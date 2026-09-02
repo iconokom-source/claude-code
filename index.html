@@ -1,884 +1,599 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Coach TDAH — Programme 30 jours</title>
+<title>Coach TDAH · 30 jours</title>
 <style>
   :root{
-    --bg:#121316;
-    --bg-elevated:#1b1d22;
-    --bg-card:#20232a;
-    --border:#2c2f37;
-    --text:#eceef1;
-    --text-dim:#9a9fab;
-    --accent:#5ec8a8;
-    --accent-dark:#3f9c81;
-    --warn:#e8b45c;
-    --danger:#e2685f;
+    --bg:#12141c; --surface:#1b1e29; --surface2:#232735; --line:#2c3143;
+    --text:#e8eaf1; --muted:#9aa0b4; --faint:#6b7186;
+    --accent:#f5b544;      /* dopamine / XP */
+    --accent-soft:#3a2f16;
+    --done:#5fcf80; --done-soft:#17321f;
+    --week1:#f5b544; --week2:#6aa9ff; --week3:#c58bff; --week4:#5fcf80;
     --radius:16px;
-    --safe-bottom: env(safe-area-inset-bottom, 0px);
   }
-  *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);}
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
   body{
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    font-size:16px; line-height:1.45;
     -webkit-font-smoothing:antialiased;
-    min-height:100vh;
-    display:flex;
-    justify-content:center;
+    padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
   }
-  #app{
-    width:100%;
-    max-width:520px;
-    min-height:100vh;
-    padding:20px 16px calc(28px + var(--safe-bottom));
-    display:flex;
-    flex-direction:column;
-    gap:16px;
-  }
-  h1,h2,h3,p{margin:0;}
-  h1{font-size:1.4rem;font-weight:700;}
-  h2{font-size:1.15rem;font-weight:700;}
-  h3{font-size:0.95rem;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.04em;}
-  p{line-height:1.45;}
-  .muted{color:var(--text-dim);font-size:.9rem;}
-  .card{
-    background:var(--bg-card);
-    border:1px solid var(--border);
-    border-radius:var(--radius);
-    padding:18px;
-    display:flex;
-    flex-direction:column;
-    gap:12px;
-  }
-  .row{display:flex;align-items:center;justify-content:space-between;gap:10px;}
-  .top-header{display:flex;align-items:center;justify-content:space-between;}
-  .pill{
-    background:var(--bg-elevated);
-    border:1px solid var(--border);
-    border-radius:999px;
-    padding:6px 12px;
-    font-size:.82rem;
-    color:var(--text-dim);
-    white-space:nowrap;
-  }
-  button{
-    font-family:inherit;
-    cursor:pointer;
-    border:none;
-    border-radius:14px;
-    padding:16px 18px;
-    font-size:1rem;
-    font-weight:600;
-    -webkit-tap-highlight-color:transparent;
-    touch-action:manipulation;
-  }
-  .btn-primary{
-    background:var(--accent);
-    color:#0c1210;
-  }
-  .btn-primary:active{background:var(--accent-dark);}
-  .btn-secondary{
-    background:var(--bg-elevated);
-    color:var(--text);
-    border:1px solid var(--border);
-  }
-  .btn-ghost{
-    background:transparent;
-    color:var(--text-dim);
-    padding:10px 12px;
-    font-weight:500;
-    font-size:.9rem;
-  }
-  .btn-block{width:100%;}
-  input[type=text], textarea{
-    width:100%;
-    background:var(--bg-elevated);
-    border:1px solid var(--border);
-    border-radius:12px;
-    color:var(--text);
-    padding:12px 14px;
-    font-size:1rem;
-    font-family:inherit;
-    resize:vertical;
-  }
-  textarea{min-height:70px;}
-  label.field-label{font-size:.85rem;color:var(--text-dim);font-weight:600;}
-  .field{display:flex;flex-direction:column;gap:6px;}
+  .wrap{max-width:520px; margin:0 auto; padding:18px 16px 96px}
+  h1,h2,h3{margin:0; font-weight:700; letter-spacing:-.01em}
+  button{font-family:inherit; cursor:pointer; border:none}
+  .hidden{display:none !important}
+
+  /* Header */
+  .top{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px}
+  .brand{font-size:14px; color:var(--muted); font-weight:600}
+  .stats{display:flex; gap:10px; align-items:center}
+  .pill{display:flex; align-items:center; gap:6px; background:var(--surface); border:1px solid var(--line);
+    padding:7px 11px; border-radius:999px; font-weight:700; font-size:14px}
+  .pill .lab{color:var(--muted); font-weight:600; font-size:12px}
+  .streak .flame{filter:grayscale(1) opacity(.5)}
+  .streak.hot .flame{filter:none}
 
   /* XP bar */
-  .xp-bar-track{
-    height:12px;
-    background:var(--bg-elevated);
-    border-radius:999px;
-    overflow:hidden;
-    border:1px solid var(--border);
-  }
-  .xp-bar-fill{
-    height:100%;
-    background:linear-gradient(90deg,var(--accent-dark),var(--accent));
-    border-radius:999px;
-    transition:width .4s ease;
-  }
+  .xpwrap{margin:6px 0 18px}
+  .xpmeta{display:flex; justify-content:space-between; font-size:12.5px; color:var(--muted); margin-bottom:6px}
+  .xpbar{height:10px; background:var(--surface2); border-radius:999px; overflow:hidden; border:1px solid var(--line)}
+  .xpfill{height:100%; width:0; background:linear-gradient(90deg,#f5b544,#f7cd77); border-radius:999px; transition:width .5s cubic-bezier(.2,.8,.2,1)}
 
-  /* Actions / checkboxes */
-  .action{
-    display:flex;
-    align-items:center;
-    gap:14px;
-    background:var(--bg-elevated);
-    border:1px solid var(--border);
-    border-radius:14px;
-    padding:14px;
-    cursor:pointer;
-    user-select:none;
-  }
-  .action.done{
-    border-color:var(--accent-dark);
-    background:rgba(94,200,168,0.08);
-  }
-  .checkbox{
-    flex:0 0 auto;
-    width:30px;height:30px;
-    border-radius:9px;
-    border:2px solid var(--text-dim);
-    display:flex;align-items:center;justify-content:center;
-    font-size:1.1rem;
-    color:var(--bg);
-    transition:transform .18s ease, background .18s ease, border-color .18s ease;
-  }
-  .action.done .checkbox{
-    background:var(--accent);
-    border-color:var(--accent);
-  }
-  .checkbox.pop{animation:pop .32s ease;}
-  @keyframes pop{
-    0%{transform:scale(1);}
-    35%{transform:scale(1.35);}
-    100%{transform:scale(1);}
-  }
-  .action-body{display:flex;flex-direction:column;gap:2px;}
-  .action-kind{font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--text-dim);font-weight:700;}
-  .action-label{font-size:1rem;line-height:1.35;}
-  .action.done .action-label{color:var(--text-dim);text-decoration:line-through;text-decoration-color:var(--accent-dark);}
+  /* Week strip */
+  .weeks{display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:18px}
+  .wk{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:10px 8px; text-align:center; position:relative}
+  .wk .n{font-size:11px; color:var(--faint); font-weight:700}
+  .wk .t{font-size:12.5px; font-weight:700; margin-top:2px}
+  .wk .lock{position:absolute; top:6px; right:8px; font-size:11px; opacity:.6}
+  .wk.active{border-color:var(--accent); box-shadow:0 0 0 1px var(--accent) inset}
+  .wk.locked{opacity:.45}
 
-  .banner{
-    border-radius:14px;
-    padding:14px;
-    font-size:.92rem;
-    line-height:1.4;
-  }
-  .banner-success{background:rgba(94,200,168,0.12);border:1px solid var(--accent-dark);}
-  .banner-warn{background:rgba(232,180,92,0.12);border:1px solid var(--warn);}
-  .banner-lock{background:rgba(255,255,255,0.03);border:1px solid var(--border);text-align:center;}
+  /* Day card */
+  .daynav{display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; gap:10px}
+  .navbtn{background:var(--surface); border:1px solid var(--line); color:var(--text); width:40px; height:40px; border-radius:12px; font-size:18px; display:flex; align-items:center; justify-content:center}
+  .navbtn:disabled{opacity:.3}
+  .dayhead{text-align:center}
+  .dayhead .dl{font-size:12.5px; color:var(--muted); font-weight:700}
+  .dayhead .dt{font-size:19px; margin-top:1px}
 
-  .day-nav{display:flex;align-items:center;justify-content:space-between;gap:10px;}
-  .day-nav button{padding:10px 14px;}
+  .banner{background:var(--surface2); border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:12px; padding:12px 14px; font-size:14px; color:var(--muted); margin-bottom:14px}
+  .banner b{color:var(--text)}
 
-  .radio-group{display:flex;flex-direction:column;gap:8px;}
-  .radio-opt{
-    background:var(--bg-elevated);
-    border:1px solid var(--border);
-    border-radius:12px;
-    padding:12px 14px;
-    display:flex;
-    align-items:center;
-    gap:10px;
-    cursor:pointer;
-  }
-  .radio-opt.sel{border-color:var(--accent);background:rgba(94,200,168,0.08);}
-  .radio-dot{width:18px;height:18px;border-radius:50%;border:2px solid var(--text-dim);flex:0 0 auto;}
-  .radio-opt.sel .radio-dot{border-color:var(--accent);background:var(--accent);}
+  .actions{display:flex; flex-direction:column; gap:10px}
+  .act{display:flex; gap:13px; align-items:flex-start; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:15px 15px; text-align:left; width:100%; color:var(--text); transition:border-color .15s, background .15s}
+  .act:active{transform:scale(.995)}
+  .act.done{background:var(--done-soft); border-color:var(--done)}
+  .box{flex:0 0 26px; height:26px; border-radius:8px; border:2px solid var(--line); display:flex; align-items:center; justify-content:center; margin-top:1px; transition:.15s}
+  .act.done .box{background:var(--done); border-color:var(--done)}
+  .box svg{width:15px; height:15px; opacity:0; transform:scale(.5); transition:.15s}
+  .act.done .box svg{opacity:1; transform:scale(1)}
+  .act .body .kind{font-size:11.5px; font-weight:800; letter-spacing:.02em; color:var(--accent); margin-bottom:3px}
+  .act.k1 .kind{color:var(--accent)} .act.k2 .kind{color:#6aa9ff} .act.k3 .kind{color:#c58bff}
+  .act.done .kind{color:var(--done)}
+  .act .body .txt{font-size:15px; line-height:1.4}
+  .act.done .txt{color:var(--muted)}
 
-  table.recap{width:100%;border-collapse:collapse;font-size:.88rem;}
-  table.recap th, table.recap td{
-    text-align:left;
-    padding:8px 6px;
-    border-bottom:1px solid var(--border);
-  }
-  table.recap th{color:var(--text-dim);font-weight:600;font-size:.78rem;text-transform:uppercase;}
+  .boss{margin-top:12px; background:linear-gradient(180deg,#241a2e,#1d1926); border:1px solid #4a2f5a; border-radius:var(--radius); padding:15px}
+  .boss .h{font-size:12px; font-weight:800; letter-spacing:.03em; color:#c58bff; margin-bottom:6px}
+  .boss .txt{font-size:15px}
 
-  .footer-nav{
-    display:flex;
-    justify-content:center;
-    gap:6px;
-    padding-top:4px;
-  }
-  .link-btn{
-    background:none;border:none;color:var(--accent);font-size:.85rem;font-weight:600;padding:8px;
-  }
-  ::placeholder{color:#6b7080;}
+  .reviewbtn{margin-top:14px; width:100%; background:var(--accent); color:#20180a; font-weight:800; padding:14px; border-radius:14px; font-size:15px}
+
+  /* Onboarding + modal */
+  .sheet{position:fixed; inset:0; background:rgba(8,9,13,.72); display:flex; align-items:flex-end; justify-content:center; z-index:50}
+  .card{background:var(--surface); border:1px solid var(--line); border-radius:20px 20px 0 0; width:100%; max-width:520px; padding:22px 18px calc(22px + env(safe-area-inset-bottom)); max-height:92vh; overflow:auto}
+  @media(min-width:560px){ .sheet{align-items:center} .card{border-radius:20px} }
+  .card h2{font-size:20px; margin-bottom:6px}
+  .card p.sub{color:var(--muted); font-size:14px; margin:0 0 16px}
+  label.fld{display:block; font-size:13px; color:var(--muted); font-weight:700; margin:14px 0 6px}
+  input.txt{width:100%; background:var(--bg); border:1px solid var(--line); color:var(--text); border-radius:12px; padding:13px 14px; font-size:15px}
+  input.txt::placeholder{color:var(--faint)}
+  textarea.txt{width:100%; min-height:64px; resize:vertical; background:var(--bg); border:1px solid var(--line); color:var(--text); border-radius:12px; padding:12px 14px; font-size:15px; font-family:inherit}
+  .primary{margin-top:20px; width:100%; background:var(--accent); color:#20180a; font-weight:800; padding:15px; border-radius:14px; font-size:16px}
+  .ghost{margin-top:10px; width:100%; background:transparent; color:var(--muted); font-weight:600; padding:10px; font-size:14px; border:none}
+
+  .rewardbar{display:flex; gap:8px; overflow:auto; margin:-2px 0 16px; padding-bottom:2px}
+  .rwd{flex:0 0 auto; background:var(--surface); border:1px solid var(--line); border-radius:999px; padding:8px 13px; font-size:12.5px; color:var(--muted)}
+  .rwd b{color:var(--accent)}
+
+  canvas#fx{position:fixed; inset:0; pointer-events:none; z-index:60}
+  .toast{position:fixed; left:50%; top:22px; transform:translateX(-50%) translateY(-20px); background:var(--accent); color:#20180a; font-weight:800; padding:12px 18px; border-radius:999px; font-size:14px; opacity:0; transition:.35s; z-index:70; box-shadow:0 8px 30px rgba(245,181,68,.35)}
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+
+  /* Bilan */
+  .biprog{font-size:12.5px; color:var(--muted); font-weight:700; margin-bottom:2px}
+  .biprogbar{height:6px; background:var(--surface2); border:1px solid var(--line); border-radius:999px; overflow:hidden; margin:6px 0 18px}
+  .biprogfill{height:100%; background:var(--accent); transition:width .3s}
+  .qrow{margin-bottom:16px}
+  .qrow .q{font-size:14.5px; margin-bottom:8px; line-height:1.35}
+  .opts{display:grid; grid-template-columns:repeat(4,1fr); gap:6px}
+  .opt{background:var(--bg); border:1px solid var(--line); color:var(--muted); border-radius:10px; padding:9px 4px; font-size:11.5px; font-weight:700; line-height:1.2; min-height:46px; display:flex; align-items:center; justify-content:center; text-align:center}
+  .opt.sel{background:var(--accent); color:#20180a; border-color:var(--accent)}
+  .rtable{width:100%; border-collapse:collapse; margin:4px 0 18px; font-size:13px}
+  .rtable td{border-top:1px solid var(--line); padding:10px 6px; vertical-align:top}
+  .rtable tr:first-child td{border-top:none}
+  .rtable .dom{font-weight:700; width:34%}
+  .fr{display:inline-block; font-size:11px; font-weight:800; padding:3px 8px; border-radius:999px; margin-top:3px}
+  .fr.h{background:var(--accent-soft); color:var(--accent)}
+  .fr.m{background:#1c2740; color:#6aa9ff}
+  .fr.l{background:var(--done-soft); color:var(--done)}
+  .rlev{color:var(--muted); font-size:12.5px}
+  .levlist{list-style:none; padding:0; margin:0 0 4px}
+  .levlist li{background:var(--surface2); border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:10px; padding:11px 13px; margin-bottom:8px; font-size:13.5px}
+  .levlist li b{color:var(--accent)}
 </style>
 </head>
 <body>
-<div id="app"></div>
+<div class="wrap">
+  <div class="top">
+    <div class="brand">Coach TDAH</div>
+    <div class="stats">
+      <div class="pill streak" id="streakPill"><span class="flame">🔥</span><span id="streakN">0</span><span class="lab">j</span></div>
+      <div class="pill"><span id="levelN">Niv. 1</span></div>
+    </div>
+  </div>
+
+  <div class="xpwrap">
+    <div class="xpmeta"><span id="xpLabel">0 XP</span><span id="xpNext">Niveau 2 à 100 XP</span></div>
+    <div class="xpbar"><div class="xpfill" id="xpFill"></div></div>
+  </div>
+
+  <div class="rewardbar" id="rewardBar"></div>
+
+  <div class="weeks" id="weeks"></div>
+
+  <div class="daynav">
+    <button class="navbtn" id="prevDay">‹</button>
+    <div class="dayhead">
+      <div class="dl" id="dayLabel">Semaine 1 · Externaliser</div>
+      <div class="dt" id="dayTitle">Jour 1</div>
+    </div>
+    <button class="navbtn" id="nextDay">›</button>
+  </div>
+
+  <div class="banner hidden" id="lightBanner">
+    <b>On allège.</b> Deux jours sans action, ça arrive et ça ne dit rien de vous. Aujourd'hui, une seule case suffit pour relancer la machine.
+  </div>
+
+  <div class="actions" id="actions"></div>
+  <div id="bossSlot"></div>
+  <button class="reviewbtn hidden" id="reviewBtn">Faire la revue de la semaine</button>
+</div>
+
+<canvas id="fx"></canvas>
+<div class="toast" id="toast"></div>
+
+<!-- Intro -->
+<div class="sheet" id="intro">
+  <div class="card">
+    <h2>Coach TDAH · 30 jours</h2>
+    <p class="sub">Votre problème n'est ni la volonté ni les capacités. On travaille par petites actions, en s'adaptant à votre énergie réelle, sans culpabilité.</p>
+    <button class="primary" id="goBilan">Faire le bilan (2 min)</button>
+    <button class="ghost" id="goSkipBilan">J'ai déjà fait mon bilan, passer</button>
+  </div>
+</div>
+
+<!-- Bilan -->
+<div class="sheet hidden" id="bilan">
+  <div class="card">
+    <div class="biprog" id="biProg">Domaine 1 sur 6</div>
+    <h2 id="biName">Attention</h2>
+    <div class="biprogbar"><div class="biprogfill" id="biFill"></div></div>
+    <div id="biQuestions"></div>
+    <button class="primary" id="biNext" disabled>Répondez à tout pour continuer</button>
+  </div>
+</div>
+
+<!-- Restitution -->
+<div class="sheet hidden" id="restit">
+  <div class="card">
+    <h2>Votre profil</h2>
+    <p class="sub">Un point de départ de travail, pas un verdict. On calibre le programme là-dessus.</p>
+    <table class="rtable" id="rTable"></table>
+    <h3 style="font-size:15px;margin:6px 0 10px">Vos 3 leviers prioritaires ce mois-ci</h3>
+    <ul class="levlist" id="rLevers"></ul>
+    <button class="primary" id="goRewards">Continuer</button>
+  </div>
+</div>
+
+<!-- Récompenses -->
+<div class="sheet hidden" id="onb">
+  <div class="card">
+    <h2>Avant de lancer</h2>
+    <p class="sub">Choisissez vos récompenses maintenant. Une récompense décidée après coup ne marche pas : le cerveau a besoin de savoir ce qui l'attend.</p>
+    <label class="fld">Récompense quotidienne (petite, immédiate, dès 3 actions cochées)</label>
+    <input class="txt" id="rDaily" placeholder="ex. un carré de chocolat, 1 épisode, un café dehors">
+    <label class="fld">Récompense de fin de semaine (défi boss réussi)</label>
+    <input class="txt" id="rWeekly" placeholder="ex. resto, soirée jeu, sortie">
+    <label class="fld">Récompense finale (30 jours bouclés)</label>
+    <input class="txt" id="rFinal" placeholder="ex. l'objet ou l'expérience qui vous fait envie">
+    <button class="primary" id="startBtn">Lancer le programme</button>
+    <button class="ghost" id="skipBtn">Passer, je remplirai plus tard</button>
+  </div>
+</div>
+
+<!-- Weekly review -->
+<div class="sheet hidden" id="rev">
+  <div class="card">
+    <h2 id="revTitle">Revue de la semaine 1</h2>
+    <p class="sub">3 minutes, sans jugement. C'est ça qui fait progresser le système.</p>
+    <label class="fld">Ce qui a marché</label>
+    <textarea class="txt" id="revGood" placeholder="Même un petit truc compte"></textarea>
+    <label class="fld">Où était la friction</label>
+    <textarea class="txt" id="revFriction" placeholder="Quel moment / quelle tâche a coincé ?"></textarea>
+    <label class="fld">Un ajustement pour la semaine suivante</label>
+    <textarea class="txt" id="revAdjust" placeholder="Une seule chose à changer"></textarea>
+    <button class="primary" id="revSave">Valider et déverrouiller la suite</button>
+  </div>
+</div>
 
 <script>
-/* =========================================================================
-   PROGRAM — contenu des 30 jours, à éditer librement.
-   4 semaines : 1) Externaliser  2) Démarrer  3) Tenir  4) Réguler
-   Chaque jour = 3 actions : "micro" (micro-habitude), "defi" (défi du jour),
-   "prepa" (préparation pour demain).
-   ========================================================================= */
+/* ---------- PROGRAMME 30 JOURS ----------
+   w = semaine, t = titre du jour, a = [micro-habitude, défi, prépa]
+   kind libellés: 0 micro-habitude · 1 défi du jour · 2 prépa / externalisation
+   boss = défi boss (jours 7,14,21,28) */
+const WEEKS = [
+  {n:1,t:"Externaliser",c:"var(--week1)"},
+  {n:2,t:"Démarrer",c:"var(--week2)"},
+  {n:3,t:"Tenir",c:"var(--week3)"},
+  {n:4,t:"Réguler",c:"var(--week4)"},
+];
 const PROGRAM = {
-  weeks: {
-    1: { theme: "Externaliser", subtitle: "Sortir tout ce qui est dans ta tête vers un système externe fiable." },
-    2: { theme: "Démarrer", subtitle: "Vaincre la paralysie du démarrage, entrer en action en 2 minutes." },
-    3: { theme: "Tenir", subtitle: "Maintenir l'effort, gérer les distractions, tenir la distance." },
-    4: { theme: "Réguler", subtitle: "Ajuster ton système, réguler tes émotions, consolider les habitudes." }
-  },
-  days: {
-    1:  { week:1, title:"Vider ta tête", micro:"Note toutes les tâches qui te trottent en tête sur une seule liste (papier ou appli).", defi:"Choisis 1 tâche en tête de liste et fais-la sans la re-planifier.", prepa:"Pose ta liste bien en vue pour demain matin (bureau, frigo, écran de veille)." },
-    2:  { week:1, title:"Un seul endroit", micro:"Regroupe toutes tes notes éparpillées (post-it, appli, tête) dans un seul endroit.", defi:"Supprime ou archive 3 choses inutiles de cette liste unique.", prepa:"Prépare 3 tâches précises pour demain, écrites en une phrase chacune." },
-    3:  { week:1, title:"Rendre visible", micro:"Affiche les 3 tâches du jour à un endroit que tu vois forcément.", defi:"Fixe un minuteur visible (10 min) pour démarrer la tâche la plus évitée.", prepa:"Sors ou ouvre déjà le matériel nécessaire à la 1ère tâche de demain." },
-    4:  { week:1, title:"Externaliser le temps", micro:"Note l'heure de début et de fin de 2 activités aujourd'hui.", defi:"Programme une alarme pour chaque rendez-vous ou tâche à heure fixe.", prepa:"Prépare tes vêtements / sac / repas pour demain, la veille au soir." },
-    5:  { week:1, title:"Un lieu par fonction", micro:"Choisis un emplacement fixe pour tes clés / téléphone / portefeuille.", defi:"Range 5 objets qui traînent à leur emplacement fixe.", prepa:"Vérifie que ton espace de travail de demain est dégagé avant de dormir." },
-    6:  { week:1, title:"Check-list de sortie", micro:"Écris une check-list des objets à ne jamais oublier en sortant.", defi:"Utilise cette check-list avant de sortir aujourd'hui.", prepa:"Colle la check-list près de la porte pour demain." },
-    7:  { week:1, title:"Bilan semaine 1", micro:"Relis ta liste de tâches et raye ce qui n'est plus utile.", defi:"Choisis 1 tâche en attente depuis le début de semaine et termine-la.", prepa:"Prépare ta liste de la semaine prochaine avec 3 priorités seulement." },
-    8:  { week:2, title:"La règle des 2 minutes", micro:"Fais immédiatement toute tâche qui prend moins de 2 minutes, dès que tu y penses.", defi:"Démarre la tâche que tu repousses depuis le plus longtemps, juste 2 minutes.", prepa:"Écris la toute première micro-action de la tâche la plus dure de demain." },
-    9:  { week:2, title:"Découper", micro:"Prends une tâche floue et découpe-la en 3 étapes concrètes.", defi:"Fais uniquement la 1ère étape de cette tâche découpée.", prepa:"Découpe déjà en étapes une tâche prévue pour demain." },
-    10: { week:2, title:"Le rituel de lancement", micro:"Crée un petit rituel de 60 secondes avant de démarrer (respirer, timer, musique).", defi:"Utilise ce rituel pour démarrer une tâche que tu redoutes.", prepa:"Choisis à l'avance l'heure et le rituel de démarrage de demain." },
-    11: { week:2, title:"Réduire la friction", micro:"Identifie un obstacle qui te fait repousser une tâche et retire-le.", defi:"Prépare à l'avance tout le matériel d'une tâche pour supprimer l'effort de démarrage.", prepa:"Pré-ouvre ou pré-sors ce qu'il faut pour démarrer instantanément demain." },
-    12: { week:2, title:"Le sprint de 10 minutes", micro:"Fixe un minuteur de 10 minutes sur une tâche que tu évites.", defi:"Enchaîne 2 sprints de 10 minutes sur la même tâche, avec une pause entre les deux.", prepa:"Planifie l'heure exacte d'un sprint de 10 minutes pour demain." },
-    13: { week:2, title:"Récompense immédiate", micro:"Associe une petite récompense (café, musique, pause) juste après avoir démarré une tâche.", defi:"Démarre une tâche pénible en te promettant la récompense juste après le lancement, pas après la fin.", prepa:"Choisis la récompense associée à la tâche de démarrage de demain." },
-    14: { week:2, title:"Bilan semaine 2", micro:"Repère la tâche que tu as le plus reportée cette semaine et découpe-la.", defi:"Démarre cette tâche reportée, ne serait-ce que 5 minutes.", prepa:"Identifie ta tâche la plus redoutée de la semaine prochaine et prépare son rituel de lancement." },
-    15: { week:3, title:"Le mode avion mental", micro:"Coupe les notifications pendant un créneau de 20 minutes.", defi:"Tiens un créneau de 20 minutes sans écran ni notification sur une seule tâche.", prepa:"Bloque déjà dans ton agenda un créneau sans distraction pour demain." },
-    16: { week:3, title:"Un onglet, une tâche", micro:"Ferme les onglets/applications inutiles avant de commencer une tâche.", defi:"Travaille une tâche avec un seul onglet ou une seule appli ouverte.", prepa:"Note la seule tâche sur laquelle tu veux te concentrer demain matin." },
-    17: { week:3, title:"Pause active", micro:"Fais une pause de 5 minutes en te levant et en bougeant, sans écran.", defi:"Utilise cette pause active entre deux tâches au lieu de scroller.", prepa:"Planifie à quel moment demain tu prendras une pause active." },
-    18: { week:3, title:"Ancrer le retour à la tâche", micro:"Note où tu t'es arrêté avant chaque interruption.", defi:"Reviens sur une tâche interrompue en utilisant uniquement cette note.", prepa:"Prépare une phrase simple de reprise pour la tâche de demain en cas d'interruption." },
-    19: { week:3, title:"Réduire à l'essentiel", micro:"Identifie la tâche la plus importante du jour (une seule).", defi:"Fais cette tâche avant toute autre chose, même petite.", prepa:"Choisis dès ce soir la tâche la plus importante de demain." },
-    20: { week:3, title:"Suivi visuel", micro:"Coche visuellement chaque tâche terminée dans la journée.", defi:"Termine une tâche commencée avant d'en démarrer une nouvelle.", prepa:"Prépare ton suivi visuel (liste, tableau) pour demain." },
-    21: { week:3, title:"Bilan semaine 3", micro:"Repère ta plus grande source de distraction cette semaine.", defi:"Mets en place une action concrète pour réduire cette distraction aujourd'hui.", prepa:"Choisis la stratégie anti-distraction que tu gardes pour la semaine prochaine." },
-    22: { week:4, title:"Nommer l'émotion", micro:"Nomme en un mot l'émotion ressentie avant une tâche difficile.", defi:"Fais la tâche malgré l'émotion, en te concentrant sur la 1ère étape seulement.", prepa:"Anticipe l'émotion probable face à la tâche de demain et prépare une phrase pour toi-même." },
-    23: { week:4, title:"Respiration courte", micro:"Fais 5 respirations lentes avant une tâche qui te stresse.", defi:"Utilise cette respiration avant ta tâche la plus chargée émotionnellement.", prepa:"Note à quel moment demain tu prévois d'utiliser cette respiration." },
-    24: { week:4, title:"Ajuster sans culpabiliser", micro:"Repère une règle du programme trop rigide pour toi et assouplis-la.", defi:"Applique aujourd'hui ta version ajustée, sans te juger.", prepa:"Note l'ajustement que tu gardes pour la suite du programme." },
-    25: { week:4, title:"Célébrer les petites victoires", micro:"Note une chose accomplie aujourd'hui, même minime.", defi:"Partage ou dis à voix haute cette victoire à quelqu'un ou à toi-même.", prepa:"Prépare une victoire à viser pour demain, réaliste et petite." },
-    26: { week:4, title:"Gérer la surcharge", micro:"Si tu te sens débordé, retire une tâche de ta liste du jour.", defi:"Termine la journée avec une liste allégée plutôt que surchargée.", prepa:"Prépare une liste volontairement courte (3 tâches max) pour demain." },
-    27: { week:4, title:"Consolider le système", micro:"Relis les outils que tu utilises depuis le début (listes, minuteurs, rituels).", defi:"Garde uniquement les 3 outils qui t'ont le plus aidé et utilise-les aujourd'hui.", prepa:"Prépare ces 3 outils pour qu'ils soient prêts à l'emploi demain." },
-    28: { week:4, title:"Bilan semaine 4", micro:"Relis ton parcours des 4 dernières semaines.", defi:"Identifie ta plus grande transformation depuis le jour 1.", prepa:"Prépare les 2 derniers jours en choisissant ce que tu veux consolider." },
-    29: { week:4, title:"Avant-dernier jour", micro:"Applique ton rituel de démarrage préféré sur une tâche du jour.", defi:"Termine une tâche en attente depuis plusieurs jours.", prepa:"Prépare ton bilan final pour demain : qu'est-ce qui a le mieux marché ?" },
-    30: { week:4, title:"Jour 30 — Ancrage", micro:"Écris les 3 outils que tu veux garder après le programme.", defi:"Fais une tâche du jour en utilisant consciemment ce que tu as appris.", prepa:"Décide comment tu continues après le programme (quels outils, quel rythme)." }
-  }
+1:{w:1,t:"Le grand vidage",a:["2 min de brain dump : tout ce qui vous trotte en tête, en vrac, sans trier","Noter chaque « il faut que je pense à… » qui surgit dans la journée","Choisir l'endroit unique où vivra votre capture (une seule appli, ou un seul carnet)"]},
+2:{w:1,t:"Le téléphone exilé",a:["Poser le téléphone dans une autre pièce le temps d'une seule tâche","1 session de travail complète avec le téléphone hors de portée physique","Définir l'emplacement fixe « exil » du téléphone chez vous"]},
+3:{w:1,t:"L'environnement par défaut",a:["Dégager le plan de travail en 2 min, ne laisser que ce qui sert à la tâche","Couper les notifications des 3 applis les plus intrusives","Préparer physiquement la 1re tâche de demain (dossier ouvert, doc prêt)"]},
+4:{w:1,t:"Le pari du soir",a:["Écrire la toute première action de demain, en une phrase concrète","La préparer physiquement pour qu'il n'y ait plus qu'à s'asseoir","Relire le brain dump du jour 1, entourer les 3 trucs qui pèsent le plus"]},
+5:{w:1,t:"Capture réflexe",a:["À chaque pensée parasite pendant le travail, la noter en 5 sec au lieu de la suivre","Chasse aux distractions : noter chaque distraction d'une session, sans jugement","Vider la capture du jour dans votre système unique"]},
+6:{w:1,t:"Journée basse friction",a:["Traiter 1 micro-tâche qui traîne (mail, formulaire, appel de 5 min)","Sanctuariser 30 min au calme sans écran, votre condition n°1","Préparer l'environnement de la session de demain à l'avance"]},
+7:{w:1,t:"Défi boss + revue",a:["Rituel de fermeture de 3 min : noter demain et clore la journée","Célébrer la fin de semaine 1 par votre récompense hebdo","Relire vos captures de la semaine"],boss:"1 session de 25 min : téléphone exilé, plan de travail dégagé, sur une tâche qui compte vraiment."},
+
+8:{w:2,t:"La première action absurde",a:["Découper la tâche qui pèse jusqu'à une action de 60 secondes","Sprint de 5 min sur une tâche évitée, puis stop autorisé","Écrire l'action absurde de démarrage de demain"]},
+9:{w:2,t:"Quand X, alors Y",a:["Écrire 1 intention : « quand [déclencheur], alors [action] »","L'exécuter au moins une fois dans la journée","Préparer le déclencheur physique (poser l'objet, ouvrir l'onglet)"]},
+10:{w:2,t:"Nommer l'émotion",a:["Avant une tâche évitée, écrire en 1 phrase l'émotion qu'elle déclenche","Démarrer la tâche juste après l'avoir nommée","Repérer la tâche la plus « chargée » émotionnellement de demain"]},
+11:{w:2,t:"Body double",a:["Annoncer à quelqu'un ce que vous allez faire, maintenant","1 session en co-working (réel, ou virtuel minuté)","Caler un créneau body double pour demain"]},
+12:{w:2,t:"Le sprint de 5 min",a:["Lancer un minuteur 5 min sur LA tâche du jour","Quand les 5 min sonnent, décider consciemment : continuer ou stopper","Choisir la tâche cible de demain"]},
+13:{w:2,t:"Zéro décision au démarrage",a:["Préparer la veille pour qu'il n'y ait aucune décision à prendre au lancement","Démarrer la tâche en moins de 2 min après vous être assis","Pari du soir : 1re action de demain écrite et prête"]},
+14:{w:2,t:"Défi boss + revue",a:["Rituel de fermeture de 3 min","Célébrer par votre récompense hebdo","Noter les 2 déclencheurs « quand X alors Y » qui ont le mieux marché"],boss:"Enchaîner 2 tâches évitées via la règle des 5 min, sans pause écran entre les deux."},
+
+15:{w:3,t:"Time boxing visible",a:["Bloquer 1 créneau nommé dans l'agenda, avec une heure de fin","Respecter l'heure de fin : stop net quand ça sonne","Préparer le time box de demain"]},
+16:{w:3,t:"Le sprint long",a:["1 sprint de 25 min minuté (Pomodoro)","Pause active 5 min sans écran entre deux sprints","Lister les 2 sprints de demain"]},
+17:{w:3,t:"Chasse aux distractions",a:["Pendant 1 session, noter chaque distraction sur une feuille","Repérer la distraction n°1 et décider comment la neutraliser demain","Préparer l'environnement anti-distraction du lendemain"]},
+18:{w:3,t:"Rituel de reprise",a:["Définir votre geste de reprise après interruption (relire la dernière ligne, respirer, reprendre)","L'appliquer à chaque interruption de la journée","Pari du soir"]},
+19:{w:3,t:"Hyperfocus canalisé",a:["Identifier 1 tâche où l'hyperfocus est un atout, la placer sur votre meilleur créneau","Y consacrer 1 bloc protégé, sans interruption","Protéger le créneau de demain (mode avion, porte fermée)"]},
+20:{w:3,t:"Journée calme sans écran",a:["45 min sur votre condition idéale : calme, sans écran, votre force","Aucune ouverture de téléphone pendant le bloc","Préparer le lieu et le matériel de demain"]},
+21:{w:3,t:"Défi boss + revue",a:["Rituel de fermeture de 3 min","Célébrer par votre récompense hebdo","Entourer le réglage attention qui a le plus aidé"],boss:"2 sprints de 25 min, rituel de reprise appliqué à chaque interruption, téléphone exilé."},
+
+22:{w:4,t:"La récompense immédiate",a:["Définir 1 micro-récompense post-tâche et la prendre aussitôt","Célébrer chaque action cochée par un geste de victoire","Choisir les récompenses de demain à l'avance"]},
+23:{w:4,t:"Temptation bundling",a:["Associer 1 tâche ingrate à 1 plaisir immédiat (podcast, café, musique)","Ne vivre le plaisir que pendant la tâche","Préparer le combo tâche + plaisir de demain"]},
+24:{w:4,t:"Le rituel de fermeture",a:["Routine de 3 min pour clore la journée : noter demain, ranger, souffler","Éteindre les écrans 30 min avant le coucher","Préparer le pari du lendemain"]},
+25:{w:4,t:"Vider le cerveau du soir",a:["Brain dump de 2 min avant le coucher, pour le cerveau qui s'emballe","Si une pensée revient la nuit, la noter au lieu de la ruminer","Poser le carnet près du lit pour demain soir"]},
+26:{w:4,t:"Bouger pour réguler",a:["5 min de mouvement avant une tâche exigeante","1 marche courte à un creux d'énergie de la journée","Préparer les conditions (tenue, créneau) de demain"]},
+27:{w:4,t:"Ancrer ce qui marche",a:["Relire vos revues, entourer les 3 habitudes qui ont le plus aidé","En attacher 1 à un déclencheur quotidien existant (habit stacking)","Pari du soir"]},
+28:{w:4,t:"Défi boss + revue",a:["Rituel de fermeture de 3 min","Célébrer : la récompense finale approche","Écrire ce que vous gardez du programme"],boss:"Une journée complète en autonomie avec vos 3 habitudes ancrées, sans consigne extérieure."},
 };
+const KIND=["Micro-habitude","Défi du jour","Prépa / externalisation"];
+const TOTAL_DAYS=28;
+const XP_PER_LEVEL=100;
 
-/* Bilan initial — 6 domaines, question + 4 options, et leviers associés */
-const BILAN = {
-  options: ["Oui", "Parfois", "Souvent", "Presque tout le temps"],
-  domains: [
-    { key:"organisation", label:"Organisation", question:"Je perds ou j'oublie des informations importantes (tâches, dates, objets) faute de système fiable." },
-    { key:"demarrage", label:"Démarrage", question:"Je remets à plus tard des tâches importantes, même quand je sais qu'il faut les faire." },
-    { key:"attention", label:"Attention", question:"Je me laisse distraire facilement et je perds le fil de ce que j'étais en train de faire." },
-    { key:"temps", label:"Gestion du temps", question:"J'estime mal le temps que prennent les choses et je suis souvent en retard ou pris de court." },
-    { key:"emotions", label:"Émotions", question:"Je me sens vite submergé(e), frustré(e) ou découragé(e) face aux tâches du quotidien." },
-    { key:"energie", label:"Sommeil / énergie", question:"Mon sommeil ou mon énergie sont irréguliers et affectent ma capacité à tenir mes engagements." }
-  ],
-  levers: {
-    organisation: "Mets en place un système externe unique (une seule liste) pour ne plus rien garder en tête.",
-    demarrage: "Utilise la règle des 2 minutes et découpe chaque tâche en une première micro-étape.",
-    attention: "Réduis les sources de distraction (notifications, onglets) avant de démarrer une tâche.",
-    temps: "Utilise des minuteurs visibles pour rendre le temps concret et éviter les dérapages.",
-    emotions: "Nomme l'émotion avant d'agir et avance quand même sur la première étape, sans viser la perfection.",
-    energie: "Stabilise un rituel de sommeil simple et repère les moments de la journée où ton énergie est la plus haute."
-  }
-};
+/* ---------- BILAN (6 domaines) ----------
+   rev:true = question de force (n'entre pas dans le score de friction, sert à repérer un atout)
+   opts scorées 0..3 : Jamais / Parfois / Souvent / Presque toujours */
+const OPTS=["Jamais","Parfois","Souvent","Presque toujours"];
+const BILAN=[
+ {key:"attention",name:"Attention et distractibilité",
+  lev:"Sanctuariser un environnement sans écran ni notification pour les tâches qui comptent.",
+  q:[
+   {t:"Vous décrochez d'une tâche dès qu'un truc plus stimulant apparaît (notif, pensée, onglet) ?"},
+   {t:"Vous relisez plusieurs fois la même ligne sans que ça rentre ?"},
+   {t:"On vous parle et vous réalisez que vous avez perdu le fil en route ?"},
+   {t:"Vous laissez des tâches finies à 90 % parce que la fin vous ennuie ?"},
+   {t:"Au calme et sans écran, votre concentration est nettement meilleure ?",rev:true,strength:"au calme sans écran, vous changez de dimension"},
+  ]},
+ {key:"initiation",name:"Initiation et procrastination",
+  lev:"Rendre la première action ridiculement petite (règle des 5 minutes).",
+  q:[
+   {t:"Vous savez quoi faire, mais démarrer semble presque physiquement impossible ?"},
+   {t:"Vous attendez la pression de la dernière minute pour vous lancer ?"},
+   {t:"Une petite tâche (mail, appel) traîne des jours alors qu'elle prend 5 min ?"},
+   {t:"Vous multipliez les micro-tâches faciles pour éviter la grosse ?"},
+   {t:"Une fois lancé, ça va souvent mieux que prévu ?",rev:true,strength:"une fois lancé, l'exécution suit"},
+  ]},
+ {key:"temps",name:"Gestion du temps et organisation",
+  lev:"Time boxing visible et rappels externes systématiques pour les échéances.",
+  q:[
+   {t:"Vous sous-estimez le temps qu'une tâche va prendre ?"},
+   {t:"Vous perdez la notion du temps une fois absorbé ?"},
+   {t:"Rendez-vous et échéances vous filent entre les doigts si ce n'est pas noté ?"},
+   {t:"Vous jonglez avec plusieurs projets ou outils sans vraie vue d'ensemble ?"},
+   {t:"Vous notez et externalisez déjà par écrit, spontanément ?",rev:true,strength:"vous externalisez déjà par écrit"},
+  ]},
+ {key:"emotion",name:"Régulation émotionnelle et motivation",
+  lev:"Nommer l'émotion avant d'agir : traiter l'émotion, pas seulement la tâche.",
+  q:[
+   {t:"Votre motivation dépend de l'intérêt du moment (passionnant à fond, ennuyeux zéro) ?"},
+   {t:"Une contrariété ou une critique vous fait dérailler plus fort ou plus longtemps ?"},
+   {t:"Vous passez de « je gère tout » à « je suis nul » assez vite ?"},
+   {t:"L'ennui vous est presque insupportable ?"},
+   {t:"Terminer une tâche ne vous procure pas la satisfaction attendue ?"},
+  ]},
+ {key:"sommeil",name:"Sommeil et énergie",
+  lev:"Rituel de fermeture le soir pour vider la tête avant le coucher.",
+  q:[
+   {t:"Du mal à vous coucher même fatigué (vous repoussez le moment d'éteindre) ?"},
+   {t:"Votre cerveau s'emballe le soir, au pire moment pour dormir ?"},
+   {t:"Vous vous réveillez rarement frais, même après une nuit correcte ?"},
+   {t:"Votre énergie fait le yo-yo dans la journée ?"},
+   {t:"Vous carburez à la caféine ou au sucre pour tenir ?"},
+  ]},
+ {key:"environnement",name:"Environnement et charge mentale",
+  lev:"Téléphone hors de portée physique et capture écrite en continu.",
+  q:[
+   {t:"Votre espace de travail est encombré, ou vous perdez du temps à chercher ?"},
+   {t:"Une liste mentale de « à ne pas oublier » tourne en fond en permanence ?"},
+   {t:"Le téléphone est à portée et vous le prenez sans y penser ?"},
+   {t:"Trop de choix ou une tâche floue vous paralyse ?"},
+   {t:"Vous êtes plus efficace quand quelqu'un est là, ou après un engagement pris ?",rev:true,strength:"vous carburez à la présence et à l'engagement"},
+  ]},
+];
 
-/* =========================================================================
-   ÉTAT & PERSISTANCE
-   ========================================================================= */
-const STORAGE_KEY = "adhd_coach";
-
-function defaultState(){
-  return {
-    profile: { bilan: { answers:{}, completed:false, skipped:false }, reviews:{} },
-    program: { startDate: null, currentDay: 1, days: {} },
-    xp: 0,
-    streak: { count:0, lastDate:null },
-    rewards: { daily:"", weekly:"", final:"" },
-    unlockedWeeks: [1],
-    meta: { onboarded:false }
-  };
+/* ---------- STATE ---------- */
+const KEY="adhd_coach";
+const todayStr=()=>new Date().toISOString().slice(0,10);
+function freshState(){
+  return {profile:{}, rewards:{daily:"",weekly:"",final:""},
+    xp:0, streak:{count:0,lastDate:null},
+    view:1, maxDay:1, days:{}, reviews:{}, onboarded:false, lightAck:{}};
 }
+let S=load();
+function load(){ try{const r=JSON.parse(localStorage.getItem(KEY)); return r||freshState();}catch(e){return freshState();} }
+function save(){ localStorage.setItem(KEY, JSON.stringify(S)); }
 
-let state = loadState();
-
-function loadState(){
-  try{
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if(!raw) return defaultState();
-    const parsed = JSON.parse(raw);
-    const base = defaultState();
-    return Object.assign(base, parsed, {
-      profile: Object.assign(base.profile, parsed.profile),
-      program: Object.assign(base.program, parsed.program),
-      streak: Object.assign(base.streak, parsed.streak),
-      rewards: Object.assign(base.rewards, parsed.rewards),
-      meta: Object.assign(base.meta, parsed.meta)
-    });
-  }catch(e){
-    return defaultState();
-  }
+/* ---------- HELPERS ---------- */
+const $=s=>document.querySelector(s);
+function dayState(d){ if(!S.days[d]) S.days[d]={actions:[false,false,false],date:null}; return S.days[d]; }
+function checkedCount(d){ return S.days[d]?S.days[d].actions.filter(Boolean).length:0; }
+function isComplete(d){ return checkedCount(d)===3; }
+function weekOf(d){ return PROGRAM[d].w; }
+function weekDays(w){ return Object.keys(PROGRAM).filter(d=>PROGRAM[d].w===w).map(Number); }
+function weekUnlocked(w){
+  if(w===1) return true;
+  const prev=weekDays(w-1);
+  const active=prev.filter(d=>checkedCount(d)>=1).length;
+  return active>=5;               /* règle : 5/7 jours avec >=1 action */
 }
-
-function saveState(){
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+function dayUnlocked(d){ return weekUnlocked(weekOf(d)); }
+function recomputeStreak(){
+  /* série de jours complétés consécutifs jusqu'au dernier jour complété */
+  let last=0; for(let d=1; d<=TOTAL_DAYS; d++){ if(isComplete(d)) last=d; }
+  let run=0; for(let d=last; d>=1; d--){ if(isComplete(d)) run++; else break; }
+  S.streak.count=run; S.streak.lastDate=todayStr();
 }
+function level(){ return Math.floor(S.xp/XP_PER_LEVEL)+1; }
 
-/* =========================================================================
-   HELPERS DATE / JOUR
-   ========================================================================= */
-function todayStr(d){
-  const dt = d || new Date();
-  return dt.getFullYear() + "-" + String(dt.getMonth()+1).padStart(2,"0") + "-" + String(dt.getDate()).padStart(2,"0");
-}
-function daysBetween(a,b){
-  const da = new Date(a+"T00:00:00"), db = new Date(b+"T00:00:00");
-  return Math.round((db-da)/86400000);
-}
-function clamp(n,min,max){ return Math.max(min, Math.min(max, n)); }
-
-function computeCurrentDay(){
-  if(!state.program.startDate) return 1;
-  const diff = daysBetween(state.program.startDate, todayStr());
-  return clamp(diff+1, 1, 30);
-}
-
-function getDayEntry(n){
-  return state.program.days[n] || { actions:[false,false,false], date:null };
-}
-function ensureDayEntry(n){
-  if(!state.program.days[n]){
-    state.program.days[n] = { actions:[false,false,false], date: todayStr() };
-  }
-  return state.program.days[n];
-}
-
-const WEEK_RANGES = { 1:[1,7], 2:[8,14], 3:[15,21], 4:[22,30] };
-function weekOfDay(n){
-  for(const w in WEEK_RANGES){
-    const [a,b] = WEEK_RANGES[w];
-    if(n>=a && n<=b) return +w;
-  }
-  return 4;
-}
-
-function computeUnlockedWeeks(){
-  const unlocked = [1];
-  for(let w=1; w<=3; w++){
-    const [a,b] = WEEK_RANGES[w];
-    let doneCount = 0;
-    for(let n=a;n<=b;n++){
-      if(getDayEntry(n).actions.some(Boolean)) doneCount++;
-    }
-    if(doneCount>=5) unlocked.push(w+1);
-  }
-  return unlocked;
-}
-
-function computeStreak(){
-  const entries = Object.keys(state.program.days)
-    .map(k=>({ n:+k, ...state.program.days[k] }))
-    .filter(d=> d.date && d.actions.every(Boolean))
-    .sort((a,b)=> a.date.localeCompare(b.date));
-  if(!entries.length) return { count:0, lastDate:null };
-  let count = 1;
-  for(let i=entries.length-1;i>0;i--){
-    const diff = daysBetween(entries[i-1].date, entries[i].date);
-    if(diff===1) count++; else break;
-  }
-  const last = entries[entries.length-1].date;
-  const gap = daysBetween(last, todayStr());
-  if(gap>1) count = 0;
-  return { count, lastDate:last };
-}
-
-function isLightMode(){
-  const cur = computeCurrentDay();
-  const d1 = getDayEntry(cur-1), d2 = getDayEntry(cur-2);
-  if(cur<3) return false;
-  const zero1 = !d1.actions.some(Boolean);
-  const zero2 = !d2.actions.some(Boolean);
-  return zero1 && zero2;
-}
-
-/* =========================================================================
-   SON + ANIMATION
-   ========================================================================= */
-let audioCtx = null;
-function playBeep(){
-  try{
-    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-    const o = audioCtx.createOscillator();
-    const g = audioCtx.createGain();
-    o.connect(g); g.connect(audioCtx.destination);
-    o.type = "sine";
-    o.frequency.value = 720;
-    g.gain.setValueAtTime(0.0001, audioCtx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.18, audioCtx.currentTime+0.012);
-    g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime+0.18);
-    o.start();
-    o.stop(audioCtx.currentTime+0.2);
-  }catch(e){ /* audio non disponible, on ignore */ }
-}
-
-/* =========================================================================
-   ROUTEUR / RENDU
-   ========================================================================= */
-const app = document.getElementById("app");
-let route = "home";
-
-function go(r){ route = r; render(); }
-
+/* ---------- RENDER ---------- */
 function render(){
-  if(!state.meta.onboarded){ renderOnboarding(); return; }
-  if(route === "bilan") { renderBilan(); return; }
-  if(route === "review") { renderReview(); return; }
-  if(route === "recap") { renderBilanRecap(); return; }
-  if(route === "settings") { renderSettings(); return; }
-  renderHome();
-}
+  /* header */
+  $("#streakN").textContent=S.streak.count;
+  $("#streakPill").classList.toggle("hot",S.streak.count>0);
+  $("#levelN").textContent="Niv. "+level();
+  const into=S.xp%XP_PER_LEVEL;
+  $("#xpFill").style.width=(into/XP_PER_LEVEL*100)+"%";
+  $("#xpLabel").textContent=S.xp+" XP";
+  $("#xpNext").textContent="Niveau "+(level()+1)+" à "+(level()*XP_PER_LEVEL)+" XP";
 
-/* ---------- Onboarding : récompenses + intro bilan ---------- */
-function renderOnboarding(){
-  const step = window.__onbStep || 1;
-  app.innerHTML = "";
+  /* rewards */
+  const rb=$("#rewardBar"); rb.innerHTML="";
+  const rw=[["Quotidienne",S.rewards.daily],["Hebdo",S.rewards.weekly],["Finale",S.rewards.final]];
+  rw.forEach(([k,v])=>{ const el=document.createElement("div"); el.className="rwd";
+    el.innerHTML="<b>"+k+"</b> · "+(v?escapeHtml(v):"à définir"); rb.appendChild(el); });
 
-  if(step===1){
-    const wrap = el("div", {class:"card"});
-    wrap.appendChild(el("h1", {}, "Bienvenue 👋"));
-    wrap.appendChild(el("p", {class:"muted"}, "Un programme de 30 jours en 4 semaines pour t'aider à externaliser, démarrer, tenir et réguler. Avant de commencer, choisis 3 récompenses qui te motivent vraiment."));
-
-    const daily = fieldInput("Récompense quotidienne", "ex : un épisode de série, un café spécial…", state.rewards.daily);
-    const weekly = fieldInput("Récompense hebdomadaire", "ex : une sortie, un achat plaisir…", state.rewards.weekly);
-    const final = fieldInput("Récompense finale (jour 30)", "ex : un week-end, un objet dont tu as envie…", state.rewards.final);
-    wrap.appendChild(daily.field);
-    wrap.appendChild(weekly.field);
-    wrap.appendChild(final.field);
-
-    const btn = el("button", {class:"btn-primary btn-block"}, "Continuer");
-    btn.onclick = () => {
-      state.rewards.daily = daily.input.value.trim() || "Un petit plaisir";
-      state.rewards.weekly = weekly.input.value.trim() || "Une pause bien méritée";
-      state.rewards.final = final.input.value.trim() || "Une belle récompense";
-      saveState();
-      window.__onbStep = 2;
-      render();
-    };
-    wrap.appendChild(btn);
-    app.appendChild(wrap);
-    return;
-  }
-
-  if(step===2){
-    const wrap = el("div", {class:"card"});
-    wrap.appendChild(el("h1", {}, "Petit bilan (optionnel)"));
-    wrap.appendChild(el("p", {class:"muted"}, "6 questions rapides pour identifier tes 3 leviers prioritaires. Tu peux le passer et le faire plus tard."));
-    const btnStart = el("button", {class:"btn-primary btn-block"}, "Faire le bilan (2 min)");
-    btnStart.onclick = () => { window.__onbStep = null; go("bilan"); };
-    const btnSkip = el("button", {class:"btn-secondary btn-block"}, "Passer et commencer directement");
-    btnSkip.onclick = () => {
-      state.profile.bilan.skipped = true;
-      finishOnboarding();
-    };
-    wrap.appendChild(btnStart);
-    wrap.appendChild(btnSkip);
-    app.appendChild(wrap);
-    return;
-  }
-}
-
-function finishOnboarding(){
-  state.meta.onboarded = true;
-  state.program.startDate = todayStr();
-  state.program.currentDay = 1;
-  saveState();
-  go("home");
-}
-
-function fieldInput(labelText, placeholder, value){
-  const field = el("div", {class:"field"});
-  const label = el("label", {class:"field-label"}, labelText);
-  const input = document.createElement("input");
-  input.type = "text";
-  input.placeholder = placeholder;
-  input.value = value || "";
-  field.appendChild(label);
-  field.appendChild(input);
-  return { field, input };
-}
-
-/* ---------- Bilan ---------- */
-function renderBilan(){
-  app.innerHTML = "";
-  const wrap = el("div", {class:"card"});
-  wrap.appendChild(el("h2", {}, "Bilan initial"));
-  wrap.appendChild(el("p", {class:"muted"}, "Pour chaque affirmation, choisis la fréquence qui te correspond le mieux."));
-
-  BILAN.domains.forEach(d => {
-    const block = el("div", {class:"card", style:"padding:14px;"});
-    block.appendChild(el("h3", {}, d.label));
-    block.appendChild(el("p", {}, d.question));
-    const group = el("div", {class:"radio-group"});
-    BILAN.options.forEach((opt, idx) => {
-      const selected = state.profile.bilan.answers[d.key] === idx;
-      const row = el("div", {class:"radio-opt" + (selected ? " sel" : "")});
-      row.appendChild(el("div", {class:"radio-dot"}));
-      row.appendChild(el("div", {}, opt));
-      row.onclick = () => {
-        state.profile.bilan.answers[d.key] = idx;
-        saveState();
-        renderBilan();
-      };
-      group.appendChild(row);
-    });
-    block.appendChild(group);
-    wrap.appendChild(block);
+  /* weeks strip */
+  const wk=$("#weeks"); wk.innerHTML="";
+  WEEKS.forEach(w=>{
+    const unlocked=weekUnlocked(w.n);
+    const el=document.createElement("div");
+    el.className="wk"+(weekOf(S.view)===w.n?" active":"")+(unlocked?"":" locked");
+    el.innerHTML="<div class='n'>SEM. "+w.n+"</div><div class='t'>"+w.t+"</div>"+(unlocked?"":"<div class='lock'>🔒</div>");
+    if(unlocked) el.onclick=()=>{ S.view=weekDays(w.n)[0]; save(); render(); };
+    wk.appendChild(el);
   });
 
-  const answered = Object.keys(state.profile.bilan.answers).length;
-  const btn = el("button", {class:"btn-primary btn-block"}, "Voir mes résultats");
-  btn.disabled = answered < BILAN.domains.length;
-  btn.style.opacity = btn.disabled ? "0.5" : "1";
-  btn.onclick = () => {
-    if(btn.disabled) return;
-    state.profile.bilan.completed = true;
-    saveState();
-    go("recap");
-  };
-  wrap.appendChild(btn);
+  /* day header */
+  const d=S.view, P=PROGRAM[d], W=WEEKS[P.w-1];
+  $("#dayLabel").textContent="Semaine "+P.w+" · "+W.t;
+  $("#dayTitle").textContent="Jour "+d+" — "+P.t;
+  $("#prevDay").disabled = d<=1 || !dayUnlocked(d-1);
+  $("#nextDay").disabled = d>=TOTAL_DAYS || !dayUnlocked(d+1);
 
-  const skip = el("button", {class:"btn-ghost btn-block"}, "Passer le bilan");
-  skip.onclick = () => {
-    state.profile.bilan.skipped = true;
-    saveState();
-    if(!state.meta.onboarded) finishOnboarding(); else go("home");
-  };
-  wrap.appendChild(skip);
+  /* light-mode banner : 2 jours précédents à 0 action */
+  const light = d>=3 && S.days[d-1] && checkedCount(d-1)===0 && S.days[d-2] && checkedCount(d-2)===0 && checkedCount(d)===0;
+  $("#lightBanner").classList.toggle("hidden",!light);
 
-  app.appendChild(wrap);
-}
-
-function renderBilanRecap(){
-  app.innerHTML = "";
-  const wrap = el("div", {class:"card"});
-  wrap.appendChild(el("h2", {}, "Tes résultats"));
-
-  const table = document.createElement("table");
-  table.className = "recap";
-  const thead = el("tr", {});
-  ["Domaine","Score","Niveau"].forEach(h => thead.appendChild(el("th", {}, h)));
-  table.appendChild(thead);
-
-  const levels = ["Léger","Modéré","Marqué","Fort"];
-  const scored = BILAN.domains.map(d => ({...d, score: state.profile.bilan.answers[d.key] ?? 0}));
-  scored.forEach(d => {
-    const tr = el("tr", {});
-    tr.appendChild(el("td", {}, d.label));
-    tr.appendChild(el("td", {}, String(d.score)));
-    tr.appendChild(el("td", {}, levels[d.score]));
-    table.appendChild(tr);
-  });
-  wrap.appendChild(table);
-
-  const top3 = [...scored].sort((a,b)=> b.score - a.score).slice(0,3);
-  wrap.appendChild(el("h3", {style:"margin-top:8px;"}, "Tes 3 leviers prioritaires"));
-  top3.forEach(d => {
-    const item = el("div", {class:"banner banner-success"});
-    item.appendChild(el("div", {style:"font-weight:700;margin-bottom:4px;"}, d.label));
-    item.appendChild(el("div", {}, BILAN.levers[d.key]));
-    wrap.appendChild(item);
+  /* actions */
+  const st=dayState(d);
+  const box=$("#actions"); box.innerHTML="";
+  P.a.forEach((txt,i)=>{
+    const el=document.createElement("button");
+    el.className="act k"+(i+1)+(st.actions[i]?" done":"");
+    el.innerHTML="<span class='box'><svg viewBox='0 0 24 24' fill='none'><path d='M5 13l4 4L19 7' stroke='#12141c' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/></svg></span>"+
+      "<span class='body'><span class='kind'>"+KIND[i]+"</span><span class='txt'>"+escapeHtml(txt)+"</span></span>";
+    el.onclick=()=>toggle(d,i,el);
+    box.appendChild(el);
   });
 
-  const btn = el("button", {class:"btn-primary btn-block"}, "Commencer le programme");
-  btn.onclick = () => {
-    if(!state.meta.onboarded) finishOnboarding(); else go("home");
-  };
-  wrap.appendChild(btn);
-  app.appendChild(wrap);
+  /* boss */
+  const bs=$("#bossSlot"); bs.innerHTML="";
+  if(P.boss){ const b=document.createElement("div"); b.className="boss";
+    b.innerHTML="<div class='h'>⚔️ DÉFI BOSS</div><div class='txt'>"+escapeHtml(P.boss)+"</div>"; bs.appendChild(b); }
+
+  /* review button on days 7/14/21/28 */
+  const isReviewDay=[7,14,21,28].includes(d);
+  $("#reviewBtn").classList.toggle("hidden",!isReviewDay);
+  $("#reviewBtn").textContent=S.reviews[P.w]?"Revoir la revue de la semaine "+P.w:"Faire la revue de la semaine "+P.w;
 }
 
-/* ---------- Accueil / jour courant ---------- */
-function renderHome(){
-  app.innerHTML = "";
-  const calendarDay = computeCurrentDay();
-  const viewDay = clamp(window.__viewDay || calendarDay, 1, 30);
-  window.__viewDay = viewDay;
+function escapeHtml(s){return (s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
 
-  state.program.currentDay = calendarDay;
-  const unlocked = computeUnlockedWeeks();
-  state.unlockedWeeks = unlocked;
-  const streak = computeStreak();
-  state.streak = streak;
-  saveState();
-
-  const week = weekOfDay(viewDay);
-  const weekInfo = PROGRAM.weeks[week];
-  const dayInfo = PROGRAM.days[viewDay];
-  const entry = ensureDayEntryIfToday(viewDay, calendarDay);
-  const level = Math.floor(state.xp/100)+1;
-  const xpInLevel = state.xp % 100;
-
-  /* Header */
-  const header = el("div", {class:"top-header"});
-  header.appendChild(el("h1", {}, "Jour " + viewDay + " / 30"));
-  const gear = el("button", {class:"btn-ghost", style:"padding:8px 10px;"}, "⚙");
-  gear.onclick = () => go("settings");
-  header.appendChild(gear);
-  app.appendChild(header);
-
-  /* Pills : semaine / niveau / streak */
-  const pills = el("div", {class:"row", style:"flex-wrap:wrap;"});
-  pills.appendChild(el("span", {class:"pill"}, "Semaine " + week + " · " + weekInfo.theme));
-  pills.appendChild(el("span", {class:"pill"}, "Niveau " + level));
-  pills.appendChild(el("span", {class:"pill"}, "🔥 " + streak.count + " jour" + (streak.count>1?"s":"")));
-  app.appendChild(pills);
-
-  /* XP bar */
-  const xpCard = el("div", {class:"card"});
-  xpCard.appendChild(el("div", {class:"row"},
-    el("span", {class:"muted"}, "XP"),
-    el("span", {class:"muted"}, xpInLevel + " / 100")
-  ));
-  const track = el("div", {class:"xp-bar-track"});
-  const fill = el("div", {class:"xp-bar-fill"});
-  fill.style.width = xpInLevel + "%";
-  track.appendChild(fill);
-  xpCard.appendChild(track);
-  app.appendChild(xpCard);
-
-  /* Allègement */
-  if(isLightMode() && viewDay===calendarDay){
-    app.appendChild(el("div", {class:"banner banner-warn"},
-      "On ralentit un peu 🌿 Deux jours sans action, ce n'est pas grave. Aujourd'hui, une seule petite chose suffit — vraiment."
-    ));
-  }
-
-  /* Navigation jours */
-  const nav = el("div", {class:"day-nav"});
-  const prev = el("button", {class:"btn-secondary"}, "←");
-  prev.disabled = viewDay<=1;
-  prev.onclick = () => { window.__viewDay = clamp(viewDay-1,1,30); render(); };
-  const label = el("div", {class:"muted"}, dayInfo.title);
-  const next = el("button", {class:"btn-secondary"}, "→");
-  next.disabled = viewDay>=calendarDay;
-  next.onclick = () => { window.__viewDay = clamp(viewDay+1,1,30); render(); };
-  nav.appendChild(prev); nav.appendChild(label); nav.appendChild(next);
-  app.appendChild(nav);
-
-  /* Semaine verrouillée */
-  if(!unlocked.includes(week)){
-    app.appendChild(el("div", {class:"banner banner-lock"},
-      "🔒 Cette semaine se débloque quand tu as coché au moins 1 action sur 5 jours de la semaine précédente."
-    ));
-    app.appendChild(footerNav());
-    return;
-  }
-
-  /* Actions du jour */
-  const kinds = [
-    { key:"micro", label:"Micro-habitude" },
-    { key:"defi", label:"Défi du jour" },
-    { key:"prepa", label:"Préparation" }
-  ];
-  const actionsCard = el("div", {class:"card"});
-  kinds.forEach((k, idx) => {
-    const done = entry.actions[idx];
-    const row = el("div", {class:"action" + (done ? " done" : "")});
-    const cb = el("div", {class:"checkbox"}, done ? "✓" : "");
-    const body = el("div", {class:"action-body"});
-    body.appendChild(el("div", {class:"action-kind"}, k.label));
-    body.appendChild(el("div", {class:"action-label"}, dayInfo[k.key]));
-    row.appendChild(cb);
-    row.appendChild(body);
-    row.onclick = () => toggleAction(viewDay, idx, cb);
-    actionsCard.appendChild(row);
-  });
-  app.appendChild(actionsCard);
-
-  /* Bannière 3/3 du jour affiché (si c'est aujourd'hui) */
-  if(viewDay===calendarDay && entry.actions.every(Boolean)){
-    app.appendChild(el("div", {class:"banner banner-success"},
-      "🎉 3/3 aujourd'hui ! Récompense du jour : " + escapeHtml(state.rewards.daily)
-    ));
-  }
-
-  /* Revue hebdo */
-  if([7,14,21,28].includes(viewDay)){
-    const reviewed = !!state.profile.reviews[viewDay];
-    const revBtn = el("button", {class:(reviewed?"btn-secondary":"btn-primary") + " btn-block"},
-      reviewed ? "Revoir mon bilan hebdo" : "Faire ma revue hebdomadaire");
-    revBtn.onclick = () => { window.__reviewDay = viewDay; go("review"); };
-    app.appendChild(revBtn);
-  }
-
-  /* Jour 30 terminé */
-  if(viewDay===30 && entry.actions.every(Boolean)){
-    app.appendChild(el("div", {class:"banner banner-success"},
-      "🏆 Programme terminé ! Récompense finale : " + escapeHtml(state.rewards.final)
-    ));
-  }
-
-  app.appendChild(footerNav());
+/* ---------- ACTIONS ---------- */
+function toggle(d,i,el){
+  const st=dayState(d);
+  const wasComplete=isComplete(d);
+  st.actions[i]=!st.actions[i];
+  if(st.actions[i]) st.date=todayStr();
+  /* XP : 10 par action ; +10 bonus au passage à 3/3 */
+  S.xp += st.actions[i]?10:-10;
+  el.classList.toggle("done",st.actions[i]);
+  beep(st.actions[i]);
+  const nowComplete=isComplete(d);
+  if(nowComplete && !wasComplete){ S.xp+=10; celebrate(); dayDone(d); }
+  if(S.xp<0) S.xp=0;
+  recomputeStreak();
+  if(d>S.maxDay) S.maxDay=d;
+  save(); render();
+}
+function dayDone(d){
+  const P=PROGRAM[d];
+  let msg="Jour "+d+" bouclé · +30 XP 🔥";
+  if(S.rewards.daily) msg="3/3 · récompense : "+S.rewards.daily+" 🎁";
+  toast(msg);
 }
 
-function footerNav(){
-  const nav = el("div", {class:"footer-nav"});
-  const bilanBtn = el("button", {class:"link-btn"}, state.profile.bilan.completed ? "Voir mon bilan" : "Faire le bilan");
-  bilanBtn.onclick = () => go(state.profile.bilan.completed ? "recap" : "bilan");
-  nav.appendChild(bilanBtn);
-  return nav;
-}
+/* navigation */
+$("#prevDay").onclick=()=>{ if(S.view>1 && dayUnlocked(S.view-1)){ S.view--; save(); render(); } };
+$("#nextDay").onclick=()=>{ if(S.view<TOTAL_DAYS && dayUnlocked(S.view+1)){ S.view++; save(); render(); } };
 
-function ensureDayEntryIfToday(viewDay, calendarDay){
-  if(viewDay===calendarDay) return ensureDayEntry(viewDay);
-  return getDayEntry(viewDay);
-}
-
-function toggleAction(dayN, idx, cbEl){
-  const calendarDay = computeCurrentDay();
-  if(dayN !== calendarDay) return; /* on ne modifie que le jour courant */
-  const entry = ensureDayEntry(dayN);
-  const wasFull = entry.actions.every(Boolean);
-  entry.actions[idx] = !entry.actions[idx];
-  entry.date = todayStr();
-
-  if(entry.actions[idx]){
-    state.xp += 10;
-    playBeep();
-    cbEl.classList.add("pop");
-    setTimeout(()=> cbEl.classList.remove("pop"), 320);
-  }
-
-  const isFullNow = entry.actions.every(Boolean);
-  if(isFullNow && !wasFull){
-    state.xp += 10; /* bonus 3/3 */
-  }
-
-  state.streak = computeStreak();
-  const newlyUnlocked = computeUnlockedWeeks();
-  state.unlockedWeeks = newlyUnlocked;
-
-  saveState();
+/* review modal */
+$("#reviewBtn").onclick=()=>{
+  const w=PROGRAM[S.view].w; const r=S.reviews[w]||{good:"",friction:"",adjust:""};
+  $("#revTitle").textContent="Revue de la semaine "+w;
+  $("#revGood").value=r.good; $("#revFriction").value=r.friction; $("#revAdjust").value=r.adjust;
+  $("#rev").dataset.week=w; $("#rev").classList.remove("hidden");
+};
+$("#revSave").onclick=()=>{
+  const w=+$("#rev").dataset.week;
+  S.reviews[w]={good:$("#revGood").value,friction:$("#revFriction").value,adjust:$("#revAdjust").value};
+  save(); $("#rev").classList.add("hidden");
+  toast(w<4?"Semaine "+(w+1)+" déverrouillée 🔓":"Programme terminé 🏆 récompense finale !");
   render();
+};
+
+/* onboarding */
+$("#startBtn").onclick=()=>{
+  S.rewards={daily:$("#rDaily").value.trim(),weekly:$("#rWeekly").value.trim(),final:$("#rFinal").value.trim()};
+  S.onboarded=true; save(); $("#onb").classList.add("hidden"); render();
+};
+$("#skipBtn").onclick=()=>{ S.onboarded=true; save(); $("#onb").classList.add("hidden"); render(); };
+
+/* ---------- FEEDBACK : son + confettis ---------- */
+let actx;
+function beep(up){
+  try{ actx=actx||new (window.AudioContext||window.webkitAudioContext)();
+    const o=actx.createOscillator(),g=actx.createGain();
+    o.connect(g); g.connect(actx.destination);
+    o.frequency.value=up?660:330; o.type="sine";
+    g.gain.setValueAtTime(.0001,actx.currentTime);
+    g.gain.exponentialRampToValueAtTime(.15,actx.currentTime+.01);
+    g.gain.exponentialRampToValueAtTime(.0001,actx.currentTime+.18);
+    o.start(); o.stop(actx.currentTime+.2);
+  }catch(e){}
 }
-
-/* ---------- Revue hebdo ---------- */
-function renderReview(){
-  const day = window.__reviewDay || 7;
-  app.innerHTML = "";
-  const wrap = el("div", {class:"card"});
-  wrap.appendChild(el("h2", {}, "Revue — jour " + day));
-  wrap.appendChild(el("p", {class:"muted"}, "Prends 2 minutes pour regarder ta semaine avec bienveillance."));
-
-  const existing = state.profile.reviews[day] || { worked:"", friction:"", adjustment:"" };
-
-  const f1 = fieldTextarea("Ce qui a marché", existing.worked);
-  const f2 = fieldTextarea("Ce qui a coincé (friction)", existing.friction);
-  const f3 = fieldTextarea("Ce que j'ajuste pour la suite", existing.adjustment);
-  wrap.appendChild(f1.field);
-  wrap.appendChild(f2.field);
-  wrap.appendChild(f3.field);
-
-  const save = el("button", {class:"btn-primary btn-block"}, "Enregistrer");
-  save.onclick = () => {
-    state.profile.reviews[day] = {
-      worked: f1.input.value.trim(),
-      friction: f2.input.value.trim(),
-      adjustment: f3.input.value.trim()
-    };
-    saveState();
-    go("home");
-  };
-  wrap.appendChild(save);
-
-  const back = el("button", {class:"btn-ghost btn-block"}, "Retour");
-  back.onclick = () => go("home");
-  wrap.appendChild(back);
-
-  app.appendChild(wrap);
+const fx=$("#fx"),ctx=fx.getContext("2d");
+function sizefx(){ fx.width=innerWidth; fx.height=innerHeight; }
+addEventListener("resize",sizefx); sizefx();
+function celebrate(){
+  const cols=["#f5b544","#6aa9ff","#c58bff","#5fcf80","#f7cd77"];
+  const N=90, parts=[];
+  for(let i=0;i<N;i++) parts.push({x:innerWidth/2,y:innerHeight*0.35,
+    vx:(Math.random()-.5)*10,vy:Math.random()*-9-3,g:.28+Math.random()*.15,
+    s:5+Math.random()*6,c:cols[i%cols.length],r:Math.random()*6,vr:(Math.random()-.5)*.4,life:60+Math.random()*30});
+  let t=0;
+  (function run(){ ctx.clearRect(0,0,fx.width,fx.height); t++;
+    parts.forEach(p=>{ p.vy+=p.g; p.x+=p.vx; p.y+=p.vy; p.r+=p.vr; p.life--;
+      ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.r);
+      ctx.fillStyle=p.c; ctx.globalAlpha=Math.max(0,p.life/40);
+      ctx.fillRect(-p.s/2,-p.s/2,p.s,p.s*1.6); ctx.restore(); });
+    if(t<90) requestAnimationFrame(run); else ctx.clearRect(0,0,fx.width,fx.height);
+  })();
 }
+let toastT;
+function toast(msg){ const el=$("#toast"); el.textContent=msg; el.classList.add("show");
+  clearTimeout(toastT); toastT=setTimeout(()=>el.classList.remove("show"),2600); }
 
-function fieldTextarea(labelText, value){
-  const field = el("div", {class:"field"});
-  field.appendChild(el("label", {class:"field-label"}, labelText));
-  const input = document.createElement("textarea");
-  input.value = value || "";
-  field.appendChild(input);
-  return { field, input };
-}
+/* ---------- BILAN ---------- */
+let BI={i:0, ans:{}};
+function openSheet(id){ ["intro","bilan","restit","onb"].forEach(x=>$("#"+x).classList.toggle("hidden",x!==id)); }
+$("#goSkipBilan").onclick=()=>{ prefillRewards(); openSheet("onb"); };
+$("#goBilan").onclick=()=>{ BI={i:0,ans:{}}; openSheet("bilan"); renderBilan(); };
 
-/* ---------- Réglages ---------- */
-function renderSettings(){
-  app.innerHTML = "";
-  const wrap = el("div", {class:"card"});
-  wrap.appendChild(el("h2", {}, "Réglages"));
-
-  const daily = fieldInput("Récompense quotidienne", "", state.rewards.daily);
-  const weekly = fieldInput("Récompense hebdomadaire", "", state.rewards.weekly);
-  const final = fieldInput("Récompense finale", "", state.rewards.final);
-  wrap.appendChild(daily.field);
-  wrap.appendChild(weekly.field);
-  wrap.appendChild(final.field);
-
-  const save = el("button", {class:"btn-primary btn-block"}, "Enregistrer");
-  save.onclick = () => {
-    state.rewards.daily = daily.input.value.trim();
-    state.rewards.weekly = weekly.input.value.trim();
-    state.rewards.final = final.input.value.trim();
-    saveState();
-    go("home");
-  };
-  wrap.appendChild(save);
-
-  wrap.appendChild(el("p", {class:"muted", style:"margin-top:8px;"},
-    "Programme démarré le " + (state.program.startDate || "-") + ". Jour actuel : " + computeCurrentDay() + "/30."
-  ));
-
-  const resetBtn = el("button", {class:"btn-secondary btn-block"}, "Réinitialiser toutes les données");
-  resetBtn.onclick = () => {
-    if(confirm("Cela efface toute ta progression. Confirmer ?")){
-      localStorage.removeItem(STORAGE_KEY);
-      state = defaultState();
-      window.__onbStep = 1;
-      window.__viewDay = null;
-      render();
-    }
-  };
-  wrap.appendChild(resetBtn);
-
-  const back = el("button", {class:"btn-ghost btn-block"}, "Retour");
-  back.onclick = () => go("home");
-  wrap.appendChild(back);
-
-  app.appendChild(wrap);
-}
-
-/* =========================================================================
-   UTIL DOM
-   ========================================================================= */
-function el(tag, attrs, ...children){
-  const node = document.createElement(tag);
-  attrs = attrs || {};
-  Object.keys(attrs).forEach(k => {
-    if(k==="class") node.className = attrs[k];
-    else if(k==="style") node.setAttribute("style", attrs[k]);
-    else node.setAttribute(k, attrs[k]);
+function renderBilan(){
+  const dom=BILAN[BI.i];
+  $("#biProg").textContent="Domaine "+(BI.i+1)+" sur "+BILAN.length;
+  $("#biName").textContent=dom.name;
+  $("#biFill").style.width=((BI.i)/BILAN.length*100)+"%";
+  const box=$("#biQuestions"); box.innerHTML="";
+  dom.q.forEach((q,qi)=>{
+    const row=document.createElement("div"); row.className="qrow";
+    const cur=(BI.ans[dom.key]||{})[qi];
+    let opts="";
+    OPTS.forEach((o,v)=>{ opts+="<button class='opt"+(cur===v?" sel":"")+"' data-qi='"+qi+"' data-v='"+v+"'>"+o+"</button>"; });
+    row.innerHTML="<div class='q'>"+escapeHtml(q.t)+"</div><div class='opts'>"+opts+"</div>";
+    box.appendChild(row);
   });
-  children.flat().forEach(c => {
-    if(c===undefined || c===null) return;
-    if(typeof c === "string" || typeof c === "number") node.appendChild(document.createTextNode(String(c)));
-    else node.appendChild(c);
+  box.querySelectorAll(".opt").forEach(b=>b.onclick=()=>{
+    const qi=+b.dataset.qi, v=+b.dataset.v;
+    BI.ans[dom.key]=BI.ans[dom.key]||{}; BI.ans[dom.key][qi]=v;
+    renderBilan();
   });
-  return node;
+  const done=dom.q.every((_,qi)=>(BI.ans[dom.key]||{})[qi]!==undefined);
+  const btn=$("#biNext"); btn.disabled=!done;
+  btn.textContent = !done ? "Répondez à tout pour continuer"
+    : (BI.i<BILAN.length-1 ? "Domaine suivant" : "Voir mon profil");
 }
-function escapeHtml(s){
-  return String(s || "").replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+$("#biNext").onclick=()=>{
+  if(BI.i<BILAN.length-1){ BI.i++; renderBilan(); }
+  else { computeProfile(); openSheet("restit"); renderRestit(); }
+};
+function frictionOf(dom){
+  const a=BI.ans[dom.key]||{}; let sum=0,max=0,strength=null;
+  dom.q.forEach((q,qi)=>{ const v=a[qi]||0;
+    if(q.rev){ if(v>=2) strength=q.strength; } else { sum+=v; max+=3; } });
+  const pct = max? sum/max : 0;
+  const lvl = pct>0.65?"h" : pct>=0.35?"m" : "l";
+  return {pct,lvl,strength};
 }
+function computeProfile(){
+  const results=BILAN.map(dom=>{ const f=frictionOf(dom);
+    return {key:dom.key,name:dom.name,lev:dom.lev,pct:f.pct,lvl:f.lvl,strength:f.strength}; });
+  const top3=[...results].sort((a,b)=>b.pct-a.pct).slice(0,3);
+  S.profile={results,top3,date:todayStr()};
+  save();
+}
+const FRLAB={h:"Friction élevée",m:"Friction moyenne",l:"Friction faible"};
+function renderRestit(){
+  const tb=$("#rTable"); tb.innerHTML="";
+  S.profile.results.forEach(r=>{
+    const obs = r.strength ? "Atout : "+r.strength+"." : (r.lvl==="h"?"Axe prioritaire.":r.lvl==="m"?"Marge de progrès nette.":"Point d'appui.");
+    const tr=document.createElement("tr");
+    tr.innerHTML="<td class='dom'>"+escapeHtml(r.name)+"<br><span class='fr "+r.lvl+"'>"+FRLAB[r.lvl]+"</span></td>"+
+      "<td class='rlev'>"+escapeHtml(obs)+"<br><br>"+escapeHtml(r.lev)+"</td>";
+    tb.appendChild(tr);
+  });
+  const ul=$("#rLevers"); ul.innerHTML="";
+  S.profile.top3.forEach((r,i)=>{ const li=document.createElement("li");
+    li.innerHTML="<b>"+(i+1)+".</b> "+escapeHtml(r.lev); ul.appendChild(li); });
+}
+$("#goRewards").onclick=()=>{ prefillRewards(); openSheet("onb"); };
+function prefillRewards(){ $("#rDaily").value=S.rewards.daily||""; $("#rWeekly").value=S.rewards.weekly||""; $("#rFinal").value=S.rewards.final||""; }
 
-/* =========================================================================
-   BOOT
-   ========================================================================= */
-if(!state.meta.onboarded){ window.__onbStep = 1; }
+/* ---------- BOOT ---------- */
+if(S.onboarded){ ["intro","bilan","restit","onb"].forEach(x=>$("#"+x).classList.add("hidden")); }
+else { openSheet("intro"); }
+recomputeStreak();
 render();
 </script>
 </body>
