@@ -65,8 +65,7 @@
   .banner b{color:var(--text)}
 
   .actions{display:flex; flex-direction:column; gap:10px}
-  .act{display:flex; gap:13px; align-items:flex-start; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:15px 15px; text-align:left; width:100%; color:var(--text); transition:border-color .15s, background .15s}
-  .act:active{transform:scale(.995)}
+  .act{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:15px 15px; transition:border-color .15s, background .15s}
   .act.done{background:var(--done-soft); border-color:var(--done)}
   .box{flex:0 0 26px; height:26px; border-radius:8px; border:2px solid var(--line); display:flex; align-items:center; justify-content:center; margin-top:1px; transition:.15s}
   .act.done .box{background:var(--done); border-color:var(--done)}
@@ -83,6 +82,23 @@
   .boss .txt{font-size:15px}
 
   .reviewbtn{margin-top:14px; width:100%; background:var(--accent); color:#20180a; font-weight:800; padding:14px; border-radius:14px; font-size:15px}
+
+  /* Personal banner */
+  .pbanner{background:var(--surface2); border:1px solid var(--line); border-radius:12px; padding:12px 14px; font-size:13.5px; color:var(--muted); margin-bottom:14px; line-height:1.4}
+  .pbanner b{color:var(--text)}
+
+  /* Mood check-in */
+  .moodrow{display:flex; gap:8px; margin-bottom:14px}
+  .moodbtn{flex:1; background:var(--surface); border:1px solid var(--line); color:var(--muted); border-radius:12px; padding:11px 6px; font-size:13px; font-weight:700; text-align:center}
+  .moodbtn.sel{background:var(--accent); color:#20180a; border-color:var(--accent)}
+  .moodlabel{font-size:12.5px; color:var(--faint); font-weight:700; margin-bottom:6px}
+
+  /* Pourquoi (why) toggle */
+  .actmain{display:flex; gap:13px; align-items:flex-start; background:none; border:none; padding:0; margin:0; text-align:left; width:100%; color:var(--text)}
+  .actmain:active{transform:scale(.995)}
+  .whytoggle{display:block; background:none; border:none; color:var(--accent); font-size:12.5px; font-weight:700; padding:8px 0 0 39px; margin:0}
+  .whytext{font-size:13px; color:var(--muted); padding:6px 0 0 39px; line-height:1.4; display:none}
+  .whytext.open{display:block}
 
   /* Onboarding + modal */
   .sheet{position:fixed; inset:0; background:rgba(8,9,13,.72); display:flex; align-items:flex-end; justify-content:center; z-index:50}
@@ -135,6 +151,7 @@
     <div class="stats">
       <div class="pill streak" id="streakPill"><span class="flame">🔥</span><span id="streakN">0</span><span class="lab">j</span></div>
       <div class="pill"><span id="levelN">Niv. 1</span></div>
+      <button class="pill" id="profilePill" style="cursor:pointer">Mon profil</button>
     </div>
   </div>
 
@@ -155,6 +172,11 @@
     </div>
     <button class="navbtn" id="nextDay">›</button>
   </div>
+
+  <div class="pbanner hidden" id="pBanner"></div>
+
+  <div class="moodlabel">Comment vous sentez-vous, là ?</div>
+  <div class="moodrow" id="moodRow"></div>
 
   <div class="banner hidden" id="lightBanner">
     <b>On allège.</b> Deux jours sans action, ça arrive et ça ne dit rien de vous. Aujourd'hui, une seule case suffit pour relancer la machine.
@@ -186,6 +208,7 @@
     <div class="biprogbar"><div class="biprogfill" id="biFill"></div></div>
     <div id="biQuestions"></div>
     <button class="primary" id="biNext" disabled>Répondez à tout pour continuer</button>
+    <button class="ghost hidden" id="bilanClose">Annuler</button>
   </div>
 </div>
 
@@ -198,6 +221,7 @@
     <h3 style="font-size:15px;margin:6px 0 10px">Vos 3 leviers prioritaires ce mois-ci</h3>
     <ul class="levlist" id="rLevers"></ul>
     <button class="primary" id="goRewards">Continuer</button>
+    <button class="ghost hidden" id="restitClose">Fermer</button>
   </div>
 </div>
 
@@ -244,37 +268,65 @@ const WEEKS = [
   {n:4,t:"Réguler",c:"var(--week4)"},
 ];
 const PROGRAM = {
-1:{w:1,t:"Le grand vidage",a:["2 min de brain dump : tout ce qui vous trotte en tête, en vrac, sans trier","Noter chaque « il faut que je pense à… » qui surgit dans la journée","Choisir l'endroit unique où vivra votre capture (une seule appli, ou un seul carnet)"]},
-2:{w:1,t:"Le téléphone exilé",a:["Poser le téléphone dans une autre pièce le temps d'une seule tâche","1 session de travail complète avec le téléphone hors de portée physique","Définir l'emplacement fixe « exil » du téléphone chez vous"]},
-3:{w:1,t:"L'environnement par défaut",a:["Dégager le plan de travail en 2 min, ne laisser que ce qui sert à la tâche","Couper les notifications des 3 applis les plus intrusives","Préparer physiquement la 1re tâche de demain (dossier ouvert, doc prêt)"]},
-4:{w:1,t:"Le pari du soir",a:["Écrire la toute première action de demain, en une phrase concrète","La préparer physiquement pour qu'il n'y ait plus qu'à s'asseoir","Relire le brain dump du jour 1, entourer les 3 trucs qui pèsent le plus"]},
-5:{w:1,t:"Capture réflexe",a:["À chaque pensée parasite pendant le travail, la noter en 5 sec au lieu de la suivre","Chasse aux distractions : noter chaque distraction d'une session, sans jugement","Vider la capture du jour dans votre système unique"]},
-6:{w:1,t:"Journée basse friction",a:["Traiter 1 micro-tâche qui traîne (mail, formulaire, appel de 5 min)","Sanctuariser 30 min au calme sans écran, votre condition n°1","Préparer l'environnement de la session de demain à l'avance"]},
-7:{w:1,t:"Défi boss + revue",a:["Rituel de fermeture de 3 min : noter demain et clore la journée","Célébrer la fin de semaine 1 par votre récompense hebdo","Relire vos captures de la semaine"],boss:"1 session de 25 min : téléphone exilé, plan de travail dégagé, sur une tâche qui compte vraiment."},
+1:{w:1,t:"Le grand vidage",a:["2 min de brain dump : tout ce qui vous trotte en tête, en vrac, sans trier","Noter chaque « il faut que je pense à… » qui surgit dans la journée","Choisir l'endroit unique où vivra votre capture (une seule appli, ou un seul carnet)"],
+  why:["Sortir une pensée de la tête libère de la charge mentale immédiatement, sans effort de tri.","Capturer sur le coup évite l'oubli et la charge de « tenir » l'information en mémoire.","Un seul endroit de capture évite de chercher où vous avez noté quoi — moins de charge, plus de fiabilité."]},
+2:{w:1,t:"Le téléphone exilé",a:["Poser le téléphone dans une autre pièce le temps d'une seule tâche","1 session de travail complète avec le téléphone hors de portée physique","Définir l'emplacement fixe « exil » du téléphone chez vous"],
+  why:["Éloigner physiquement la tentation coûte moins d'énergie que résister à la tentation présente.","Sans accès immédiat, votre attention reste sur la tâche au lieu de zapper vers la stimulation facile.","Un rituel fixe transforme une décision à chaque fois en un geste automatique, sans effort de volonté."]},
+3:{w:1,t:"L'environnement par défaut",a:["Dégager le plan de travail en 2 min, ne laisser que ce qui sert à la tâche","Couper les notifications des 3 applis les plus intrusives","Préparer physiquement la 1re tâche de demain (dossier ouvert, doc prêt)"],
+  why:["Un espace visuellement chargé sollicite l'attention même sans que vous vous en rendiez compte.","Chaque notification est une interruption qui coûte plusieurs minutes de reconcentration.","Réduire les décisions du matin baisse la friction de démarrage avant même de commencer."]},
+4:{w:1,t:"Le pari du soir",a:["Écrire la toute première action de demain, en une phrase concrète","La préparer physiquement pour qu'il n'y ait plus qu'à s'asseoir","Relire le brain dump du jour 1, entourer les 3 trucs qui pèsent le plus"],
+  why:["Une action précise et écrite élimine l'étape de réflexion qui bloque souvent le démarrage.","Quand le matériel est prêt, il n'y a plus qu'à s'asseoir : la friction de départ disparaît.","Prioriser 3 éléments évite la paralysie du choix face à une liste trop longue."]},
+5:{w:1,t:"Capture réflexe",a:["À chaque pensée parasite pendant le travail, la noter en 5 sec au lieu de la suivre","Chasse aux distractions : noter chaque distraction d'une session, sans jugement","Vider la capture du jour dans votre système unique"],
+  why:["Noter au lieu de suivre la pensée la neutralise sans perdre le fil de la tâche en cours.","Observer sans jugement montre où va réellement votre attention, une donnée utile pour ajuster ensuite.","Vider régulièrement évite que le système de capture devienne lui-même une source de surcharge."]},
+6:{w:1,t:"Journée basse friction",a:["Traiter 1 micro-tâche qui traîne (mail, formulaire, appel de 5 min)","Sanctuariser 30 min au calme sans écran, votre condition n°1","Préparer l'environnement de la session de demain à l'avance"],
+  why:["Les petites tâches non faites occupent une place disproportionnée dans la charge mentale.","C'est la condition où votre attention est la plus stable : autant la protéger consciemment.","Préparer à l'avance retire une décision de plus au moment où l'énergie est la plus basse."]},
+7:{w:1,t:"Défi boss + revue",a:["Rituel de fermeture de 3 min : noter demain et clore la journée","Célébrer la fin de semaine 1 par votre récompense hebdo","Relire vos captures de la semaine"],boss:"1 session de 25 min : téléphone exilé, plan de travail dégagé, sur une tâche qui compte vraiment.",
+  why:["Clore consciemment la journée évite que les tâches non finies tournent en boucle le soir.","Le cerveau apprend par la récompense immédiate : célébrer renforce l'envie de continuer.","Relire permet de voir le chemin parcouru, souvent invisible au jour le jour."]},
 
-8:{w:2,t:"La première action absurde",a:["Découper la tâche qui pèse jusqu'à une action de 60 secondes","Sprint de 5 min sur une tâche évitée, puis stop autorisé","Écrire l'action absurde de démarrage de demain"]},
-9:{w:2,t:"Quand X, alors Y",a:["Écrire 1 intention : « quand [déclencheur], alors [action] »","L'exécuter au moins une fois dans la journée","Préparer le déclencheur physique (poser l'objet, ouvrir l'onglet)"]},
-10:{w:2,t:"Nommer l'émotion",a:["Avant une tâche évitée, écrire en 1 phrase l'émotion qu'elle déclenche","Démarrer la tâche juste après l'avoir nommée","Repérer la tâche la plus « chargée » émotionnellement de demain"]},
-11:{w:2,t:"Body double",a:["Annoncer à quelqu'un ce que vous allez faire, maintenant","1 session en co-working (réel, ou virtuel minuté)","Caler un créneau body double pour demain"]},
-12:{w:2,t:"Le sprint de 5 min",a:["Lancer un minuteur 5 min sur LA tâche du jour","Quand les 5 min sonnent, décider consciemment : continuer ou stopper","Choisir la tâche cible de demain"]},
-13:{w:2,t:"Zéro décision au démarrage",a:["Préparer la veille pour qu'il n'y ait aucune décision à prendre au lancement","Démarrer la tâche en moins de 2 min après vous être assis","Pari du soir : 1re action de demain écrite et prête"]},
-14:{w:2,t:"Défi boss + revue",a:["Rituel de fermeture de 3 min","Célébrer par votre récompense hebdo","Noter les 2 déclencheurs « quand X alors Y » qui ont le mieux marché"],boss:"Enchaîner 2 tâches évitées via la règle des 5 min, sans pause écran entre les deux."},
+8:{w:2,t:"La première action absurde",a:["Découper la tâche qui pèse jusqu'à une action de 60 secondes","Sprint de 5 min sur une tâche évitée, puis stop autorisé","Écrire l'action absurde de démarrage de demain"],
+  why:["Une action de 60 secondes ne demande presque aucune motivation pour être lancée.","Savoir que l'arrêt est autorisé réduit la résistance à démarrer.","Avoir déjà l'action ultra-simple écrite supprime l'obstacle du « je ne sais pas par où commencer »."]},
+9:{w:2,t:"Quand X, alors Y",a:["Écrire 1 intention : « quand [déclencheur], alors [action] »","L'exécuter au moins une fois dans la journée","Préparer le déclencheur physique (poser l'objet, ouvrir l'onglet)"],
+  why:["Une règle « si-alors » transfère la décision du moment présent, le plus coûteux, vers maintenant.","La répétition d'un déclencheur-action construit un automatisme qui ne dépend plus de la volonté.","Un déclencheur visible rappelle l'intention sans effort de mémoire."]},
+10:{w:2,t:"Nommer l'émotion",a:["Avant une tâche évitée, écrire en 1 phrase l'émotion qu'elle déclenche","Démarrer la tâche juste après l'avoir nommée","Repérer la tâche la plus « chargée » émotionnellement de demain"],
+  why:["Nommer une émotion diminue son intensité et la rend plus facile à traverser.","Agir tout de suite après empêche l'émotion de se transformer en évitement prolongé.","Anticiper la charge émotionnelle permet de s'y préparer plutôt que de la subir."]},
+11:{w:2,t:"Body double",a:["Annoncer à quelqu'un ce que vous allez faire, maintenant","1 session en co-working (réel, ou virtuel minuté)","Caler un créneau body double pour demain"],
+  why:["Dire à voix haute crée un engagement social qui aide à passer à l'action.","La présence d'autrui, même virtuelle, augmente la capacité à rester sur la tâche.","Programmer à l'avance retire l'incertitude qui peut faire annuler la session."]},
+12:{w:2,t:"Le sprint de 5 min",a:["Lancer un minuteur 5 min sur LA tâche du jour","Quand les 5 min sonnent, décider consciemment : continuer ou stopper","Choisir la tâche cible de demain"],
+  why:["Un minuteur court rend l'engagement limité dans le temps, donc moins intimidant.","Reprendre la main sur la décision évite le sentiment de subir la tâche.","Choisir à l'avance élimine l'hésitation du moment qui retarde le démarrage."]},
+13:{w:2,t:"Zéro décision au démarrage",a:["Préparer la veille pour qu'il n'y ait aucune décision à prendre au lancement","Démarrer la tâche en moins de 2 min après vous être assis","Pari du soir : 1re action de demain écrite et prête"],
+  why:["Chaque décision en moins au lancement est de l'énergie disponible en plus pour agir.","Plus le délai entre l'intention et l'action est court, plus l'action a de chances d'avoir lieu.","Une action déjà écrite et prête court-circuite la procrastination du lendemain matin."]},
+14:{w:2,t:"Défi boss + revue",a:["Rituel de fermeture de 3 min","Célébrer par votre récompense hebdo","Noter les 2 déclencheurs « quand X alors Y » qui ont le mieux marché"],boss:"Enchaîner 2 tâches évitées via la règle des 5 min, sans pause écran entre les deux.",
+  why:["Fermer la journée consciemment évite de la prolonger mentalement le soir.","La récompense marque concrètement la fin d'un cycle et ancre la motivation.","Identifier ce qui fonctionne permet de le reproduire plutôt que de repartir de zéro."]},
 
-15:{w:3,t:"Time boxing visible",a:["Bloquer 1 créneau nommé dans l'agenda, avec une heure de fin","Respecter l'heure de fin : stop net quand ça sonne","Préparer le time box de demain"]},
-16:{w:3,t:"Le sprint long",a:["1 sprint de 25 min minuté (Pomodoro)","Pause active 5 min sans écran entre deux sprints","Lister les 2 sprints de demain"]},
-17:{w:3,t:"Chasse aux distractions",a:["Pendant 1 session, noter chaque distraction sur une feuille","Repérer la distraction n°1 et décider comment la neutraliser demain","Préparer l'environnement anti-distraction du lendemain"]},
-18:{w:3,t:"Rituel de reprise",a:["Définir votre geste de reprise après interruption (relire la dernière ligne, respirer, reprendre)","L'appliquer à chaque interruption de la journée","Pari du soir"]},
-19:{w:3,t:"Hyperfocus canalisé",a:["Identifier 1 tâche où l'hyperfocus est un atout, la placer sur votre meilleur créneau","Y consacrer 1 bloc protégé, sans interruption","Protéger le créneau de demain (mode avion, porte fermée)"]},
-20:{w:3,t:"Journée calme sans écran",a:["45 min sur votre condition idéale : calme, sans écran, votre force","Aucune ouverture de téléphone pendant le bloc","Préparer le lieu et le matériel de demain"]},
-21:{w:3,t:"Défi boss + revue",a:["Rituel de fermeture de 3 min","Célébrer par votre récompense hebdo","Entourer le réglage attention qui a le plus aidé"],boss:"2 sprints de 25 min, rituel de reprise appliqué à chaque interruption, téléphone exilé."},
+15:{w:3,t:"Time boxing visible",a:["Bloquer 1 créneau nommé dans l'agenda, avec une heure de fin","Respecter l'heure de fin : stop net quand ça sonne","Préparer le time box de demain"],
+  why:["Une fin annoncée rend le début moins intimidant : l'effort est borné dans le temps.","Respecter la limite entraîne la confiance dans votre propre planification.","Anticiper le créneau évite de le perdre dans le flou du lendemain."]},
+16:{w:3,t:"Le sprint long",a:["1 sprint de 25 min minuté (Pomodoro)","Pause active 5 min sans écran entre deux sprints","Lister les 2 sprints de demain"],
+  why:["25 minutes est une durée qui permet l'entrée en concentration sans être écrasante.","Une vraie pause, sans écran, recharge réellement l'attention pour le sprint suivant.","Savoir à l'avance sur quoi porteront les sprints réduit le temps perdu à décider."]},
+17:{w:3,t:"Chasse aux distractions",a:["Pendant 1 session, noter chaque distraction sur une feuille","Repérer la distraction n°1 et décider comment la neutraliser demain","Préparer l'environnement anti-distraction du lendemain"],
+  why:["Observer les distractions sans les suivre entraîne la capacité à revenir sur la tâche.","Une distraction identifiée précisément est bien plus facile à neutraliser qu'une gêne diffuse.","Agir sur l'environnement demande moins d'effort que résister en continu à la tentation."]},
+18:{w:3,t:"Rituel de reprise",a:["Définir votre geste de reprise après interruption (relire la dernière ligne, respirer, reprendre)","L'appliquer à chaque interruption de la journée","Pari du soir"],
+  why:["Un geste fixe après interruption évite de perdre du temps à retrouver où vous en étiez.","La répétition transforme le geste en réflexe, plus rapide que d'y repenser à chaque fois.","Préparer la suite avant l'interruption suivante limite son impact sur la journée."]},
+19:{w:3,t:"Hyperfocus canalisé",a:["Identifier 1 tâche où l'hyperfocus est un atout, la placer sur votre meilleur créneau","Y consacrer 1 bloc protégé, sans interruption","Protéger le créneau de demain (mode avion, porte fermée)"],
+  why:["Repérer où l'hyperfocus sert vraiment permet de le placer au bon endroit plutôt que de le subir.","Un cadre protégé permet à l'hyperfocus de produire son plein potentiel sans être interrompu.","Anticiper la protection du créneau évite qu'il soit grignoté par d'autres sollicitations."]},
+20:{w:3,t:"Journée calme sans écran",a:["45 min sur votre condition idéale : calme, sans écran, votre force","Aucune ouverture de téléphone pendant le bloc","Préparer le lieu et le matériel de demain"],
+  why:["C'est votre condition de concentration la plus favorable : elle mérite d'être délibérément recherchée.","Zéro ouverture, même rapide, évite l'effet cumulatif des micro-interruptions sur l'attention.","Un lieu et un matériel prêts suppriment l'excuse logistique qui retarde le démarrage."]},
+21:{w:3,t:"Défi boss + revue",a:["Rituel de fermeture de 3 min","Célébrer par votre récompense hebdo","Entourer le réglage attention qui a le plus aidé"],boss:"2 sprints de 25 min, rituel de reprise appliqué à chaque interruption, téléphone exilé.",
+  why:["Un rituel de clôture stable ancre la routine, semaine après semaine.","Trois semaines de tenue méritent une reconnaissance concrète, pas seulement mentale.","Isoler ce qui a le mieux fonctionné en fait un outil à réutiliser en semaine 4."]},
 
-22:{w:4,t:"La récompense immédiate",a:["Définir 1 micro-récompense post-tâche et la prendre aussitôt","Célébrer chaque action cochée par un geste de victoire","Choisir les récompenses de demain à l'avance"]},
-23:{w:4,t:"Temptation bundling",a:["Associer 1 tâche ingrate à 1 plaisir immédiat (podcast, café, musique)","Ne vivre le plaisir que pendant la tâche","Préparer le combo tâche + plaisir de demain"]},
-24:{w:4,t:"Le rituel de fermeture",a:["Routine de 3 min pour clore la journée : noter demain, ranger, souffler","Éteindre les écrans 30 min avant le coucher","Préparer le pari du lendemain"]},
-25:{w:4,t:"Vider le cerveau du soir",a:["Brain dump de 2 min avant le coucher, pour le cerveau qui s'emballe","Si une pensée revient la nuit, la noter au lieu de la ruminer","Poser le carnet près du lit pour demain soir"]},
-26:{w:4,t:"Bouger pour réguler",a:["5 min de mouvement avant une tâche exigeante","1 marche courte à un creux d'énergie de la journée","Préparer les conditions (tenue, créneau) de demain"]},
-27:{w:4,t:"Ancrer ce qui marche",a:["Relire vos revues, entourer les 3 habitudes qui ont le plus aidé","En attacher 1 à un déclencheur quotidien existant (habit stacking)","Pari du soir"]},
-28:{w:4,t:"Défi boss + revue",a:["Rituel de fermeture de 3 min","Célébrer : la récompense finale approche","Écrire ce que vous gardez du programme"],boss:"Une journée complète en autonomie avec vos 3 habitudes ancrées, sans consigne extérieure."},
+22:{w:4,t:"La récompense immédiate",a:["Définir 1 micro-récompense post-tâche et la prendre aussitôt","Célébrer chaque action cochée par un geste de victoire","Choisir les récompenses de demain à l'avance"],
+  why:["Une récompense immédiate crée une association positive forte avec l'action, plus efficace qu'une récompense différée.","Un geste physique de victoire ancre la sensation de réussite dans le corps, pas seulement dans la tête.","Savoir à l'avance ce qui vous attend renforce l'anticipation positive de l'action."]},
+23:{w:4,t:"Temptation bundling",a:["Associer 1 tâche ingrate à 1 plaisir immédiat (podcast, café, musique)","Ne vivre le plaisir que pendant la tâche","Préparer le combo tâche + plaisir de demain"],
+  why:["Coupler une corvée à un plaisir simultané rend la tâche elle-même plus désirable.","Réserver le plaisir à la tâche crée une dépendance positive entre les deux.","Préparer le combo à l'avance évite d'improviser, ce qui use l'énergie disponible."]},
+24:{w:4,t:"Le rituel de fermeture",a:["Routine de 3 min pour clore la journée : noter demain, ranger, souffler","Éteindre les écrans 30 min avant le coucher","Préparer le pari du lendemain"],
+  why:["Un rituel de fermeture signale au cerveau que la journée de travail est terminée.","Réduire la stimulation avant le coucher facilite la transition vers le sommeil.","Préparer demain ce soir évite au cerveau de continuer à y penser la nuit."]},
+25:{w:4,t:"Vider le cerveau du soir",a:["Brain dump de 2 min avant le coucher, pour le cerveau qui s'emballe","Si une pensée revient la nuit, la noter au lieu de la ruminer","Poser le carnet près du lit pour demain soir"],
+  why:["Vider les pensées avant de dormir réduit les ruminations qui retardent l'endormissement.","Noter plutôt que ruminer permet au cerveau de lâcher l'information en confiance.","Un outil à portée de main rend le réflexe possible même à moitié endormi."]},
+26:{w:4,t:"Bouger pour réguler",a:["5 min de mouvement avant une tâche exigeante","1 marche courte à un creux d'énergie de la journée","Préparer les conditions (tenue, créneau) de demain"],
+  why:["Le mouvement aide à réguler l'état d'activation avant une tâche qui demande de l'énergie.","Bouger à un creux relance l'attention plus efficacement qu'une pause passive.","Anticiper tenue et créneau évite que la fatigue serve d'excuse au moment venu."]},
+27:{w:4,t:"Ancrer ce qui marche",a:["Relire vos revues, entourer les 3 habitudes qui ont le plus aidé","En attacher 1 à un déclencheur quotidien existant (habit stacking)","Pari du soir"],
+  why:["Répéter la lecture de ce qui marche renforce sa mémorisation et son usage futur.","Une habitude accrochée à une routine déjà automatique demande beaucoup moins d'effort pour tenir.","Le pari du soir reste l'outil le plus simple pour fluidifier chaque lendemain."]},
+28:{w:4,t:"Défi boss + revue",a:["Rituel de fermeture de 3 min","Célébrer : la récompense finale approche","Écrire ce que vous gardez du programme"],boss:"Une journée complète en autonomie avec vos 3 habitudes ancrées, sans consigne extérieure.",
+  why:["Ce rituel, répété 28 fois, est probablement l'habitude la plus solide que vous ayez construite ce mois-ci.","Célébrer avant la fin prolonge la motivation jusqu'au dernier jour.","Formuler ce que vous gardez transforme 28 jours d'essais en un système que vous choisissez de garder."]},
 };
 const KIND=["Micro-habitude","Défi du jour","Prépa / externalisation"];
 const TOTAL_DAYS=28;
@@ -405,25 +457,56 @@ function render(){
 
   /* day header */
   const d=S.view, P=PROGRAM[d], W=WEEKS[P.w-1];
+  const st=dayState(d);
   $("#dayLabel").textContent="Semaine "+P.w+" · "+W.t;
   $("#dayTitle").textContent="Jour "+d+" — "+P.t;
   $("#prevDay").disabled = d<=1 || !dayUnlocked(d-1);
   $("#nextDay").disabled = d>=TOTAL_DAYS || !dayUnlocked(d+1);
+
+  /* bannière personnalisée selon le bilan */
+  const pb=$("#pBanner");
+  const bannerTxt = personalBanner(W.t);
+  if(bannerTxt){ pb.innerHTML=bannerTxt; pb.classList.remove("hidden"); }
+  else pb.classList.add("hidden");
+
+  /* check-in d'humeur du jour */
+  const moods=["À plat","Ça va","En forme"];
+  const mr=$("#moodRow"); mr.innerHTML="";
+  moods.forEach((m,mi)=>{
+    const b=document.createElement("button");
+    b.className="moodbtn"+(st.mood===mi?" sel":"");
+    b.textContent=m;
+    b.onclick=()=>{ st.mood=mi; save(); render(); };
+    mr.appendChild(b);
+  });
 
   /* light-mode banner : 2 jours précédents à 0 action */
   const light = d>=3 && S.days[d-1] && checkedCount(d-1)===0 && S.days[d-2] && checkedCount(d-2)===0 && checkedCount(d)===0;
   $("#lightBanner").classList.toggle("hidden",!light);
 
   /* actions */
-  const st=dayState(d);
   const box=$("#actions"); box.innerHTML="";
   P.a.forEach((txt,i)=>{
-    const el=document.createElement("button");
-    el.className="act k"+(i+1)+(st.actions[i]?" done":"");
-    el.innerHTML="<span class='box'><svg viewBox='0 0 24 24' fill='none'><path d='M5 13l4 4L19 7' stroke='#12141c' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/></svg></span>"+
-      "<span class='body'><span class='kind'>"+KIND[i]+"</span><span class='txt'>"+escapeHtml(txt)+"</span></span>";
-    el.onclick=()=>toggle(d,i,el);
-    box.appendChild(el);
+    const why = (P.why && P.why[i]) ? P.why[i] : "";
+    const wrap=document.createElement("div");
+    wrap.className="act k"+(i+1)+(st.actions[i]?" done":"");
+    wrap.innerHTML=
+      "<button class='actmain'>"+
+        "<span class='box'><svg viewBox='0 0 24 24' fill='none'><path d='M5 13l4 4L19 7' stroke='#12141c' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/></svg></span>"+
+        "<span class='body'><span class='kind'>"+KIND[i]+"</span><span class='txt'>"+escapeHtml(txt)+"</span></span>"+
+      "</button>"+
+      (why ? "<button class='whytoggle'>‣ Pourquoi</button><div class='whytext'>"+escapeHtml(why)+"</div>" : "");
+    wrap.querySelector(".actmain").onclick=()=>toggle(d,i,wrap);
+    const wt=wrap.querySelector(".whytoggle");
+    if(wt){
+      wt.onclick=(e)=>{
+        e.stopPropagation();
+        const wtxt=wrap.querySelector(".whytext");
+        wtxt.classList.toggle("open");
+        wt.textContent = wtxt.classList.contains("open") ? "‣ Masquer" : "‣ Pourquoi";
+      };
+    }
+    box.appendChild(wrap);
   });
 
   /* boss */
@@ -438,6 +521,14 @@ function render(){
 }
 
 function escapeHtml(s){return (s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+
+function personalBanner(weekTheme){
+  if(!S.profile || !S.profile.top3 || !S.profile.top3.length) return null;
+  const top=S.profile.top3[0];
+  let out = "Semaine "+weekTheme.toLowerCase()+". <b>Votre enjeu n°1 ici est "+escapeHtml(top.name.toLowerCase())+"</b> : "+escapeHtml(top.lev);
+  if(top.strength) out += " Point fort à exploiter : "+escapeHtml(top.strength)+".";
+  return out;
+}
 
 /* ---------- ACTIONS ---------- */
 function toggle(d,i,el){
@@ -481,6 +572,15 @@ $("#revSave").onclick=()=>{
   toast(w<4?"Semaine "+(w+1)+" déverrouillée 🔓":"Programme terminé 🏆 récompense finale !");
   render();
 };
+
+/* accès profil depuis l'accueil */
+$("#profilePill").onclick=()=>{
+  if(S.profile && S.profile.top3 && S.profile.top3.length){ openSheet("restit"); renderRestit(); }
+  else { BI={i:0,ans:{}}; openSheet("bilan"); renderBilan(); }
+};
+function closeSheets(){ ["intro","bilan","restit","onb"].forEach(x=>$("#"+x).classList.add("hidden")); }
+$("#restitClose").onclick=()=>{ closeSheets(); };
+$("#bilanClose").onclick=()=>{ closeSheets(); };
 
 /* onboarding */
 $("#startBtn").onclick=()=>{
@@ -527,10 +627,27 @@ function toast(msg){ const el=$("#toast"); el.textContent=msg; el.classList.add(
 /* ---------- BILAN ---------- */
 let BI={i:0, ans:{}};
 function openSheet(id){ ["intro","bilan","restit","onb"].forEach(x=>$("#"+x).classList.toggle("hidden",x!==id)); }
-$("#goSkipBilan").onclick=()=>{ prefillRewards(); openSheet("onb"); };
-$("#goBilan").onclick=()=>{ BI={i:0,ans:{}}; openSheet("bilan"); renderBilan(); };
+
+function renderIntroSheet(){
+  const hasProfile = !!(S.profile && S.profile.top3 && S.profile.top3.length);
+  const sub=$("#intro p.sub"), btnMain=$("#goBilan"), btnAlt=$("#goSkipBilan");
+  if(hasProfile){
+    sub.textContent="Votre problème n'est ni la volonté ni les capacités : c'est le démarrage et l'émotion qui l'entoure. Votre profil est déjà pré-chargé. On travaille par petites actions, sans culpabilité.";
+    btnMain.textContent="Voir mon profil et lancer";
+    btnMain.onclick=()=>{ openSheet("restit"); renderRestit(); };
+    btnAlt.textContent="Refaire le bilan (2 min)";
+    btnAlt.onclick=()=>{ BI={i:0,ans:{}}; openSheet("bilan"); renderBilan(); };
+  } else {
+    sub.textContent="Votre problème n'est ni la volonté ni les capacités. On travaille par petites actions, en s'adaptant à votre énergie réelle, sans culpabilité.";
+    btnMain.textContent="Faire le bilan (2 min)";
+    btnMain.onclick=()=>{ BI={i:0,ans:{}}; openSheet("bilan"); renderBilan(); };
+    btnAlt.textContent="J'ai déjà fait mon bilan, passer";
+    btnAlt.onclick=()=>{ prefillRewards(); openSheet("onb"); };
+  }
+}
 
 function renderBilan(){
+  $("#bilanClose").classList.toggle("hidden",!S.onboarded);
   const dom=BILAN[BI.i];
   $("#biProg").textContent="Domaine "+(BI.i+1)+" sur "+BILAN.length;
   $("#biName").textContent=dom.name;
@@ -575,6 +692,7 @@ function computeProfile(){
 }
 const FRLAB={h:"Friction élevée",m:"Friction moyenne",l:"Friction faible"};
 function renderRestit(){
+  $("#restitClose").classList.toggle("hidden",!S.onboarded);
   const tb=$("#rTable"); tb.innerHTML="";
   S.profile.results.forEach(r=>{
     const obs = r.strength ? "Atout : "+r.strength+"." : (r.lvl==="h"?"Axe prioritaire.":r.lvl==="m"?"Marge de progrès nette.":"Point d'appui.");
@@ -587,12 +705,15 @@ function renderRestit(){
   S.profile.top3.forEach((r,i)=>{ const li=document.createElement("li");
     li.innerHTML="<b>"+(i+1)+".</b> "+escapeHtml(r.lev); ul.appendChild(li); });
 }
-$("#goRewards").onclick=()=>{ prefillRewards(); openSheet("onb"); };
+$("#goRewards").onclick=()=>{
+  if(S.onboarded){ closeSheets(); }
+  else { prefillRewards(); openSheet("onb"); }
+};
 function prefillRewards(){ $("#rDaily").value=S.rewards.daily||""; $("#rWeekly").value=S.rewards.weekly||""; $("#rFinal").value=S.rewards.final||""; }
 
 /* ---------- BOOT ---------- */
-if(S.onboarded){ ["intro","bilan","restit","onb"].forEach(x=>$("#"+x).classList.add("hidden")); }
-else { openSheet("intro"); }
+if(S.onboarded){ closeSheets(); }
+else { renderIntroSheet(); openSheet("intro"); }
 recomputeStreak();
 render();
 </script>
