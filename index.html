@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Coach TDAH — Programme 30 jours</title>
+<style>
+  :root{
+    --bg:#121316;
+    --bg-elevated:#1b1d22;
+    --bg-card:#20232a;
+    --border:#2c2f37;
+    --text:#eceef1;
+    --text-dim:#9a9fab;
+    --accent:#5ec8a8;
+    --accent-dark:#3f9c81;
+    --warn:#e8b45c;
+    --danger:#e2685f;
+    --radius:16px;
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+  }
+  #app{
+    width:100%;
+    max-width:520px;
+    min-height:100vh;
+    padding:20px 16px calc(28px + var(--safe-bottom));
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+  }
+  h1,h2,h3,p{margin:0;}
+  h1{font-size:1.4rem;font-weight:700;}
+  h2{font-size:1.15rem;font-weight:700;}
+  h3{font-size:0.95rem;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.04em;}
+  p{line-height:1.45;}
+  .muted{color:var(--text-dim);font-size:.9rem;}
+  .card{
+    background:var(--bg-card);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:18px;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+  .row{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+  .top-header{display:flex;align-items:center;justify-content:space-between;}
+  .pill{
+    background:var(--bg-elevated);
+    border:1px solid var(--border);
+    border-radius:999px;
+    padding:6px 12px;
+    font-size:.82rem;
+    color:var(--text-dim);
+    white-space:nowrap;
+  }
+  button{
+    font-family:inherit;
+    cursor:pointer;
+    border:none;
+    border-radius:14px;
+    padding:16px 18px;
+    font-size:1rem;
+    font-weight:600;
+    -webkit-tap-highlight-color:transparent;
+    touch-action:manipulation;
+  }
+  .btn-primary{
+    background:var(--accent);
+    color:#0c1210;
+  }
+  .btn-primary:active{background:var(--accent-dark);}
+  .btn-secondary{
+    background:var(--bg-elevated);
+    color:var(--text);
+    border:1px solid var(--border);
+  }
+  .btn-ghost{
+    background:transparent;
+    color:var(--text-dim);
+    padding:10px 12px;
+    font-weight:500;
+    font-size:.9rem;
+  }
+  .btn-block{width:100%;}
+  input[type=text], textarea{
+    width:100%;
+    background:var(--bg-elevated);
+    border:1px solid var(--border);
+    border-radius:12px;
+    color:var(--text);
+    padding:12px 14px;
+    font-size:1rem;
+    font-family:inherit;
+    resize:vertical;
+  }
+  textarea{min-height:70px;}
+  label.field-label{font-size:.85rem;color:var(--text-dim);font-weight:600;}
+  .field{display:flex;flex-direction:column;gap:6px;}
+
+  /* XP bar */
+  .xp-bar-track{
+    height:12px;
+    background:var(--bg-elevated);
+    border-radius:999px;
+    overflow:hidden;
+    border:1px solid var(--border);
+  }
+  .xp-bar-fill{
+    height:100%;
+    background:linear-gradient(90deg,var(--accent-dark),var(--accent));
+    border-radius:999px;
+    transition:width .4s ease;
+  }
+
+  /* Actions / checkboxes */
+  .action{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    background:var(--bg-elevated);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:14px;
+    cursor:pointer;
+    user-select:none;
+  }
+  .action.done{
+    border-color:var(--accent-dark);
+    background:rgba(94,200,168,0.08);
+  }
+  .checkbox{
+    flex:0 0 auto;
+    width:30px;height:30px;
+    border-radius:9px;
+    border:2px solid var(--text-dim);
+    display:flex;align-items:center;justify-content:center;
+    font-size:1.1rem;
+    color:var(--bg);
+    transition:transform .18s ease, background .18s ease, border-color .18s ease;
+  }
+  .action.done .checkbox{
+    background:var(--accent);
+    border-color:var(--accent);
+  }
+  .checkbox.pop{animation:pop .32s ease;}
+  @keyframes pop{
+    0%{transform:scale(1);}
+    35%{transform:scale(1.35);}
+    100%{transform:scale(1);}
+  }
+  .action-body{display:flex;flex-direction:column;gap:2px;}
+  .action-kind{font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--text-dim);font-weight:700;}
+  .action-label{font-size:1rem;line-height:1.35;}
+  .action.done .action-label{color:var(--text-dim);text-decoration:line-through;text-decoration-color:var(--accent-dark);}
+
+  .banner{
+    border-radius:14px;
+    padding:14px;
+    font-size:.92rem;
+    line-height:1.4;
+  }
+  .banner-success{background:rgba(94,200,168,0.12);border:1px solid var(--accent-dark);}
+  .banner-warn{background:rgba(232,180,92,0.12);border:1px solid var(--warn);}
+  .banner-lock{background:rgba(255,255,255,0.03);border:1px solid var(--border);text-align:center;}
+
+  .day-nav{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+  .day-nav button{padding:10px 14px;}
+
+  .radio-group{display:flex;flex-direction:column;gap:8px;}
+  .radio-opt{
+    background:var(--bg-elevated);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:12px 14px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    cursor:pointer;
+  }
+  .radio-opt.sel{border-color:var(--accent);background:rgba(94,200,168,0.08);}
+  .radio-dot{width:18px;height:18px;border-radius:50%;border:2px solid var(--text-dim);flex:0 0 auto;}
+  .radio-opt.sel .radio-dot{border-color:var(--accent);background:var(--accent);}
+
+  table.recap{width:100%;border-collapse:collapse;font-size:.88rem;}
+  table.recap th, table.recap td{
+    text-align:left;
+    padding:8px 6px;
+    border-bottom:1px solid var(--border);
+  }
+  table.recap th{color:var(--text-dim);font-weight:600;font-size:.78rem;text-transform:uppercase;}
+
+  .footer-nav{
+    display:flex;
+    justify-content:center;
+    gap:6px;
+    padding-top:4px;
+  }
+  .link-btn{
+    background:none;border:none;color:var(--accent);font-size:.85rem;font-weight:600;padding:8px;
+  }
+  ::placeholder{color:#6b7080;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* =========================================================================
+   PROGRAM — contenu des 30 jours, à éditer librement.
+   4 semaines : 1) Externaliser  2) Démarrer  3) Tenir  4) Réguler
+   Chaque jour = 3 actions : "micro" (micro-habitude), "defi" (défi du jour),
+   "prepa" (préparation pour demain).
+   ========================================================================= */
+const PROGRAM = {
+  weeks: {
+    1: { theme: "Externaliser", subtitle: "Sortir tout ce qui est dans ta tête vers un système externe fiable." },
+    2: { theme: "Démarrer", subtitle: "Vaincre la paralysie du démarrage, entrer en action en 2 minutes." },
+    3: { theme: "Tenir", subtitle: "Maintenir l'effort, gérer les distractions, tenir la distance." },
+    4: { theme: "Réguler", subtitle: "Ajuster ton système, réguler tes émotions, consolider les habitudes." }
+  },
+  days: {
+    1:  { week:1, title:"Vider ta tête", micro:"Note toutes les tâches qui te trottent en tête sur une seule liste (papier ou appli).", defi:"Choisis 1 tâche en tête de liste et fais-la sans la re-planifier.", prepa:"Pose ta liste bien en vue pour demain matin (bureau, frigo, écran de veille)." },
+    2:  { week:1, title:"Un seul endroit", micro:"Regroupe toutes tes notes éparpillées (post-it, appli, tête) dans un seul endroit.", defi:"Supprime ou archive 3 choses inutiles de cette liste unique.", prepa:"Prépare 3 tâches précises pour demain, écrites en une phrase chacune." },
+    3:  { week:1, title:"Rendre visible", micro:"Affiche les 3 tâches du jour à un endroit que tu vois forcément.", defi:"Fixe un minuteur visible (10 min) pour démarrer la tâche la plus évitée.", prepa:"Sors ou ouvre déjà le matériel nécessaire à la 1ère tâche de demain." },
+    4:  { week:1, title:"Externaliser le temps", micro:"Note l'heure de début et de fin de 2 activités aujourd'hui.", defi:"Programme une alarme pour chaque rendez-vous ou tâche à heure fixe.", prepa:"Prépare tes vêtements / sac / repas pour demain, la veille au soir." },
+    5:  { week:1, title:"Un lieu par fonction", micro:"Choisis un emplacement fixe pour tes clés / téléphone / portefeuille.", defi:"Range 5 objets qui traînent à leur emplacement fixe.", prepa:"Vérifie que ton espace de travail de demain est dégagé avant de dormir." },
+    6:  { week:1, title:"Check-list de sortie", micro:"Écris une check-list des objets à ne jamais oublier en sortant.", defi:"Utilise cette check-list avant de sortir aujourd'hui.", prepa:"Colle la check-list près de la porte pour demain." },
+    7:  { week:1, title:"Bilan semaine 1", micro:"Relis ta liste de tâches et raye ce qui n'est plus utile.", defi:"Choisis 1 tâche en attente depuis le début de semaine et termine-la.", prepa:"Prépare ta liste de la semaine prochaine avec 3 priorités seulement." },
+    8:  { week:2, title:"La règle des 2 minutes", micro:"Fais immédiatement toute tâche qui prend moins de 2 minutes, dès que tu y penses.", defi:"Démarre la tâche que tu repousses depuis le plus longtemps, juste 2 minutes.", prepa:"Écris la toute première micro-action de la tâche la plus dure de demain." },
+    9:  { week:2, title:"Découper", micro:"Prends une tâche floue et découpe-la en 3 étapes concrètes.", defi:"Fais uniquement la 1ère étape de cette tâche découpée.", prepa:"Découpe déjà en étapes une tâche prévue pour demain." },
+    10: { week:2, title:"Le rituel de lancement", micro:"Crée un petit rituel de 60 secondes avant de démarrer (respirer, timer, musique).", defi:"Utilise ce rituel pour démarrer une tâche que tu redoutes.", prepa:"Choisis à l'avance l'heure et le rituel de démarrage de demain." },
+    11: { week:2, title:"Réduire la friction", micro:"Identifie un obstacle qui te fait repousser une tâche et retire-le.", defi:"Prépare à l'avance tout le matériel d'une tâche pour supprimer l'effort de démarrage.", prepa:"Pré-ouvre ou pré-sors ce qu'il faut pour démarrer instantanément demain." },
+    12: { week:2, title:"Le sprint de 10 minutes", micro:"Fixe un minuteur de 10 minutes sur une tâche que tu évites.", defi:"Enchaîne 2 sprints de 10 minutes sur la même tâche, avec une pause entre les deux.", prepa:"Planifie l'heure exacte d'un sprint de 10 minutes pour demain." },
+    13: { week:2, title:"Récompense immédiate", micro:"Associe une petite récompense (café, musique, pause) juste après avoir démarré une tâche.", defi:"Démarre une tâche pénible en te promettant la récompense juste après le lancement, pas après la fin.", prepa:"Choisis la récompense associée à la tâche de démarrage de demain." },
+    14: { week:2, title:"Bilan semaine 2", micro:"Repère la tâche que tu as le plus reportée cette semaine et découpe-la.", defi:"Démarre cette tâche reportée, ne serait-ce que 5 minutes.", prepa:"Identifie ta tâche la plus redoutée de la semaine prochaine et prépare son rituel de lancement." },
+    15: { week:3, title:"Le mode avion mental", micro:"Coupe les notifications pendant un créneau de 20 minutes.", defi:"Tiens un créneau de 20 minutes sans écran ni notification sur une seule tâche.", prepa:"Bloque déjà dans ton agenda un créneau sans distraction pour demain." },
+    16: { week:3, title:"Un onglet, une tâche", micro:"Ferme les onglets/applications inutiles avant de commencer une tâche.", defi:"Travaille une tâche avec un seul onglet ou une seule appli ouverte.", prepa:"Note la seule tâche sur laquelle tu veux te concentrer demain matin." },
+    17: { week:3, title:"Pause active", micro:"Fais une pause de 5 minutes en te levant et en bougeant, sans écran.", defi:"Utilise cette pause active entre deux tâches au lieu de scroller.", prepa:"Planifie à quel moment demain tu prendras une pause active." },
+    18: { week:3, title:"Ancrer le retour à la tâche", micro:"Note où tu t'es arrêté avant chaque interruption.", defi:"Reviens sur une tâche interrompue en utilisant uniquement cette note.", prepa:"Prépare une phrase simple de reprise pour la tâche de demain en cas d'interruption." },
+    19: { week:3, title:"Réduire à l'essentiel", micro:"Identifie la tâche la plus importante du jour (une seule).", defi:"Fais cette tâche avant toute autre chose, même petite.", prepa:"Choisis dès ce soir la tâche la plus importante de demain." },
+    20: { week:3, title:"Suivi visuel", micro:"Coche visuellement chaque tâche terminée dans la journée.", defi:"Termine une tâche commencée avant d'en démarrer une nouvelle.", prepa:"Prépare ton suivi visuel (liste, tableau) pour demain." },
+    21: { week:3, title:"Bilan semaine 3", micro:"Repère ta plus grande source de distraction cette semaine.", defi:"Mets en place une action concrète pour réduire cette distraction aujourd'hui.", prepa:"Choisis la stratégie anti-distraction que tu gardes pour la semaine prochaine." },
+    22: { week:4, title:"Nommer l'émotion", micro:"Nomme en un mot l'émotion ressentie avant une tâche difficile.", defi:"Fais la tâche malgré l'émotion, en te concentrant sur la 1ère étape seulement.", prepa:"Anticipe l'émotion probable face à la tâche de demain et prépare une phrase pour toi-même." },
+    23: { week:4, title:"Respiration courte", micro:"Fais 5 respirations lentes avant une tâche qui te stresse.", defi:"Utilise cette respiration avant ta tâche la plus chargée émotionnellement.", prepa:"Note à quel moment demain tu prévois d'utiliser cette respiration." },
+    24: { week:4, title:"Ajuster sans culpabiliser", micro:"Repère une règle du programme trop rigide pour toi et assouplis-la.", defi:"Applique aujourd'hui ta version ajustée, sans te juger.", prepa:"Note l'ajustement que tu gardes pour la suite du programme." },
+    25: { week:4, title:"Célébrer les petites victoires", micro:"Note une chose accomplie aujourd'hui, même minime.", defi:"Partage ou dis à voix haute cette victoire à quelqu'un ou à toi-même.", prepa:"Prépare une victoire à viser pour demain, réaliste et petite." },
+    26: { week:4, title:"Gérer la surcharge", micro:"Si tu te sens débordé, retire une tâche de ta liste du jour.", defi:"Termine la journée avec une liste allégée plutôt que surchargée.", prepa:"Prépare une liste volontairement courte (3 tâches max) pour demain." },
+    27: { week:4, title:"Consolider le système", micro:"Relis les outils que tu utilises depuis le début (listes, minuteurs, rituels).", defi:"Garde uniquement les 3 outils qui t'ont le plus aidé et utilise-les aujourd'hui.", prepa:"Prépare ces 3 outils pour qu'ils soient prêts à l'emploi demain." },
+    28: { week:4, title:"Bilan semaine 4", micro:"Relis ton parcours des 4 dernières semaines.", defi:"Identifie ta plus grande transformation depuis le jour 1.", prepa:"Prépare les 2 derniers jours en choisissant ce que tu veux consolider." },
+    29: { week:4, title:"Avant-dernier jour", micro:"Applique ton rituel de démarrage préféré sur une tâche du jour.", defi:"Termine une tâche en attente depuis plusieurs jours.", prepa:"Prépare ton bilan final pour demain : qu'est-ce qui a le mieux marché ?" },
+    30: { week:4, title:"Jour 30 — Ancrage", micro:"Écris les 3 outils que tu veux garder après le programme.", defi:"Fais une tâche du jour en utilisant consciemment ce que tu as appris.", prepa:"Décide comment tu continues après le programme (quels outils, quel rythme)." }
+  }
+};
+
+/* Bilan initial — 6 domaines, question + 4 options, et leviers associés */
+const BILAN = {
+  options: ["Oui", "Parfois", "Souvent", "Presque tout le temps"],
+  domains: [
+    { key:"organisation", label:"Organisation", question:"Je perds ou j'oublie des informations importantes (tâches, dates, objets) faute de système fiable." },
+    { key:"demarrage", label:"Démarrage", question:"Je remets à plus tard des tâches importantes, même quand je sais qu'il faut les faire." },
+    { key:"attention", label:"Attention", question:"Je me laisse distraire facilement et je perds le fil de ce que j'étais en train de faire." },
+    { key:"temps", label:"Gestion du temps", question:"J'estime mal le temps que prennent les choses et je suis souvent en retard ou pris de court." },
+    { key:"emotions", label:"Émotions", question:"Je me sens vite submergé(e), frustré(e) ou découragé(e) face aux tâches du quotidien." },
+    { key:"energie", label:"Sommeil / énergie", question:"Mon sommeil ou mon énergie sont irréguliers et affectent ma capacité à tenir mes engagements." }
+  ],
+  levers: {
+    organisation: "Mets en place un système externe unique (une seule liste) pour ne plus rien garder en tête.",
+    demarrage: "Utilise la règle des 2 minutes et découpe chaque tâche en une première micro-étape.",
+    attention: "Réduis les sources de distraction (notifications, onglets) avant de démarrer une tâche.",
+    temps: "Utilise des minuteurs visibles pour rendre le temps concret et éviter les dérapages.",
+    emotions: "Nomme l'émotion avant d'agir et avance quand même sur la première étape, sans viser la perfection.",
+    energie: "Stabilise un rituel de sommeil simple et repère les moments de la journée où ton énergie est la plus haute."
+  }
+};
+
+/* =========================================================================
+   ÉTAT & PERSISTANCE
+   ========================================================================= */
+const STORAGE_KEY = "adhd_coach";
+
+function defaultState(){
+  return {
+    profile: { bilan: { answers:{}, completed:false, skipped:false }, reviews:{} },
+    program: { startDate: null, currentDay: 1, days: {} },
+    xp: 0,
+    streak: { count:0, lastDate:null },
+    rewards: { daily:"", weekly:"", final:"" },
+    unlockedWeeks: [1],
+    meta: { onboarded:false }
+  };
+}
+
+let state = loadState();
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return defaultState();
+    const parsed = JSON.parse(raw);
+    const base = defaultState();
+    return Object.assign(base, parsed, {
+      profile: Object.assign(base.profile, parsed.profile),
+      program: Object.assign(base.program, parsed.program),
+      streak: Object.assign(base.streak, parsed.streak),
+      rewards: Object.assign(base.rewards, parsed.rewards),
+      meta: Object.assign(base.meta, parsed.meta)
+    });
+  }catch(e){
+    return defaultState();
+  }
+}
+
+function saveState(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+/* =========================================================================
+   HELPERS DATE / JOUR
+   ========================================================================= */
+function todayStr(d){
+  const dt = d || new Date();
+  return dt.getFullYear() + "-" + String(dt.getMonth()+1).padStart(2,"0") + "-" + String(dt.getDate()).padStart(2,"0");
+}
+function daysBetween(a,b){
+  const da = new Date(a+"T00:00:00"), db = new Date(b+"T00:00:00");
+  return Math.round((db-da)/86400000);
+}
+function clamp(n,min,max){ return Math.max(min, Math.min(max, n)); }
+
+function computeCurrentDay(){
+  if(!state.program.startDate) return 1;
+  const diff = daysBetween(state.program.startDate, todayStr());
+  return clamp(diff+1, 1, 30);
+}
+
+function getDayEntry(n){
+  return state.program.days[n] || { actions:[false,false,false], date:null };
+}
+function ensureDayEntry(n){
+  if(!state.program.days[n]){
+    state.program.days[n] = { actions:[false,false,false], date: todayStr() };
+  }
+  return state.program.days[n];
+}
+
+const WEEK_RANGES = { 1:[1,7], 2:[8,14], 3:[15,21], 4:[22,30] };
+function weekOfDay(n){
+  for(const w in WEEK_RANGES){
+    const [a,b] = WEEK_RANGES[w];
+    if(n>=a && n<=b) return +w;
+  }
+  return 4;
+}
+
+function computeUnlockedWeeks(){
+  const unlocked = [1];
+  for(let w=1; w<=3; w++){
+    const [a,b] = WEEK_RANGES[w];
+    let doneCount = 0;
+    for(let n=a;n<=b;n++){
+      if(getDayEntry(n).actions.some(Boolean)) doneCount++;
+    }
+    if(doneCount>=5) unlocked.push(w+1);
+  }
+  return unlocked;
+}
+
+function computeStreak(){
+  const entries = Object.keys(state.program.days)
+    .map(k=>({ n:+k, ...state.program.days[k] }))
+    .filter(d=> d.date && d.actions.every(Boolean))
+    .sort((a,b)=> a.date.localeCompare(b.date));
+  if(!entries.length) return { count:0, lastDate:null };
+  let count = 1;
+  for(let i=entries.length-1;i>0;i--){
+    const diff = daysBetween(entries[i-1].date, entries[i].date);
+    if(diff===1) count++; else break;
+  }
+  const last = entries[entries.length-1].date;
+  const gap = daysBetween(last, todayStr());
+  if(gap>1) count = 0;
+  return { count, lastDate:last };
+}
+
+function isLightMode(){
+  const cur = computeCurrentDay();
+  const d1 = getDayEntry(cur-1), d2 = getDayEntry(cur-2);
+  if(cur<3) return false;
+  const zero1 = !d1.actions.some(Boolean);
+  const zero2 = !d2.actions.some(Boolean);
+  return zero1 && zero2;
+}
+
+/* =========================================================================
+   SON + ANIMATION
+   ========================================================================= */
+let audioCtx = null;
+function playBeep(){
+  try{
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.connect(g); g.connect(audioCtx.destination);
+    o.type = "sine";
+    o.frequency.value = 720;
+    g.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.18, audioCtx.currentTime+0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime+0.18);
+    o.start();
+    o.stop(audioCtx.currentTime+0.2);
+  }catch(e){ /* audio non disponible, on ignore */ }
+}
+
+/* =========================================================================
+   ROUTEUR / RENDU
+   ========================================================================= */
+const app = document.getElementById("app");
+let route = "home";
+
+function go(r){ route = r; render(); }
+
+function render(){
+  if(!state.meta.onboarded){ renderOnboarding(); return; }
+  if(route === "bilan") { renderBilan(); return; }
+  if(route === "review") { renderReview(); return; }
+  if(route === "recap") { renderBilanRecap(); return; }
+  if(route === "settings") { renderSettings(); return; }
+  renderHome();
+}
+
+/* ---------- Onboarding : récompenses + intro bilan ---------- */
+function renderOnboarding(){
+  const step = window.__onbStep || 1;
+  app.innerHTML = "";
+
+  if(step===1){
+    const wrap = el("div", {class:"card"});
+    wrap.appendChild(el("h1", {}, "Bienvenue 👋"));
+    wrap.appendChild(el("p", {class:"muted"}, "Un programme de 30 jours en 4 semaines pour t'aider à externaliser, démarrer, tenir et réguler. Avant de commencer, choisis 3 récompenses qui te motivent vraiment."));
+
+    const daily = fieldInput("Récompense quotidienne", "ex : un épisode de série, un café spécial…", state.rewards.daily);
+    const weekly = fieldInput("Récompense hebdomadaire", "ex : une sortie, un achat plaisir…", state.rewards.weekly);
+    const final = fieldInput("Récompense finale (jour 30)", "ex : un week-end, un objet dont tu as envie…", state.rewards.final);
+    wrap.appendChild(daily.field);
+    wrap.appendChild(weekly.field);
+    wrap.appendChild(final.field);
+
+    const btn = el("button", {class:"btn-primary btn-block"}, "Continuer");
+    btn.onclick = () => {
+      state.rewards.daily = daily.input.value.trim() || "Un petit plaisir";
+      state.rewards.weekly = weekly.input.value.trim() || "Une pause bien méritée";
+      state.rewards.final = final.input.value.trim() || "Une belle récompense";
+      saveState();
+      window.__onbStep = 2;
+      render();
+    };
+    wrap.appendChild(btn);
+    app.appendChild(wrap);
+    return;
+  }
+
+  if(step===2){
+    const wrap = el("div", {class:"card"});
+    wrap.appendChild(el("h1", {}, "Petit bilan (optionnel)"));
+    wrap.appendChild(el("p", {class:"muted"}, "6 questions rapides pour identifier tes 3 leviers prioritaires. Tu peux le passer et le faire plus tard."));
+    const btnStart = el("button", {class:"btn-primary btn-block"}, "Faire le bilan (2 min)");
+    btnStart.onclick = () => { window.__onbStep = null; go("bilan"); };
+    const btnSkip = el("button", {class:"btn-secondary btn-block"}, "Passer et commencer directement");
+    btnSkip.onclick = () => {
+      state.profile.bilan.skipped = true;
+      finishOnboarding();
+    };
+    wrap.appendChild(btnStart);
+    wrap.appendChild(btnSkip);
+    app.appendChild(wrap);
+    return;
+  }
+}
+
+function finishOnboarding(){
+  state.meta.onboarded = true;
+  state.program.startDate = todayStr();
+  state.program.currentDay = 1;
+  saveState();
+  go("home");
+}
+
+function fieldInput(labelText, placeholder, value){
+  const field = el("div", {class:"field"});
+  const label = el("label", {class:"field-label"}, labelText);
+  const input = document.createElement("input");
+  input.type = "text";
+  input.placeholder = placeholder;
+  input.value = value || "";
+  field.appendChild(label);
+  field.appendChild(input);
+  return { field, input };
+}
+
+/* ---------- Bilan ---------- */
+function renderBilan(){
+  app.innerHTML = "";
+  const wrap = el("div", {class:"card"});
+  wrap.appendChild(el("h2", {}, "Bilan initial"));
+  wrap.appendChild(el("p", {class:"muted"}, "Pour chaque affirmation, choisis la fréquence qui te correspond le mieux."));
+
+  BILAN.domains.forEach(d => {
+    const block = el("div", {class:"card", style:"padding:14px;"});
+    block.appendChild(el("h3", {}, d.label));
+    block.appendChild(el("p", {}, d.question));
+    const group = el("div", {class:"radio-group"});
+    BILAN.options.forEach((opt, idx) => {
+      const selected = state.profile.bilan.answers[d.key] === idx;
+      const row = el("div", {class:"radio-opt" + (selected ? " sel" : "")});
+      row.appendChild(el("div", {class:"radio-dot"}));
+      row.appendChild(el("div", {}, opt));
+      row.onclick = () => {
+        state.profile.bilan.answers[d.key] = idx;
+        saveState();
+        renderBilan();
+      };
+      group.appendChild(row);
+    });
+    block.appendChild(group);
+    wrap.appendChild(block);
+  });
+
+  const answered = Object.keys(state.profile.bilan.answers).length;
+  const btn = el("button", {class:"btn-primary btn-block"}, "Voir mes résultats");
+  btn.disabled = answered < BILAN.domains.length;
+  btn.style.opacity = btn.disabled ? "0.5" : "1";
+  btn.onclick = () => {
+    if(btn.disabled) return;
+    state.profile.bilan.completed = true;
+    saveState();
+    go("recap");
+  };
+  wrap.appendChild(btn);
+
+  const skip = el("button", {class:"btn-ghost btn-block"}, "Passer le bilan");
+  skip.onclick = () => {
+    state.profile.bilan.skipped = true;
+    saveState();
+    if(!state.meta.onboarded) finishOnboarding(); else go("home");
+  };
+  wrap.appendChild(skip);
+
+  app.appendChild(wrap);
+}
+
+function renderBilanRecap(){
+  app.innerHTML = "";
+  const wrap = el("div", {class:"card"});
+  wrap.appendChild(el("h2", {}, "Tes résultats"));
+
+  const table = document.createElement("table");
+  table.className = "recap";
+  const thead = el("tr", {});
+  ["Domaine","Score","Niveau"].forEach(h => thead.appendChild(el("th", {}, h)));
+  table.appendChild(thead);
+
+  const levels = ["Léger","Modéré","Marqué","Fort"];
+  const scored = BILAN.domains.map(d => ({...d, score: state.profile.bilan.answers[d.key] ?? 0}));
+  scored.forEach(d => {
+    const tr = el("tr", {});
+    tr.appendChild(el("td", {}, d.label));
+    tr.appendChild(el("td", {}, String(d.score)));
+    tr.appendChild(el("td", {}, levels[d.score]));
+    table.appendChild(tr);
+  });
+  wrap.appendChild(table);
+
+  const top3 = [...scored].sort((a,b)=> b.score - a.score).slice(0,3);
+  wrap.appendChild(el("h3", {style:"margin-top:8px;"}, "Tes 3 leviers prioritaires"));
+  top3.forEach(d => {
+    const item = el("div", {class:"banner banner-success"});
+    item.appendChild(el("div", {style:"font-weight:700;margin-bottom:4px;"}, d.label));
+    item.appendChild(el("div", {}, BILAN.levers[d.key]));
+    wrap.appendChild(item);
+  });
+
+  const btn = el("button", {class:"btn-primary btn-block"}, "Commencer le programme");
+  btn.onclick = () => {
+    if(!state.meta.onboarded) finishOnboarding(); else go("home");
+  };
+  wrap.appendChild(btn);
+  app.appendChild(wrap);
+}
+
+/* ---------- Accueil / jour courant ---------- */
+function renderHome(){
+  app.innerHTML = "";
+  const calendarDay = computeCurrentDay();
+  const viewDay = clamp(window.__viewDay || calendarDay, 1, 30);
+  window.__viewDay = viewDay;
+
+  state.program.currentDay = calendarDay;
+  const unlocked = computeUnlockedWeeks();
+  state.unlockedWeeks = unlocked;
+  const streak = computeStreak();
+  state.streak = streak;
+  saveState();
+
+  const week = weekOfDay(viewDay);
+  const weekInfo = PROGRAM.weeks[week];
+  const dayInfo = PROGRAM.days[viewDay];
+  const entry = ensureDayEntryIfToday(viewDay, calendarDay);
+  const level = Math.floor(state.xp/100)+1;
+  const xpInLevel = state.xp % 100;
+
+  /* Header */
+  const header = el("div", {class:"top-header"});
+  header.appendChild(el("h1", {}, "Jour " + viewDay + " / 30"));
+  const gear = el("button", {class:"btn-ghost", style:"padding:8px 10px;"}, "⚙");
+  gear.onclick = () => go("settings");
+  header.appendChild(gear);
+  app.appendChild(header);
+
+  /* Pills : semaine / niveau / streak */
+  const pills = el("div", {class:"row", style:"flex-wrap:wrap;"});
+  pills.appendChild(el("span", {class:"pill"}, "Semaine " + week + " · " + weekInfo.theme));
+  pills.appendChild(el("span", {class:"pill"}, "Niveau " + level));
+  pills.appendChild(el("span", {class:"pill"}, "🔥 " + streak.count + " jour" + (streak.count>1?"s":"")));
+  app.appendChild(pills);
+
+  /* XP bar */
+  const xpCard = el("div", {class:"card"});
+  xpCard.appendChild(el("div", {class:"row"},
+    el("span", {class:"muted"}, "XP"),
+    el("span", {class:"muted"}, xpInLevel + " / 100")
+  ));
+  const track = el("div", {class:"xp-bar-track"});
+  const fill = el("div", {class:"xp-bar-fill"});
+  fill.style.width = xpInLevel + "%";
+  track.appendChild(fill);
+  xpCard.appendChild(track);
+  app.appendChild(xpCard);
+
+  /* Allègement */
+  if(isLightMode() && viewDay===calendarDay){
+    app.appendChild(el("div", {class:"banner banner-warn"},
+      "On ralentit un peu 🌿 Deux jours sans action, ce n'est pas grave. Aujourd'hui, une seule petite chose suffit — vraiment."
+    ));
+  }
+
+  /* Navigation jours */
+  const nav = el("div", {class:"day-nav"});
+  const prev = el("button", {class:"btn-secondary"}, "←");
+  prev.disabled = viewDay<=1;
+  prev.onclick = () => { window.__viewDay = clamp(viewDay-1,1,30); render(); };
+  const label = el("div", {class:"muted"}, dayInfo.title);
+  const next = el("button", {class:"btn-secondary"}, "→");
+  next.disabled = viewDay>=calendarDay;
+  next.onclick = () => { window.__viewDay = clamp(viewDay+1,1,30); render(); };
+  nav.appendChild(prev); nav.appendChild(label); nav.appendChild(next);
+  app.appendChild(nav);
+
+  /* Semaine verrouillée */
+  if(!unlocked.includes(week)){
+    app.appendChild(el("div", {class:"banner banner-lock"},
+      "🔒 Cette semaine se débloque quand tu as coché au moins 1 action sur 5 jours de la semaine précédente."
+    ));
+    app.appendChild(footerNav());
+    return;
+  }
+
+  /* Actions du jour */
+  const kinds = [
+    { key:"micro", label:"Micro-habitude" },
+    { key:"defi", label:"Défi du jour" },
+    { key:"prepa", label:"Préparation" }
+  ];
+  const actionsCard = el("div", {class:"card"});
+  kinds.forEach((k, idx) => {
+    const done = entry.actions[idx];
+    const row = el("div", {class:"action" + (done ? " done" : "")});
+    const cb = el("div", {class:"checkbox"}, done ? "✓" : "");
+    const body = el("div", {class:"action-body"});
+    body.appendChild(el("div", {class:"action-kind"}, k.label));
+    body.appendChild(el("div", {class:"action-label"}, dayInfo[k.key]));
+    row.appendChild(cb);
+    row.appendChild(body);
+    row.onclick = () => toggleAction(viewDay, idx, cb);
+    actionsCard.appendChild(row);
+  });
+  app.appendChild(actionsCard);
+
+  /* Bannière 3/3 du jour affiché (si c'est aujourd'hui) */
+  if(viewDay===calendarDay && entry.actions.every(Boolean)){
+    app.appendChild(el("div", {class:"banner banner-success"},
+      "🎉 3/3 aujourd'hui ! Récompense du jour : " + escapeHtml(state.rewards.daily)
+    ));
+  }
+
+  /* Revue hebdo */
+  if([7,14,21,28].includes(viewDay)){
+    const reviewed = !!state.profile.reviews[viewDay];
+    const revBtn = el("button", {class:(reviewed?"btn-secondary":"btn-primary") + " btn-block"},
+      reviewed ? "Revoir mon bilan hebdo" : "Faire ma revue hebdomadaire");
+    revBtn.onclick = () => { window.__reviewDay = viewDay; go("review"); };
+    app.appendChild(revBtn);
+  }
+
+  /* Jour 30 terminé */
+  if(viewDay===30 && entry.actions.every(Boolean)){
+    app.appendChild(el("div", {class:"banner banner-success"},
+      "🏆 Programme terminé ! Récompense finale : " + escapeHtml(state.rewards.final)
+    ));
+  }
+
+  app.appendChild(footerNav());
+}
+
+function footerNav(){
+  const nav = el("div", {class:"footer-nav"});
+  const bilanBtn = el("button", {class:"link-btn"}, state.profile.bilan.completed ? "Voir mon bilan" : "Faire le bilan");
+  bilanBtn.onclick = () => go(state.profile.bilan.completed ? "recap" : "bilan");
+  nav.appendChild(bilanBtn);
+  return nav;
+}
+
+function ensureDayEntryIfToday(viewDay, calendarDay){
+  if(viewDay===calendarDay) return ensureDayEntry(viewDay);
+  return getDayEntry(viewDay);
+}
+
+function toggleAction(dayN, idx, cbEl){
+  const calendarDay = computeCurrentDay();
+  if(dayN !== calendarDay) return; /* on ne modifie que le jour courant */
+  const entry = ensureDayEntry(dayN);
+  const wasFull = entry.actions.every(Boolean);
+  entry.actions[idx] = !entry.actions[idx];
+  entry.date = todayStr();
+
+  if(entry.actions[idx]){
+    state.xp += 10;
+    playBeep();
+    cbEl.classList.add("pop");
+    setTimeout(()=> cbEl.classList.remove("pop"), 320);
+  }
+
+  const isFullNow = entry.actions.every(Boolean);
+  if(isFullNow && !wasFull){
+    state.xp += 10; /* bonus 3/3 */
+  }
+
+  state.streak = computeStreak();
+  const newlyUnlocked = computeUnlockedWeeks();
+  state.unlockedWeeks = newlyUnlocked;
+
+  saveState();
+  render();
+}
+
+/* ---------- Revue hebdo ---------- */
+function renderReview(){
+  const day = window.__reviewDay || 7;
+  app.innerHTML = "";
+  const wrap = el("div", {class:"card"});
+  wrap.appendChild(el("h2", {}, "Revue — jour " + day));
+  wrap.appendChild(el("p", {class:"muted"}, "Prends 2 minutes pour regarder ta semaine avec bienveillance."));
+
+  const existing = state.profile.reviews[day] || { worked:"", friction:"", adjustment:"" };
+
+  const f1 = fieldTextarea("Ce qui a marché", existing.worked);
+  const f2 = fieldTextarea("Ce qui a coincé (friction)", existing.friction);
+  const f3 = fieldTextarea("Ce que j'ajuste pour la suite", existing.adjustment);
+  wrap.appendChild(f1.field);
+  wrap.appendChild(f2.field);
+  wrap.appendChild(f3.field);
+
+  const save = el("button", {class:"btn-primary btn-block"}, "Enregistrer");
+  save.onclick = () => {
+    state.profile.reviews[day] = {
+      worked: f1.input.value.trim(),
+      friction: f2.input.value.trim(),
+      adjustment: f3.input.value.trim()
+    };
+    saveState();
+    go("home");
+  };
+  wrap.appendChild(save);
+
+  const back = el("button", {class:"btn-ghost btn-block"}, "Retour");
+  back.onclick = () => go("home");
+  wrap.appendChild(back);
+
+  app.appendChild(wrap);
+}
+
+function fieldTextarea(labelText, value){
+  const field = el("div", {class:"field"});
+  field.appendChild(el("label", {class:"field-label"}, labelText));
+  const input = document.createElement("textarea");
+  input.value = value || "";
+  field.appendChild(input);
+  return { field, input };
+}
+
+/* ---------- Réglages ---------- */
+function renderSettings(){
+  app.innerHTML = "";
+  const wrap = el("div", {class:"card"});
+  wrap.appendChild(el("h2", {}, "Réglages"));
+
+  const daily = fieldInput("Récompense quotidienne", "", state.rewards.daily);
+  const weekly = fieldInput("Récompense hebdomadaire", "", state.rewards.weekly);
+  const final = fieldInput("Récompense finale", "", state.rewards.final);
+  wrap.appendChild(daily.field);
+  wrap.appendChild(weekly.field);
+  wrap.appendChild(final.field);
+
+  const save = el("button", {class:"btn-primary btn-block"}, "Enregistrer");
+  save.onclick = () => {
+    state.rewards.daily = daily.input.value.trim();
+    state.rewards.weekly = weekly.input.value.trim();
+    state.rewards.final = final.input.value.trim();
+    saveState();
+    go("home");
+  };
+  wrap.appendChild(save);
+
+  wrap.appendChild(el("p", {class:"muted", style:"margin-top:8px;"},
+    "Programme démarré le " + (state.program.startDate || "-") + ". Jour actuel : " + computeCurrentDay() + "/30."
+  ));
+
+  const resetBtn = el("button", {class:"btn-secondary btn-block"}, "Réinitialiser toutes les données");
+  resetBtn.onclick = () => {
+    if(confirm("Cela efface toute ta progression. Confirmer ?")){
+      localStorage.removeItem(STORAGE_KEY);
+      state = defaultState();
+      window.__onbStep = 1;
+      window.__viewDay = null;
+      render();
+    }
+  };
+  wrap.appendChild(resetBtn);
+
+  const back = el("button", {class:"btn-ghost btn-block"}, "Retour");
+  back.onclick = () => go("home");
+  wrap.appendChild(back);
+
+  app.appendChild(wrap);
+}
+
+/* =========================================================================
+   UTIL DOM
+   ========================================================================= */
+function el(tag, attrs, ...children){
+  const node = document.createElement(tag);
+  attrs = attrs || {};
+  Object.keys(attrs).forEach(k => {
+    if(k==="class") node.className = attrs[k];
+    else if(k==="style") node.setAttribute("style", attrs[k]);
+    else node.setAttribute(k, attrs[k]);
+  });
+  children.flat().forEach(c => {
+    if(c===undefined || c===null) return;
+    if(typeof c === "string" || typeof c === "number") node.appendChild(document.createTextNode(String(c)));
+    else node.appendChild(c);
+  });
+  return node;
+}
+function escapeHtml(s){
+  return String(s || "").replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+}
+
+/* =========================================================================
+   BOOT
+   ========================================================================= */
+if(!state.meta.onboarded){ window.__onbStep = 1; }
+render();
+</script>
+</body>
+</html>
