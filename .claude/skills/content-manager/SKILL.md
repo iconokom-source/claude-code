@@ -24,6 +24,8 @@ Tu orchestres 5 agents spécialisés puis tu fais la **synthèse éditoriale**. 
 
 Lance les agents **en parallèle** avec l'outil Agent (`subagent_type` = `veille-marche`, `veille-webflow`, `voix-client`, `performance-posts`, `data-clients`). Passe à chacun : la date du jour, la période, le chemin de sortie, et le thème en mode `sujet`.
 
+Appels Composio : maximum 3 outils par `COMPOSIO_MULTI_EXECUTE_TOOL` (au-delà, timeout à 60 s). Pour analyser plusieurs transcripts, passer par `COMPOSIO_REMOTE_WORKBENCH` (`run_composio_tool` + `invoke_llm` en parallèle).
+
 Si un agent échoue (connecteur KO, pas de données), continue avec les autres et note-le dans la section "Santé des sources" du brief.
 
 ## 2. Synthèse
