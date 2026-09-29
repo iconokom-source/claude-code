@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Kit refonte de site : ICONOKOM</title>
+<style>
+@font-face{font-family:'Inter';font-weight:400 800;src:url('fonts/Inter-400.woff2') format('woff2');}
+@font-face{font-family:'Fraunces';font-weight:600;src:url('fonts/Fraunces-600.woff2') format('woff2');}
+:root{--ink:#121214;--muted:#5d5d66;--line:#e4e1da;--paper:#fbfaf7;--accent:#2f4bff;--accent-soft:#eceffe;--warm:#f3efe7;}
+@page{size:A4;margin:0}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--paper)}
+body{font-family:'Inter',sans-serif;color:var(--ink);font-size:10.4pt;line-height:1.5;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.page{width:210mm;height:297mm;padding:20mm 20mm 18mm;position:relative;page-break-after:always;overflow:hidden;background:var(--paper)}
+.page:last-child{page-break-after:auto}
+.folio{position:absolute;left:20mm;right:20mm;bottom:10mm;display:flex;justify-content:space-between;font-size:7.5pt;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+.eyebrow{font-size:8pt;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:5mm}
+h1,h2{font-family:'Fraunces',serif;font-weight:600;letter-spacing:-.01em;line-height:1.1}
+h2{font-size:22pt;margin-bottom:6mm}
+h3{font-size:12.5pt;font-weight:700;letter-spacing:-.005em;margin-bottom:2mm}
+p+p{margin-top:3mm}
+.lead{font-size:12pt;line-height:1.55;color:#2a2a30}
+strong{font-weight:700}
+
+/* cover */
+.cover{background:var(--ink);color:#fff;padding:24mm 22mm;display:flex;flex-direction:column}
+.cover .brand{font-weight:800;letter-spacing:.2em;font-size:9pt}
+.cover h1{font-size:40pt;margin-top:48mm;max-width:150mm}
+.cover h1 em{font-style:normal;color:#9fb0ff}
+.cover .sub{font-size:13pt;line-height:1.5;color:#c9c9d1;max-width:140mm;margin-top:10mm}
+.cover .meta{margin-top:auto;display:flex;justify-content:space-between;align-items:flex-end;border-top:1px solid #34343a;padding-top:6mm;font-size:9pt;color:#b5b5bf}
+.cover .meta b{color:#fff;font-weight:600;display:block;font-size:10.5pt}
+.cover .pill{display:inline-block;border:1px solid #4a4a52;border-radius:99px;padding:1.5mm 4mm;font-size:8.5pt;color:#d8d8e0;margin-top:14mm}
+
+/* blocks */
+.quote{border-left:3px solid var(--accent);padding:1mm 0 1mm 5mm;margin:6mm 0;font-family:'Fraunces',serif;font-size:13pt;line-height:1.4}
+.quote small{display:block;font-family:'Inter',sans-serif;font-size:8pt;color:var(--muted);margin-top:2mm;letter-spacing:.02em}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:4mm;margin-top:7mm}
+.step{background:var(--warm);border-radius:3mm;padding:5mm}
+.step b{display:block;font-size:20pt;font-family:'Fraunces',serif;color:var(--accent);line-height:1;margin-bottom:2mm}
+.step span{font-size:9.5pt}
+.note{margin-top:8mm;background:var(--accent-soft);border-radius:3mm;padding:5mm 6mm;font-size:9.5pt}
+
+.item{border-top:1px solid var(--line);padding-top:5mm;margin-top:5mm;display:grid;grid-template-columns:14mm 1fr;gap:0 4mm}
+.item:first-of-type{border-top:0;margin-top:0;padding-top:0}
+.num{font-family:'Fraunces',serif;font-size:26pt;color:var(--accent);line-height:1}
+.why{color:#33333a;margin-bottom:3mm}
+.cols{display:grid;grid-template-columns:1.25fr 1fr;gap:5mm}
+.label{font-size:7.5pt;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:1.5mm}
+ul.check{list-style:none}
+ul.check li{position:relative;padding-left:6mm;margin-bottom:1.3mm;font-size:9.6pt;line-height:1.4}
+ul.check li:before{content:"";position:absolute;left:0;top:.6mm;width:3.2mm;height:3.2mm;border:1.2px solid var(--ink);border-radius:.7mm}
+.fallback{background:var(--warm);border-radius:2.5mm;padding:3.5mm 4mm;font-size:9.3pt;line-height:1.45}
+.verb{font-size:9pt;color:var(--muted);font-style:italic;margin-top:2.5mm}
+
+/* fiche projet */
+table{width:100%;border-collapse:collapse;font-size:9.5pt}
+td{border:1px solid var(--line);padding:3mm 3.5mm;vertical-align:top;background:#fff}
+td.k{width:48mm;font-weight:600;background:var(--warm)}
+td.v{height:13mm}
+
+/* mail */
+.mail{background:#fff;border:1px solid var(--line);border-radius:3mm;padding:7mm 8mm;font-size:10pt;line-height:1.6}
+.mail .subj{border-bottom:1px solid var(--line);padding-bottom:3mm;margin-bottom:4mm;font-weight:600}
+.mail .ph{background:var(--accent-soft);color:var(--accent);border-radius:1mm;padding:0 1mm;font-weight:500}
+.tips{display:grid;grid-template-columns:repeat(3,1fr);gap:4mm;margin-top:6mm;font-size:9pt}
+.tips div{border-top:2px solid var(--ink);padding-top:2.5mm}
+
+/* questions */
+ol.qs{list-style:none;counter-reset:q}
+ol.qs li{counter-increment:q;display:grid;grid-template-columns:10mm 1fr;padding:3.6mm 0;border-top:1px solid var(--line)}
+ol.qs li:before{content:counter(q, decimal-leading-zero);font-weight:700;color:var(--accent);font-size:10pt}
+ol.qs li b{display:block;margin-bottom:.8mm}
+ol.qs li span{color:#44444c;font-size:9.5pt}
+.cta{position:absolute;left:20mm;right:20mm;bottom:22mm;background:var(--ink);color:#fff;border-radius:4mm;padding:8mm 9mm;display:grid;grid-template-columns:1fr auto;gap:6mm;align-items:center}
+.cta h3{font-family:'Fraunces',serif;font-weight:600;font-size:16pt;margin-bottom:2mm}
+.cta p{color:#c9c9d1;font-size:9.8pt}
+.cta .btn{background:#fff;color:var(--ink);border-radius:99px;padding:3mm 6mm;font-weight:700;font-size:10pt;white-space:nowrap}
+</style>
+</head>
+<body>
+
+<!-- 1. COUVERTURE -->
+<section class="page cover">
+  <div class="brand">ICONOKOM</div>
+  <h1>Refonte de site :<br>ce qu'il faut réunir <em>avant</em> d'appeler une agence.</h1>
+  <p class="sub">7 éléments à rassembler, une fiche projet à envoyer aux prestataires, et le mail pour obtenir de votre direction un budget et une échéance.</p>
+  <div><span class="pill">Checklist · 20 minutes de lecture · à remplir</span></div>
+  <div class="meta">
+    <div><b>Louis Montagne</b>Fondateur d'ICONOKOM, agence Webflow premium</div>
+    <div>Édition 2026</div>
+  </div>
+</section>
+
+<!-- 2. INTRO -->
+<section class="page">
+  <div class="eyebrow">Pour qui est ce kit</div>
+  <h2>On vient de vous confier la refonte du site. Vous n'avez pas toutes les réponses. C'est normal.</h2>
+  <p class="lead">La personne qui porte une refonte est rarement celle qui a construit le site actuel. Souvent, elle vient d'arriver. Elle choisit le prestataire, mais c'est la direction qui valide. Et elle découvre les problèmes au fil des échanges.</p>
+  <div class="quote">« Non, en vrai je n'ai pas trop d'infos sur tout ça. J'ai essayé de chercher un peu. »<small>Chargée de communication, en poste depuis 3 semaines, lors d'un premier call avec nous</small></div>
+  <p>Ce jour-là, en quarante minutes, nous avons découvert ensemble que la version anglaise du site ne fonctionnait plus, que les fiches produits n'étaient plus à jour, et que personne n'avait encore fixé de budget ni de date.</p>
+  <p>Rien de grave. Mais sans ces éléments, aucune agence ne peut vous faire une proposition sérieuse. Vous recevrez des devis impossibles à comparer, et vous aurez du mal à défendre le projet en interne.</p>
+
+  <div class="steps">
+    <div class="step"><b>1</b><span>Cochez les <strong>7 éléments</strong> au fil de vos recherches. Chacun indique quoi faire si vous ne trouvez pas.</span></div>
+    <div class="step"><b>2</b><span>Remplissez la <strong>fiche projet</strong> d'une page. Envoyez la même à chaque agence.</span></div>
+    <div class="step"><b>3</b><span>Envoyez le <strong>mail type</strong> à votre direction pour obtenir budget, échéance et objectif.</span></div>
+  </div>
+
+  <div class="note"><strong>Il n'est pas nécessaire de tout avoir.</strong> Une agence sérieuse doit vous aider à combler les trous. Mais savoir ce qui manque, et le dire, change complètement la qualité des propositions que vous recevrez.</div>
+  <div class="folio"><span>Kit refonte · ICONOKOM</span><span>02</span></div>
+</section>
+
+<!-- 3. ELEMENTS 1-3 -->
+<section class="page">
+  <div class="eyebrow">Les 7 éléments · 1 à 3</div>
+
+  <div class="item"><div class="num">01</div><div>
+    <h3>Les accès</h3>
+    <p class="why">Sans accès, pas d'audit, pas de migration propre, et des semaines perdues à retrouver qui détient quoi. C'est le point qui fait le plus souvent déraper un calendrier.</p>
+    <div class="cols">
+      <div><div class="label">À rassembler</div><ul class="check">
+        <li>Nom de domaine : chez quel registrar, sur quel compte</li>
+        <li>Hébergement et CMS actuel (WordPress, Wix, autre)</li>
+        <li>Google Analytics 4 et Google Search Console</li>
+        <li>Outils branchés : CRM, formulaires, e-mailing, chat</li>
+      </ul></div>
+      <div><div class="label">Si vous ne l'avez pas</div><div class="fallback">Listez simplement « qui pourrait savoir » (ancien prestataire, DSI, direction). C'est déjà une information utile pour l'agence.</div></div>
+    </div>
+  </div></div>
+
+  <div class="item"><div class="num">02</div><div>
+    <h3>L'état des lieux chiffré</h3>
+    <p class="why">Une refonte se juge à ce qu'elle améliore. Sans point de départ, impossible de prouver le résultat à votre direction dans six mois.</p>
+    <div class="cols">
+      <div><div class="label">À rassembler (12 derniers mois)</div><ul class="check">
+        <li>Visiteurs par mois et principales sources de trafic</li>
+        <li>Les 10 pages les plus vues</li>
+        <li>Nombre de demandes : formulaires, appels, devis</li>
+        <li>Les requêtes Google qui amènent du trafic (Search Console)</li>
+      </ul></div>
+      <div><div class="label">Si vous ne l'avez pas</div><div class="fallback">Pas de suivi en place ? Notez-le tel quel. Un site qui ne mesure rien, c'est un constat, et il doit figurer dans le cahier des charges.</div></div>
+    </div>
+  </div></div>
+
+  <div class="item"><div class="num">03</div><div>
+    <h3>L'objectif principal du site, et sa cible</h3>
+    <p class="why">Un site qui veut tout faire ne fait rien bien. Un seul objectif prioritaire guide la structure, les contenus et les appels à l'action.</p>
+    <div class="cols">
+      <div><div class="label">À trancher</div><ul class="check">
+        <li>L'objectif n°1 : demandes de contact, notoriété, vente, recrutement</li>
+        <li>La cible prioritaire (et celle qui passe au second plan)</li>
+        <li>Ce que doit faire un visiteur idéal en quittant le site</li>
+      </ul></div>
+      <div><div class="label">Si vous ne l'avez pas</div><div class="fallback">Posez la question telle quelle à votre direction (voir le mail type, page 7).</div></div>
+    </div>
+    <p class="verb">« Le cœur de cible, il faut que ça reste vraiment le distributeur. » : une phrase comme celle-ci vaut plus qu'une page de brief.</p>
+  </div></div>
+  <div class="folio"><span>Kit refonte · ICONOKOM</span><span>03</span></div>
+</section>
+
+<!-- 4. ELEMENTS 4-5 -->
+<section class="page">
+  <div class="eyebrow">Les 7 éléments · 4 et 5</div>
+
+  <div class="item"><div class="num">04</div><div>
+    <h3>Le périmètre exact</h3>
+    <p class="why">Beaucoup d'entreprises ont plusieurs plateformes sans le formuler : site vitrine, boutique en ligne, espace pro, blog, pages de recrutement. Refaire l'une sans penser aux autres crée un décalage visible pour vos clients.</p>
+    <div class="cols">
+      <div><div class="label">À lister</div><ul class="check">
+        <li>Toutes les plateformes existantes et leur rôle</li>
+        <li>Celles qui sont refaites maintenant, celles qui attendront</li>
+        <li>Les langues à proposer, et celles qui fonctionnent vraiment</li>
+        <li>Les fonctionnalités indispensables (recherche, filtres, espace client)</li>
+      </ul></div>
+      <div><div class="label">Si le périmètre est flou</div><div class="fallback">Demandez aux agences un scénario en deux temps : ce qu'on fait maintenant, et comment on évite le décalage d'image avec ce qui reste en l'état.</div></div>
+    </div>
+    <p class="verb">« Déjà faire celui-là, après, on voit... » : c'est une bonne approche, à condition de l'avoir anticipée dès le départ.</p>
+  </div></div>
+
+  <div class="item"><div class="num">05</div><div>
+    <h3>L'inventaire des contenus</h3>
+    <p class="why">Les contenus sont la première cause de retard d'une refonte, loin devant le design ou le développement. Savoir tôt qui écrit quoi évite de lancer un site vide ou obsolète.</p>
+    <div class="cols">
+      <div><div class="label">À évaluer</div><ul class="check">
+        <li>Ce qui est à jour, ce qui est à réécrire, ce qui disparaît</li>
+        <li>Photos et vidéos disponibles (et leurs droits)</li>
+        <li>Fiches produits ou services : où sont les données à jour ?</li>
+        <li>Qui rédige, qui traduit, qui valide en interne</li>
+      </ul></div>
+      <div><div class="label">Si personne n'est disponible</div><div class="fallback">Demandez explicitement si la rédaction (et la traduction) est incluse dans chaque devis. C'est souvent là que les prix divergent.</div></div>
+    </div>
+  </div></div>
+  <div class="folio"><span>Kit refonte · ICONOKOM</span><span>04</span></div>
+</section>
+
+<!-- 5. ELEMENTS 6-7 -->
+<section class="page">
+  <div class="eyebrow">Les 7 éléments · 6 et 7</div>
+
+  <div class="item"><div class="num">06</div><div>
+    <h3>L'identité visuelle</h3>
+    <p class="why">Une charte peut être récente et pourtant ne plus coller à l'image que l'entreprise veut donner. Il faut savoir si on part de l'existant ou si on la fait évoluer, car cela change le budget et le calendrier.</p>
+    <div class="cols">
+      <div><div class="label">À rassembler</div><ul class="check">
+        <li>La charte actuelle : logo, couleurs, typographies</li>
+        <li>Ce qui ne convient plus, en une phrase</li>
+        <li>2 ou 3 sites que la direction aime (et pourquoi)</li>
+        <li>Qui décide sur les sujets de marque</li>
+      </ul></div>
+      <div><div class="label">Si la charte est à refaire</div><div class="fallback">Vérifiez qu'elle est incluse dans la mission. Sinon, c'est à vous de trouver un second prestataire, ce qui ajoute des délais et des allers-retours.</div></div>
+    </div>
+    <p class="verb">« S'il y a une charte graphique à refaire, c'est vous ou c'est moi qui dois chercher ? » : la bonne question, à poser à chaque agence.</p>
+  </div></div>
+
+  <div class="item"><div class="num">07</div><div>
+    <h3>Le cadre de décision</h3>
+    <p class="why">C'est l'élément qu'on repousse le plus, et celui qui conditionne tout le reste. Sans budget indicatif ni date, les agences chiffrent à l'aveugle et vous comparez des propositions qui ne parlent pas du même projet.</p>
+    <div class="cols">
+      <div><div class="label">À obtenir</div><ul class="check">
+        <li>Une fourchette de budget, même large</li>
+        <li>Une date réelle : salon, lancement, fin d'exercice</li>
+        <li>Qui valide, et à quelles étapes</li>
+        <li>Les 3 critères de choix du prestataire</li>
+      </ul></div>
+      <div><div class="label">Si la direction ne répond pas</div><div class="fallback">Utilisez le mail type de la page 7. Une question fermée avec des options obtient une réponse beaucoup plus vite qu'un « quel est le budget ? ».</div></div>
+    </div>
+  </div></div>
+  <div class="folio"><span>Kit refonte · ICONOKOM</span><span>05</span></div>
+</section>
+
+<!-- 6. FICHE PROJET -->
+<section class="page">
+  <div class="eyebrow">Outil · à remplir</div>
+  <h2>La fiche projet d'une page</h2>
+  <p style="margin-bottom:6mm">Remplissez-la avec ce que vous avez, écrivez « inconnu » ailleurs, et envoyez la même fiche à chaque agence. Vous recevrez enfin des propositions comparables.</p>
+  <table>
+    <tr><td class="k">Entreprise, activité, taille</td><td class="v"></td></tr>
+    <tr><td class="k">Plateformes concernées</td><td class="v"></td></tr>
+    <tr><td class="k">Objectif n°1 du site</td><td class="v"></td></tr>
+    <tr><td class="k">Cible prioritaire</td><td class="v"></td></tr>
+    <tr><td class="k">Chiffres actuels (trafic, demandes)</td><td class="v"></td></tr>
+    <tr><td class="k">Ce qui ne va plus aujourd'hui</td><td class="v"></td></tr>
+    <tr><td class="k">Langues</td><td class="v"></td></tr>
+    <tr><td class="k">Contenus : qui rédige, qui traduit</td><td class="v"></td></tr>
+    <tr><td class="k">Charte : conservée ou à faire évoluer</td><td class="v"></td></tr>
+    <tr><td class="k">Budget indicatif</td><td class="v"></td></tr>
+    <tr><td class="k">Échéance et raison de cette date</td><td class="v"></td></tr>
+    <tr><td class="k">Décideurs et étapes de validation</td><td class="v"></td></tr>
+    <tr><td class="k">Qui mettra le site à jour ensuite</td><td class="v"></td></tr>
+  </table>
+  <div class="folio"><span>Kit refonte · ICONOKOM</span><span>06</span></div>
+</section>
+
+<!-- 7. MAIL DIRECTION -->
+<section class="page">
+  <div class="eyebrow">Outil · à copier</div>
+  <h2>Le mail pour obtenir un budget et une date</h2>
+  <p style="margin-bottom:6mm">Le principe : ne pas poser de question ouverte. Proposer des options, donner une date de réponse, et montrer que vous avez déjà avancé.</p>
+  <div class="mail">
+    <div class="subj">Objet : Refonte du site : 3 arbitrages avant de consulter les agences</div>
+    <p>Bonjour <span class="ph">[Prénom]</span>,</p>
+    <p>J'avance sur la refonte du site. J'ai fait l'état des lieux (<span class="ph">[1 constat marquant : ex. la version anglaise ne fonctionne plus]</span>) et je souhaite consulter <span class="ph">[2 ou 3]</span> agences d'ici le <span class="ph">[date]</span>.</p>
+    <p>Pour recevoir des propositions comparables, j'ai besoin de trois arbitrages :</p>
+    <p><strong>1. L'objectif prioritaire du site.</strong> Plutôt <span class="ph">[générer des demandes]</span>, <span class="ph">[renforcer la marque auprès de nos distributeurs]</span> ou <span class="ph">[autre]</span> ?</p>
+    <p><strong>2. Une fourchette de budget.</strong> Plutôt <span class="ph">[fourchette A]</span>, <span class="ph">[fourchette B]</span> ou <span class="ph">[fourchette C]</span> ? Une fourchette large me suffit pour cadrer les agences.</p>
+    <p><strong>3. L'échéance.</strong> Y a-t-il une date qui compte : <span class="ph">[salon, lancement de gamme, fin d'exercice]</span> ?</p>
+    <p>Si c'est plus simple, je vous propose 15 minutes <span class="ph">[jour]</span> pour trancher ensemble. Je vous transmets ensuite la fiche projet et la liste des agences consultées.</p>
+    <p>Merci,<br><span class="ph">[Signature]</span></p>
+  </div>
+  <div class="tips">
+    <div><strong>Les options</strong><br>Proposer trois fourchettes obtient une réponse. Demander « quel budget ? » obtient un silence.</div>
+    <div><strong>Le constat</strong><br>Un problème concret trouvé pendant l'état des lieux montre que le projet est nécessaire.</div>
+    <div><strong>La date</strong><br>Annoncer quand vous consultez les agences donne un délai de réponse sans avoir à relancer.</div>
+  </div>
+  <div class="folio"><span>Kit refonte · ICONOKOM</span><span>07</span></div>
+</section>
+
+<!-- 8. QUESTIONS AGENCES + CTA -->
+<section class="page">
+  <div class="eyebrow">Pour choisir</div>
+  <h2>6 questions à poser à chaque agence</h2>
+  <ol class="qs">
+    <li><div><b>« Qu'est-ce qui est inclus, et qu'est-ce qui ne l'est pas ? »</b><span>Rédaction, traduction, charte, migration des contenus, formation. C'est là que deux devis identiques cessent de l'être.</span></div></li>
+    <li><div><b>« Comment évitez-vous de perdre notre référencement Google ? »</b><span>Attendez une réponse concrète : plan de redirections, suivi Search Console avant et après la mise en ligne.</span></div></li>
+    <li><div><b>« Qui pourra modifier le site chez nous, et en combien de temps ? »</b><span>Si la réponse passe par l'agence à chaque modification, vous remplacez un problème par un autre.</span></div></li>
+    <li><div><b>« Comment mesurerons-nous que la refonte a fonctionné ? »</b><span>Un bon prestataire parle d'objectifs chiffrés et d'un point de départ, pas seulement de design.</span></div></li>
+    <li><div><b>« Que se passe-t-il après la mise en ligne ? »</b><span>Suivi, rapports, évolutions. La plupart des déceptions arrivent trois mois après la livraison, pas pendant le projet.</span></div></li>
+    <li><div><b>« Qu'est-ce que vous nous déconseilleriez de faire ? »</b><span>Une agence qui ne vous contredit jamais ne vous protège de rien.</span></div></li>
+  </ol>
+  <div class="cta">
+    <div><h3>Vous voulez un regard extérieur sur votre fiche projet ?</h3><p>Envoyez-la-moi. Je vous réponds avec ce qui manque et les points de vigilance, même si vous ne travaillez pas avec nous.</p></div>
+    <div class="btn">iconokom.fr</div>
+  </div>
+  <div class="folio"><span>Kit refonte · ICONOKOM</span><span>08</span></div>
+</section>
+
+</body>
+</html>
