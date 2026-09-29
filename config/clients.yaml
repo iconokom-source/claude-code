@@ -1,0 +1,34 @@
+# Sites clients branchés au content manager.
+# L'agent data-clients ne lit QUE les sites listés ici.
+#
+# ga4_property_id : ID numérique de la propriété GA4 (GOOGLE_ANALYTICS_LIST_ACCOUNT_SUMMARIES pour le trouver)
+# gsc_site        : "sc-domain:exemple.com" ou "https://www.exemple.com/"
+# secteur         : saas_b2b | services_b2b | ecommerce | organisation | startup_early | industrie | recrutement
+# objectif_site   : lead_gen | demo_booking | trial_signup | vente_en_ligne | notoriete | recrutement
+# mise_en_ligne   : date de livraison du site ICONOKOM (pour les comparaisons avant/après)
+# citable         : true = nom du client utilisable dans un post (accord écrit obtenu)
+#                   false = anonymisation obligatoire ("une scale-up SaaS RH")
+# descripteur_anonyme : comment le nommer si citable = false
+
+clients:
+  - nom: "Exemple Client SaaS"
+    ga4_property_id: "000000000"
+    gsc_site: "sc-domain:exemple-saas.com"
+    secteur: saas_b2b
+    objectif_site: demo_booking
+    mise_en_ligne: "2026-03-15"
+    citable: false
+    descripteur_anonyme: "une scale-up SaaS B2B (Série A)"
+    pages_cles:
+      - /demo
+      - /pricing
+
+  # - nom: ""
+  #   ga4_property_id: ""
+  #   gsc_site: ""
+  #   secteur: services_b2b
+  #   objectif_site: lead_gen
+  #   mise_en_ligne: ""
+  #   citable: false
+  #   descripteur_anonyme: ""
+  #   pages_cles: []

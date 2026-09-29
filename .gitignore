@@ -1,0 +1,8 @@
+# Données sensibles : jamais versionnées
+data/fireflies/*
+!data/fireflies/README.md
+data/linkedin/*
+!data/linkedin/README.md
+
+# Sorties brutes des agents (peuvent contenir des chiffres clients non anonymisés)
+outputs/*/sources/
