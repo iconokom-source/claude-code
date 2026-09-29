@@ -42,8 +42,8 @@ body{background:var(--bg);color:var(--ink);font:300 15px/1.55 var(--f-body);marg
 button,input,select,textarea{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--orange);outline-offset:2px}
 h1,h2,h3{font-family:var(--f-display);font-weight:400;letter-spacing:-.005em;text-wrap:balance;margin:0}
-h1{font-size:clamp(1.9rem,3.2vw,2.6rem);line-height:1.1}
-h2{font-size:1.35rem;line-height:1.2}
+h1{font-size:clamp(1.9rem,3.2vw,2.6rem);line-height:1.08;letter-spacing:-.035em}
+h2{font-size:1.35rem;line-height:1.2;letter-spacing:-.02em}
 h3{font-size:1.02rem;line-height:1.3}
 b,strong{font-weight:500}
 .num{font-variant-numeric:tabular-nums}
@@ -199,6 +199,30 @@ textarea{resize:vertical;min-height:120px;line-height:1.6}
 .sb b{font:400 1.5rem/1 var(--f-display);font-variant-numeric:tabular-nums}
 .sb span{font-size:.72rem;color:var(--muted)}
 
+/* Jury ICP, hooks, notes de signaux, questions */
+.jury{display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px;align-items:start}
+.jury-note{font:400 2.2rem/1 var(--f-display);font-variant-numeric:tabular-nums}
+.jury-note small{font:400 .8rem var(--f-body);color:var(--muted)}
+.jury-voice{font-family:var(--f-display);font-size:1.05rem;line-height:1.5;margin:0}
+.verdict{display:inline-flex;align-items:center;gap:6px;font-size:.74rem;padding:4px 10px;border-radius:99px}
+.verdict.lit{background:var(--good-soft);color:var(--good)}
+.verdict.scroll{background:var(--bad-soft);color:var(--bad)}
+.icp-badge{font:500 .72rem/1 var(--f-body);padding:5px 8px;border-radius:99px;background:var(--blue-soft);color:var(--mof);font-variant-numeric:tabular-nums}
+.hook{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;padding:12px 0;border-top:1px solid var(--line)}
+.hook:first-child{border-top:0;padding-top:2px}
+.hook p{margin:0;font-size:.95rem;line-height:1.5;white-space:pre-line}
+.hook .meta{font-size:.74rem;color:var(--muted);margin-top:6px}
+.hook.best p{color:var(--ink)}
+.hook.best .meta b{color:var(--orange);font-weight:500}
+.sig-note{font:500 .78rem/1 var(--f-body);width:34px;height:34px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--line-2);font-variant-numeric:tabular-nums;flex:none}
+.sig-note.hi{border-color:var(--orange);color:var(--orange)}
+.sig-left{display:flex;flex-direction:column;align-items:center;gap:8px}
+.reads{margin:8px 0 0;font-size:.86rem;color:var(--ink);padding-left:12px;border-left:2px solid var(--orange)}
+.qa{display:flex;flex-direction:column;gap:14px}
+.qa label span{color:var(--ink);font-size:.9rem;font-weight:400}
+.qa small{color:var(--faint);font-size:.74rem}
+.idea-row{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line);font-size:.88rem}
+.idea-row:first-child{border-top:0}
 .toast{position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:11px 18px;border-radius:99px;font-size:.86rem;z-index:40;max-width:calc(100% - 32px)}
 .banner{padding:13px 16px;border-radius:var(--r-sm);background:var(--warn-soft);color:var(--warn);font-size:.86rem;margin-bottom:14px}
 .empty{padding:22px;border:1px dashed var(--line-2);border-radius:var(--r-sm);color:var(--muted);display:flex;flex-direction:column;gap:6px;font-size:.88rem}
@@ -265,8 +289,10 @@ const SIGNAL_TYPES = [...CLIENT_TYPES,'veille','webflow','preuve'];
 const CONSCIENCE = ['Inconscient','Conscient du problème','Conscient de la solution','Conscient de l\'offre','Très conscient'];
 const FUNNEL_VAR = {TOF:'--tof', MOF:'--mof', BOF:'--bof'};
 
-const S = {view:'semaine', briefs:[], signaux:[], posts:[], piliers:[], sources:[], runs:[], memoire:{},
+const S = {view:'semaine', briefs:[], signaux:[], posts:[], piliers:[], sources:[], runs:[], idees:[], cas:[], memoire:{},
   dbOk:null, sampleOk:null, open:null, sigFilter:'tous', briefPilier:'tous', memTab:'plan', busy:{}};
+const JURY_MIN = 6;
+const sigVisible = s => !s.archive;
 try{ const v = (location.hash||'').slice(1); if (VIEWS.some(x=>x.id===v)) S.view=v; }catch(e){}
 try{ const v = localStorage.getItem('orem.view'); if (!location.hash && v && VIEWS.some(x=>x.id===v)) S.view=v; }catch(e){}
 
@@ -297,7 +323,7 @@ async function boot(){
   try { sample = await claude.use('sample'); } catch(e){ sample = null; }
   S.sampleOk = !!sample;
   if (!db){ render(); return; }
-  ['briefs','signaux','posts','piliers','sources','runs','memoire'].forEach(name => {
+  ['briefs','signaux','posts','piliers','sources','runs','memoire','idees','cas'].forEach(name => {
     db.collection(name).limit(1000).onSnapshot(snap => {
       const rows = snap.docs.map(d => ({id:d.id, ...d.data()}));
       if (name === 'memoire') S.memoire = Object.fromEntries(rows.map(r => [r.id, r]));
@@ -315,6 +341,14 @@ async function write(fn, okMsg){
 const upd = (col,id,data,msg) => write(() => db.collection(col).doc(id).update({...data, maj: Date.now()}), msg);
 
 /* ---------- Claude (atelier) ---------- */
+const HUMAN = `Écriture humaine obligatoire (tout ce que tu écris doit sonner comme les notes d'un dirigeant qui connaît son sujet) :
+- Jamais de tiret cadratin, jamais d'emoji, pas de gras décoratif.
+- Pas de triade systématique (trois adjectifs, trois bénéfices). Un ou deux mots précis.
+- Pas de « ce n'est pas X, c'est Y » ni « non seulement... mais aussi » en réflexe.
+- Bannis : plonger dans, au cœur de, à l'ère de, s'inscrire dans, tirer parti de, naviguer, favoriser, écosystème, paysage, robuste, riche, dédié, clé (adjectif), incontournable, véritable, il est important de noter, par ailleurs, en outre, de plus, en conclusion, vraiment, extrêmement, tout simplement, n'hésitez pas.
+- Pas de participe présent analytique en fin de phrase (« ..., renforçant sa position »).
+- Pas de fausse amplitude « de X à Y », pas d'attribution vague (« certains experts »).
+- Verbes concrets. Mots de terrain, ceux qu'un prospect emploie en call. Longueurs de phrases variées, fragments autorisés.`;
 const RULES = `Tu es le content manager interne d'Orem (anciennement ICONOKOM), studio de clarté stratégique, d'image et d'exécution pilotée pour PME B2B. Tu travailles pour Louis Montagne, cofondateur, dont le territoire de parole est « le système et la visibilité » (Webflow, automatisation, IA, SEO, GEO, site vivant).
 Tu NE RÉDIGES JAMAIS de post. Tu produis uniquement des briefs structurés que Louis rédigera lui-même.
 Règles absolues :
@@ -325,7 +359,8 @@ Règles absolues :
 - TOF Visibilité : valeurs, sujets larges pour la cible. MOF Autorité : problèmes de la cible et la manière Orem de les résoudre. BOF Conversion : cas clients, preuves, résultats.
 - Évite les angles déjà traités listés dans l'historique, ou propose explicitement un angle différent.
 - Respecte les anti-sujets et les mots bannis.
-- Français. N'utilise jamais le caractère tiret cadratin.`;
+- Français. N'utilise jamais le caractère tiret cadratin.
+${HUMAN}`;
 function schema(){
   const pil = S.piliers.map(p => `${p.code} (thèmes : ${(p.themes||[]).filter(Boolean).join(', ') || 'libres'})`).join(' ; ');
   return `Piliers disponibles : ${pil || 'TOF, MOF, BOF'}.
@@ -338,7 +373,8 @@ function context({signals=[], posts=[]}={}){
   const hist = S.briefs.slice().sort((a,b)=>ts(b.cree)-ts(a.cree)).slice(0,40).map(b => `- [${b.statut}] ${b.titre} (${codeOf(b.pilier)}${b.theme?' / '+b.theme:''})${b.statut==='rejete'&&b.feedback?' rejeté : '+b.feedback:''}`).join('\n');
   const sig = signals.map(s => `- (${s.type}${s.persona?' / '+s.persona:''}) ${s.titre||''} :: ${cut(s.citation||s.resume,400)} [source: ${s.source||''} ${s.url||''}]`).join('\n');
   const po = posts.map(p => `- ${fmtDate(p.date)} ${codeOf(p.pilier)} | ${nf(p.impressions)} impr, ${nf(p.engagements)} eng., ${nf(p.leads)} leads | ${cut(p.texte||p.sujet||p.url,600)}`).join('\n');
-  return `# MÉMOIRE OREM\n${mem}\n\n# PILIERS\n${pil}\n\n# HISTORIQUE DES BRIEFS (à ne pas dupliquer)\n${hist||'(aucun)'}${sig?`\n\n# SIGNAUX FOURNIS\n${sig}`:''}${po?`\n\n# POSTS FOURNIS\n${po}`:''}`;
+  const cas = S.cas.map(c => `- ${c.nom} (${c.secteur}) : ${c.probleme} Résultat : ${c.resultat}. Chiffres : ${(c.chiffres||[]).slice(0,5).join(' ; ')}. Leviers : ${c.leviers||''}. À ne pas dire : ${c.eviter||''}`).join('\n');
+  return `# MÉMOIRE OREM\n${mem}\n\n# CAS CLIENTS RÉELS (seules preuves chiffrées autorisées)\n${cas||'(aucun)'}\n\n# PILIERS\n${pil}\n\n# HISTORIQUE DES BRIEFS (à ne pas dupliquer)\n${hist||'(aucun)'}${sig?`\n\n# SIGNAUX FOURNIS\n${sig}`:''}${po?`\n\n# POSTS FOURNIS\n${po}`:''}`;
 }
 async function askBriefs(key, task, ctx, extra={}){
   if (!sample){ toast('Claude n\'est pas disponible dans cette vue.'); return false; }
@@ -346,15 +382,114 @@ async function askBriefs(key, task, ctx, extra={}){
   S.busy[key] = true; render(true);
   try{
     const out = await sample.json(`${RULES}\n\n${context(ctx)}\n\n# MISSION\n${task}\n\n${schema()}`, {modelTier:'complex', cache:false});
-    const list = (out && Array.isArray(out.briefs)) ? out.briefs : [];
+    const list = ((out && Array.isArray(out.briefs)) ? out.briefs : []).map(sanitizeBrief);
     if (!list.length){ toast('Aucun brief exploitable, reformule la demande.'); return false; }
+    toast('L\'ICP relit les briefs…');
+    const verdicts = await juryReview(list);
     const now = Date.now();
-    return await write(async () => { for (const b of list){ await db.collection('briefs').add({...sanitizeBrief(b), statut:'nouveau', origine:'atelier', semaine:isoWeek(), cree:now, ...extra}); } }, `${list.length} brief${list.length>1?'s':''} ajouté${list.length>1?'s':''} à arbitrer`);
+    let kept = 0;
+    const ok = await write(async () => { for (const [i,b] of list.entries()){
+      const jury = verdicts[i] || null;
+      const pass = !jury || jury.note >= JURY_MIN;
+      if (pass) kept++;
+      await db.collection('briefs').add({...b, jury, statut: pass ? 'nouveau' : 'rejete', feedback: pass ? '' : 'Filtré par l\'ICP : ' + (jury.pourquoi||''), origine:'atelier', semaine:isoWeek(), cree:now, ...extra});
+    } });
+    if (ok) toast(`${kept} brief${kept>1?'s':''} validé${kept>1?'s':''} par l'ICP sur ${list.length}`);
+    return ok;
   } catch(e){
     const m = {rate_limited:'Trop de demandes, réessaie dans une minute.', not_granted:'Accès à Claude refusé pour cette page.', prompt_too_large:'Mémoire trop volumineuse pour une requête, raccourcis certains blocs.', invalid_json:'Réponse illisible, relance la génération.'}[e && e.code];
     toast(m || 'Génération interrompue : ' + (e && e.message || 'erreur')); return false;
   } finally { S.busy[key] = false; render(true); }
 }
+/* Agent ICP : un décideur de la cible lit chaque brief et dit s'il s'arrêterait. */
+function icpPrompt(){
+  return `Tu n'es plus un assistant. Tu es un décideur de la cible d'Orem, décrit dans la fiche ICP ci-dessous. Tu as ses douleurs, ses objections, son manque de temps et sa méfiance envers les agences. Tu scrolles LinkedIn entre deux rendez-vous.
+Pour chaque élément, incarne le persona le plus concerné (A, B ou C) et réagis honnêtement, en première personne, avec tes mots à toi, oralement, sans jargon marketing. Sois dur : la plupart des contenus ne t'arrêtent pas. Tu t'arrêtes seulement si tu reconnais ton problème exact, avec une preuve crédible, et que tu apprends quelque chose.
+${HUMAN}
+
+# FICHE ICP
+${String(S.memoire.icp?.contenu||'(vide)').slice(0,4500)}`;
+}
+async function juryReview(list){
+  if (!sample || !list.length) return [];
+  try{
+    const items = list.map((b,i)=>`#${i} [${codeOf(b.pilier)}] ${b.titre}\nPersona visé : ${b.persona}\nTension : ${b.tension}\nStructure : ${(b.structure||[]).map(s=>s.etape+': '+(s.points||[]).join(' / ')).join(' | ')}\nPreuves : ${(b.preuves||[]).map(p=>p.ref).join(' | ')}`).join('\n\n');
+    const out = await sample.json(`${icpPrompt()}\n\n# BRIEFS DE POSTS À JUGER\n${items}\n\nRéponds UNIQUEMENT en JSON : {"verdicts":[{"i":0,"persona":"A|B|C","note":0,"verdict":"je lis|je scrolle","pourquoi":"ta réaction en 1 à 2 phrases, à la première personne","manque":"ce qui te ferait vraiment t'arrêter, en une phrase"}]}. Note sur 10.`, {modelTier:'default', cache:false});
+    const v = Array.isArray(out?.verdicts) ? out.verdicts : [];
+    const clip = (x,n) => String(x??'').slice(0,n);
+    return list.map((_,i) => { const r = v.find(x=>+x.i===i); return r ? {persona:clip(r.persona,4), note:Math.max(0,Math.min(10,+r.note||0)), verdict:clip(r.verdict,20), pourquoi:clip(r.pourquoi,400), manque:clip(r.manque,300), date:Date.now()} : null; });
+  } catch(e){ return []; }
+}
+async function juryOne(b){
+  if (S.busy['jury:'+b.id]) return;
+  S.busy['jury:'+b.id]=true; renderDrawer();
+  const [v] = await juryReview([b]);
+  S.busy['jury:'+b.id]=false;
+  if (v) await upd('briefs', b.id, {jury:v}, `ICP : ${v.note}/10`); else { toast('Le jury ICP n\'a pas répondu, réessaie.'); renderDrawer(); }
+}
+
+/* Agent hooks : propose des hooks LinkedIn, puis l'ICP choisit celui qui l'arrête. */
+async function genHooks(b){
+  const key='hooks:'+b.id; if (S.busy[key]) return;
+  S.busy[key]=true; renderDrawer();
+  try{
+    const out = await sample.json(`Tu es spécialiste des hooks LinkedIn en français pour des dirigeants B2B. Le hook, ce sont les 1 à 2 premières lignes visibles avant « voir plus » (140 caractères max au total, retour à la ligne autorisé).
+Écris 6 hooks pour ce brief, chacun avec une mécanique différente parmi : contre-intuitif, chiffre ou fait précis, aveu personnel, question qui pique, scène concrète, avant/après, verbatim client.
+Règles : ancré dans la tension et une preuve réelle du brief, jamais de promesse vide ni de putaclic, aucune formule usée (« Et si... », « Voici pourquoi », « Arrêtez de... », « Personne ne vous dit »), parle comme Louis parlerait à un dirigeant.
+${HUMAN}
+
+# BRIEF
+${JSON.stringify({titre:b.titre, pilier:codeOf(b.pilier), persona:b.persona, tension:b.tension, conviction:b.conviction, structure:b.structure, preuves:b.preuves})}
+
+Réponds UNIQUEMENT en JSON : {"hooks":[{"texte":"","mecanique":"","pourquoi":"pourquoi ça arrête ce persona, 1 phrase"}]}`, {modelTier:'complex', cache:false});
+    let hooks = (Array.isArray(out?.hooks)?out.hooks:[]).slice(0,8).map(h=>({texte:String(h.texte||'').replace(/\u2014/g,',').slice(0,220), mecanique:String(h.mecanique||'').slice(0,40), pourquoi:String(h.pourquoi||'').slice(0,240)}));
+    if (!hooks.length){ toast('Aucun hook exploitable, relance.'); return; }
+    try{
+      const r = await sample.json(`${icpPrompt()}\n\n# HOOKS (premières lignes de posts) À JUGER\n${hooks.map((h,i)=>`#${i} ${h.texte}`).join('\n')}\n\nPour chaque hook : est-ce que tu cliques sur « voir plus » ? Réponds UNIQUEMENT en JSON : {"notes":[{"i":0,"note":0,"reaction":"ta réaction en une phrase, première personne"}]}. Note sur 10.`, {modelTier:'default', cache:false});
+      const n = Array.isArray(r?.notes)?r.notes:[];
+      hooks = hooks.map((h,i)=>{ const x=n.find(y=>+y.i===i); return x?{...h, note_icp:Math.max(0,Math.min(10,+x.note||0)), reaction_icp:String(x.reaction||'').slice(0,240)}:h; })
+        .sort((a,c)=>(c.note_icp||0)-(a.note_icp||0));
+    } catch(e){}
+    await upd('briefs', b.id, {hooks}, `${hooks.length} hooks, classés par l'ICP`);
+  } catch(e){ toast(e?.code==='rate_limited'?'Trop de demandes, réessaie dans une minute.':'Génération interrompue : '+(e?.message||'erreur')); }
+  finally{ S.busy[key]=false; renderDrawer(); }
+}
+
+/* Idées de Louis : l'outil pose des questions avant de construire le brief. */
+async function askQuestions(texte){
+  if (!sample){ toast('Claude n\'est pas disponible dans cette vue.'); return; }
+  S.busy.q=true; render(true);
+  try{
+    const out = await sample.json(`${RULES}\n\n${context({})}\n\n# IDÉE DE LOUIS\n« ${texte} »\n\n# MISSION\nAvant de construire le brief, tu dois récupérer ce qui manque pour en faire un post fort et vrai. Pose 3 à 5 questions à Louis, courtes et concrètes, qui font remonter : l'histoire ou le client réel derrière l'idée, un chiffre ou un fait vérifiable, l'erreur ou la croyance qu'il veut combattre, ce que le lecteur doit faire ou penser après. Pas de question à laquelle la mémoire répond déjà.\nRéponds UNIQUEMENT en JSON : {"questions":[{"q":"","pourquoi":"ce que la réponse apporte au post, en quelques mots"}]}`, {modelTier:'default', cache:false});
+    const qs = (Array.isArray(out?.questions)?out.questions:[]).slice(0,5).map(x=>({q:String(x.q||'').slice(0,240), pourquoi:String(x.pourquoi||'').slice(0,160)}));
+    if (!qs.length){ toast('Pas de question générée, relance.'); return; }
+    const ok = await write(()=>db.collection('idees').add({texte:texte.slice(0,1200), questions:qs, reponses:qs.map(()=>''), statut:'questions', cree:Date.now()}));
+    if (ok){ const el=$('#aIdee'); if(el) el.value=''; }
+  } catch(e){ toast('Interruption : '+(e?.message||'erreur')); }
+  finally{ S.busy.q=false; render(true); }
+}
+
+/* Signaux : note de force et lecture de ce que ça révèle. */
+async function interpretSignals(list){
+  if (!sample || !list.length) return;
+  S.busy.interp=true; render(true);
+  try{
+    const out = await sample.json(`Tu analyses des signaux bruts (verbatims de calls, veille) pour la stratégie de contenu d'Orem. Ne garde que les vraies douleurs et les vrais signaux. Un signal utile révèle une croyance, une peur ou un blocage partagé par la cible ICP, qui peut nourrir un post. La logistique, le contexte interne ou une remarque isolée ne valent rien.
+${HUMAN}
+
+# FICHE ICP
+${String(S.memoire.icp?.contenu||'').slice(0,3000)}
+
+# SIGNAUX
+${list.map((s,i)=>`#${i} (${s.type}) ${s.titre} :: ${s.citation||s.resume||''} [${s.persona||''}]`).join('\n')}
+
+Réponds UNIQUEMENT en JSON : {"lectures":[{"i":0,"note":0,"interpretation":"ce que ça révèle chez la cible, en une phrase directe"}]}. Note sur 10 : 8+ douleur forte et partagée par l'ICP, 5-7 exploitable, moins de 5 inutile.`, {modelTier:'default', cache:false});
+    const l = Array.isArray(out?.lectures)?out.lectures:[];
+    await write(async()=>{ for (const [i,s] of list.entries()){ const x=l.find(y=>+y.i===i); if(!x) continue; const note=Math.max(0,Math.min(10,+x.note||0)); await db.collection('signaux').doc(s.id).update({note, interpretation:String(x.interpretation||'').slice(0,300), archive: note<5, maj:Date.now()}); } }, 'Signaux évalués');
+  } catch(e){ toast('Évaluation interrompue : '+(e?.message||'erreur')); }
+  finally{ S.busy.interp=false; render(true); }
+}
+
 function sanitizeBrief(b){
   const clip = (v,n=300) => String(v ?? '').slice(0,n);
   const sc = b.score || {};
@@ -383,7 +518,7 @@ function render(force){
 document.addEventListener('focusout', () => setTimeout(() => { if (pendingRender) render(); }, 0));
 
 function renderNav(){
-  const counts = {briefs:S.briefs.filter(b=>b.statut==='nouveau').length, signaux:S.signaux.filter(s=>!s.utilise && ts(s.date||s.cree)>Date.now()-21*DAY).length};
+  const counts = {briefs:S.briefs.filter(b=>b.statut==='nouveau').length, signaux:S.signaux.filter(s=>!s.utilise && sigVisible(s) && ts(s.date||s.cree)>Date.now()-21*DAY).length, atelier:S.idees.filter(i=>i.statut==='questions').length};
   $('#nav').innerHTML = VIEWS.map(v => `<button class="nav-btn" data-view="${v.id}" ${S.view===v.id?'aria-current="page"':''}><span>${v.label}</span>${counts[v.id]?`<span class="count">${counts[v.id]}</span>`:''}</button>`).join('');
   const last = S.runs.slice().sort((a,b)=>ts(b.date)-ts(a.date))[0];
   $('#railFoot').innerHTML = `<span><i class="dot ${S.dbOk?'on':''}"></i>${S.dbOk===null?'Connexion…':S.dbOk?'Base connectée':'Base hors ligne'}</span><span><i class="dot ${S.sampleOk?'on':''}"></i>${S.sampleOk?'Claude disponible':'Claude indisponible'}</span>${last?`<span>Dernier agent : ${esc(last.agent)}, ${fmtDate(last.date)}</span>`:''}<span class="num">Semaine ${isoWeek()}</span>`;
@@ -394,7 +529,7 @@ function briefCard(b){
   return `<button class="card" data-open-brief="${esc(b.id)}">
     <div class="card-top"><span class="funnel" style="--pc:${pilierColor(b.pilier)}"><i></i>${esc(codeOf(b.pilier)||'Pilier ?')}${b.theme?' · '+esc(b.theme):''}</span><span class="score ${t>=15?'hi':t>=11?'mid':''}">${t}/20</span></div>
     <h3>${esc(b.titre||'Sans titre')}</h3>
-    <div class="card-meta"><span>${esc((b.persona||'').slice(0,60))}</span>${b.date_prevue?`<span class="pill acc">${fmtDate(b.date_prevue)}</span>`:''}</div>
+    <div class="card-meta"><span>${esc((b.persona||'').slice(0,60))}</span><span class="row" style="gap:6px">${b.jury?`<span class="icp-badge" title="Note du jury ICP">ICP ${b.jury.note}/10</span>`:''}${b.date_prevue?`<span class="pill acc">${fmtDate(b.date_prevue)}</span>`:''}</span></div>
   </button>`;
 }
 
@@ -404,7 +539,7 @@ function vSemaine(){
   const sig7 = S.signaux.filter(s=>ts(s.date||s.cree)>now-7*DAY);
   const pub30 = S.posts.filter(p=>ts(p.date)>now-30*DAY);
   const planned = S.briefs.filter(b=>b.statut==='planifie').sort((a,b)=>ts(a.date_prevue)-ts(b.date_prevue));
-  const hot = S.signaux.filter(s=>!s.utilise).sort((a,b)=>(b.poids||0)-(a.poids||0) || ts(b.date||b.cree)-ts(a.date||a.cree)).slice(0,4);
+  const hot = S.signaux.filter(s=>!s.utilise && sigVisible(s)).sort((a,b)=>(b.note||0)-(a.note||0) || ts(b.date||b.cree)-ts(a.date||a.cree)).slice(0,4);
   const memFill = MEMOIRE.filter(m => (S.memoire[m.id]?.contenu||'').replace(/À COMPLÉTER/g,'').trim().length > 300).length;
   return `
   <div class="head"><div class="head-txt"><span class="label">Semaine ${isoWeek()} · ${new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})}</span><h1>Ce qu'il y a sur ton bureau</h1><p>Les agents collectent, tu arbitres. Retiens les briefs qui te parlent, planifie-les, puis note ce qui a marché une fois publié.</p></div>
@@ -462,23 +597,28 @@ function vBriefs(){
 function sigItem(s){
   const busy = S.busy['sig:'+s.id];
   const fam = sigFamily(s.type);
-  return `<div class="item"><span class="tag ${fam}">${esc(s.type||'signal')}</span>
+  const note = s.note!=null ? `<span class="sig-note ${s.note>=8?'hi':''}" title="Force du signal">${s.note}</span>` : `<span class="sig-note" title="Pas encore évalué">?</span>`;
+  return `<div class="item"><div class="sig-left">${note}<span class="tag ${fam}">${esc(s.type||'signal')}</span></div>
     <div><span>${esc(s.titre||s.resume||'Signal')}</span>
       ${s.citation?`<p class="quote">« ${esc(s.citation)} »</p>`:''}
       ${s.resume && s.titre?`<p>${esc(s.resume)}</p>`:''}
+      ${s.interpretation?`<p class="reads">Ce que ça révèle : ${esc(s.interpretation)}</p>`:''}
       <p style="font-size:.76rem">${[s.persona, s.source].filter(Boolean).map(esc).join(' · ')}${s.url?` · <a href="${esc(s.url)}" target="_blank" rel="noopener">source</a>`:''}${s.occurrences>1?` · ${s.occurrences} occurrences`:''}${s.emergent_us?` · <span class="pill warn">Émergent US</span>`:''}</p>
     </div>
     <div class="row" style="justify-content:flex-end;flex-direction:column;align-items:flex-end"><span class="label num">${fmtDate(s.date||s.cree)}</span>
       ${S.sampleOk?`<button class="btn sm" data-sig-brief="${esc(s.id)}" ${busy?'disabled':''}>${busy?'<span class="spin"></span> Angles…':'3 angles'}</button>`:''}
       ${s.utilise?`<span class="pill good">Utilisé</span>`:''}
+      <button class="btn ghost sm" data-archive-sig="${esc(s.id)}">${s.archive?'Restaurer':'Archiver'}</button>
     </div></div>`;
 }
 function vSignaux(){
-  const types = ['tous','client','marché',...SIGNAL_TYPES];
-  const list = S.signaux.filter(s => S.sigFilter==='tous' || (S.sigFilter==='client'?CLIENT_TYPES.includes(s.type): S.sigFilter==='marché'?['veille','webflow'].includes(s.type) : s.type===S.sigFilter))
-    .sort((a,b)=>ts(b.date||b.cree)-ts(a.date||a.cree) || (b.poids||0)-(a.poids||0));
-  return `<div class="head"><div class="head-txt"><span class="label">Matière première</span><h1>Signaux</h1><p>Verbatims et objections issus de Fireflies, veille US et France, nouveautés Webflow, preuves clients. Transforme n'importe quel signal en 3 angles.</p></div>
-    <div class="row"><button class="btn" data-add-signal>Ajouter un signal</button></div></div>
+  const types = ['tous','client','marché',...SIGNAL_TYPES,'archivés'];
+  const base = S.sigFilter==='archivés' ? S.signaux.filter(s=>s.archive) : S.signaux.filter(sigVisible);
+  const list = base.filter(s => ['tous','archivés'].includes(S.sigFilter) || (S.sigFilter==='client'?CLIENT_TYPES.includes(s.type): S.sigFilter==='marché'?['veille','webflow'].includes(s.type) : s.type===S.sigFilter))
+    .sort((a,b)=>(b.note??-1)-(a.note??-1) || ts(b.date||b.cree)-ts(a.date||a.cree));
+  const unrated = S.signaux.filter(s=>s.note==null && !s.archive);
+  return `<div class="head"><div class="head-txt"><span class="label">Matière première</span><h1>Signaux</h1><p>Seules les vraies douleurs restent visibles. Chaque signal est noté sur 10 et interprété : ce qu'il révèle chez la cible. En dessous de 5, il part aux archives.</p></div>
+    <div class="row">${unrated.length && S.sampleOk?`<button class="btn" data-interp ${S.busy.interp?'disabled':''}>${S.busy.interp?'<span class="spin"></span> Évaluation…':`Évaluer ${unrated.length} signal${unrated.length>1?'s':''}`}</button>`:''}<button class="btn" data-add-signal>Ajouter un signal</button></div></div>
   <div id="addSignal" hidden class="panel" style="margin-bottom:14px">${signalForm()}</div>
   <div class="filters">${types.map(t=>`<button class="chip" data-sig-filter="${esc(t)}" aria-pressed="${S.sigFilter===t}">${t==='tous'?'Tous':esc(t)}</button>`).join('')}</div>
   <section class="panel">${panelTop(`${list.length} signal${list.length>1?'s':''}`, 1)}${list.length?`<div class="list">${list.slice(0,200).map(sigItem).join('')}</div>`:`<div class="empty"><b>Aucun signal dans cette catégorie.</b><span>Ajoute une question reçue en DM, une remarque de call ou un article repéré. Ce sont souvent les meilleurs sujets.</span></div>`}</section>`;
@@ -526,9 +666,10 @@ function vAtelier(){
   return `<div class="head"><div class="head-txt"><span class="label">À la demande</span><h1>Atelier</h1><p>Claude construit des briefs à partir de la mémoire Orem et de tes signaux. Il ne rédige rien : tu reçois la tension, la structure et les preuves.</p></div></div>
   ${S.sampleOk===false?`<div class="banner">Claude n'est pas disponible dans cette vue. Les agents planifiés continuent de déposer des briefs.</div>`:''}
   <div class="grid-2">
-    <section class="panel">${panelTop('Idée brute',1)}<h2>Transformer une intuition</h2><p class="muted" style="margin:0">Une phrase entendue, un sujet flou. Tu reçois 2 briefs avec deux angles opposés.</p>
-      <label>Ton idée<textarea id="aIdee" placeholder="ex : les dirigeants pensent qu'une refonte règle un problème de positionnement"></textarea></label>
-      <div class="row"><button class="btn primary" data-atelier="idee" ${b('idee')?'disabled':''}>${b('idee')?'<span class="spin"></span> Construction…':'Structurer <span class="arr">↗</span>'}</button></div></section>
+    <section class="panel" style="grid-column:1/-1">${panelTop('Mes idées',1)}<h2>Ajouter une idée de post</h2><p class="muted" style="margin:0">Note ton idée comme elle vient. L'outil te pose d'abord quelques questions pour récupérer l'histoire, le chiffre ou le client derrière, puis construit le brief et le fait juger par l'ICP.</p>
+      <label>Ton idée<textarea id="aIdee" style="min-height:90px" placeholder="ex : les dirigeants pensent qu'une refonte règle un problème de positionnement"></textarea></label>
+      <div class="row"><button class="btn primary" data-atelier="idee" ${b('q')?'disabled':''}>${b('q')?'<span class="spin"></span> Préparation des questions…':'Continuer <span class="arr">↗</span>'}</button></div>
+      ${ideasBlock()}</section>
     <section class="panel">${panelTop('Semaine',2)}<h2>Préparer ma semaine</h2><p class="muted" style="margin:0">Croise les signaux non utilisés des 21 derniers jours, le pilier en retard et ta mémoire. 5 briefs classés par score.</p>
       <dl class="kv"><dt>Signaux disponibles</dt><dd class="num">${S.signaux.filter(s=>!s.utilise && ts(s.date||s.cree)>Date.now()-21*DAY).length}</dd><dt>Pilier en retard</dt><dd>${esc(lag?pilierLabel(lag):'aucun')}</dd></dl>
       <div class="row"><button class="btn primary" data-atelier="semaine" ${b('semaine')?'disabled':''}>${b('semaine')?'<span class="spin"></span> Analyse…':'Générer 5 briefs <span class="arr">↗</span>'}</button></div></section>
@@ -540,6 +681,24 @@ function vAtelier(){
       <div class="row"><button class="btn primary" data-atelier="us" ${b('us')?'disabled':''}>${b('us')?'<span class="spin"></span> Analyse…':'Trouver 3 angles <span class="arr">↗</span>'}</button></div></section>
   </div>`;
 }
+function ideasBlock(){
+  const f = S.ideaPilier || 'tous';
+  const open = S.idees.filter(i=>i.statut==='questions' && (f==='tous' || codeOf(i.pilier)===f)).sort((a,b)=>(a.ordre??999)-(b.ordre??999) || ts(b.cree)-ts(a.cree));
+  const done = S.idees.filter(i=>i.statut==='transformee').sort((a,b)=>ts(b.cree)-ts(a.cree)).slice(0,5);
+  if (!S.idees.length) return '';
+  const total = S.idees.filter(i=>i.statut==='questions').length;
+  return `<div class="filters" style="margin:6px 0 0">${['tous',...S.piliers.map(p=>p.code)].map(p=>`<button class="chip" type="button" data-idea-pilier="${p}" aria-pressed="${f===p}">${p==='tous'?`Toutes (${total})`:esc(p)+' ('+S.idees.filter(i=>i.statut==='questions'&&codeOf(i.pilier)===p).length+')'}</button>`).join('')}</div>
+    <div>${open.map(i=> S.openIdea===i.id ? ideaForm(i) : `<div class="idea-row"><span class="stack" style="gap:4px;min-width:0"><span class="funnel label" style="--pc:${pilierColor(i.pilier)}"><i></i>${esc(codeOf(i.pilier)||'?')}${i.theme?' · '+esc(i.theme):''}${(i.reponses||[]).some(Boolean)?' · réponses en cours':''}</span><span>${esc(i.texte)}</span></span><button class="btn sm" type="button" data-open-idea="${esc(i.id)}">Approfondir</button></div>`).join('') || '<p class="label">Aucune idée en attente dans ce pilier.</p>'}</div>
+    ${done.length?`<div><span class="label">Idées déjà transformées en briefs</span>${done.map(i=>`<div class="idea-row"><span>${esc(i.texte.slice(0,110))}</span><span class="label">${fmtDate(i.maj||i.cree)}</span></div>`).join('')}</div>`:''}`;
+}
+function ideaForm(i){
+  return `<form class="panel qa" data-idea="${esc(i.id)}" style="background:var(--surface);margin:8px 0">
+      <div class="panel-top"><span class="funnel" style="--pc:${pilierColor(i.pilier)}"><i></i>${esc(pilierLabel(i.pilier))}${i.theme?' · '+esc(i.theme):''}</span><button class="btn ghost sm" type="button" data-open-idea="">Replier</button></div>
+      <p class="tension" style="margin:0;font-size:1.05rem">« ${esc(i.texte)} »</p>${i.notes?`<p class="muted" style="margin:0;font-size:.86rem">Tes notes : ${esc(i.notes)}</p>`:''}
+      ${(i.questions||[]).map((q,k)=>`<label><span>${esc(q.q)}</span><small>${esc(q.pourquoi||'')}</small><textarea name="r${k}" style="min-height:64px" placeholder="Réponds comme tu parlerais, même en vrac">${esc((i.reponses||[])[k]||'')}</textarea></label>`).join('')}
+      <div class="row"><button class="btn primary" type="submit" ${S.busy['idea:'+i.id]?'disabled':''}>${S.busy['idea:'+i.id]?'<span class="spin"></span> Construction et jury ICP…':'Construire le brief <span class="arr">↗</span>'}</button><button class="btn ghost sm" type="button" data-save-idea="${esc(i.id)}">Enregistrer mes réponses</button><button class="btn ghost sm danger" type="button" data-del-idea="${esc(i.id)}">Abandonner</button></div>
+    </form>`;
+}
 function laggingPilier(){
   const since = Date.now()-60*DAY;
   const items = [...S.posts.filter(p=>ts(p.date)>since).map(p=>codeOf(p.pilier)), ...S.briefs.filter(b=>b.statut==='planifie').map(b=>codeOf(b.pilier))];
@@ -550,10 +709,11 @@ function laggingPilier(){
 }
 
 function vMemoire(){
-  const tabs = [...MEMOIRE.map(m=>({id:m.id,titre:m.titre})), {id:'_piliers',titre:'Piliers et thèmes'}, {id:'_sources',titre:'Sources de veille'}];
+  const tabs = [...MEMOIRE.map(m=>({id:m.id,titre:m.titre})), {id:'_cas',titre:'Cas clients'}, {id:'_piliers',titre:'Piliers et thèmes'}, {id:'_sources',titre:'Sources de veille'}];
   const cur = S.memTab;
   let body='';
-  if (cur === '_piliers') body = piliersEditor();
+  if (cur === '_cas') body = casView();
+  else if (cur === '_piliers') body = piliersEditor();
   else if (cur === '_sources') body = sourcesEditor();
   else {
     const m = MEMOIRE.find(x=>x.id===cur); const d = S.memoire[cur] || {};
@@ -565,8 +725,18 @@ function vMemoire(){
   <div class="mem"><div class="mem-nav">${tabs.map(t=>{
     const txt = t.id.startsWith('_') ? null : (S.memoire[t.id]?.contenu||'');
     const todo = txt && /À COMPLÉTER/.test(txt);
-    return `<button data-mem-tab="${t.id}" aria-current="${cur===t.id}"><span>${esc(t.titre)}</span>${txt==null?`<small>${t.id==='_piliers'?S.piliers.length+' piliers':S.sources.length+' sources'}</small>`:`<small>${txt.length?nf(txt.length)+' caractères'+(todo?' · à compléter':''):'vide'}</small><span class="meter"><i style="width:${Math.min(100,txt.length/20)}%"></i></span>`}</button>`;}).join('')}</div>
+    return `<button data-mem-tab="${t.id}" aria-current="${cur===t.id}"><span>${esc(t.titre)}</span>${txt==null?`<small>${t.id==='_piliers'?S.piliers.length+' piliers':t.id==='_cas'?S.cas.length+' cas':S.sources.length+' sources'}</small>`:`<small>${txt.length?nf(txt.length)+' caractères'+(todo?' · à compléter':''):'vide'}</small><span class="meter"><i style="width:${Math.min(100,txt.length/20)}%"></i></span>`}</button>`;}).join('')}</div>
   <div style="min-width:0">${body}</div></div>`;
+}
+function casView(){
+  const list = S.cas.slice().sort((a,b)=>(a.ordre??99)-(b.ordre??99));
+  return `<div class="stack">${list.map((c,k)=>`<section class="panel">${panelTop(c.secteur||'Cas client',k+1)}
+    <div class="panel-h"><h2>${esc(c.nom)}</h2>${c.resultat?`<span class="pill good">${esc(c.resultat)}</span>`:''}</div>
+    <p style="margin:0">${esc(c.probleme||'')}</p>
+    ${c.realise?`<p class="muted" style="margin:0;font-size:.86rem">Réalisé : ${esc(c.realise)}</p>`:''}
+    ${(c.chiffres||[]).length?`<ul style="margin:0;padding-left:18px;font-size:.86rem">${c.chiffres.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}
+    ${c.eviter?`<p class="label" style="margin:0">À ne pas dire : ${esc(c.eviter)}</p>`:''}
+  </section>`).join('') || '<div class="empty"><b>Aucun cas client.</b></div>'}</div>`;
 }
 function piliersEditor(){
   const sum = S.piliers.reduce((a,p)=>a+(+p.cible_pct||0),0);
@@ -599,11 +769,29 @@ function renderDrawer(){
   <div class="drawer-b">
     <section class="panel">${panelTop('Tension à exploiter',nx())}<p class="tension" style="margin:0">${esc(b.tension||'')}</p>${b.conviction?`<p class="muted" style="margin:0;font-size:.86rem">Conviction Orem : ${esc(b.conviction)}</p>`:''}</section>
     <section class="panel">${panelTop('Cadrage',nx())}<dl class="kv"><dt>Persona</dt><dd>${esc(b.persona||'')}</dd><dt>Conscience</dt><dd>${esc(b.conscience||'')}</dd><dt>Format</dt><dd>${esc(b.format||'')}</dd><dt>Offre reliée</dt><dd>${esc(b.offre||'')}</dd><dt>Pourquoi maintenant</dt><dd>${esc(b.pourquoi_maintenant||'')}</dd><dt>Origine</dt><dd>${esc(b.origine||'')}${b.semaine?' · S'+esc(b.semaine):''}</dd></dl></section>
+    ${juryBlock(b, nx())}
     <section class="panel">${panelTop('Structure',nx())}<div>${(b.structure||[]).map((s,k)=>`<div class="step"><span class="step-n">${k+1}</span><div><span>${esc(s.etape)}</span><ul>${(s.points||[]).map(p=>`<li>${esc(p)}</li>`).join('')}</ul></div></div>`).join('')}</div></section>
     <section class="panel">${panelTop('Preuves à mobiliser',nx())}${(b.preuves||[]).map(p=>`<div class="proof"><span class="tag ${p.type==='verbatim'?'client':p.type==='veille'?'marche':'preuve'}">${esc(p.type)}</span><span>${esc(p.ref)}</span></div>`).join('') || '<p class="muted" style="margin:0">Aucune preuve rattachée.</p>'}</section>
+    ${hooksBlock(b, nx())}
     <section class="panel">${panelTop(`Score ${scoreTotal(b)}/20`,nx())}<div class="scorebars">${[['icp','Pertinence ICP'],['originalite','Originalité'],['preuve','Force de la preuve'],['timing','Timing']].map(([k,l])=>`<div class="sb"><b>${+sc[k]||0}<span style="font-size:.8rem;color:var(--muted)"> /5</span></b><span>${l}</span></div>`).join('')}</div></section>
     ${drawerActions(b, busy, nx())}
   </div></aside>`;
+}
+function juryBlock(b, idx){
+  const j = b.jury; const busy = S.busy['jury:'+b.id];
+  const btn = S.sampleOk ? `<button class="btn sm" data-jury="${esc(b.id)}" ${busy?'disabled':''}>${busy?'<span class="spin"></span> Lecture…':(j?'Refaire lire':'Faire lire par l\'ICP')}</button>` : '';
+  if (!j) return `<section class="panel">${panelTop('Jury ICP',idx)}<p class="muted" style="margin:0">Ce brief n'a pas encore été lu par un décideur de ta cible.</p><div class="row">${btn}</div></section>`;
+  const lit = /lis/.test(j.verdict||'') && j.note>=JURY_MIN;
+  return `<section class="panel">${panelTop('Jury ICP · persona '+(j.persona||'?'),idx)}
+    <div class="jury"><span class="jury-note">${j.note}<small> /10</small></span><div class="stack" style="gap:8px"><span class="verdict ${lit?'lit':'scroll'}">${lit?'Je lis':'Je scrolle'}</span><p class="jury-voice">« ${esc(j.pourquoi)} »</p>${j.manque?`<p class="muted" style="margin:0;font-size:.86rem">Pour m'arrêter vraiment : ${esc(j.manque)}</p>`:''}</div></div>
+    <div class="row">${btn}</div></section>`;
+}
+function hooksBlock(b, idx){
+  const h = b.hooks||[]; const busy = S.busy['hooks:'+b.id];
+  const btn = S.sampleOk ? `<button class="btn sm" data-hooks="${esc(b.id)}" ${busy?'disabled':''}>${busy?'<span class="spin"></span> Hooks et vote ICP…':(h.length?'Nouveaux hooks':'Proposer des hooks')}</button>` : '';
+  return `<section class="panel">${panelTop('Hooks',idx)}
+    ${h.length?`<div>${h.map((x,k)=>`<div class="hook ${k===0&&x.note_icp!=null?'best':''}"><div><p>${esc(x.texte)}</p><div class="meta">${k===0&&x.note_icp!=null?'<b>Choix de l\'ICP</b> · ':''}${esc(x.mecanique)}${x.note_icp!=null?` · ICP ${x.note_icp}/10`:''}${x.reaction_icp?` · « ${esc(x.reaction_icp)} »`:''}</div></div><button class="btn ghost sm" data-copy="${esc(x.texte)}">Copier</button></div>`).join('')}</div>`:`<p class="muted" style="margin:0">L'agent hooks propose 6 premières lignes avec des mécaniques différentes, puis l'ICP les classe selon qu'il cliquerait sur « voir plus ».</p>`}
+    <div class="row">${btn}</div></section>`;
 }
 function drawerActions(b, busy, idx){
   const alt = S.sampleOk ? `<button class="btn" data-alt="${esc(b.id)}" ${busy?'disabled':''}>${busy?'<span class="spin"></span> Variantes…':'3 variantes d\'angle'}</button>` : '';
@@ -647,9 +835,16 @@ document.addEventListener('click', async e => {
   if (d.recycle){ const p = S.posts.find(x=>x.id===d.recycle); if(!p) return;
     const top = S.posts.slice().sort((a,b)=>(b.engagements||0)-(a.engagements||0)).slice(0,5);
     await askBriefs('post:'+p.id, `Ce post a été publié. Propose 3 briefs qui le recyclent sous un angle neuf (autre persona, autre preuve, point de vue inverse ou approfondissement). Pour calibrer, les 5 posts les plus engageants sont fournis.`, {posts:[p, ...top.filter(x=>x.id!==p.id)]}, {recycle_de:p.id}); return; }
-  if (d.atelier === 'idee'){ const v = ($('#aIdee')?.value||'').trim(); if(!v){toast('Écris ton idée d\'abord.');return;}
-    const rel = S.signaux.slice().sort((a,b)=>ts(b.date||b.cree)-ts(a.date||a.cree)).slice(0,25);
-    await askBriefs('idee', `Idée brute de Louis : « ${v} ». Construis 2 briefs aux angles opposés. Appuie-les sur les signaux fournis quand c'est pertinent.`, {signals:rel}); return; }
+  if (d.atelier === 'idee'){ const v = ($('#aIdee')?.value||'').trim(); if(!v){toast('Écris ton idée d\'abord.');return;} await askQuestions(v); return; }
+  if (d.jury){ const br = S.briefs.find(x=>x.id===d.jury); if (br) await juryOne(br); return; }
+  if (d.hooks){ const br = S.briefs.find(x=>x.id===d.hooks); if (br) await genHooks(br); return; }
+  if (d.copy != null){ try{ await navigator.clipboard.writeText(d.copy); toast('Hook copié'); }catch(err){ toast('Copie impossible ici, sélectionne le texte.'); } return; }
+  if ('interp' in d){ await interpretSignals(S.signaux.filter(s=>s.note==null && !s.archive).slice(0,40)); return; }
+  if (d.archiveSig){ const s=S.signaux.find(x=>x.id===d.archiveSig); if(s) await upd('signaux', s.id, {archive:!s.archive}, s.archive?'Signal restauré':'Signal archivé'); return; }
+  if (d.openIdea != null){ S.openIdea = d.openIdea || null; render(true); return; }
+  if (d.ideaPilier){ S.ideaPilier = d.ideaPilier; S.openIdea = null; render(true); return; }
+  if (d.saveIdea){ const f=document.querySelector(`form[data-idea="${d.saveIdea}"]`); const i=S.idees.find(x=>x.id===d.saveIdea); if(f&&i) await upd('idees', i.id, {reponses:(i.questions||[]).map((_,k)=>(f.elements['r'+k]?.value||'').trim())}, 'Réponses enregistrées'); return; }
+  if (d.delIdea){ await write(()=>db.collection('idees').doc(d.delIdea).delete(), 'Idée abandonnée'); return; }
   if (d.atelier === 'semaine'){
     const sig = S.signaux.filter(s=>!s.utilise && ts(s.date||s.cree)>Date.now()-21*DAY).slice(0,40);
     const top = S.posts.slice().sort((a,b)=>(b.engagements||0)-(a.engagements||0)).slice(0,5);
@@ -670,6 +865,17 @@ document.addEventListener('change', async e => {
 document.addEventListener('submit', async e => {
   e.preventDefault();
   const f = e.target;
+  if (f.dataset.idea){
+    const i = S.idees.find(x=>x.id===f.dataset.idea); if(!i) return;
+    const rep = (i.questions||[]).map((_,k)=>(f.elements['r'+k]?.value||'').trim());
+    if (!rep.some(Boolean)){ toast('Réponds au moins à une question.'); return; }
+    await upd('idees', i.id, {reponses:rep});
+    const qa = (i.questions||[]).map((q,k)=>`Q : ${q.q}\nR : ${rep[k]||'(pas de réponse)'}`).join('\n');
+    const rel = S.signaux.filter(sigVisible).sort((a,b)=>(b.note||0)-(a.note||0)).slice(0,15);
+    const ok = await askBriefs('idea:'+i.id, `Idée de Louis : « ${i.texte} »${i.pilier?` (pilier visé : ${codeOf(i.pilier)}${i.theme?', thème '+i.theme:''})`:''}.${i.notes?`\nNotes de Louis : ${i.notes}`:''}\nSes réponses aux questions de cadrage :\n${qa}\n\nConstruis 2 briefs à partir de cette idée et surtout de ses réponses (ce sont les preuves principales, cite-les). Deux angles nettement différents. Appuie-toi sur les signaux fournis seulement s'ils renforcent l'idée.`, {signals:rel}, {idee_id:i.id, origine:'idée de Louis'});
+    if (ok) await upd('idees', i.id, {statut:'transformee'});
+    return;
+  }
   if (f.dataset.pilForm){
     const pct = Math.max(0, Math.min(100, +f.elements.pct.value || 0));
     const themes = [0,1,2].map(i => f.elements['t'+i].value.trim().slice(0,80));
@@ -679,8 +885,10 @@ document.addEventListener('submit', async e => {
     const titre = $('#sTitre').value.trim(); if(!titre) return;
     const texte = $('#sTexte').value.trim(); const type = $('#sType').value;
     const client = CLIENT_TYPES.includes(type);
-    const ok = await write(()=>db.collection('signaux').add({type, titre, citation: client?texte:'', resume: client?'':texte, persona:$('#sPersona').value.trim(), source:$('#sSource').value.trim()||'saisie manuelle', url:$('#sUrl').value.trim(), date:new Date().toISOString().slice(0,10), cree:Date.now(), utilise:false, poids:2}), 'Signal enregistré');
-    if (ok){ f.reset(); $('#addSignal').hidden = true; }
+    const data = {type, titre, citation: client?texte:'', resume: client?'':texte, persona:$('#sPersona').value.trim(), source:$('#sSource').value.trim()||'saisie manuelle', url:$('#sUrl').value.trim(), date:new Date().toISOString().slice(0,10), cree:Date.now(), utilise:false};
+    let ref = null;
+    const ok = await write(async()=>{ ref = await db.collection('signaux').add(data); }, 'Signal enregistré, évaluation en cours');
+    if (ok){ f.reset(); $('#addSignal').hidden = true; if (ref && sample) await interpretSignals([{id:ref.id, ...data}]); }
   }
   if (f.id === 'fPost'){
     const url = $('#pUrl').value.trim(); const id = url ? postId(url) : 'm'+Date.now();
