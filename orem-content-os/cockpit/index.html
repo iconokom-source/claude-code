@@ -1,0 +1,744 @@
+<title>Orem Content Desk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Trykker&family=Lexend+Deca:wght@300;400;500;600&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+/* Layout : charte Orem. Fond noir, cartes sombres arrondies avec label et index en coin (comme le guide de marque),
+   titres Trykker, texte Lexend Deca, halo bleu Orem en tête, orange réservé aux signaux d'action. */
+:root{
+  --bg:#000000; --surface:#0D0D0D; --card:#171717; --card-2:#1F1F1F; --line:#262626; --line-2:#333333;
+  --ink:#F2F2F2; --muted:rgba(242,242,242,.6); --faint:#777777;
+  --blue:#092482; --blue-deep:#051026; --sky:#C5E6F1; --orange:#FF6200; --peach:#FCDFCE; --umber:#210E03;
+  --tof:#C5E6F1; --mof:#6E86FF; --bof:#FF6200;
+  --good:#6FD39B; --good-soft:rgba(111,211,155,.12); --warn:#FFB066; --warn-soft:rgba(255,98,0,.14); --bad:#FF7A6B; --bad-soft:rgba(255,122,107,.12);
+  --blue-soft:rgba(110,134,255,.14);
+  --glow:radial-gradient(120% 90% at 20% -10%, rgba(9,36,130,.55) 0%, rgba(5,16,38,.35) 40%, rgba(0,0,0,0) 70%);
+  --f-display:"Trykker",Georgia,"Times New Roman",serif;
+  --f-body:"Lexend Deca","Avenir Next","Segoe UI",system-ui,sans-serif;
+  --r:18px; --r-sm:12px;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){
+  --bg:#F2F2F2; --surface:#EAEAEA; --card:#FFFFFF; --card-2:#F7F7F7; --line:#DEDEDE; --line-2:#CFCFCF;
+  --ink:#000000; --muted:rgba(0,0,0,.6); --faint:#777777;
+  --tof:#2C7A93; --mof:#092482; --bof:#D95300;
+  --good:#1D7A4B; --good-soft:rgba(29,122,75,.1); --warn:#B34700; --warn-soft:rgba(255,98,0,.12); --bad:#B42318; --bad-soft:rgba(180,35,24,.08);
+  --blue-soft:rgba(9,36,130,.08);
+  --glow:radial-gradient(120% 90% at 20% -10%, rgba(197,230,241,.9) 0%, rgba(197,230,241,.35) 40%, rgba(242,242,242,0) 70%);
+  color-scheme:light}}
+:root[data-theme="light"]{
+  --bg:#F2F2F2; --surface:#EAEAEA; --card:#FFFFFF; --card-2:#F7F7F7; --line:#DEDEDE; --line-2:#CFCFCF;
+  --ink:#000000; --muted:rgba(0,0,0,.6); --faint:#777777;
+  --tof:#2C7A93; --mof:#092482; --bof:#D95300;
+  --good:#1D7A4B; --good-soft:rgba(29,122,75,.1); --warn:#B34700; --warn-soft:rgba(255,98,0,.12); --bad:#B42318; --bad-soft:rgba(180,35,24,.08);
+  --blue-soft:rgba(9,36,130,.08);
+  --glow:radial-gradient(120% 90% at 20% -10%, rgba(197,230,241,.9) 0%, rgba(197,230,241,.35) 40%, rgba(242,242,242,0) 70%);
+  color-scheme:light}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font:300 15px/1.55 var(--f-body);margin:0;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--orange);outline-offset:2px}
+h1,h2,h3{font-family:var(--f-display);font-weight:400;letter-spacing:-.005em;text-wrap:balance;margin:0}
+h1{font-size:clamp(1.9rem,3.2vw,2.6rem);line-height:1.1}
+h2{font-size:1.35rem;line-height:1.2}
+h3{font-size:1.02rem;line-height:1.3}
+b,strong{font-weight:500}
+.num{font-variant-numeric:tabular-nums}
+.label{font:400 .74rem/1 var(--f-body);color:var(--muted)}
+.muted{color:var(--muted)}
+a{color:inherit;text-decoration-color:var(--faint);text-underline-offset:3px}
+a:hover{text-decoration-color:var(--orange)}
+
+.app{display:grid;grid-template-columns:232px minmax(0,1fr);min-height:100%}
+.rail{position:sticky;top:env(safe-area-inset-top,0px);align-self:start;height:100vh;padding:22px 14px;display:flex;flex-direction:column;gap:28px}
+.brand{display:flex;align-items:center;gap:10px;padding-inline:10px}
+.mark{width:30px;height:30px;background:var(--ink);-webkit-mask:var(--mark) center/contain no-repeat;mask:var(--mark) center/contain no-repeat;flex:none}
+.brand-txt{display:flex;flex-direction:column;gap:3px}
+.brand-txt b{font:600 1.2rem/1 var(--f-body);letter-spacing:-.03em}
+.brand-txt span{font-size:.72rem;color:var(--muted)}
+nav{display:flex;flex-direction:column;gap:2px}
+.nav-btn{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;padding:10px 12px;border:0;border-radius:999px;background:transparent;text-align:left;cursor:pointer;color:var(--muted);font-weight:400;font-size:.92rem}
+.nav-btn:hover{color:var(--ink);background:var(--card)}
+.nav-btn[aria-current="page"]{background:var(--card);color:var(--ink)}
+.nav-btn[aria-current="page"]::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--orange);margin-right:-2px;order:-1}
+.nav-btn span:first-of-type{flex:1}
+.count{font:500 .7rem/1 var(--f-body);padding:4px 7px;border-radius:99px;background:var(--card-2);color:var(--muted);font-variant-numeric:tabular-nums}
+.nav-btn[aria-current="page"] .count{background:var(--ink);color:var(--bg)}
+.rail-foot{margin-top:auto;font-size:.76rem;color:var(--faint);padding-inline:12px;display:flex;flex-direction:column;gap:7px}
+.dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--faint);margin-right:7px;vertical-align:middle}
+.dot.on{background:var(--good)}
+
+main{padding-block:28px 72px;padding-inline:32px;min-width:0;width:100%;position:relative}
+main::before{content:"";position:absolute;inset:0 0 auto 0;height:420px;background:var(--glow);pointer-events:none;z-index:0}
+main > *{position:relative;z-index:1}
+.wrap{max-width:1180px}
+.head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:28px;padding-top:14px}
+.head-txt{display:flex;flex-direction:column;gap:12px;min-width:0}
+.head p{margin:0;color:var(--muted);max-width:60ch}
+.stack{display:flex;flex-direction:column;gap:14px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+
+.btn{display:inline-flex;align-items:center;gap:8px;padding:9px 16px;border-radius:999px;border:1px solid var(--line-2);background:transparent;cursor:pointer;font-weight:400;font-size:.88rem;white-space:nowrap;color:var(--ink)}
+.btn:hover{border-color:var(--ink)}
+.btn.primary{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.btn.primary:hover{opacity:.88}
+.btn.primary .arr{display:inline-block;transition:transform .2s}
+.btn.primary:hover .arr{transform:translate(2px,-2px)}
+.btn.ghost{border-color:transparent;color:var(--muted)}
+.btn.ghost:hover{color:var(--ink)}
+.btn.danger{color:var(--bad);border-color:var(--bad-soft)}
+.btn:disabled{opacity:.5;cursor:progress}
+.btn.sm{padding:6px 12px;font-size:.8rem}
+
+/* Carte façon guide de marque : label en haut à gauche, index en haut à droite */
+.panel{background:var(--card);border-radius:var(--r);padding:18px 20px 22px;min-width:0;display:flex;flex-direction:column;gap:14px}
+.panel-top{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:.74rem;color:var(--muted)}
+.panel-top .idx{font-variant-numeric:tabular-nums}
+.panel-h{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.grid-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:14px}
+.kpi{background:var(--card);border-radius:var(--r);padding:16px 18px 18px;display:flex;flex-direction:column;gap:18px}
+.kpi b{font:400 2.6rem/1 var(--f-display);font-variant-numeric:tabular-nums}
+.kpi span{font-size:.76rem;color:var(--muted)}
+
+.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:99px;font-size:.74rem;font-weight:400;background:var(--card-2);color:var(--muted);white-space:nowrap}
+.pill i{width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block}
+.pill.good{background:var(--good-soft);color:var(--good)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.pill.acc{background:var(--blue-soft);color:var(--mof)}
+
+/* Board */
+.board{display:grid;grid-template-columns:repeat(4,minmax(250px,1fr));gap:14px;overflow-x:auto;padding-bottom:8px}
+.col{background:var(--surface);border-radius:var(--r);padding:12px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.col-h{display:flex;justify-content:space-between;align-items:center;padding:4px 6px 2px;font-size:.8rem;color:var(--muted)}
+.card{background:var(--card);border:1px solid transparent;border-radius:var(--r-sm);padding:14px;display:flex;flex-direction:column;gap:10px;cursor:pointer;text-align:left;width:100%}
+.card:hover{border-color:var(--line-2)}
+.card h3{font-family:var(--f-body);font-weight:400;font-size:.95rem;line-height:1.4}
+.card-top{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:.72rem;color:var(--muted)}
+.funnel{display:inline-flex;align-items:center;gap:6px}
+.funnel i{width:7px;height:7px;border-radius:50%;background:var(--pc,var(--faint))}
+.card-meta{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:.76rem;color:var(--muted)}
+.score{font:500 .76rem/1 var(--f-body);padding:5px 8px;border-radius:99px;background:var(--card-2);font-variant-numeric:tabular-nums}
+.score.hi{background:var(--good-soft);color:var(--good)}
+.score.mid{background:var(--warn-soft);color:var(--warn)}
+.empty-col{font-size:.8rem;color:var(--faint);padding:10px 6px}
+
+/* Lists */
+.list{display:flex;flex-direction:column}
+.item{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:14px;padding:14px 2px;border-top:1px solid var(--line);align-items:start}
+.item:first-child{border-top:0;padding-top:4px}
+.item p{margin:4px 0 0;color:var(--muted);font-size:.86rem}
+.quote{font-family:var(--f-display);font-size:1.02rem;line-height:1.45;margin:8px 0 0;color:var(--ink)}
+.tag{font:400 .7rem/1 var(--f-body);padding:6px 9px;border-radius:99px;background:var(--card-2);color:var(--muted);min-width:84px;text-align:center;white-space:nowrap}
+.tag.client{background:var(--blue-soft);color:var(--mof)}
+.tag.marche{background:var(--good-soft);color:var(--good)}
+.tag.preuve,.tag.alerte{background:var(--warn-soft);color:var(--warn)}
+
+.filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.chip{padding:7px 13px;border-radius:99px;border:1px solid var(--line-2);background:transparent;font-size:.8rem;cursor:pointer;color:var(--muted)}
+.chip:hover{color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+
+/* Balance */
+.bal{display:flex;flex-direction:column;gap:16px}
+.bal-row{display:grid;grid-template-columns:minmax(0,150px) minmax(0,1fr) 80px;gap:14px;align-items:center;font-size:.84rem}
+.track{position:relative;height:8px;border-radius:99px;background:var(--card-2)}
+.fill{position:absolute;left:0;top:0;bottom:0;border-radius:99px;background:var(--pc)}
+.target{position:absolute;top:-5px;bottom:-5px;width:2px;background:var(--ink);border-radius:2px}
+.bal-num{text-align:right;font-size:.78rem;color:var(--muted);font-variant-numeric:tabular-nums}
+
+/* Table */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.86rem}
+th{font:400 .72rem/1 var(--f-body);color:var(--muted);text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:11px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+td.n{text-align:right;font-variant-numeric:tabular-nums}
+th.n{text-align:right}
+
+/* Forms */
+label{display:flex;flex-direction:column;gap:7px;font-size:.78rem;font-weight:400;color:var(--muted)}
+input[type=text],input[type=url],input[type=date],input[type=number],select,textarea{width:100%;padding:10px 13px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--surface);color:var(--ink);font-size:.9rem;font-weight:300}
+input:focus,select:focus,textarea:focus{border-color:var(--line-2);outline:none;box-shadow:0 0 0 3px var(--blue-soft)}
+textarea{resize:vertical;min-height:120px;line-height:1.6}
+.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.form-grid .full{grid-column:1/-1}
+
+/* Mémoire */
+.mem{display:grid;grid-template-columns:230px minmax(0,1fr);gap:14px}
+.mem-nav{display:flex;flex-direction:column;gap:4px}
+.mem-nav button{text-align:left;padding:11px 14px;border-radius:var(--r-sm);border:0;background:transparent;cursor:pointer;display:flex;flex-direction:column;gap:4px;color:var(--muted)}
+.mem-nav button:hover{color:var(--ink)}
+.mem-nav button[aria-current="true"]{background:var(--card);color:var(--ink)}
+.mem-nav small{color:var(--faint);font-size:.72rem}
+.mem textarea{min-height:460px;font-size:.86rem}
+.meter{height:3px;border-radius:99px;background:var(--card-2);overflow:hidden}
+.meter i{display:block;height:100%;background:var(--sky)}
+.pil-card{background:var(--surface);border-radius:var(--r-sm);padding:16px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:16px}
+
+/* Drawer */
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:20}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(660px,100%);background:var(--bg);border-left:1px solid var(--line);z-index:21;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.drawer-h{padding:22px 24px 18px;display:flex;justify-content:space-between;gap:12px;align-items:flex-start;background:var(--glow)}
+.drawer-b{padding:4px 24px 48px;overflow-y:auto;display:flex;flex-direction:column;gap:14px}
+.kv{display:grid;grid-template-columns:150px minmax(0,1fr);gap:10px 14px;font-size:.88rem}
+.kv dt{color:var(--muted);font-size:.78rem;padding-top:2px}
+.kv dd{margin:0}
+.tension{font-family:var(--f-display);font-size:1.2rem;line-height:1.45}
+.step{display:grid;grid-template-columns:32px minmax(0,1fr);gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+.step:first-child{border-top:0;padding-top:2px}
+.step-n{font:500 .78rem/1 var(--f-body);width:26px;height:26px;border-radius:50%;border:1px solid var(--line-2);display:grid;place-items:center;font-variant-numeric:tabular-nums}
+.step ul{margin:6px 0 0;padding-left:18px;color:var(--muted);font-size:.88rem}
+.step li::marker{color:var(--orange)}
+.proof{display:flex;gap:12px;align-items:flex-start;font-size:.86rem;padding:6px 0}
+.scorebars{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.sb{background:var(--surface);border-radius:var(--r-sm);padding:12px;display:flex;flex-direction:column;gap:8px}
+.sb b{font:400 1.5rem/1 var(--f-display);font-variant-numeric:tabular-nums}
+.sb span{font-size:.72rem;color:var(--muted)}
+
+.toast{position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:11px 18px;border-radius:99px;font-size:.86rem;z-index:40;max-width:calc(100% - 32px)}
+.banner{padding:13px 16px;border-radius:var(--r-sm);background:var(--warn-soft);color:var(--warn);font-size:.86rem;margin-bottom:14px}
+.empty{padding:22px;border:1px dashed var(--line-2);border-radius:var(--r-sm);color:var(--muted);display:flex;flex-direction:column;gap:6px;font-size:.88rem}
+.empty b{color:var(--ink)}
+.spin{display:inline-block;width:12px;height:12px;border:1.5px solid currentColor;border-right-color:transparent;border-radius:50%;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin{animation:none}.btn.primary .arr{transition:none}}
+
+@media (max-width:900px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  .rail{position:sticky;top:env(safe-area-inset-top,0px);height:auto;flex-direction:row;align-items:center;padding:10px 16px;gap:14px;background:var(--bg);border-bottom:1px solid var(--line);z-index:10;overflow-x:auto}
+  .brand-txt span,.rail-foot{display:none}
+  nav{flex-direction:row}
+  .nav-btn{white-space:nowrap}
+  main{padding-inline:16px;padding-block:18px 56px}
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .grid-2,.mem,.form-grid,.pil-card{grid-template-columns:minmax(0,1fr)}
+  .mem-nav{flex-direction:row;overflow-x:auto}
+  .mem-nav button{white-space:nowrap}
+  .bal-row{grid-template-columns:minmax(0,96px) minmax(0,1fr) 64px}
+  .kv{grid-template-columns:minmax(0,1fr)}
+  .scorebars{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+</style>
+
+<div class="app" style="--mark:url('data:image/png;base64,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')">
+  <aside class="rail">
+    <div class="brand"><span class="mark" aria-hidden="true"></span><div class="brand-txt"><b>Orem</b><span>Content Desk</span></div></div>
+    <nav id="nav" aria-label="Sections"></nav>
+    <div class="rail-foot" id="railFoot"></div>
+  </aside>
+  <main id="main"></main>
+</div>
+<div id="drawerRoot"></div>
+<div id="toastRoot"></div>
+
+<script>
+(() => {
+const VIEWS = [
+  {id:'semaine', label:'Cette semaine'},
+  {id:'briefs', label:'Briefs'},
+  {id:'signaux', label:'Signaux'},
+  {id:'posts', label:'Posts publiés'},
+  {id:'atelier', label:'Atelier'},
+  {id:'memoire', label:'Mémoire Orem'},
+];
+const STATUTS = [
+  {id:'nouveau', label:'À arbitrer'},
+  {id:'retenu', label:'Retenus'},
+  {id:'planifie', label:'Planifiés'},
+  {id:'publie', label:'Publiés'},
+];
+const MEMOIRE = [
+  {id:'plan', titre:'Plan LinkedIn', aide:'Je veux être connu pour quoi ? Qui je veux attirer ? Mon territoire de parole.'},
+  {id:'positionnement', titre:'Positionnement', aide:'Catégorie, promesse, méthode O.R.E.M., maison de message.'},
+  {id:'icp', titre:'Cibles (ICP)', aide:'Moment de bascule, personas, douleurs, déclencheurs, objections.'},
+  {id:'offres', titre:'Offres', aide:'Conseil, Image de marque, Site web, Suivis. Ce que chaque offre rapporte.'},
+  {id:'convictions', titre:'Convictions', aide:'Tes opinions tranchées. La matière première des angles.'},
+  {id:'clients', titre:'Clients et preuves', aide:'Cas, résultats, chiffres publiables oui / anonymisé / non.'},
+  {id:'anti_sujets', titre:'Anti-sujets', aide:'Mots bannis, angles grillés, clichés, profils exclus.'},
+];
+const CLIENT_TYPES = ['verbatim','objection','douleur','crainte','declencheur','question'];
+const SIGNAL_TYPES = [...CLIENT_TYPES,'veille','webflow','preuve'];
+const CONSCIENCE = ['Inconscient','Conscient du problème','Conscient de la solution','Conscient de l\'offre','Très conscient'];
+const FUNNEL_VAR = {TOF:'--tof', MOF:'--mof', BOF:'--bof'};
+
+const S = {view:'semaine', briefs:[], signaux:[], posts:[], piliers:[], sources:[], runs:[], memoire:{},
+  dbOk:null, sampleOk:null, open:null, sigFilter:'tous', briefPilier:'tous', memTab:'plan', busy:{}};
+try{ const v = (location.hash||'').slice(1); if (VIEWS.some(x=>x.id===v)) S.view=v; }catch(e){}
+try{ const v = localStorage.getItem('orem.view'); if (!location.hash && v && VIEWS.some(x=>x.id===v)) S.view=v; }catch(e){}
+
+let db = null, sample = null, pendingRender = false;
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ts = v => typeof v === 'number' ? v : (v ? (Date.parse(v) || 0) : 0);
+const fmtDate = v => { const t = ts(v); return t ? new Date(t).toLocaleDateString('fr-FR',{day:'2-digit',month:'short'}) : ''; };
+const nf = n => (n==null||n==='') ? '' : Number(n).toLocaleString('fr-FR');
+const pad = n => String(n).padStart(2,'0');
+function isoWeek(d=new Date()){ const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())); const day=t.getUTCDay()||7; t.setUTCDate(t.getUTCDate()+4-day); const y=new Date(Date.UTC(t.getUTCFullYear(),0,1)); return Math.ceil(((t-y)/864e5+1)/7); }
+const DAY = 864e5;
+const scoreTotal = b => { const s=b.score||{}; return ['icp','originalite','preuve','timing'].reduce((a,k)=>a+(+s[k]||0),0); };
+const codeOf = name => { const p = S.piliers.find(x => x.nom === name || x.code === name); return p ? p.code : (String(name||'').match(/\b(TOF|MOF|BOF)\b/)||[])[1] || ''; };
+const pilierColor = name => { const c = codeOf(name); return c ? `var(${FUNNEL_VAR[c]})` : 'var(--faint)'; };
+const pilierLabel = name => { const p = S.piliers.find(x => x.nom === name || x.code === codeOf(name)); return p ? p.nom : (name || 'Sans pilier'); };
+const sigFamily = t => CLIENT_TYPES.includes(t) ? 'client' : ['veille','webflow'].includes(t) ? 'marche' : 'preuve';
+
+function toast(msg){ const r=$('#toastRoot'); r.innerHTML=`<div class="toast" role="status">${esc(msg)}</div>`; clearTimeout(toast.t); toast.t=setTimeout(()=>r.innerHTML='',3200); }
+function setView(v){ S.view=v; try{localStorage.setItem('orem.view',v)}catch(e){} render(true); window.scrollTo(0,0); }
+const panelTop = (label, idx) => `<div class="panel-top"><span>${esc(label)}</span><span class="idx">${pad(idx)}</span></div>`;
+
+/* ---------- Données ---------- */
+async function boot(){
+  render();
+  try { db = await claude.use('db'); } catch(e){ db = null; }
+  S.dbOk = !!db;
+  try { sample = await claude.use('sample'); } catch(e){ sample = null; }
+  S.sampleOk = !!sample;
+  if (!db){ render(); return; }
+  ['briefs','signaux','posts','piliers','sources','runs','memoire'].forEach(name => {
+    db.collection(name).limit(1000).onSnapshot(snap => {
+      const rows = snap.docs.map(d => ({id:d.id, ...d.data()}));
+      if (name === 'memoire') S.memoire = Object.fromEntries(rows.map(r => [r.id, r]));
+      else S[name] = rows;
+      if (name === 'piliers') S.piliers.sort((a,b)=>(a.ordre??99)-(b.ordre??99));
+      render();
+    }, err => toast('Lecture impossible : ' + (err && err.message || 'erreur')));
+  });
+}
+async function write(fn, okMsg){
+  if (!db){ toast('Base indisponible dans cette vue.'); return false; }
+  try { await fn(); if (okMsg) toast(okMsg); return true; }
+  catch(e){ toast(e && e.code === 'not_granted' ? 'Tu n\'as pas les droits d\'écriture sur cet outil.' : 'Échec de l\'enregistrement : ' + (e && e.message || 'erreur')); return false; }
+}
+const upd = (col,id,data,msg) => write(() => db.collection(col).doc(id).update({...data, maj: Date.now()}), msg);
+
+/* ---------- Claude (atelier) ---------- */
+const RULES = `Tu es le content manager interne d'Orem (anciennement ICONOKOM), studio de clarté stratégique, d'image et d'exécution pilotée pour PME B2B. Tu travailles pour Louis Montagne, cofondateur, dont le territoire de parole est « le système et la visibilité » (Webflow, automatisation, IA, SEO, GEO, site vivant).
+Tu NE RÉDIGES JAMAIS de post. Tu produis uniquement des briefs structurés que Louis rédigera lui-même.
+Règles absolues :
+- Aucune phrase rédigée prête à publier, aucune accroche écrite. Décris la tension à exploiter, pas la formulation.
+- Chaque point de structure : une idée clé en 12 mots maximum, style télégraphique.
+- Chaque brief s'appuie sur au moins une preuve réelle fournie dans le contexte (signal, verbatim, chiffre, post). N'invente jamais de chiffre ni de citation.
+- Un brief = un pilier (TOF, MOF ou BOF), un thème, un persona, un niveau de conscience, une idée.
+- TOF Visibilité : valeurs, sujets larges pour la cible. MOF Autorité : problèmes de la cible et la manière Orem de les résoudre. BOF Conversion : cas clients, preuves, résultats.
+- Évite les angles déjà traités listés dans l'historique, ou propose explicitement un angle différent.
+- Respecte les anti-sujets et les mots bannis.
+- Français. N'utilise jamais le caractère tiret cadratin.`;
+function schema(){
+  const pil = S.piliers.map(p => `${p.code} (thèmes : ${(p.themes||[]).filter(Boolean).join(', ') || 'libres'})`).join(' ; ');
+  return `Piliers disponibles : ${pil || 'TOF, MOF, BOF'}.
+Réponds UNIQUEMENT en JSON : {"briefs":[{"titre":"sujet en 8 mots max","pilier":"TOF|MOF|BOF","theme":"un thème du pilier","persona":"","conscience":"${CONSCIENCE.join('|')}","tension":"décalage entre ce que la cible croit et la réalité, 25 mots max","conviction":"conviction Orem mobilisée","structure":[{"etape":"Constat","points":["..."]},{"etape":"Retournement","points":["..."]},{"etape":"Démonstration","points":["...","...","..."]},{"etape":"Preuve","points":["..."]},{"etape":"Ouverture","points":["intention de CTA"]}],"preuves":[{"type":"verbatim|chiffre|cas|veille|post","ref":"source exacte tirée du contexte"}],"format":"texte|carrousel|vidéo|sondage","offre":"Conseil|Image de marque|Site web|Suivi","pourquoi_maintenant":"","score":{"icp":0,"originalite":0,"preuve":0,"timing":0}}]}. Chaque score sur 5, sois exigeant.`;
+}
+function context({signals=[], posts=[]}={}){
+  const cut = (s,n) => { s = String(s||''); return s.length>n ? s.slice(0,n)+' […]' : s; };
+  const mem = MEMOIRE.map(m => `## ${m.titre}\n${cut(S.memoire[m.id]?.contenu,3200) || '(vide)'}`).join('\n\n');
+  const pil = S.piliers.map(p => `- ${p.code} ${p.nom} : ${p.objectif||''} (cible ${p.cible_pct||0}%). Thèmes : ${(p.themes||[]).filter(Boolean).join(', ')||'à définir'}`).join('\n') || '(aucun pilier défini)';
+  const hist = S.briefs.slice().sort((a,b)=>ts(b.cree)-ts(a.cree)).slice(0,40).map(b => `- [${b.statut}] ${b.titre} (${codeOf(b.pilier)}${b.theme?' / '+b.theme:''})${b.statut==='rejete'&&b.feedback?' rejeté : '+b.feedback:''}`).join('\n');
+  const sig = signals.map(s => `- (${s.type}${s.persona?' / '+s.persona:''}) ${s.titre||''} :: ${cut(s.citation||s.resume,400)} [source: ${s.source||''} ${s.url||''}]`).join('\n');
+  const po = posts.map(p => `- ${fmtDate(p.date)} ${codeOf(p.pilier)} | ${nf(p.impressions)} impr, ${nf(p.engagements)} eng., ${nf(p.leads)} leads | ${cut(p.texte||p.sujet||p.url,600)}`).join('\n');
+  return `# MÉMOIRE OREM\n${mem}\n\n# PILIERS\n${pil}\n\n# HISTORIQUE DES BRIEFS (à ne pas dupliquer)\n${hist||'(aucun)'}${sig?`\n\n# SIGNAUX FOURNIS\n${sig}`:''}${po?`\n\n# POSTS FOURNIS\n${po}`:''}`;
+}
+async function askBriefs(key, task, ctx, extra={}){
+  if (!sample){ toast('Claude n\'est pas disponible dans cette vue.'); return false; }
+  if (S.busy[key]) return false;
+  S.busy[key] = true; render(true);
+  try{
+    const out = await sample.json(`${RULES}\n\n${context(ctx)}\n\n# MISSION\n${task}\n\n${schema()}`, {modelTier:'complex', cache:false});
+    const list = (out && Array.isArray(out.briefs)) ? out.briefs : [];
+    if (!list.length){ toast('Aucun brief exploitable, reformule la demande.'); return false; }
+    const now = Date.now();
+    return await write(async () => { for (const b of list){ await db.collection('briefs').add({...sanitizeBrief(b), statut:'nouveau', origine:'atelier', semaine:isoWeek(), cree:now, ...extra}); } }, `${list.length} brief${list.length>1?'s':''} ajouté${list.length>1?'s':''} à arbitrer`);
+  } catch(e){
+    const m = {rate_limited:'Trop de demandes, réessaie dans une minute.', not_granted:'Accès à Claude refusé pour cette page.', prompt_too_large:'Mémoire trop volumineuse pour une requête, raccourcis certains blocs.', invalid_json:'Réponse illisible, relance la génération.'}[e && e.code];
+    toast(m || 'Génération interrompue : ' + (e && e.message || 'erreur')); return false;
+  } finally { S.busy[key] = false; render(true); }
+}
+function sanitizeBrief(b){
+  const clip = (v,n=300) => String(v ?? '').slice(0,n);
+  const sc = b.score || {};
+  const code = (String(b.pilier||'').match(/TOF|MOF|BOF/)||[])[0] || '';
+  const p = S.piliers.find(x => x.code === code);
+  return {
+    titre: clip(b.titre,140), pilier: p ? p.nom : clip(b.pilier,80), theme: clip(b.theme,80), persona: clip(b.persona,160), conscience: clip(b.conscience,60),
+    tension: clip(b.tension,400), conviction: clip(b.conviction,300), format: clip(b.format,40), offre: clip(b.offre,120),
+    pourquoi_maintenant: clip(b.pourquoi_maintenant,300),
+    structure: (Array.isArray(b.structure)?b.structure:[]).slice(0,7).map(s => ({etape:clip(s.etape,40), points:(Array.isArray(s.points)?s.points:[]).slice(0,6).map(x=>clip(x,160))})),
+    preuves: (Array.isArray(b.preuves)?b.preuves:[]).slice(0,5).map(x => ({type:clip(x.type,20), ref:clip(x.ref,300)})),
+    score: {icp:+sc.icp||0, originalite:+sc.originalite||0, preuve:+sc.preuve||0, timing:+sc.timing||0},
+  };
+}
+
+/* ---------- Rendu ---------- */
+function render(force){
+  const a = document.activeElement;
+  if (!force && a && $('#main').contains(a) && /INPUT|TEXTAREA|SELECT/.test(a.tagName)){ pendingRender = true; return; }
+  pendingRender = false;
+  renderNav();
+  const v = {semaine:vSemaine, briefs:vBriefs, signaux:vSignaux, posts:vPosts, atelier:vAtelier, memoire:vMemoire}[S.view];
+  $('#main').innerHTML = `<div class="wrap">${S.dbOk === false ? `<div class="banner">La base de l'outil n'est pas accessible dans cette vue. Ouvre la page depuis claude.ai pour voir et modifier les données.</div>` : ''}${v()}</div>`;
+  renderDrawer();
+}
+document.addEventListener('focusout', () => setTimeout(() => { if (pendingRender) render(); }, 0));
+
+function renderNav(){
+  const counts = {briefs:S.briefs.filter(b=>b.statut==='nouveau').length, signaux:S.signaux.filter(s=>!s.utilise && ts(s.date||s.cree)>Date.now()-21*DAY).length};
+  $('#nav').innerHTML = VIEWS.map(v => `<button class="nav-btn" data-view="${v.id}" ${S.view===v.id?'aria-current="page"':''}><span>${v.label}</span>${counts[v.id]?`<span class="count">${counts[v.id]}</span>`:''}</button>`).join('');
+  const last = S.runs.slice().sort((a,b)=>ts(b.date)-ts(a.date))[0];
+  $('#railFoot').innerHTML = `<span><i class="dot ${S.dbOk?'on':''}"></i>${S.dbOk===null?'Connexion…':S.dbOk?'Base connectée':'Base hors ligne'}</span><span><i class="dot ${S.sampleOk?'on':''}"></i>${S.sampleOk?'Claude disponible':'Claude indisponible'}</span>${last?`<span>Dernier agent : ${esc(last.agent)}, ${fmtDate(last.date)}</span>`:''}<span class="num">Semaine ${isoWeek()}</span>`;
+}
+
+function briefCard(b){
+  const t = scoreTotal(b);
+  return `<button class="card" data-open-brief="${esc(b.id)}">
+    <div class="card-top"><span class="funnel" style="--pc:${pilierColor(b.pilier)}"><i></i>${esc(codeOf(b.pilier)||'Pilier ?')}${b.theme?' · '+esc(b.theme):''}</span><span class="score ${t>=15?'hi':t>=11?'mid':''}">${t}/20</span></div>
+    <h3>${esc(b.titre||'Sans titre')}</h3>
+    <div class="card-meta"><span>${esc((b.persona||'').slice(0,60))}</span>${b.date_prevue?`<span class="pill acc">${fmtDate(b.date_prevue)}</span>`:''}</div>
+  </button>`;
+}
+
+function vSemaine(){
+  const now = Date.now();
+  const nouveaux = S.briefs.filter(b=>b.statut==='nouveau').sort((a,b)=>scoreTotal(b)-scoreTotal(a));
+  const sig7 = S.signaux.filter(s=>ts(s.date||s.cree)>now-7*DAY);
+  const pub30 = S.posts.filter(p=>ts(p.date)>now-30*DAY);
+  const planned = S.briefs.filter(b=>b.statut==='planifie').sort((a,b)=>ts(a.date_prevue)-ts(b.date_prevue));
+  const hot = S.signaux.filter(s=>!s.utilise).sort((a,b)=>(b.poids||0)-(a.poids||0) || ts(b.date||b.cree)-ts(a.date||a.cree)).slice(0,4);
+  const memFill = MEMOIRE.filter(m => (S.memoire[m.id]?.contenu||'').replace(/À COMPLÉTER/g,'').trim().length > 300).length;
+  return `
+  <div class="head"><div class="head-txt"><span class="label">Semaine ${isoWeek()} · ${new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})}</span><h1>Ce qu'il y a sur ton bureau</h1><p>Les agents collectent, tu arbitres. Retiens les briefs qui te parlent, planifie-les, puis note ce qui a marché une fois publié.</p></div>
+  <div class="row"><button class="btn primary" data-view="atelier">Ouvrir l'atelier <span class="arr">↗</span></button></div></div>
+  ${memFill < MEMOIRE.length ? `<div class="banner">Mémoire Orem remplie à ${memFill}/${MEMOIRE.length}. Tant qu'elle est incomplète, les angles restent génériques. <a href="#memoire" data-view="memoire">Compléter la mémoire</a></div>`:''}
+  <div class="kpis">
+    <div class="kpi"><span>Briefs à arbitrer</span><b>${nouveaux.length}</b></div>
+    <div class="kpi"><span>Signaux cette semaine</span><b>${sig7.length}</b></div>
+    <div class="kpi"><span>Posts planifiés</span><b>${planned.length}</b></div>
+    <div class="kpi"><span>Posts publiés, 30 jours</span><b>${pub30.length}</b></div>
+  </div>
+  <div class="grid-2">
+    <section class="panel">${panelTop('Briefs',1)}<div class="panel-h"><h2>Les meilleurs à arbitrer</h2><button class="btn ghost sm" data-view="briefs">Tout voir</button></div>
+      ${nouveaux.length ? `<div class="stack">${nouveaux.slice(0,4).map(briefCard).join('')}</div>` : `<div class="empty"><b>Aucun brief en attente.</b><span>Le stratège en dépose chaque lundi matin. Tu peux aussi en générer depuis un signal ou dans l'atelier.</span></div>`}
+    </section>
+    <section class="panel">${panelTop('Funnel',2)}<div class="panel-h"><h2>Équilibre des piliers</h2><span class="label">publiés + planifiés, 60 jours · trait = cible</span></div>${balance()}</section>
+    <section class="panel">${panelTop('Signaux',3)}<div class="panel-h"><h2>Signaux chauds</h2><button class="btn ghost sm" data-view="signaux">Tous les signaux</button></div>
+      ${hot.length ? `<div class="list">${hot.map(sigItem).join('')}</div>` : `<div class="empty"><b>Pas encore de signaux.</b><span>Les agents Voix client (Fireflies) et Veille alimentent cette liste.</span></div>`}
+    </section>
+    <section class="panel">${panelTop('Calendrier',4)}<div class="panel-h"><h2>À publier</h2></div>
+      ${planned.length ? `<div class="list">${planned.slice(0,6).map(b=>`<div class="item"><span class="tag">${fmtDate(b.date_prevue)||'?'}</span><div><span>${esc(b.titre)}</span><p>${esc(codeOf(b.pilier))}${b.theme?' · '+esc(b.theme):''}</p></div><button class="btn sm" data-open-brief="${esc(b.id)}">Ouvrir</button></div>`).join('')}</div>` : `<div class="empty"><b>Rien de planifié.</b><span>Retiens un brief puis donne-lui une date de publication.</span></div>`}
+      ${runsBlock()}
+    </section>
+  </div>`;
+}
+function runsBlock(){
+  const r = S.runs.slice().sort((a,b)=>ts(b.date)-ts(a.date)).slice(0,4);
+  if (!r.length) return '';
+  return `<div><span class="label">Activité des agents</span><div class="list" style="margin-top:6px">${r.map(x=>`<div class="item"><span class="tag">${esc(x.agent)}</span><div><span>${esc(x.resume||'')}</span></div><span class="label num">${fmtDate(x.date)}</span></div>`).join('')}</div></div>`;
+}
+function balance(){
+  if (!S.piliers.length) return `<div class="empty"><b>Aucun pilier défini.</b><span>Configure TOF, MOF et BOF dans Mémoire Orem.</span></div>`;
+  const since = Date.now()-60*DAY;
+  const items = [...S.posts.filter(p=>ts(p.date)>since).map(p=>codeOf(p.pilier)), ...S.briefs.filter(b=>b.statut==='planifie').map(b=>codeOf(b.pilier))];
+  const total = items.length;
+  return `<div class="bal">${S.piliers.map(p=>{
+    const n = items.filter(x=>x===p.code).length; const pct = total? Math.round(n/total*100):0; const cible = +p.cible_pct||0;
+    return `<div class="bal-row"><span class="funnel" style="--pc:${pilierColor(p.nom)}"><i></i>${esc(p.nom)}</span><div class="track"><div class="fill" style="width:${Math.min(pct,100)}%;--pc:${pilierColor(p.nom)}"></div><div class="target" style="left:calc(${Math.min(cible,100)}% - 1px)" title="Cible ${cible}%"></div></div><span class="bal-num">${pct} % / ${cible} %</span></div>`;
+  }).join('')}</div>${total?'':`<p class="label" style="margin:4px 0 0">Aucun post publié ou planifié sur la période.</p>`}`;
+}
+
+function vBriefs(){
+  const pil = ['tous', ...S.piliers.map(p=>p.code)];
+  const list = S.briefs.filter(b => S.briefPilier==='tous' || codeOf(b.pilier)===S.briefPilier);
+  const rejected = list.filter(b=>b.statut==='rejete').length;
+  return `<div class="head"><div class="head-txt"><span class="label">Pipeline éditorial</span><h1>Briefs</h1><p>Chaque brief donne la tension, la structure et les preuves. La rédaction reste la tienne.</p></div><div class="row"><button class="btn" data-view="atelier">Nouveau brief</button></div></div>
+  <div class="filters">${pil.map(p=>`<button class="chip" data-brief-pilier="${esc(p)}" aria-pressed="${S.briefPilier===p}">${p==='tous'?'Tous les piliers':esc(pilierLabel(p))}</button>`).join('')}</div>
+  <div class="board">${STATUTS.map(st => {
+    const items = list.filter(b=>b.statut===st.id).sort((a,b)=> st.id==='planifie' ? ts(a.date_prevue)-ts(b.date_prevue) : st.id==='publie' ? ts(b.maj)-ts(a.maj) : scoreTotal(b)-scoreTotal(a));
+    return `<div class="col"><div class="col-h"><span>${st.label}</span><span class="count">${items.length}</span></div>${items.map(briefCard).join('') || `<div class="empty-col">Vide</div>`}</div>`;
+  }).join('')}</div>
+  ${rejected?`<p class="label">${rejected} brief${rejected>1?'s':''} rejeté${rejected>1?'s':''}. Tes raisons de rejet servent au stratège pour affiner les prochains.</p>`:''}`;
+}
+
+function sigItem(s){
+  const busy = S.busy['sig:'+s.id];
+  const fam = sigFamily(s.type);
+  return `<div class="item"><span class="tag ${fam}">${esc(s.type||'signal')}</span>
+    <div><span>${esc(s.titre||s.resume||'Signal')}</span>
+      ${s.citation?`<p class="quote">« ${esc(s.citation)} »</p>`:''}
+      ${s.resume && s.titre?`<p>${esc(s.resume)}</p>`:''}
+      <p style="font-size:.76rem">${[s.persona, s.source].filter(Boolean).map(esc).join(' · ')}${s.url?` · <a href="${esc(s.url)}" target="_blank" rel="noopener">source</a>`:''}${s.occurrences>1?` · ${s.occurrences} occurrences`:''}${s.emergent_us?` · <span class="pill warn">Émergent US</span>`:''}</p>
+    </div>
+    <div class="row" style="justify-content:flex-end;flex-direction:column;align-items:flex-end"><span class="label num">${fmtDate(s.date||s.cree)}</span>
+      ${S.sampleOk?`<button class="btn sm" data-sig-brief="${esc(s.id)}" ${busy?'disabled':''}>${busy?'<span class="spin"></span> Angles…':'3 angles'}</button>`:''}
+      ${s.utilise?`<span class="pill good">Utilisé</span>`:''}
+    </div></div>`;
+}
+function vSignaux(){
+  const types = ['tous','client','marché',...SIGNAL_TYPES];
+  const list = S.signaux.filter(s => S.sigFilter==='tous' || (S.sigFilter==='client'?CLIENT_TYPES.includes(s.type): S.sigFilter==='marché'?['veille','webflow'].includes(s.type) : s.type===S.sigFilter))
+    .sort((a,b)=>ts(b.date||b.cree)-ts(a.date||a.cree) || (b.poids||0)-(a.poids||0));
+  return `<div class="head"><div class="head-txt"><span class="label">Matière première</span><h1>Signaux</h1><p>Verbatims et objections issus de Fireflies, veille US et France, nouveautés Webflow, preuves clients. Transforme n'importe quel signal en 3 angles.</p></div>
+    <div class="row"><button class="btn" data-add-signal>Ajouter un signal</button></div></div>
+  <div id="addSignal" hidden class="panel" style="margin-bottom:14px">${signalForm()}</div>
+  <div class="filters">${types.map(t=>`<button class="chip" data-sig-filter="${esc(t)}" aria-pressed="${S.sigFilter===t}">${t==='tous'?'Tous':esc(t)}</button>`).join('')}</div>
+  <section class="panel">${panelTop(`${list.length} signal${list.length>1?'s':''}`, 1)}${list.length?`<div class="list">${list.slice(0,200).map(sigItem).join('')}</div>`:`<div class="empty"><b>Aucun signal dans cette catégorie.</b><span>Ajoute une question reçue en DM, une remarque de call ou un article repéré. Ce sont souvent les meilleurs sujets.</span></div>`}</section>`;
+}
+function signalForm(){
+  return `<form id="fSignal" class="form-grid">
+    <label>Type<select id="sType">${SIGNAL_TYPES.map(t=>`<option>${t}</option>`).join('')}</select></label>
+    <label>Persona<input id="sPersona" type="text" placeholder="ex : associé de cabinet de conseil"></label>
+    <label class="full">Titre<input id="sTitre" type="text" required placeholder="ex : Peur de perdre le SEO en quittant WordPress"></label>
+    <label class="full">Citation exacte ou résumé<textarea id="sTexte" style="min-height:90px" placeholder="Colle la phrase telle qu'elle a été dite ou écrite"></textarea></label>
+    <label>Source<input id="sSource" type="text" placeholder="DM LinkedIn, call, article…"></label>
+    <label>Lien<input id="sUrl" type="url" placeholder="https://"></label>
+    <div class="row full"><button class="btn primary" type="submit">Enregistrer le signal</button></div></form>`;
+}
+
+function vPosts(){
+  const list = S.posts.slice().sort((a,b)=>ts(b.date)-ts(a.date));
+  return `<div class="head"><div class="head-txt"><span class="label">Mesure</span><h1>Posts publiés</h1><p>Importe l'export LinkedIn (Statistiques, onglet Contenu, Exporter) ou ajoute un post à la main. Le stratège s'appuie sur ces chiffres pour recycler ce qui marche.</p></div>
+    <div class="row"><label class="btn" for="xlsx" style="flex-direction:row;color:var(--ink)">Importer l'export LinkedIn<input id="xlsx" type="file" accept=".xlsx,.xls,.csv" hidden></label><button class="btn" data-add-post>Ajouter un post</button></div></div>
+  <div id="addPost" hidden class="panel" style="margin-bottom:14px">${postForm()}</div>
+  <section class="panel">${panelTop('Historique',1)}${list.length?`<div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Sujet</th><th>Pilier</th><th class="n">Impressions</th><th class="n">Engag.</th><th class="n">Taux</th><th class="n">Leads</th><th></th></tr></thead><tbody>${list.map(p=>{
+      const rate = p.impressions ? (p.engagements||0)/p.impressions*100 : null;
+      const busy = S.busy['post:'+p.id];
+      return `<tr><td class="num">${fmtDate(p.date)}</td><td style="min-width:220px">${p.url?`<a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.sujet||'Voir le post')}</a>`:esc(p.sujet||'')}</td>
+      <td><select data-post-pilier="${esc(p.id)}" aria-label="Pilier"><option value="">…</option>${S.piliers.map(x=>`<option value="${esc(x.nom)}" ${codeOf(p.pilier)===x.code?'selected':''}>${esc(x.code)}</option>`).join('')}</select></td>
+      <td class="n">${nf(p.impressions)}</td><td class="n">${nf(p.engagements)}</td><td class="n">${rate==null?'':rate.toFixed(1)+' %'}</td><td class="n">${nf(p.leads)}</td>
+      <td>${S.sampleOk?`<button class="btn sm" data-recycle="${esc(p.id)}" ${busy?'disabled':''}>${busy?'<span class="spin"></span>':'Recycler'}</button>`:''}</td></tr>`;}).join('')}</tbody></table></div>`
+    : `<div class="empty"><b>Aucun post enregistré.</b><span>Sur LinkedIn : Statistiques de ton profil, onglet Contenu, bouton Exporter. Dépose le fichier ici chaque semaine. Pour que le recyclage soit pertinent, ajoute aussi le sujet de tes meilleurs posts et les leads qu'ils ont générés.</span></div>`}</section>`;
+}
+function postForm(){
+  return `<form id="fPost" class="form-grid">
+    <label class="full">Lien du post<input id="pUrl" type="url" placeholder="https://www.linkedin.com/feed/update/…"></label>
+    <label class="full">Sujet ou texte du post<textarea id="pSujet" style="min-height:90px" placeholder="Résumé du sujet ou texte complet"></textarea></label>
+    <label>Date<input id="pDate" type="date"></label>
+    <label>Pilier<select id="pPilier"><option value="">…</option>${S.piliers.map(x=>`<option value="${esc(x.nom)}">${esc(x.nom)}</option>`).join('')}</select></label>
+    <label>Impressions<input id="pImp" type="number" min="0"></label>
+    <label>Engagements<input id="pEng" type="number" min="0"></label>
+    <label>Leads ou DM générés<input id="pLeads" type="number" min="0"></label>
+    <div class="row full" style="align-self:end"><button class="btn primary" type="submit">Enregistrer</button></div></form>`;
+}
+
+function vAtelier(){
+  const b = k => S.busy[k];
+  const lag = laggingPilier();
+  return `<div class="head"><div class="head-txt"><span class="label">À la demande</span><h1>Atelier</h1><p>Claude construit des briefs à partir de la mémoire Orem et de tes signaux. Il ne rédige rien : tu reçois la tension, la structure et les preuves.</p></div></div>
+  ${S.sampleOk===false?`<div class="banner">Claude n'est pas disponible dans cette vue. Les agents planifiés continuent de déposer des briefs.</div>`:''}
+  <div class="grid-2">
+    <section class="panel">${panelTop('Idée brute',1)}<h2>Transformer une intuition</h2><p class="muted" style="margin:0">Une phrase entendue, un sujet flou. Tu reçois 2 briefs avec deux angles opposés.</p>
+      <label>Ton idée<textarea id="aIdee" placeholder="ex : les dirigeants pensent qu'une refonte règle un problème de positionnement"></textarea></label>
+      <div class="row"><button class="btn primary" data-atelier="idee" ${b('idee')?'disabled':''}>${b('idee')?'<span class="spin"></span> Construction…':'Structurer <span class="arr">↗</span>'}</button></div></section>
+    <section class="panel">${panelTop('Semaine',2)}<h2>Préparer ma semaine</h2><p class="muted" style="margin:0">Croise les signaux non utilisés des 21 derniers jours, le pilier en retard et ta mémoire. 5 briefs classés par score.</p>
+      <dl class="kv"><dt>Signaux disponibles</dt><dd class="num">${S.signaux.filter(s=>!s.utilise && ts(s.date||s.cree)>Date.now()-21*DAY).length}</dd><dt>Pilier en retard</dt><dd>${esc(lag?pilierLabel(lag):'aucun')}</dd></dl>
+      <div class="row"><button class="btn primary" data-atelier="semaine" ${b('semaine')?'disabled':''}>${b('semaine')?'<span class="spin"></span> Analyse…':'Générer 5 briefs <span class="arr">↗</span>'}</button></div></section>
+    <section class="panel">${panelTop('Objection',3)}<h2>Traiter une objection en amont</h2><p class="muted" style="margin:0">Choisis une objection ou une crainte entendue en call. Tu obtiens 3 angles qui la désamorcent avant le rendez-vous.</p>
+      <label>Objection<select id="aObj"><option value="">Choisir…</option>${S.signaux.filter(s=>['objection','crainte','douleur'].includes(s.type)).slice(0,80).map(s=>`<option value="${esc(s.id)}">${esc((s.titre||s.citation||'').slice(0,90))}</option>`).join('')}</select></label>
+      <div class="row"><button class="btn primary" data-atelier="objection" ${b('objection')?'disabled':''}>${b('objection')?'<span class="spin"></span> Construction…':'Construire 3 angles <span class="arr">↗</span>'}</button></div></section>
+    <section class="panel">${panelTop('Avance US',4)}<h2>Angle first-mover</h2><p class="muted" style="margin:0">Prend les signaux marqués Émergent US et cherche l'angle à prendre en premier sur le marché français.</p>
+      <dl class="kv"><dt>Signaux US</dt><dd class="num">${S.signaux.filter(s=>s.emergent_us).length}</dd></dl>
+      <div class="row"><button class="btn primary" data-atelier="us" ${b('us')?'disabled':''}>${b('us')?'<span class="spin"></span> Analyse…':'Trouver 3 angles <span class="arr">↗</span>'}</button></div></section>
+  </div>`;
+}
+function laggingPilier(){
+  const since = Date.now()-60*DAY;
+  const items = [...S.posts.filter(p=>ts(p.date)>since).map(p=>codeOf(p.pilier)), ...S.briefs.filter(b=>b.statut==='planifie').map(b=>codeOf(b.pilier))];
+  const total = items.length || 1;
+  let worst=null, gap=-1;
+  S.piliers.forEach(p => { const g = (+p.cible_pct||0) - items.filter(x=>x===p.code).length/total*100; if (g>gap){gap=g;worst=p.code;} });
+  return worst;
+}
+
+function vMemoire(){
+  const tabs = [...MEMOIRE.map(m=>({id:m.id,titre:m.titre})), {id:'_piliers',titre:'Piliers et thèmes'}, {id:'_sources',titre:'Sources de veille'}];
+  const cur = S.memTab;
+  let body='';
+  if (cur === '_piliers') body = piliersEditor();
+  else if (cur === '_sources') body = sourcesEditor();
+  else {
+    const m = MEMOIRE.find(x=>x.id===cur); const d = S.memoire[cur] || {};
+    body = `<div class="panel">${panelTop(m.titre, MEMOIRE.indexOf(m)+1)}<div><h2>${esc(m.titre)}</h2><p class="muted" style="margin:6px 0 0;font-size:.86rem">${esc(m.aide)}</p></div>
+      <textarea id="memText" aria-label="${esc(m.titre)}" placeholder="Écris en markdown. Plus c'est précis, meilleurs sont les angles.">${esc(d.contenu||'')}</textarea>
+      <div class="row" style="justify-content:space-between"><button class="btn primary" data-save-mem="${esc(cur)}">Enregistrer</button><span class="label">${d.maj?'Modifié le '+fmtDate(d.maj):'Jamais rempli'} · lu par tous les agents et par l'atelier</span></div></div>`;
+  }
+  return `<div class="head"><div class="head-txt"><span class="label">Le cerveau de l'outil</span><h1>Mémoire Orem</h1><p>Tout ce que les agents doivent savoir d'Orem. C'est ce qui fait la différence entre un angle générique et un angle qui te ressemble.</p></div></div>
+  <div class="mem"><div class="mem-nav">${tabs.map(t=>{
+    const txt = t.id.startsWith('_') ? null : (S.memoire[t.id]?.contenu||'');
+    const todo = txt && /À COMPLÉTER/.test(txt);
+    return `<button data-mem-tab="${t.id}" aria-current="${cur===t.id}"><span>${esc(t.titre)}</span>${txt==null?`<small>${t.id==='_piliers'?S.piliers.length+' piliers':S.sources.length+' sources'}</small>`:`<small>${txt.length?nf(txt.length)+' caractères'+(todo?' · à compléter':''):'vide'}</small><span class="meter"><i style="width:${Math.min(100,txt.length/20)}%"></i></span>`}</button>`;}).join('')}</div>
+  <div style="min-width:0">${body}</div></div>`;
+}
+function piliersEditor(){
+  const sum = S.piliers.reduce((a,p)=>a+(+p.cible_pct||0),0);
+  return `<div class="panel">${panelTop('Plan LinkedIn',8)}<div class="panel-h"><h2>Piliers et thèmes</h2><span class="pill ${sum===100?'good':'warn'}">Total cible ${sum} %</span></div>
+  <p class="muted" style="margin:0;font-size:.86rem">Trois piliers alignés sur le funnel. Définis jusqu'à trois thèmes par pilier : les agents classent chaque brief dans un thème.</p>
+  ${S.piliers.map(p=>`<form class="pil-card" data-pil-form="${esc(p.id)}">
+    <div class="stack" style="gap:10px"><span class="funnel" style="--pc:${pilierColor(p.nom)}"><i></i><b>${esc(p.nom)}</b></span><span class="muted" style="font-size:.84rem">${esc(p.objectif||'')}</span>
+      <label>Part cible (%)<input type="number" min="0" max="100" name="pct" value="${+p.cible_pct||0}" style="max-width:120px"></label></div>
+    <div class="stack" style="gap:8px">${[0,1,2].map(i=>`<label>Thème ${i+1}<input type="text" name="t${i}" value="${esc((p.themes||[])[i]||'')}" placeholder="à définir"></label>`).join('')}
+      <div class="row"><button class="btn sm" type="submit">Enregistrer ${esc(p.code)}</button></div></div>
+  </form>`).join('')}</div>`;
+}
+function sourcesEditor(){
+  const zones = ['US','FR','Webflow'];
+  return `<div class="panel">${panelTop('Veille',9)}<div class="panel-h"><h2>Sources suivies par l'agent Veille</h2><span class="label">${S.sources.filter(s=>s.actif!==false).length} actives</span></div>
+  ${zones.map(z=>{ const l=S.sources.filter(s=>s.zone===z); return `<div><span class="label">${z}</span><div class="list">${l.map(s=>`<div class="item"><span class="tag">${esc(s.type||'site')}</span><div><span>${esc(s.nom)}</span><p>${s.url?`<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.url)}</a>`:''}${s.pourquoi?' · '+esc(s.pourquoi):''}</p></div><button class="btn ghost sm" data-toggle-src="${esc(s.id)}">${s.actif===false?'Réactiver':'Pause'}</button></div>`).join('')||'<p class="label">Aucune source.</p>'}</div></div>`;}).join('')}
+  <form id="fSrc" class="form-grid"><label>Nom<input id="srNom" type="text" required placeholder="nom du leader ou du média"></label><label>Lien<input id="srUrl" type="url" placeholder="https://"></label><label>Zone<select id="srZone">${zones.map(z=>`<option>${z}</option>`).join('')}</select></label><label>Type<select id="srType"><option>linkedin</option><option>blog</option><option>newsletter</option><option>podcast</option><option>youtube</option><option>site</option></select></label><div class="row full"><button class="btn" type="submit">Ajouter la source</button></div></form></div>`;
+}
+
+/* ---------- Tiroir ---------- */
+function renderDrawer(){
+  const r = $('#drawerRoot');
+  const b = S.open && S.briefs.find(x=>x.id===S.open);
+  if (!b){ r.innerHTML=''; return; }
+  const sc = b.score||{};
+  const busy = S.busy['alt:'+b.id];
+  const i = {n:0}; const nx = () => ++i.n;
+  r.innerHTML = `<div class="scrim" data-close></div><aside class="drawer" role="dialog" aria-modal="true" aria-label="Brief">
+  <div class="drawer-h"><div class="stack" style="gap:10px;min-width:0"><span class="funnel label" style="--pc:${pilierColor(b.pilier)}"><i></i>${esc(pilierLabel(b.pilier))}${b.theme?' · '+esc(b.theme):''} · ${esc(({nouveau:'À arbitrer',retenu:'Retenu',planifie:'Planifié',publie:'Publié',rejete:'Rejeté'})[b.statut]||'')}</span><h2 style="font-size:1.6rem">${esc(b.titre)}</h2></div><button class="btn ghost" data-close aria-label="Fermer">Fermer</button></div>
+  <div class="drawer-b">
+    <section class="panel">${panelTop('Tension à exploiter',nx())}<p class="tension" style="margin:0">${esc(b.tension||'')}</p>${b.conviction?`<p class="muted" style="margin:0;font-size:.86rem">Conviction Orem : ${esc(b.conviction)}</p>`:''}</section>
+    <section class="panel">${panelTop('Cadrage',nx())}<dl class="kv"><dt>Persona</dt><dd>${esc(b.persona||'')}</dd><dt>Conscience</dt><dd>${esc(b.conscience||'')}</dd><dt>Format</dt><dd>${esc(b.format||'')}</dd><dt>Offre reliée</dt><dd>${esc(b.offre||'')}</dd><dt>Pourquoi maintenant</dt><dd>${esc(b.pourquoi_maintenant||'')}</dd><dt>Origine</dt><dd>${esc(b.origine||'')}${b.semaine?' · S'+esc(b.semaine):''}</dd></dl></section>
+    <section class="panel">${panelTop('Structure',nx())}<div>${(b.structure||[]).map((s,k)=>`<div class="step"><span class="step-n">${k+1}</span><div><span>${esc(s.etape)}</span><ul>${(s.points||[]).map(p=>`<li>${esc(p)}</li>`).join('')}</ul></div></div>`).join('')}</div></section>
+    <section class="panel">${panelTop('Preuves à mobiliser',nx())}${(b.preuves||[]).map(p=>`<div class="proof"><span class="tag ${p.type==='verbatim'?'client':p.type==='veille'?'marche':'preuve'}">${esc(p.type)}</span><span>${esc(p.ref)}</span></div>`).join('') || '<p class="muted" style="margin:0">Aucune preuve rattachée.</p>'}</section>
+    <section class="panel">${panelTop(`Score ${scoreTotal(b)}/20`,nx())}<div class="scorebars">${[['icp','Pertinence ICP'],['originalite','Originalité'],['preuve','Force de la preuve'],['timing','Timing']].map(([k,l])=>`<div class="sb"><b>${+sc[k]||0}<span style="font-size:.8rem;color:var(--muted)"> /5</span></b><span>${l}</span></div>`).join('')}</div></section>
+    ${drawerActions(b, busy, nx())}
+  </div></aside>`;
+}
+function drawerActions(b, busy, idx){
+  const alt = S.sampleOk ? `<button class="btn" data-alt="${esc(b.id)}" ${busy?'disabled':''}>${busy?'<span class="spin"></span> Variantes…':'3 variantes d\'angle'}</button>` : '';
+  const wrap = inner => `<section class="panel">${panelTop('Décision',idx)}${inner}</section>`;
+  if (b.statut==='nouveau') return wrap(`<div class="row"><button class="btn primary" data-set-statut="retenu">Retenir <span class="arr">↗</span></button>${alt}</div>
+    <label>Rejeter avec une raison (le stratège apprend de tes refus)<input id="rejReason" type="text" placeholder="ex : trop générique, déjà vu, pas notre cible"></label><div class="row"><button class="btn danger" data-reject>Rejeter</button></div>`);
+  if (b.statut==='retenu') return wrap(`<label>Date de publication<input id="planDate" type="date"></label><div class="row"><button class="btn primary" data-plan>Planifier</button><button class="btn ghost" data-set-statut="nouveau">Remettre à arbitrer</button>${alt}</div>`);
+  if (b.statut==='planifie') return wrap(`<label>Lien du post publié<input id="pubUrl" type="url" placeholder="https://www.linkedin.com/feed/update/…"></label><div class="row"><button class="btn primary" data-publish>Marquer comme publié</button><button class="btn ghost" data-set-statut="retenu">Déplanifier</button></div>`);
+  if (b.statut==='rejete') return wrap(`<p class="muted" style="margin:0">Rejeté : ${esc(b.feedback||'sans raison')}</p><div class="row"><button class="btn" data-set-statut="nouveau">Remettre à arbitrer</button></div>`);
+  return wrap(`<p class="muted" style="margin:0">${b.lien_post?`Publié : <a href="${esc(b.lien_post)}" target="_blank" rel="noopener">voir le post</a>.`:'Publié.'} Les chiffres remontent via l'import LinkedIn.</p><div class="row">${alt}</div>`);
+}
+
+/* ---------- Événements ---------- */
+document.addEventListener('click', async e => {
+  const t = e.target.closest('button, a[data-view], .scrim');
+  if (!t) return;
+  const d = t.dataset;
+  if (d.view){ e.preventDefault(); setView(d.view); return; }
+  if (d.openBrief){ S.open = d.openBrief; renderDrawer(); return; }
+  if ('close' in d){ S.open = null; renderDrawer(); return; }
+  if (d.briefPilier){ S.briefPilier = d.briefPilier; render(true); return; }
+  if (d.sigFilter){ S.sigFilter = d.sigFilter; render(true); return; }
+  if (d.memTab){ S.memTab = d.memTab; render(true); return; }
+  if ('addSignal' in d){ const p=$('#addSignal'); p.hidden=!p.hidden; return; }
+  if ('addPost' in d){ const p=$('#addPost'); p.hidden=!p.hidden; return; }
+  const b = S.briefs.find(x=>x.id===S.open);
+  if (d.setStatut && b){ await upd('briefs', b.id, {statut:d.setStatut}, 'Brief mis à jour'); return; }
+  if ('reject' in d && b){ await upd('briefs', b.id, {statut:'rejete', feedback: ($('#rejReason')?.value||'').trim().slice(0,300)}, 'Brief rejeté, raison enregistrée'); S.open=null; renderDrawer(); return; }
+  if ('plan' in d && b){ const v=$('#planDate')?.value; if(!v){toast('Choisis une date.');return;} await upd('briefs', b.id, {statut:'planifie', date_prevue:v}, 'Brief planifié'); return; }
+  if ('publish' in d && b){
+    const url = ($('#pubUrl')?.value||'').trim();
+    const ok = await upd('briefs', b.id, {statut:'publie', lien_post:url, publie_le:new Date().toISOString().slice(0,10)}, 'Publié. Pense à importer les stats à J+7.');
+    if (ok && url){ const id = postId(url); await write(()=>db.collection('posts').doc(id).set({url, sujet:b.titre, pilier:b.pilier||'', theme:b.theme||'', brief_id:b.id, date:new Date().toISOString().slice(0,10), maj:Date.now()})); }
+    return;
+  }
+  if (d.alt){ const br = S.briefs.find(x=>x.id===d.alt); if(!br) return;
+    await askBriefs('alt:'+br.id, `Propose 3 variantes de ce brief, chacune avec un changement net : 1) autre persona, 2) autre preuve, 3) autre pilier du funnel ou autre format. Brief de départ : ${JSON.stringify(br)}`, {signals:[]}, {parent:br.id}); return; }
+  if (d.sigBrief){ const s = S.signaux.find(x=>x.id===d.sigBrief); if(!s) return;
+    const ok = await askBriefs('sig:'+s.id, `Construis 3 briefs aux angles nettement différents à partir de ce signal, idéalement un TOF, un MOF et un BOF. Le signal est la preuve principale.`, {signals:[s]}, {signal_id:s.id});
+    if (ok) await upd('signaux', s.id, {utilise:true}); return; }
+  if (d.recycle){ const p = S.posts.find(x=>x.id===d.recycle); if(!p) return;
+    const top = S.posts.slice().sort((a,b)=>(b.engagements||0)-(a.engagements||0)).slice(0,5);
+    await askBriefs('post:'+p.id, `Ce post a été publié. Propose 3 briefs qui le recyclent sous un angle neuf (autre persona, autre preuve, point de vue inverse ou approfondissement). Pour calibrer, les 5 posts les plus engageants sont fournis.`, {posts:[p, ...top.filter(x=>x.id!==p.id)]}, {recycle_de:p.id}); return; }
+  if (d.atelier === 'idee'){ const v = ($('#aIdee')?.value||'').trim(); if(!v){toast('Écris ton idée d\'abord.');return;}
+    const rel = S.signaux.slice().sort((a,b)=>ts(b.date||b.cree)-ts(a.date||a.cree)).slice(0,25);
+    await askBriefs('idee', `Idée brute de Louis : « ${v} ». Construis 2 briefs aux angles opposés. Appuie-les sur les signaux fournis quand c'est pertinent.`, {signals:rel}); return; }
+  if (d.atelier === 'semaine'){
+    const sig = S.signaux.filter(s=>!s.utilise && ts(s.date||s.cree)>Date.now()-21*DAY).slice(0,40);
+    const top = S.posts.slice().sort((a,b)=>(b.engagements||0)-(a.engagements||0)).slice(0,5);
+    await askBriefs('semaine', `Prépare la semaine : 5 briefs couvrant TOF, MOF et BOF, en priorisant le pilier en retard « ${laggingPilier()||''} ». Classe-les du meilleur score au plus faible.`, {signals:sig, posts:top}); return; }
+  if (d.atelier === 'objection'){ const s = S.signaux.find(x=>x.id===$('#aObj')?.value); if(!s){toast('Choisis une objection.');return;}
+    await askBriefs('objection', `Construis 3 briefs qui traitent cette objection en amont, pour qu'un prospect arrive au rendez-vous déjà rassuré. Angles différents : démonstration (MOF), cas client (BOF), conviction (TOF).`, {signals:[s]}, {signal_id:s.id}); return; }
+  if (d.atelier === 'us'){ const sig = S.signaux.filter(s=>s.emergent_us).slice(0,20); if(!sig.length){toast('Aucun signal Émergent US pour l\'instant.');return;}
+    await askBriefs('us', `Ces tendances montent aux États-Unis et sont peu traitées en France. Construis 3 briefs first-mover pour le marché français, en rendant la tendance concrète pour les PME B2B cibles d'Orem.`, {signals:sig}); return; }
+  if (d.saveMem){ const v = $('#memText')?.value ?? ''; const m = MEMOIRE.find(x=>x.id===d.saveMem);
+    await write(()=>db.collection('memoire').doc(d.saveMem).set({titre:m.titre, contenu:v, maj:Date.now()}), 'Mémoire enregistrée'); render(true); return; }
+  if (d.toggleSrc){ const s=S.sources.find(x=>x.id===d.toggleSrc); if(s) await upd('sources', s.id, {actif: s.actif===false}); return; }
+});
+document.addEventListener('change', async e => {
+  const t = e.target;
+  if (t.dataset.postPilier){ await upd('posts', t.dataset.postPilier, {pilier:t.value}); return; }
+  if (t.id === 'xlsx' && t.files && t.files[0]){ await importLinkedIn(t.files[0]); t.value=''; }
+});
+document.addEventListener('submit', async e => {
+  e.preventDefault();
+  const f = e.target;
+  if (f.dataset.pilForm){
+    const pct = Math.max(0, Math.min(100, +f.elements.pct.value || 0));
+    const themes = [0,1,2].map(i => f.elements['t'+i].value.trim().slice(0,80));
+    await upd('piliers', f.dataset.pilForm, {cible_pct:pct, themes}, 'Pilier enregistré'); render(true); return;
+  }
+  if (f.id === 'fSignal'){
+    const titre = $('#sTitre').value.trim(); if(!titre) return;
+    const texte = $('#sTexte').value.trim(); const type = $('#sType').value;
+    const client = CLIENT_TYPES.includes(type);
+    const ok = await write(()=>db.collection('signaux').add({type, titre, citation: client?texte:'', resume: client?'':texte, persona:$('#sPersona').value.trim(), source:$('#sSource').value.trim()||'saisie manuelle', url:$('#sUrl').value.trim(), date:new Date().toISOString().slice(0,10), cree:Date.now(), utilise:false, poids:2}), 'Signal enregistré');
+    if (ok){ f.reset(); $('#addSignal').hidden = true; }
+  }
+  if (f.id === 'fPost'){
+    const url = $('#pUrl').value.trim(); const id = url ? postId(url) : 'm'+Date.now();
+    const ok = await write(()=>db.collection('posts').doc(id).set({url, sujet:$('#pSujet').value.trim(), date:$('#pDate').value||new Date().toISOString().slice(0,10), pilier:$('#pPilier').value, impressions:+$('#pImp').value||0, engagements:+$('#pEng').value||0, leads:+$('#pLeads').value||0, maj:Date.now()}), 'Post enregistré');
+    if (ok){ f.reset(); $('#addPost').hidden = true; }
+  }
+  if (f.id === 'fSrc'){
+    const nom = $('#srNom').value.trim(); if(!nom) return;
+    await write(()=>db.collection('sources').add({nom, url:$('#srUrl').value.trim(), zone:$('#srZone').value, type:$('#srType').value, actif:true}), 'Source ajoutée'); f.reset();
+  }
+});
+document.addEventListener('keydown', e => { if (e.key==='Escape' && S.open){ S.open=null; renderDrawer(); } });
+
+/* ---------- Import LinkedIn ---------- */
+function postId(url){ const m = String(url).match(/(?:activity|share|ugcPost)[-:](\d{10,})/); return m ? 'li'+m[1] : 'u'+Math.abs([...String(url)].reduce((h,c)=>((h<<5)-h+c.charCodeAt(0))|0,0)); }
+function toISO(v){
+  if (v instanceof Date) return v.toISOString().slice(0,10);
+  if (typeof v === 'number' && v > 20000 && v < 80000) return new Date(Date.UTC(1899,11,30)+v*DAY).toISOString().slice(0,10);
+  const s = String(v||'').trim(); const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (m) return `${m[3]}-${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}`;
+  const t = Date.parse(s); return t ? new Date(t).toISOString().slice(0,10) : '';
+}
+async function importLinkedIn(file){
+  if (typeof XLSX === 'undefined'){ toast('Lecteur Excel indisponible, recharge la page.'); return; }
+  try{
+    const wb = XLSX.read(await file.arrayBuffer(), {type:'array', cellDates:true});
+    const found = {};
+    wb.SheetNames.forEach(name => {
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[name], {header:1, raw:true, defval:''});
+      let header = null;
+      rows.forEach(r => {
+        const cells = r.map(c => String(c).toLowerCase());
+        if (cells.some(c => c.includes('post url') || c.includes('url de la publication') || c.includes('url du post'))){ header = cells; return; }
+        if (!header) return;
+        r.forEach((c,i) => {
+          if (typeof c === 'string' && /linkedin\.com\//.test(c)){
+            const id = postId(c); const o = found[id] ||= {url:c.trim()};
+            const date = toISO(r[i+1]); if (date) o.date = date;
+            const metric = header[i+2] || '';
+            const val = +String(r[i+2]).replace(/[^\d.]/g,'') || 0;
+            if (/impression/.test(metric)) o.impressions = val;
+            else if (/engag|interaction/.test(metric)) o.engagements = val;
+          }
+        });
+      });
+    });
+    const ids = Object.keys(found);
+    if (!ids.length){ toast('Aucun post trouvé. Utilise l\'export Contenu des statistiques LinkedIn.'); return; }
+    await write(async () => {
+      for (const id of ids){
+        const ref = db.collection('posts').doc(id); const snap = await ref.get();
+        const data = {...found[id], maj:Date.now(), source:'export LinkedIn'};
+        if (snap.exists) await ref.update(data); else await ref.set({sujet:'', pilier:'', leads:0, ...data});
+      }
+    }, `${ids.length} post${ids.length>1?'s':''} importé${ids.length>1?'s':''} ou mis à jour`);
+  } catch(e){ toast('Fichier illisible : ' + (e && e.message || 'format inconnu')); }
+}
+
+boot();
+})();
+</script>
