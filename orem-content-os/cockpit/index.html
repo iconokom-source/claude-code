@@ -221,6 +221,17 @@ textarea{resize:vertical;min-height:120px;line-height:1.6}
 .qa{display:flex;flex-direction:column;gap:14px}
 .qa label span{color:var(--ink);font-size:.9rem;font-weight:400}
 .qa small{color:var(--faint);font-size:.74rem}
+.jet-steps{display:flex;flex-direction:column;gap:8px;padding:6px 0}
+.jet-step{display:flex;align-items:center;gap:10px;font-size:.86rem;color:var(--faint)}
+.jet-step.done{color:var(--muted)}
+.jet-step.now{color:var(--ink)}
+.jet-step.done .step-n{border-color:var(--good);color:var(--good)}
+.jet-step.now .step-n{border-color:var(--orange);color:var(--orange)}
+.jet-text{white-space:pre-line;background:var(--surface);border-radius:var(--r-sm);padding:16px 18px;font-size:.93rem;line-height:1.6}
+.iv-log{display:flex;flex-direction:column;gap:8px;max-height:360px;overflow-y:auto;padding:4px 0}
+.iv-msg{padding:10px 14px;border-radius:14px;font-size:.9rem;max-width:85%;white-space:pre-line}
+.iv-msg.agent{background:var(--surface);align-self:flex-start}
+.iv-msg.louis{background:var(--blue-soft);align-self:flex-end}
 .idea-row{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line);font-size:.88rem}
 .idea-row:first-child{border-top:0}
 .toast{position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:11px 18px;border-radius:99px;font-size:.86rem;z-index:40;max-width:calc(100% - 32px)}
@@ -289,7 +300,7 @@ const SIGNAL_TYPES = [...CLIENT_TYPES,'veille','webflow','preuve'];
 const CONSCIENCE = ['Inconscient','Conscient du problème','Conscient de la solution','Conscient de l\'offre','Très conscient'];
 const FUNNEL_VAR = {TOF:'--tof', MOF:'--mof', BOF:'--bof'};
 
-const S = {view:'semaine', briefs:[], signaux:[], posts:[], piliers:[], sources:[], runs:[], idees:[], cas:[], memoire:{},
+const S = {view:'semaine', briefs:[], signaux:[], posts:[], piliers:[], sources:[], runs:[], idees:[], cas:[], faits:[], anecdotes:[], regles:[], jet:{}, terrain:'metier', memoire:{},
   dbOk:null, sampleOk:null, open:null, sigFilter:'tous', briefPilier:'tous', memTab:'plan', busy:{}};
 const JURY_MIN = 6;
 const sigVisible = s => !s.archive;
@@ -323,7 +334,7 @@ async function boot(){
   try { sample = await claude.use('sample'); } catch(e){ sample = null; }
   S.sampleOk = !!sample;
   if (!db){ render(); return; }
-  ['briefs','signaux','posts','piliers','sources','runs','memoire','idees','cas'].forEach(name => {
+  ['briefs','signaux','posts','piliers','sources','runs','memoire','idees','cas','faits','anecdotes','regles'].forEach(name => {
     db.collection(name).limit(1000).onSnapshot(snap => {
       const rows = snap.docs.map(d => ({id:d.id, ...d.data()}));
       if (name === 'memoire') S.memoire = Object.fromEntries(rows.map(r => [r.id, r]));
@@ -488,6 +499,230 @@ Réponds UNIQUEMENT en JSON : {"lectures":[{"i":0,"note":0,"interpretation":"ce 
     await write(async()=>{ for (const [i,s] of list.entries()){ const x=l.find(y=>+y.i===i); if(!x) continue; const note=Math.max(0,Math.min(10,+x.note||0)); await db.collection('signaux').doc(s.id).update({note, interpretation:String(x.interpretation||'').slice(0,300), archive: note<5, maj:Date.now()}); } }, 'Signaux évalués');
   } catch(e){ toast('Évaluation interrompue : '+(e?.message||'erreur')); }
   finally{ S.busy.interp=false; render(true); }
+}
+
+/* ---------- Éditorial : voix, interview, premier jet, apprentissage ---------- */
+const THEMES = ['client','échec','succès','déclic','process','fierté','conseil','prix','positionnement','mindset','parcours','linkedin','perso','opinion'];
+const TERRAINS = [
+  {id:'metier', nom:'Métier et clients', cible:'des cas nommés et datés : quel client, quel devis, quelle méthode', themes:['client','process','conseil','prix','positionnement','fierté'],
+   pistes:['le projet dont tu es le plus fier et ce qui le distinguait','un projet qui a dérapé : le premier signe, puis ta réaction','le détail que tu vois rater partout chez les autres','ce que tu as retiré de ton offre et ce que ça a changé','un client refusé : combien, et après quel épisode']},
+  {id:'bascules', nom:'Tournants', cible:'le moment exact : date, lieu, qui était là, ce qui a été dit', themes:['déclic','échec','succès'],
+   pistes:['la scène où une décision a été prise','le jour le plus dur, heure par heure','ce que tu as arrêté et ce que ça a coûté','une phrase entendue qui t\'est restée']},
+  {id:'parcours', nom:'Parcours et choix', cible:'les bifurcations et le regard des autres', themes:['parcours','mindset'],
+   pistes:['un choix que ton entourage n\'a pas compris','une proposition refusée','ce qui te fait douter dans une semaine normale']},
+  {id:'linkedin', nom:'LinkedIn vu de l\'intérieur', cible:'ton vécu de la publication, pas des généralités', themes:['linkedin'],
+   pistes:['ton post qui a le plus marché, et pourquoi selon toi','ce qui te fait repérer un post écrit par une IA','ce sur quoi tu te censures']},
+  {id:'perso', nom:'Hors travail', cible:'ta vie perso, avec la même précision qu\'un cas client', themes:['perso'],
+   pistes:['la course et la musculation : ce que ça t\'a appris pour l\'agence','une habitude sans rapport avec ton métier']},
+  {id:'convictions', nom:'Convictions', cible:'des avis tranchés, avec la scène qui les a fait naître', themes:['opinion'],
+   pistes:['ce que tout le métier répète et que tu sais faux','une discussion tendue à cause d\'un avis','ce que tu faisais il y a trois ans et ne referais plus']},
+];
+const VX = {
+  registres:{
+    'Direct':'Va droit au fait. Pas d\'introduction, pas de contexte inutile.',
+    'Pédagogue':'Avance par étapes nettes. Chaque affirmation a sa raison, chaque idée son exemple concret. Ne réexplique jamais ce que le lecteur sait.',
+    'Storyteller':'Part d\'une scène datée et située. Le lecteur doit voir le moment avant de lire la leçon.',
+    'Inspirant':'Relie le fait raconté à une trajectoire plus large, sans grandiloquence.',
+    'Provocateur':'Prend le contre-pied d\'une idée reçue du secteur et l\'assume jusqu\'au bout.',
+    'Technique':'Appuie chaque point sur un chiffre ou un mécanisme précis.',
+    'Humoristique':'Une pointe d\'autodérision, jamais de blague plaquée.'},
+  accroches:{
+    'Entrée en scène':'Ouvre sur un moment précis (« Mardi, 8h47… »).',
+    'Chiffre brut':'Ouvre sur un chiffre documenté, sans l\'expliquer tout de suite.',
+    'Contre-pied':'Ouvre sur l\'inverse de ce que tout le monde pense.',
+    'Question qui divise':'Ouvre sur une question qui force le lecteur à choisir un camp.',
+    'Déclaration sèche':'Ouvre sur une phrase courte et affirmative.',
+    'Promesse retenue':'Garde l\'information clé pour après le « voir plus ».'},
+  structures:{
+    'Récit puis leçon':'Une histoire, puis ce qu\'elle apprend.',
+    'Problème puis solution':'Le blocage, puis la sortie.',
+    'Liste rythmée':'Points courts, 5 au maximum, une phrase de verdict par point.',
+    'Avant / après':'L\'état de départ, le déclic, le résultat.',
+    'Thèse puis preuves':'L\'affirmation d\'abord, les faits ensuite.'},
+  clotures:{
+    'Libre':'Choisis la fin la plus juste pour ce post.',
+    'Affirmation':'Termine par une phrase tranchée qui referme le sujet.',
+    'Question':'Termine par une question ancrée dans le post, qui appelle un vrai témoignage.',
+    'Punchline':'Termine par une formule courte, sans cliché.'},
+  longueurs:{'Court':'300 à 600 caractères','Moyen':'700 à 1 200 caractères','Long':'1 600 à 2 400 caractères'},
+  phrases:{'Libre':'','Courtes':'Une idée par ligne.','Variées':'Alterne phrases très courtes et plus longues.','Amples':'Phrases construites, plus littéraires.'},
+  emojis:{'Aucun':'Aucun emoji.','Rares':'Un ou deux emojis au maximum, jamais décoratifs.','Comme puces':'Emojis seulement comme puces de liste.'},
+  regles:{mobile:'Lignes courtes, lisibles sur mobile.', tranche:'Un point de vue tranché, assumé.', nojargon:'Aucun jargon corporate.', chiffre:'Un chiffre concret dès que possible, uniquement parmi les faits fournis.', uneidee:'Une seule idée par post.', ponctuation:'Ponctuation normale en fin de phrase.'},
+  perso:{'Travail':'Ne parle jamais de vie perso.','Un peu':'Une touche perso possible si elle sert le propos.','Autant':'Le perso est bienvenu à parts égales avec le travail.'},
+};
+const VOIX_DEFAUT = {pronom:'tu', registres:['Pédagogue','Storyteller'], curseurs:{direct:25, casual:75, provoc:25, detail:50}, longueur:'Moyen', cloture:'Libre', accroches:[], structure:'', phrases:'Libre', emojis:'Aucun', regles:{mobile:true,tranche:true,nojargon:true,chiffre:true,uneidee:true,ponctuation:true}, perso:'Un peu', regles_perso:[], faits_chiffres:[], cta:''};
+const voix = () => ({...VOIX_DEFAUT, ...(S.memoire.voix?.config||{})});
+
+function voixPrompt(){
+  const v = voix(), c = v.curseurs||{};
+  const cur = (n,a,b) => n<=35?a:n>=65?b:`entre ${a.toLowerCase()} et ${b.toLowerCase()}`;
+  const L = [];
+  L.push(`Tu écris en ${v.pronom==='vous'?'vouvoyant':'tutoyant'} le lecteur, à la première personne (Louis, parfois « on » pour l'agence).`);
+  if (v.registres.length) L.push(`Registre principal, qui décide de la structure : ${v.registres[0]}. ${VX.registres[v.registres[0]]||''}` + (v.registres.slice(1).map(r=>` Registre secondaire, qui colore seulement : ${r}. ${VX.registres[r]||''}`).join('')));
+  L.push(`Ton : ${cur(c.direct,'Direct','Diplomate')}, ${cur(c.casual,'Professionnel','Décontracté')}, ${cur(c.provoc,'Pédagogue','Provocateur')}, ${cur(c.detail,'Concis','Détaillé')}.`);
+  L.push(`Longueur : ${VX.longueurs[v.longueur]||VX.longueurs.Moyen}.`);
+  if (v.accroches.length) L.push(`Accroches autorisées : ${v.accroches.map(a=>a+' ('+VX.accroches[a]+')').join(' ; ')}.`);
+  if (v.structure) L.push(`Structure : ${v.structure}. ${VX.structures[v.structure]||''}`);
+  L.push(`Clôture : ${VX.clotures[v.cloture]||VX.clotures.Libre}`);
+  if (VX.phrases[v.phrases]) L.push(VX.phrases[v.phrases]);
+  L.push(VX.emojis[v.emojis]||VX.emojis.Aucun);
+  L.push(VX.perso[v.perso]||'');
+  Object.entries(v.regles||{}).forEach(([k,on]) => { if (on && VX.regles[k]) L.push(VX.regles[k]); });
+  (v.regles_perso||[]).filter(Boolean).forEach(r => L.push('Règle de Louis : ' + r));
+  S.regles.forEach(r => L.push('Règle apprise de ses corrections : ' + r.texte));
+  return L.filter(Boolean).map(x=>'- '+x).join('\n');
+}
+
+/* Contrôle déterministe : ce qu'on ne laisse jamais passer au modèle. */
+const TICS_MOTS = ['plonger dans','au cœur de','à l\'ère de','s\'inscrit dans','s\'inscrire dans','tirer parti','naviguer','favoriser','écosystème','paysage','robuste','incontournable','véritable','il est important de','il convient de','par ailleurs','en outre','de plus,','en conclusion','dans l\'ensemble','force est de constater','vraiment','extrêmement','tout simplement','véritablement','n\'hésitez pas','game-changer','game changer','clé en main','pas cher','template','vitrine','joli','tendance','solutions digitales','au cœur','transformation digitale','accompagner dans'];
+const TICS_MOTIFS = [
+  [/\u2014|\u2013/, 'tiret cadratin ou demi-cadratin'],
+  [/ce n['’]est pas [^.\n]{1,70}[,.]\s*c['’]est /i, '« ce n\'est pas X, c\'est Y »'],
+  [/non seulement/i, '« non seulement… mais aussi »'],
+  [/le problème n['’]est pas/i, '« le problème n\'est pas… »'],
+  [/pas par [^.\n]{1,40}\.\s*parce que/i, '« pas par X. Parce que… »'],
+  [/le truc que personne|personne ne (te|vous) (le )?dit|ce que personne ne/i, '« ce que personne ne dit »'],
+  [/^et si /im, 'accroche « Et si… »'],
+  [/voici pourquoi|voilà pourquoi/i, '« voici pourquoi »'],
+  [/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u, 'emoji'],
+];
+function lintTexte(texte, sourcesTexte){
+  const out = [], low = texte.toLowerCase();
+  TICS_MOTS.forEach(m => { if (low.includes(m)) out.push({type:'mot', detail:`mot à bannir : « ${m} »`}); });
+  TICS_MOTIFS.forEach(([re,l]) => { if (re.test(texte)) out.push({type:'motif', detail:l}); });
+  const lignes = texte.split('\n').map(x=>x.trim()).filter(Boolean);
+  for (let i=0;i+2<lignes.length;i++){ const w=l=>l.split(/\s+/)[0].toLowerCase(); if (w(lignes[i]).length>2 && w(lignes[i])===w(lignes[i+1]) && w(lignes[i])===w(lignes[i+2])){ out.push({type:'motif', detail:`anaphore en trois temps (« ${lignes[i].split(/\s+/)[0]}… ») : effet triade`}); break; } }
+  const src = String(sourcesTexte||'').replace(/[\s  .]/g,'');
+  const nums = texte.match(/\d[\d\s  .,]*\d|\d+/g) || [];
+  [...new Set(nums)].forEach(n => { const k = n.replace(/[\s  .]/g,''); if ((+k.replace(',','.')>12 || /%|€/.test(texte.slice(texte.indexOf(n), texte.indexOf(n)+n.length+2))) && !src.includes(k)) out.push({type:'chiffre', detail:`chiffre introuvable dans les sources : ${n.trim()}`}); });
+  const max = {Court:700, Moyen:1300, Long:2600}[voix().longueur] || 1300;
+  if (texte.length > max) out.push({type:'longueur', detail:`${texte.length} caractères, au-delà de la cible (${max})`});
+  return out;
+}
+
+function sourcesCatalogue(){
+  const items = [];
+  S.faits.forEach(f => items.push({id:'f:'+f.id, type:'fait', label:f.texte}));
+  S.anecdotes.forEach(a => items.push({id:'a:'+a.id, type:'anecdote', label:`${a.sujet} :: ${a.recit}`}));
+  S.cas.forEach(c => items.push({id:'c:'+c.id, type:'cas', label:`${c.nom} : ${c.probleme} Résultat : ${c.resultat}. ${(c.chiffres||[]).join(' ; ')}. À ne pas dire : ${c.eviter||''}`}));
+  S.signaux.filter(s=>sigVisible(s) && (s.note??5)>=6).forEach(s => items.push({id:'s:'+s.id, type:'verbatim', label:`${s.titre} :: « ${s.citation||s.resume||''} »${s.interpretation?' (révèle : '+s.interpretation+')':''}`}));
+  (voix().faits_chiffres||[]).forEach((f,i) => items.push({id:'k:'+i, type:'chiffre', label:f}));
+  return items;
+}
+function setJet(id, patch){ S.jet[id] = {...(S.jet[id]||{}), ...patch}; renderDrawer(); }
+const ETAPES_JET = ['Mémoire chargée','Angle et sources','Rédaction dans ta voix','Accroche et chute','Contrôle anti-IA','Vérification finale'];
+
+async function premierJet(b){
+  if (!sample){ toast('Claude n\'est pas disponible dans cette vue.'); return; }
+  if (S.jet[b.id]?.enCours) return;
+  const cat = sourcesCatalogue();
+  const brief = {titre:b.titre, pilier:codeOf(b.pilier), theme:b.theme, persona:b.persona, conscience:b.conscience, tension:b.tension, conviction:b.conviction, structure:b.structure, preuves:b.preuves, format:b.format, hook_prefere:(b.hooks||[])[0]?.texte||''};
+  try{
+    setJet(b.id, {enCours:true, etape:1});
+    const mem = `# POSITIONNEMENT\n${String(S.memoire.positionnement?.contenu||'').slice(0,2500)}\n\n# CONVICTIONS\n${String(S.memoire.convictions?.contenu||'').slice(0,2000)}\n\n# ANTI-SUJETS\n${String(S.memoire.anti_sujets?.contenu||'').slice(0,1500)}`;
+    setJet(b.id, {etape:2});
+    const plan = await sample.json(`Tu prépares un post LinkedIn de Louis Montagne (Orem). Choisis l'angle précis et les sources qui vont l'ancrer.
+Règles : un post ne tient que sur du vécu réel. Choisis 2 à 5 sources dans le catalogue, en privilégiant une anecdote ou une scène, puis un chiffre documenté. N'invente aucune source.
+# BRIEF\n${JSON.stringify(brief)}
+# CATALOGUE DES SOURCES (id :: contenu)\n${cat.map(x=>`${x.id} [${x.type}] ${x.label.slice(0,380)}`).join('\n').slice(0,14000)}
+Réponds UNIQUEMENT en JSON : {"angle":"l'angle en une phrase","scene":"la scène ou le fait d'ouverture choisi","sources":["id"],"manque":"ce qui manque pour que ce post soit impossible à écrire par quelqu'un d'autre, ou vide"}`, {modelTier:'default', cache:false});
+    const choisies = cat.filter(x => (plan.sources||[]).includes(x.id));
+    const srcTxt = choisies.map(x=>`[${x.type}] ${x.label}`).join('\n');
+    setJet(b.id, {etape:3, plan});
+    const r1 = await sample(`Tu écris le premier jet d'un post LinkedIn pour Louis Montagne. Il le réécrira lui-même, mais le texte doit déjà sonner comme lui.
+# SA VOIX\n${voixPrompt()}
+# CONTEXTE\n${mem}
+# BRIEF\n${JSON.stringify(brief)}
+# ANGLE RETENU\n${plan.angle||''}\nOuverture : ${plan.scene||''}
+# SOURCES AUTORISÉES (seuls faits et chiffres utilisables)\n${srcTxt}
+${HUMAN}
+Contraintes dures :
+- Chaque fait, chaque chiffre vient des sources ci-dessus. Aucun chiffre, aucun client, aucune citation inventés. Si un détail manque, écris autour, n'invente pas.
+- Pas de nom de client si la source dit de l'anonymiser ou si c'est un verbatim de prospect.
+- Pas de maxime creuse à la fin de chaque paragraphe. Pas de titre, pas de hashtags.
+Rends UNIQUEMENT le texte du post.`, {modelTier:'complex', cache:false});
+    let texte = String(r1.text||'').trim();
+    setJet(b.id, {etape:4, texte});
+    const r2 = await sample.json(`Tu retravailles uniquement la première ligne (accroche) et la dernière ligne (chute) de ce post LinkedIn. Le reste ne bouge pas.
+L'accroche doit arrêter un dirigeant de PME B2B qui scrolle : concrète, spécifique à ce post, sans formule usée (« Et si… », « Voici pourquoi », « Personne ne vous dit », « Arrêtez de… »). ${voix().accroches.length?'Types autorisés : '+voix().accroches.join(', ')+'.':''}
+La chute : ${VX.clotures[voix().cloture]||''} Pas de morale générique.
+${HUMAN}
+# POST\n${texte}
+Réponds UNIQUEMENT en JSON : {"accroche":"nouvelle première ligne","chute":"nouvelle dernière ligne","pourquoi":"en une phrase"}`, {modelTier:'default', cache:false});
+    if (r2 && r2.accroche && r2.chute){ const L = texte.split('\n'); const fi = L.findIndex(x=>x.trim()); let li = L.length-1; while (li>0 && !L[li].trim()) li--; if (fi>=0){ L[fi]=r2.accroche; if (li>fi) L[li]=r2.chute; texte = L.join('\n'); } }
+    setJet(b.id, {etape:5, texte});
+    const lint1 = lintTexte(texte, srcTxt + '\n' + mem);
+    const r3 = await sample.json(`Tu es le relecteur le plus exigeant de Louis. Ta mission : que ce post ne puisse être écrit par personne d'autre et qu'aucune trace d'IA ne subsiste.
+1. Repère chaque tic d'écriture IA : triades, contrastes en réflexe, maximes plaquées, formules que n'importe quel auteur LinkedIn pourrait écrire, transitions vides, rythme trop régulier.
+2. Repère chaque phrase générique qui pourrait figurer sur le compte d'un autre consultant.
+3. Réécris ces passages seulement, en gardant la voix, les faits et la structure. Ne rajoute aucun fait.
+# SA VOIX\n${voixPrompt()}
+# SOURCES AUTORISÉES\n${srcTxt}
+# PROBLÈMES DÉJÀ DÉTECTÉS AUTOMATIQUEMENT (à corriger en priorité)\n${lint1.map(x=>'- '+x.detail).join('\n')||'aucun'}
+${HUMAN}
+# POST\n${texte}
+Réponds UNIQUEMENT en JSON : {"problemes":[{"extrait":"","raison":""}],"signature":"ce qui rend ce post impossible à écrire par un autre, ou ce qui manque encore","texte":"le post corrigé complet"}`, {modelTier:'complex', cache:false});
+    if (r3 && r3.texte) texte = String(r3.texte).trim();
+    setJet(b.id, {etape:6, texte});
+    const lint2 = lintTexte(texte, srcTxt + '\n' + mem);
+    const prev = b.jet?.texte ? [...(b.jet.versions||[]), b.jet.texte].slice(-4) : (b.jet?.versions||[]);
+    const jet = {texte, versions:prev, angle:plan.angle||'', manque:plan.manque||'', sources:choisies.map(x=>({id:x.id, type:x.type, label:x.label.slice(0,220)})), accroche_pourquoi:r2?.pourquoi||'', problemes:(r3?.problemes||[]).slice(0,10), signature:r3?.signature||'', restant:lint2, date:Date.now()};
+    await upd('briefs', b.id, {jet}, lint2.length ? `Premier jet prêt, ${lint2.length} point${lint2.length>1?'s':''} à vérifier` : 'Premier jet prêt, contrôle propre');
+  } catch(e){ toast(e?.code==='rate_limited'?'Trop de demandes, réessaie dans une minute.':'Rédaction interrompue : '+(e?.message||'erreur')); }
+  finally{ S.jet[b.id] = {}; renderDrawer(); }
+}
+
+const norm = s => String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9 ]/g,' ').split(/\s+/).filter(w=>w.length>3);
+const similaire = (a,b) => { const A=new Set(norm(a)), B=new Set(norm(b)); if(!A.size||!B.size) return 0; let n=0; A.forEach(w=>{ if(B.has(w)) n++; }); return n/Math.min(A.size,B.size); };
+async function apprendre(b, finale){
+  if (!sample || !b.jet?.texte) return;
+  S.busy['learn:'+b.id] = true; renderDrawer();
+  try{
+    const r = await sample.json(`Louis a réécrit le premier jet d'un post. Compare les deux versions et déduis ses préférences d'écriture durables.
+Ne retiens que ce qui se généralise à d'autres posts (rythme, ouverture, vocabulaire, ce qu'il coupe, ce qu'il ajoute), pas les corrections propres à ce sujet. 0 à 3 règles, chacune en une phrase à l'impératif, concrète.
+Règles déjà connues (ne les répète pas) :\n${S.regles.map(x=>'- '+x.texte).join('\n')||'aucune'}
+# PREMIER JET\n${b.jet.texte}\n# VERSION DE LOUIS\n${finale}
+Réponds UNIQUEMENT en JSON : {"regles":["..."]}`, {modelTier:'default', cache:false});
+    const neuves = (r?.regles||[]).map(x=>String(x).replace(/\u2014/g,',').slice(0,240)).filter(x => x && !S.regles.some(e => similaire(e.texte,x) > .6));
+    await write(async()=>{
+      await db.collection('briefs').doc(b.id).update({version_finale:finale, maj:Date.now()});
+      for (const t of neuves) await db.collection('regles').add({texte:t, origine:'correction', brief:b.titre, date:Date.now()});
+    }, neuves.length ? `${neuves.length} règle${neuves.length>1?'s':''} apprise${neuves.length>1?'s':''} de ta réécriture` : 'Version enregistrée, aucune nouvelle règle');
+  } catch(e){ toast('Apprentissage interrompu : '+(e?.message||'erreur')); }
+  finally{ S.busy['learn:'+b.id]=false; renderDrawer(); }
+}
+
+/* Interview : une scène à la fois, de plus en plus précise. */
+const INTERVIEW_PRINCIPES = `Tu interviewes Louis pour récolter la matière de ses futurs posts. Tes questions suivent ces principes :
+- Tu demandes un moment qui a eu lieu, jamais un sujet général. Une question à laquelle il peut répondre par une généralité est ratée.
+- Tu t'appuies sur ce que tu sais déjà de lui et tu le cites : ta question doit être impossible à poser à quelqu'un d'autre.
+- Tu vises ce qui ne s'invente pas : mots exacts entendus, chiffres, mois, prénoms, ce qu'il a ressenti, ce qu'il a fait juste après.
+- Une seule scène par question, mais tu peux demander jusqu'à trois détails de cette scène.
+- Tu vas là où il y a de la tension : ce qui a basculé, ce qu'on lui a déconseillé, ce qu'il a arrêté, ce qu'il refuse.
+- Chaque question part de sa réponse précédente et creuse, elle ne repart pas de zéro.
+- Tu réagis brièvement et naturellement à sa réponse avant la question suivante, comme dans une vraie conversation.
+Tutoiement, français parlé, jamais de tiret cadratin.`;
+function terrainCouverture(){ return TERRAINS.map(t => ({...t, n:S.anecdotes.filter(a => a.terrain===t.id || (!a.terrain && t.themes.includes(a.theme))).length})); }
+async function interviewTour(reponse){
+  if (!sample){ toast('Claude n\'est pas disponible dans cette vue.'); return; }
+  const iv = S.memoire.interview || {};
+  const t = TERRAINS.find(x=>x.id===(iv.terrain||S.terrain)) || TERRAINS[0];
+  const echanges = [...(iv.echanges||[])]; if (reponse) echanges.push({role:'louis', texte:reponse.slice(0,3000)});
+  S.busy.iv = true; render(true);
+  try{
+    const deja = S.anecdotes.filter(a => t.themes.includes(a.theme)).map(a=>`- ${a.sujet} : ${a.recit}`).join('\n');
+    const faits = S.faits.slice(0,40).map(f=>'- '+f.texte).join('\n');
+    const out = await sample.json(`${INTERVIEW_PRINCIPES}
+# TERRAIN : ${t.nom}\nÀ rapporter : ${t.cible}\nPistes possibles : ${t.pistes.join(' ; ')}
+# CE QU'ON SAIT DÉJÀ DE LUI\n${faits}\n# ANECDOTES DÉJÀ RÉCOLTÉES SUR CE TERRAIN\n${deja||'aucune'}
+# CONVERSATION EN COURS\n${echanges.map(e=>(e.role==='louis'?'Louis : ':'Toi : ')+e.texte).join('\n')||'(début)'}
+${reponse?`Si sa dernière réponse contient une scène exploitable (un moment réel avec au moins un détail concret), extrais-la en anecdote fidèle à ses mots, sans rien ajouter. Sinon anecdote = null.`:'Pose la première question.'}
+Réponds UNIQUEMENT en JSON : {"anecdote":${reponse?'{"sujet":"la question à laquelle elle répond","recit":"le récit fidèle, 2 à 5 phrases","theme":"un parmi '+THEMES.join(', ')+'"} ou null':'null'},"question":"ta réaction courte puis ta prochaine question"}`, {modelTier:'default', cache:false});
+    if (out?.anecdote?.recit) await write(()=>db.collection('anecdotes').add({sujet:String(out.anecdote.sujet||'').slice(0,200), recit:String(out.anecdote.recit).slice(0,1500), theme:THEMES.includes(out.anecdote.theme)?out.anecdote.theme:t.themes[0], terrain:t.id, source:'interview', date:Date.now()}), 'Anecdote ajoutée à ta banque');
+    if (out?.question) echanges.push({role:'agent', texte:String(out.question).replace(/\u2014/g,',').slice(0,800)});
+    await write(()=>db.collection('memoire').doc('interview').set({titre:'Interview', terrain:t.id, echanges:echanges.slice(-16), maj:Date.now()}));
+  } catch(e){ toast('Interview interrompue : '+(e?.message||'erreur')); }
+  finally{ S.busy.iv=false; render(true); }
 }
 
 function sanitizeBrief(b){
@@ -663,13 +898,14 @@ function postForm(){
 function vAtelier(){
   const b = k => S.busy[k];
   const lag = laggingPilier();
-  return `<div class="head"><div class="head-txt"><span class="label">À la demande</span><h1>Atelier</h1><p>Claude construit des briefs à partir de la mémoire Orem et de tes signaux. Il ne rédige rien : tu reçois la tension, la structure et les preuves.</p></div></div>
+  return `<div class="head"><div class="head-txt"><span class="label">À la demande</span><h1>Atelier</h1><p>L'interview remplit ta banque d'anecdotes, les idées deviennent des briefs jugés par l'ICP. Le premier jet se lance depuis chaque brief : c'est toi qui écris la version finale.</p></div></div>
   ${S.sampleOk===false?`<div class="banner">Claude n'est pas disponible dans cette vue. Les agents planifiés continuent de déposer des briefs.</div>`:''}
   <div class="grid-2">
     <section class="panel" style="grid-column:1/-1">${panelTop('Mes idées',1)}<h2>Ajouter une idée de post</h2><p class="muted" style="margin:0">Note ton idée comme elle vient. L'outil te pose d'abord quelques questions pour récupérer l'histoire, le chiffre ou le client derrière, puis construit le brief et le fait juger par l'ICP.</p>
       <label>Ton idée<textarea id="aIdee" style="min-height:90px" placeholder="ex : les dirigeants pensent qu'une refonte règle un problème de positionnement"></textarea></label>
       <div class="row"><button class="btn primary" data-atelier="idee" ${b('q')?'disabled':''}>${b('q')?'<span class="spin"></span> Préparation des questions…':'Continuer <span class="arr">↗</span>'}</button></div>
       ${ideasBlock()}</section>
+    ${interviewPanel()}
     <section class="panel">${panelTop('Semaine',2)}<h2>Préparer ma semaine</h2><p class="muted" style="margin:0">Croise les signaux non utilisés des 21 derniers jours, le pilier en retard et ta mémoire. 5 briefs classés par score.</p>
       <dl class="kv"><dt>Signaux disponibles</dt><dd class="num">${S.signaux.filter(s=>!s.utilise && ts(s.date||s.cree)>Date.now()-21*DAY).length}</dd><dt>Pilier en retard</dt><dd>${esc(lag?pilierLabel(lag):'aucun')}</dd></dl>
       <div class="row"><button class="btn primary" data-atelier="semaine" ${b('semaine')?'disabled':''}>${b('semaine')?'<span class="spin"></span> Analyse…':'Générer 5 briefs <span class="arr">↗</span>'}</button></div></section>
@@ -709,10 +945,13 @@ function laggingPilier(){
 }
 
 function vMemoire(){
-  const tabs = [...MEMOIRE.map(m=>({id:m.id,titre:m.titre})), {id:'_cas',titre:'Cas clients'}, {id:'_piliers',titre:'Piliers et thèmes'}, {id:'_sources',titre:'Sources de veille'}];
+  const tabs = [...MEMOIRE.map(m=>({id:m.id,titre:m.titre})), {id:'_voix',titre:'Ma voix'}, {id:'_anecdotes',titre:'Anecdotes'}, {id:'_regles',titre:'Règles apprises'}, {id:'_cas',titre:'Cas clients'}, {id:'_piliers',titre:'Piliers et thèmes'}, {id:'_sources',titre:'Sources de veille'}];
   const cur = S.memTab;
   let body='';
-  if (cur === '_cas') body = casView();
+  if (cur === '_voix') body = voixEditor();
+  else if (cur === '_anecdotes') body = anecdotesView();
+  else if (cur === '_regles') body = reglesView();
+  else if (cur === '_cas') body = casView();
   else if (cur === '_piliers') body = piliersEditor();
   else if (cur === '_sources') body = sourcesEditor();
   else {
@@ -725,7 +964,7 @@ function vMemoire(){
   <div class="mem"><div class="mem-nav">${tabs.map(t=>{
     const txt = t.id.startsWith('_') ? null : (S.memoire[t.id]?.contenu||'');
     const todo = txt && /À COMPLÉTER/.test(txt);
-    return `<button data-mem-tab="${t.id}" aria-current="${cur===t.id}"><span>${esc(t.titre)}</span>${txt==null?`<small>${t.id==='_piliers'?S.piliers.length+' piliers':t.id==='_cas'?S.cas.length+' cas':S.sources.length+' sources'}</small>`:`<small>${txt.length?nf(txt.length)+' caractères'+(todo?' · à compléter':''):'vide'}</small><span class="meter"><i style="width:${Math.min(100,txt.length/20)}%"></i></span>`}</button>`;}).join('')}</div>
+    return `<button data-mem-tab="${t.id}" aria-current="${cur===t.id}"><span>${esc(t.titre)}</span>${txt==null?`<small>${t.id==='_piliers'?S.piliers.length+' piliers':t.id==='_cas'?S.cas.length+' cas':t.id==='_voix'?(S.memoire.voix?'configurée':'par défaut'):t.id==='_anecdotes'?S.anecdotes.length+' anecdotes':t.id==='_regles'?S.regles.length+' règles':S.sources.length+' sources'}</small>`:`<small>${txt.length?nf(txt.length)+' caractères'+(todo?' · à compléter':''):'vide'}</small><span class="meter"><i style="width:${Math.min(100,txt.length/20)}%"></i></span>`}</button>`;}).join('')}</div>
   <div style="min-width:0">${body}</div></div>`;
 }
 function casView(){
@@ -773,6 +1012,7 @@ function renderDrawer(){
     <section class="panel">${panelTop('Structure',nx())}<div>${(b.structure||[]).map((s,k)=>`<div class="step"><span class="step-n">${k+1}</span><div><span>${esc(s.etape)}</span><ul>${(s.points||[]).map(p=>`<li>${esc(p)}</li>`).join('')}</ul></div></div>`).join('')}</div></section>
     <section class="panel">${panelTop('Preuves à mobiliser',nx())}${(b.preuves||[]).map(p=>`<div class="proof"><span class="tag ${p.type==='verbatim'?'client':p.type==='veille'?'marche':'preuve'}">${esc(p.type)}</span><span>${esc(p.ref)}</span></div>`).join('') || '<p class="muted" style="margin:0">Aucune preuve rattachée.</p>'}</section>
     ${hooksBlock(b, nx())}
+    ${jetBlock(b, nx())}
     <section class="panel">${panelTop(`Score ${scoreTotal(b)}/20`,nx())}<div class="scorebars">${[['icp','Pertinence ICP'],['originalite','Originalité'],['preuve','Force de la preuve'],['timing','Timing']].map(([k,l])=>`<div class="sb"><b>${+sc[k]||0}<span style="font-size:.8rem;color:var(--muted)"> /5</span></b><span>${l}</span></div>`).join('')}</div></section>
     ${drawerActions(b, busy, nx())}
   </div></aside>`;
@@ -792,6 +1032,72 @@ function hooksBlock(b, idx){
   return `<section class="panel">${panelTop('Hooks',idx)}
     ${h.length?`<div>${h.map((x,k)=>`<div class="hook ${k===0&&x.note_icp!=null?'best':''}"><div><p>${esc(x.texte)}</p><div class="meta">${k===0&&x.note_icp!=null?'<b>Choix de l\'ICP</b> · ':''}${esc(x.mecanique)}${x.note_icp!=null?` · ICP ${x.note_icp}/10`:''}${x.reaction_icp?` · « ${esc(x.reaction_icp)} »`:''}</div></div><button class="btn ghost sm" data-copy="${esc(x.texte)}">Copier</button></div>`).join('')}</div>`:`<p class="muted" style="margin:0">L'agent hooks propose 6 premières lignes avec des mécaniques différentes, puis l'ICP les classe selon qu'il cliquerait sur « voir plus ».</p>`}
     <div class="row">${btn}</div></section>`;
+}
+function jetBlock(b, idx){
+  const run = S.jet[b.id] || {}, j = b.jet;
+  const lb = S.busy['learn:'+b.id];
+  const steps = run.enCours ? `<div class="jet-steps">${ETAPES_JET.map((e,k)=>`<div class="jet-step ${k+1<run.etape?'done':k+1===run.etape?'now':''}"><span class="step-n">${k+1<run.etape?'✓':k+1}</span><span>${e}</span>${k+1===run.etape?'<span class="spin"></span>':''}</div>`).join('')}</div>` : '';
+  const btn = S.sampleOk ? `<button class="btn ${j?'':'primary'}" data-jet="${esc(b.id)}" ${run.enCours?'disabled':''}>${run.enCours?'Rédaction en cours…':j?'Refaire un premier jet':'Écrire le premier jet <span class="arr">↗</span>'}</button>` : '';
+  if (!j) return `<section class="panel">${panelTop('Premier jet',idx)}<p class="muted" style="margin:0">Un premier jet dans ta voix, ancré uniquement sur tes faits, anecdotes et cas clients, puis passé au contrôle anti-IA. Tu le réécris ensuite : tes corrections deviennent des règles.</p>${steps}<div class="row">${btn}</div></section>`;
+  const rest = j.restant||[];
+  return `<section class="panel">${panelTop('Premier jet · '+fmtDate(j.date),idx)}
+    ${steps}
+    ${j.angle?`<p class="muted" style="margin:0;font-size:.86rem">Angle : ${esc(j.angle)}</p>`:''}
+    <div class="jet-text">${esc(j.texte)}</div>
+    <div class="row" style="justify-content:space-between"><span class="label">${j.texte.length} caractères</span><button class="btn ghost sm" data-copy="${esc(j.texte)}">Copier</button></div>
+    <div><span class="label">Contrôle</span>${rest.length?rest.map(x=>`<div class="proof"><span class="tag ${x.type==='chiffre'?'alerte':'preuve'}">${esc(x.type)}</span><span>${esc(x.detail)}</span></div>`).join(''):`<div class="proof"><span class="tag marche">propre</span><span>Aucun tic repéré, aucun chiffre hors sources.</span></div>`}
+      ${(j.problemes||[]).length?`<p class="muted" style="margin:6px 0 0;font-size:.82rem">Corrigés par le relecteur : ${j.problemes.map(p=>esc(p.raison)).slice(0,4).join(' · ')}</p>`:''}
+      ${j.signature?`<p class="muted" style="margin:6px 0 0;font-size:.82rem">Signature : ${esc(j.signature)}</p>`:''}
+      ${j.manque?`<p class="muted" style="margin:6px 0 0;font-size:.82rem">Il manque : ${esc(j.manque)}</p>`:''}</div>
+    <div><span class="label">Sources utilisées</span>${(j.sources||[]).map(x=>`<div class="proof"><span class="tag ${x.type==='verbatim'?'client':x.type==='anecdote'?'marche':'preuve'}">${esc(x.type)}</span><span>${esc(x.label)}</span></div>`).join('')||'<p class="muted" style="margin:0">Aucune.</p>'}</div>
+    <label>Ta version réécrite (l'outil en tire des règles)<textarea id="finale-${esc(b.id)}" style="min-height:160px" placeholder="Colle ici le post tel que tu vas le publier">${esc(b.version_finale||'')}</textarea></label>
+    <div class="row"><button class="btn" data-learn="${esc(b.id)}" ${lb?'disabled':''}>${lb?'<span class="spin"></span> Analyse de tes corrections…':'Enregistrer et apprendre'}</button>${btn}</div>
+  </section>`;
+}
+function voixEditor(){
+  const v = S.vxDraft || voix(), c = v.curseurs||{};
+  const chips = (name, opts, sel, multi) => `<div class="filters" style="margin:0">${Object.keys(opts).map(o=>`<button type="button" class="chip" data-vx="${name}" data-val="${esc(o)}" data-multi="${multi?1:0}" aria-pressed="${multi?(sel||[]).includes(o):sel===o}" title="${esc(opts[o])}">${esc(o)}</button>`).join('')}</div>`;
+  const slider = (k,a,b2) => `<label>${a} ↔ ${b2}<input type="range" min="0" max="100" step="5" value="${+c[k]||50}" data-vx-cur="${k}"></label>`;
+  return `<div class="panel">${panelTop('Voix',1)}<div><h2>Ma voix</h2><p class="muted" style="margin:6px 0 0;font-size:.86rem">Chaque réglage devient une consigne pour l'agent Éditorial. Tes réglages priment toujours sur les conventions LinkedIn.</p></div>
+    <label>Adresse au lecteur<select data-vx-sel="pronom"><option value="tu" ${v.pronom==='tu'?'selected':''}>Tutoiement</option><option value="vous" ${v.pronom==='vous'?'selected':''}>Vouvoiement</option></select></label>
+    <div class="stack" style="gap:6px"><span class="label">Registres (le premier décide de la structure, 3 maximum) : ${esc(v.registres.join(' puis ')||'libre')}</span>${chips('registres', VX.registres, v.registres, true)}</div>
+    <div class="form-grid">${slider('direct','Direct','Diplomate')}${slider('casual','Pro','Décontracté')}${slider('provoc','Pédagogue','Provocateur')}${slider('detail','Concis','Détaillé')}</div>
+    <div class="stack" style="gap:6px"><span class="label">Longueur</span>${chips('longueur', VX.longueurs, v.longueur)}</div>
+    <div class="stack" style="gap:6px"><span class="label">Accroches (aucune = l'agent choisit)</span>${chips('accroches', VX.accroches, v.accroches, true)}</div>
+    <div class="stack" style="gap:6px"><span class="label">Structure (aucune = l'agent choisit)</span>${chips('structure', VX.structures, v.structure)}</div>
+    <div class="stack" style="gap:6px"><span class="label">Clôture</span>${chips('cloture', VX.clotures, v.cloture)}</div>
+    <div class="form-grid"><div class="stack" style="gap:6px"><span class="label">Phrases</span>${chips('phrases', VX.phrases, v.phrases)}</div><div class="stack" style="gap:6px"><span class="label">Emojis</span>${chips('emojis', VX.emojis, v.emojis)}</div></div>
+    <div class="stack" style="gap:6px"><span class="label">Vie perso</span>${chips('perso', VX.perso, v.perso)}</div>
+    <div class="stack" style="gap:6px"><span class="label">Règles actives</span>${Object.entries(VX.regles).map(([k,l])=>`<label style="flex-direction:row;align-items:center;gap:10px;color:var(--ink)"><input type="checkbox" data-vx-regle="${k}" ${v.regles?.[k]?'checked':''}> ${esc(l)}</label>`).join('')}</div>
+    <label>Tes règles de rédaction (une par ligne)<textarea data-vx-lines="regles_perso" style="min-height:90px" placeholder="ex : Ne jamais commencer par une question">${esc((v.regles_perso||[]).join('\n'))}</textarea></label>
+    <label>Faits chiffrés autorisés (un par ligne, l'agent n'utilise que ceux-là en plus des cas clients)<textarea data-vx-lines="faits_chiffres" style="min-height:90px">${esc((v.faits_chiffres||[]).join('\n'))}</textarea></label>
+    <div class="row"><button class="btn primary" data-save-voix>Enregistrer ma voix</button></div></div>`;
+}
+function anecdotesView(){
+  const cov = terrainCouverture();
+  return `<div class="stack"><div class="panel">${panelTop('Banque d\'anecdotes',1)}<div class="panel-h"><h2>Tes histoires vécues</h2><button class="btn sm" data-view="atelier">Faire l'interview</button></div>
+    <p class="muted" style="margin:0;font-size:.86rem">La matière première des posts qui ne font pas IA. Chaque anecdote vient de l'interview ou de ta saisie, jamais d'une invention.</p>
+    <div class="bal">${cov.map(t=>`<div class="bal-row"><span>${esc(t.nom)}</span><div class="track"><div class="fill" style="width:${Math.min(100,t.n*20)}%;--pc:var(--sky)"></div></div><span class="bal-num">${t.n} / 5</span></div>`).join('')}</div></div>
+    ${S.anecdotes.slice().sort((a,b)=>ts(b.date)-ts(a.date)).map(a=>`<section class="panel"><div class="panel-top"><span>${esc(a.theme||'')}${a.terrain?' · '+esc((TERRAINS.find(t=>t.id===a.terrain)||{}).nom||''):''}${a.source?' · '+esc(a.source):''}</span><button class="btn ghost sm danger" data-del-anec="${esc(a.id)}">Supprimer</button></div><h3>${esc(a.sujet)}</h3><p style="margin:0">${esc(a.recit)}</p>${a.verifier?`<p class="label" style="color:var(--warn);margin:0">${esc(a.verifier)}</p>`:''}</section>`).join('')}
+    <form id="fAnec" class="panel"><h3>Ajouter une anecdote</h3><div class="form-grid"><label>Sujet<input id="anSujet" type="text" required placeholder="ex : le jour où on a refusé un gros devis"></label><label>Thème<select id="anTheme">${THEMES.map(t=>`<option>${t}</option>`).join('')}</select></label><label class="full">Récit (avec les détails : quand, qui, ce qui a été dit)<textarea id="anRecit" style="min-height:90px" required></textarea></label></div><div class="row"><button class="btn" type="submit">Ajouter</button></div></form></div>`;
+}
+function reglesView(){
+  return `<div class="panel">${panelTop('Apprentissage',1)}<div class="panel-h"><h2>Règles apprises</h2><span class="label">${S.regles.length} règle${S.regles.length>1?'s':''}</span></div>
+    <p class="muted" style="margin:0;font-size:.86rem">Tirées de tes réécritures : à chaque version finale enregistrée, l'outil compare avec le premier jet et garde ce qui se généralise. Les doublons sont écartés.</p>
+    <div class="list">${S.regles.slice().sort((a,b)=>ts(b.date)-ts(a.date)).map(r=>`<div class="item"><span class="tag">${esc(r.origine||'')}</span><div><span>${esc(r.texte)}</span>${r.brief?`<p>Depuis : ${esc(r.brief)}</p>`:''}</div><button class="btn ghost sm danger" data-del-regle="${esc(r.id)}">Retirer</button></div>`).join('')||'<p class="label">Aucune règle pour l\'instant.</p>'}</div></div>`;
+}
+function interviewPanel(){
+  const iv = S.memoire.interview || {}, cur = iv.terrain || S.terrain;
+  const cov = terrainCouverture(), pct = Math.round(cov.reduce((a,t)=>a+Math.min(t.n,5),0) / (cov.length*5) * 100);
+  const ech = iv.echanges || [];
+  return `<section class="panel" style="grid-column:1/-1">${panelTop('Interview · matière connue à '+pct+' %',2)}<h2>Raconte-moi une scène</h2>
+    <p class="muted" style="margin:0">Une question à la fois, sur un terrain. Chaque scène racontée devient une anecdote que l'agent Éditorial peut utiliser. Plus la banque est remplie, moins les posts ressemblent à ceux des autres.</p>
+    <div class="filters" style="margin:0">${cov.map(t=>`<button class="chip" type="button" data-terrain="${t.id}" aria-pressed="${cur===t.id}">${esc(t.nom)} · ${t.n}</button>`).join('')}</div>
+    ${ech.length?`<div class="iv-log">${ech.slice(-6).map(e=>`<div class="iv-msg ${e.role}">${esc(e.texte)}</div>`).join('')}</div>`:''}
+    ${ech.length && ech[ech.length-1].role==='agent' ? `<label>Ta réponse<textarea id="ivRep" style="min-height:90px" placeholder="Raconte comme tu parlerais : quand, qui, ce qui a été dit"></textarea></label>
+      <div class="row"><button class="btn primary" data-iv="repondre" ${S.busy.iv?'disabled':''}>${S.busy.iv?'<span class="spin"></span> …':'Répondre <span class="arr">↗</span>'}</button><button class="btn ghost sm" data-iv="reset">Changer de sujet</button></div>`
+    : `<div class="row"><button class="btn primary" data-iv="start" ${S.busy.iv?'disabled':''}>${S.busy.iv?'<span class="spin"></span> …':'Commencer l\'interview <span class="arr">↗</span>'}</button></div>`}
+  </section>`;
 }
 function drawerActions(b, busy, idx){
   const alt = S.sampleOk ? `<button class="btn" data-alt="${esc(b.id)}" ${busy?'disabled':''}>${busy?'<span class="spin"></span> Variantes…':'3 variantes d\'angle'}</button>` : '';
@@ -814,7 +1120,7 @@ document.addEventListener('click', async e => {
   if ('close' in d){ S.open = null; renderDrawer(); return; }
   if (d.briefPilier){ S.briefPilier = d.briefPilier; render(true); return; }
   if (d.sigFilter){ S.sigFilter = d.sigFilter; render(true); return; }
-  if (d.memTab){ S.memTab = d.memTab; render(true); return; }
+  if (d.memTab){ S.memTab = d.memTab; S.vxDraft = null; render(true); return; }
   if ('addSignal' in d){ const p=$('#addSignal'); p.hidden=!p.hidden; return; }
   if ('addPost' in d){ const p=$('#addPost'); p.hidden=!p.hidden; return; }
   const b = S.briefs.find(x=>x.id===S.open);
@@ -841,6 +1147,21 @@ document.addEventListener('click', async e => {
   if (d.copy != null){ try{ await navigator.clipboard.writeText(d.copy); toast('Hook copié'); }catch(err){ toast('Copie impossible ici, sélectionne le texte.'); } return; }
   if ('interp' in d){ await interpretSignals(S.signaux.filter(s=>s.note==null && !s.archive).slice(0,40)); return; }
   if (d.archiveSig){ const s=S.signaux.find(x=>x.id===d.archiveSig); if(s) await upd('signaux', s.id, {archive:!s.archive}, s.archive?'Signal restauré':'Signal archivé'); return; }
+  if (d.jet){ const br = S.briefs.find(x=>x.id===d.jet); if (br) await premierJet(br); return; }
+  if (d.learn){ const br = S.briefs.find(x=>x.id===d.learn); const v = ($('#finale-'+d.learn)?.value||'').trim(); if(!br) return; if(!v){ toast('Colle ta version réécrite d\'abord.'); return; } await apprendre(br, v); return; }
+  if (d.vx){ const v = S.vxDraft = S.vxDraft || JSON.parse(JSON.stringify(voix())); const val = d.val;
+    if (d.multi==='1'){ const arr = v[d.vx] = [...(v[d.vx]||[])]; const i = arr.indexOf(val); if (i>=0) arr.splice(i,1); else if (d.vx!=='registres' || arr.length<3) arr.push(val); }
+    else v[d.vx] = (v[d.vx]===val && ['structure'].includes(d.vx)) ? '' : val;
+    render(true); return; }
+  if ('saveVoix' in d){ const v = S.vxDraft || JSON.parse(JSON.stringify(voix()));
+    document.querySelectorAll('[data-vx-lines]').forEach(el => { v[el.dataset.vxLines] = el.value.split('\n').map(x=>x.trim()).filter(Boolean).slice(0,40); });
+    const ok = await write(()=>db.collection('memoire').doc('voix').set({titre:'Voix', config:v, maj:Date.now()}), 'Voix enregistrée'); if (ok) S.vxDraft = null; render(true); return; }
+  if (d.terrain){ S.terrain = d.terrain; const iv = S.memoire.interview; if (iv && iv.terrain!==d.terrain) await write(()=>db.collection('memoire').doc('interview').set({titre:'Interview', terrain:d.terrain, echanges:[], maj:Date.now()})); else render(true); return; }
+  if (d.iv==='start'){ await interviewTour(''); return; }
+  if (d.iv==='repondre'){ const v = ($('#ivRep')?.value||'').trim(); if(!v){ toast('Écris ta réponse d\'abord.'); return; } await interviewTour(v); return; }
+  if (d.iv==='reset'){ await write(()=>db.collection('memoire').doc('interview').set({titre:'Interview', terrain:S.memoire.interview?.terrain||S.terrain, echanges:[], maj:Date.now()})); return; }
+  if (d.delAnec){ await write(()=>db.collection('anecdotes').doc(d.delAnec).delete(), 'Anecdote supprimée'); return; }
+  if (d.delRegle){ await write(()=>db.collection('regles').doc(d.delRegle).delete(), 'Règle retirée'); return; }
   if (d.openIdea != null){ S.openIdea = d.openIdea || null; render(true); return; }
   if (d.ideaPilier){ S.ideaPilier = d.ideaPilier; S.openIdea = null; render(true); return; }
   if (d.saveIdea){ const f=document.querySelector(`form[data-idea="${d.saveIdea}"]`); const i=S.idees.find(x=>x.id===d.saveIdea); if(f&&i) await upd('idees', i.id, {reponses:(i.questions||[]).map((_,k)=>(f.elements['r'+k]?.value||'').trim())}, 'Réponses enregistrées'); return; }
@@ -860,6 +1181,11 @@ document.addEventListener('click', async e => {
 document.addEventListener('change', async e => {
   const t = e.target;
   if (t.dataset.postPilier){ await upd('posts', t.dataset.postPilier, {pilier:t.value}); return; }
+  if (t.dataset.vxCur || t.dataset.vxSel || t.dataset.vxRegle){ const v = S.vxDraft = S.vxDraft || JSON.parse(JSON.stringify(voix()));
+    if (t.dataset.vxCur) v.curseurs = {...(v.curseurs||{}), [t.dataset.vxCur]: +t.value};
+    if (t.dataset.vxSel) v[t.dataset.vxSel] = t.value;
+    if (t.dataset.vxRegle) v.regles = {...(v.regles||{}), [t.dataset.vxRegle]: t.checked};
+    return; }
   if (t.id === 'xlsx' && t.files && t.files[0]){ await importLinkedIn(t.files[0]); t.value=''; }
 });
 document.addEventListener('submit', async e => {
@@ -880,6 +1206,10 @@ document.addEventListener('submit', async e => {
     const pct = Math.max(0, Math.min(100, +f.elements.pct.value || 0));
     const themes = [0,1,2].map(i => f.elements['t'+i].value.trim().slice(0,80));
     await upd('piliers', f.dataset.pilForm, {cible_pct:pct, themes}, 'Pilier enregistré'); render(true); return;
+  }
+  if (f.id === 'fAnec'){
+    const sujet = $('#anSujet').value.trim(), recit = $('#anRecit').value.trim(); if(!sujet||!recit) return;
+    const ok = await write(()=>db.collection('anecdotes').add({sujet, recit, theme:$('#anTheme').value, source:'saisie', date:Date.now()}), 'Anecdote ajoutée'); if (ok) f.reset(); return;
   }
   if (f.id === 'fSignal'){
     const titre = $('#sTitre').value.trim(); if(!titre) return;
