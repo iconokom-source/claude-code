@@ -294,6 +294,7 @@ const MEMOIRE = [
   {id:'convictions', titre:'Convictions', aide:'Tes opinions tranchées. La matière première des angles.'},
   {id:'clients', titre:'Clients et preuves', aide:'Cas, résultats, chiffres publiables oui / anonymisé / non.'},
   {id:'anti_sujets', titre:'Anti-sujets', aide:'Mots bannis, angles grillés, clichés, profils exclus.'},
+  {id:'calibrage', titre:'Ce qui performe', aide:'Calibrage tiré de tes posts et du marché : accroches, structures, clôtures et longueurs qui marchent. Mis à jour par l\'agent de mesure.'},
 ];
 const CLIENT_TYPES = ['verbatim','objection','douleur','crainte','declencheur','question'];
 const SIGNAL_TYPES = [...CLIENT_TYPES,'veille','webflow','preuve'];
@@ -446,6 +447,8 @@ async function genHooks(b){
   try{
     const out = await sample.json(`Tu es spécialiste des hooks LinkedIn en français pour des dirigeants B2B. Le hook, ce sont les 1 à 2 premières lignes visibles avant « voir plus » (140 caractères max au total, retour à la ligne autorisé).
 Écris 6 hooks pour ce brief, chacun avec une mécanique différente parmi : contre-intuitif, chiffre ou fait précis, aveu personnel, question qui pique, scène concrète, avant/après, verbatim client.
+Calibrage réel de ce qui performe chez Louis et sur le marché :
+${String(S.memoire.calibrage?.contenu||'').slice(0,3500)}
 Règles : ancré dans la tension et une preuve réelle du brief, jamais de promesse vide ni de putaclic, aucune formule usée (« Et si... », « Voici pourquoi », « Arrêtez de... », « Personne ne vous dit »), parle comme Louis parlerait à un dirigeant.
 ${HUMAN}
 
@@ -620,9 +623,12 @@ async function premierJet(b){
   try{
     setJet(b.id, {enCours:true, etape:1});
     const mem = `# POSITIONNEMENT\n${String(S.memoire.positionnement?.contenu||'').slice(0,2500)}\n\n# CONVICTIONS\n${String(S.memoire.convictions?.contenu||'').slice(0,2000)}\n\n# ANTI-SUJETS\n${String(S.memoire.anti_sujets?.contenu||'').slice(0,1500)}`;
+    const calib = String(S.memoire.calibrage?.contenu||'').slice(0,4000);
     setJet(b.id, {etape:2});
     const plan = await sample.json(`Tu prépares un post LinkedIn de Louis Montagne (Orem). Choisis l'angle précis et les sources qui vont l'ancrer.
-Règles : un post ne tient que sur du vécu réel. Choisis 2 à 5 sources dans le catalogue, en privilégiant une anecdote ou une scène, puis un chiffre documenté. N'invente aucune source.
+Règles : un post ne tient que sur du vécu réel. Tiens compte de ce qui performe (ci-dessous) pour choisir l'ouverture et la structure.
+# CE QUI PERFORME\n${calib}
+ Choisis 2 à 5 sources dans le catalogue, en privilégiant une anecdote ou une scène, puis un chiffre documenté. N'invente aucune source.
 # BRIEF\n${JSON.stringify(brief)}
 # CATALOGUE DES SOURCES (id :: contenu)\n${cat.map(x=>`${x.id} [${x.type}] ${x.label.slice(0,380)}`).join('\n').slice(0,14000)}
 Réponds UNIQUEMENT en JSON : {"angle":"l'angle en une phrase","scene":"la scène ou le fait d'ouverture choisi","sources":["id"],"manque":"ce qui manque pour que ce post soit impossible à écrire par quelqu'un d'autre, ou vide"}`, {modelTier:'default', cache:false});
@@ -632,6 +638,7 @@ Réponds UNIQUEMENT en JSON : {"angle":"l'angle en une phrase","scene":"la scèn
     const r1 = await sample(`Tu écris le premier jet d'un post LinkedIn pour Louis Montagne. Il le réécrira lui-même, mais le texte doit déjà sonner comme lui.
 # SA VOIX\n${voixPrompt()}
 # CONTEXTE\n${mem}
+# CE QUI PERFORME (applique ces règles, tes réglages de voix restent prioritaires)\n${calib}
 # BRIEF\n${JSON.stringify(brief)}
 # ANGLE RETENU\n${plan.angle||''}\nOuverture : ${plan.scene||''}
 # SOURCES AUTORISÉES (seuls faits et chiffres utilisables)\n${srcTxt}
@@ -646,6 +653,7 @@ Rends UNIQUEMENT le texte du post.`, {modelTier:'complex', cache:false});
     const r2 = await sample.json(`Tu retravailles uniquement la première ligne (accroche) et la dernière ligne (chute) de ce post LinkedIn. Le reste ne bouge pas.
 L'accroche doit arrêter un dirigeant de PME B2B qui scrolle : concrète, spécifique à ce post, sans formule usée (« Et si… », « Voici pourquoi », « Personne ne vous dit », « Arrêtez de… »). ${voix().accroches.length?'Types autorisés : '+voix().accroches.join(', ')+'.':''}
 La chute : ${VX.clotures[voix().cloture]||''} Pas de morale générique.
+# CE QUI PERFORME (données réelles, appuie tes choix dessus)\n${calib}
 ${HUMAN}
 # POST\n${texte}
 Réponds UNIQUEMENT en JSON : {"accroche":"nouvelle première ligne","chute":"nouvelle dernière ligne","pourquoi":"en une phrase"}`, {modelTier:'default', cache:false});
