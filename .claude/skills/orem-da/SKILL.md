@@ -168,6 +168,7 @@ Le script utilise Chromium (`/opt/pw-browsers/chromium`). **Ne jamais lancer `pl
 - un seul message par slide, le titre lisible en 3 secondes ;
 - des cartes d'une même rangée alignées et de hauteur égale, sans grand vide disgracieux (sinon ajouter un bloc « Le résultat » ou agrandir la typo d'un cran) ;
 - l'orange réservé aux accents, jamais en aplat de fond ;
+- pas d'ombre portée floue (`box-shadow` à grand flou) : dans le PDF, Aperçu l'affiche comme un rectangle gris autour de l'élément. Préférer un filet `0 0 0 1px rgba(0,0,18,.08)` ;
 - des liens cliquables (`<a href>`) sur les CTA et les « Voir le site », qui restent actifs dans le PDF ;
 - un PDF de moins de 5 Mo, et autant de pages que de slides (`pdfinfo`).
 
