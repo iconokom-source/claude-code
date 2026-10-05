@@ -1,0 +1,677 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Orem · Book</title>
+<style>
+@font-face{font-family:'Trykker';font-style:normal;font-weight:400;font-display:block;src:url(assets/fonts/trykker-latin.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Trykker';font-style:normal;font-weight:400;font-display:block;src:url(assets/fonts/trykker-latin-ext.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:'Lexend Deca';font-style:normal;font-weight:100 900;font-display:block;src:url(assets/fonts/lexend-deca-latin.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Lexend Deca';font-style:normal;font-weight:100 900;font-display:block;src:url(assets/fonts/lexend-deca-latin-ext.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+:root{
+  --ink:#000012;
+  --paper:#ffffff;
+  --paper-2:#f8f8f7;
+  --cream:#f9f5f1;
+  --graphite:#1d1d1d;
+  --muted:rgba(67,66,66,.6);
+  --light:#f2f2f2;
+  --light-muted:rgba(242,242,242,.6);
+  --orange:#ff6200;
+  --accent:#092482;
+  --stroke:#cdcdcd;
+  --serif:'Trykker',Georgia,serif;
+  --sans:'Lexend Deca',system-ui,sans-serif;
+  --grad:linear-gradient(180deg,#050c1c 0%,#04132f 17%,#041e48 28%,#05336c 39%,#115695 50%,#3484b9 61%,#6cb5d7 72%,#a1d6e9 83%,#caebf6 94%,#d3edf5 100%);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#2b2b2b}
+body{-webkit-print-color-adjust:exact;print-color-adjust:exact;-webkit-font-smoothing:antialiased}
+.deck{padding:24px 0;display:flex;flex-direction:column;align-items:center;gap:24px}
+.slide-wrap{width:calc(1920px * var(--s,1));height:calc(1080px * var(--s,1));flex:none;overflow:hidden}
+.slide-wrap>.slide{transform:scale(var(--s,1));transform-origin:0 0}
+.slide{position:relative;width:1920px;height:1080px;overflow:hidden;background:var(--paper);color:var(--ink);break-after:page;page-break-after:always;flex:none}
+.abs{position:absolute}
+img{display:block}
+ul{list-style:none}
+
+/* Typo ramp (Figma: Slide typeramp) */
+.display{font-family:var(--serif);font-size:94px;line-height:1.2;letter-spacing:-2.82px;font-weight:400}
+.title{font-family:var(--serif);font-size:64px;line-height:1.2;letter-spacing:-1.92px;font-weight:400}
+.quote{font-family:var(--serif);font-size:72px;line-height:1.2;letter-spacing:-2.16px;font-weight:400}
+.headline{font-family:var(--serif);font-size:37px;line-height:1.2;font-weight:400}
+.headline-13{font-family:var(--serif);font-size:37px;line-height:1.3;font-weight:400}
+.body{font-family:var(--sans);font-size:24px;line-height:1.2;letter-spacing:-.48px;font-weight:400}
+.body-l{font-family:var(--sans);font-size:24px;line-height:1.2;letter-spacing:-.48px;font-weight:350}
+.sub{font-family:var(--sans);font-size:20px;line-height:1.2;letter-spacing:-.4px;font-weight:400}
+.label{font-family:var(--sans);font-size:17px;line-height:1.1;letter-spacing:-.34px;font-weight:400}
+.eyebrow{font-family:var(--sans);font-size:24px;line-height:1.2;letter-spacing:-.48px;font-weight:350;color:var(--orange)}
+.c-light{color:var(--light)} .c-lm{color:var(--light-muted)} .c-muted{color:var(--muted)} .c-orange{color:var(--orange)} .c-accent{color:var(--accent)} .c-ink{color:var(--ink)}
+
+/* Backgrounds */
+.bg-black{background:#000}
+.bg-grad{background:var(--grad)}
+.dots-dark{background-color:#000;background-image:radial-gradient(circle at center,#0d0d0d 0 3.5px,transparent 4px);background-size:48px 48px;background-position:-24px -12px}
+.dots-light{background-color:#fff;background-image:radial-gradient(circle at center,#ededed 0 3.5px,transparent 4px);background-size:48px 48px;background-position:-24px -12px}
+
+/* Bullets */
+.dash li{position:relative;padding-left:36px}
+.dash li::before{content:"";position:absolute;left:12px;top:.5em;width:5px;height:5px;border-radius:50%;background:currentColor}
+.dash li+li{margin-top:12px}
+.dash.tight li+li{margin-top:4px}
+.checks li{display:flex;gap:16px;align-items:flex-start}
+.checks li+li{margin-top:8px}
+.checks svg{flex:none;width:25px;height:25px;margin-top:2px}
+
+/* Chapitre */
+.chap-label{position:absolute;left:0;width:1920px;text-align:center}
+.chap-title{position:absolute;left:0;width:1920px;text-align:center}
+
+.chap-center .eyebrow{position:absolute;left:0;right:0;bottom:calc(100% + 57px)}
+
+/* Split (versus / cartes) */
+.split-left{position:absolute;left:0;top:0;width:653px;height:1080px;padding:24px;display:flex;flex-direction:column;justify-content:space-between;background:var(--grad)}
+.split-right{position:absolute;left:653px;top:0;width:1267px;height:1080px}
+.card{position:absolute;background:var(--paper-2);padding:24px;display:flex;flex-direction:column;gap:8px}
+.card .grow{flex:1}
+
+/* Liste sombre */
+.col-rule{border-left:1.5px solid var(--light-muted);padding-left:32px;display:flex;flex-direction:column;gap:64px;overflow:hidden}
+
+
+/* Graphique */
+.bar{flex:1;border-radius:999px;background:#000;box-shadow:inset -30px -40px 90px 0 rgba(203,211,240,.25),inset 30px 50px 120px 0 rgba(9,36,130,.9);padding:80px 32px;display:flex;flex-direction:column;gap:8px;align-items:center;text-align:center}
+/* Cartes options */
+.opt-frame{position:relative;border-radius:9px;overflow:hidden;background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center}
+.opt-card{width:539px;background:#fff;border-radius:28px;padding:32px;display:flex;flex-direction:column;gap:32px;box-shadow:0 0 4px rgba(0,0,18,.3),0 16px 90px 5px rgba(0,0,18,.15)}
+/* Tableau */
+.tbl-head{display:flex;gap:32px;height:75px;padding-bottom:32px;border-bottom:1px solid var(--stroke);align-items:flex-end}
+.tbl-head p,.tbl p{flex:1;min-width:0}
+.tbl>div{display:flex;gap:32px;padding:16px 8px;align-items:center}
+.tbl>div:nth-child(odd){background:var(--paper-2)}
+.tbl-total p{font-weight:500}
+/* Cercles */
+
+/* Chronologie */
+.tl-line{left:0;top:508px;width:1920px;height:1.5px;background:var(--ink)}
+.tl-col{position:relative;display:flex;flex-direction:column;gap:16px}
+.tl-col.big{gap:64px}
+.tl-col.big .tl-h{min-height:88.8px}
+.tl-dot{position:absolute;left:0;top:-74px;width:20px;height:20px;border-radius:50%;background:var(--ink)}
+/* Équipe */
+.team{top:233px;display:flex;flex-direction:column;gap:30.956px}
+.team img{width:100%;aspect-ratio:620/733;object-fit:cover;border-radius:30.956px}
+.team div{display:flex;flex-direction:column;gap:15.478px}
+/* Étapes */
+.step{flex:1;border-left:1px solid var(--ink);padding-left:32px;display:flex;flex-direction:column;gap:24px}
+
+
+/* Comparatif */
+.cmp-head,.cmp-row{display:grid;grid-template-columns:240px 1fr 1fr 1fr;gap:32px;padding:16px 8px;position:relative;z-index:1}
+.cmp-head{padding:0 8px 24px;border-bottom:1px solid var(--stroke);align-items:end;margin-bottom:16px}
+.cmp>.cmp-row:nth-child(odd){background:var(--paper-2)}
+.cmp-total p:not(.c-muted){font-weight:500}
+.cmp-big{align-items:center}
+.cmp-loose .cmp-row{padding:36px 8px}
+.cmp-loose .cmp-big .headline{font-size:44px}
+.cmp-reco{position:absolute;z-index:2;pointer-events:none;top:-16px;bottom:-16px;left:569.7px;width:305.7px;border:1.5px solid var(--orange);border-radius:16px}
+
+.kpi{gap:36px}
+.kpi>.headline-13{flex:1}
+.kpi .label{margin-bottom:10px}
+
+
+/* Book Orem */
+.loss{border-left:1px solid var(--ink);padding-left:64px;display:flex;flex-direction:column;gap:12px}
+.mini-logo{height:56px;width:auto;max-width:320px;object-fit:contain;object-position:left center;margin:24px 0 32px}
+.mini-stats{display:flex;flex-direction:column;gap:28px}
+.mini-stats>div{border-left:1px solid var(--ink);padding-left:24px}
+.case-left{position:absolute;left:64px;top:64px;width:936px;height:952px;display:flex;flex-direction:column}
+.case-logo{height:56px;width:auto;max-width:340px;object-fit:contain;object-position:left center;margin-top:24px}
+.case-title{font-family:var(--serif);font-size:52px;line-height:1.15;letter-spacing:-1.56px;font-weight:400;margin-top:32px}
+.case-cols{display:grid;grid-template-columns:1fr 1fr 1fr;gap:32px;margin-top:48px}
+.case-cols>div{display:flex;flex-direction:column;gap:12px}
+.case-stats{display:flex;gap:24px}
+.case-stats>div{flex:1;border-left:1px solid var(--ink);padding-left:20px;display:flex;flex-direction:column;gap:8px}
+.case-num{font-size:52px;line-height:1.05;letter-spacing:-1.56px;white-space:nowrap}
+.case-note{border-left:1px solid var(--stroke);padding-left:20px}
+.case-right{position:absolute;left:1064px;top:64px;width:792px;height:952px;display:flex;flex-direction:column;gap:16px}
+.case-cover{width:792px;height:560px;object-fit:cover;border-radius:24px;background:var(--paper-2)}
+.case-thumbs{display:flex;gap:16px;flex:1;min-height:0}
+.case-thumbs img{flex:1;width:0;height:100%;object-fit:cover;border-radius:16px;background:var(--paper-2)}
+.case-quote{background:var(--ink);border-radius:24px;padding:56px;gap:32px}
+.logo-grid{display:grid;grid-template-columns:repeat(6,1fr);grid-template-rows:repeat(4,1fr);gap:16px}
+.logo-cell{background:var(--paper-2);border-radius:16px;display:flex;align-items:center;justify-content:center;padding:28px}
+.logo-cell img{max-width:86%;max-height:84px;object-fit:contain}
+.pill-cta{display:inline-flex;gap:12px;align-items:center;background:var(--ink);color:var(--light);border-radius:999px;padding:18px 28px;font-family:var(--sans);font-size:24px;letter-spacing:-.48px;text-decoration:none}
+a{color:inherit;text-decoration:none}
+
+/* Bouton PDF */
+.pdf-btn{position:fixed;right:24px;bottom:24px;z-index:10;font-family:var(--sans);font-size:16px;font-weight:400;letter-spacing:-.3px;background:var(--light);color:#000;border:0;border-radius:999px;padding:12px 18px 12px 20px;display:flex;gap:8px;align-items:center;cursor:pointer;box-shadow:0 8px 30px rgba(0,0,0,.35)}
+@media print{
+  @page{size:1920px 1080px;margin:0}
+  html,body{background:#fff}
+  :root{--s:1!important}
+  .deck{padding:0;gap:0}
+  .slide-wrap{width:1920px;height:1080px;break-after:page;page-break-after:always}
+  .slide{transform:none!important;break-after:auto;page-break-after:auto}
+  .pdf-btn{display:none}
+}
+</style>
+</head>
+<body>
+<button class="pdf-btn" onclick="window.print()">Télécharger en PDF
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M7 17L17 7M17 7H8M17 7v9" stroke="#000" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+</button>
+
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="currentColor"/><path d="M7.6 12.4l3 3 5.8-6.3" fill="none" stroke="var(--check-stroke,#fff)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</svg>
+
+<main class="deck" id="deck">
+
+<!-- 01 · Couverture (Figma 3656:3190) -->
+<section class="slide">
+  <img class="abs" src="assets/cover-bg.png" alt="" style="left:0;top:0;width:1920px;height:1080px">
+  <img class="abs" src="assets/logo-black.png" alt="Orem" style="left:1749px;top:64px;width:107px;height:105px">
+  <p class="abs sub c-light" style="left:64px;top:64px">Orem · Book de présentation<br>2026</p>
+  <div class="abs" style="left:64px;bottom:53px;width:1814px">
+    <p class="eyebrow" style="margin-bottom:24px">Agence de stratégie, de direction artistique et de sites Webflow pour les PME B2B</p>
+    <h1 class="display c-light">Des sites qui font travailler les entreprises B2B</h1>
+    <p class="body c-light" style="margin-top:24px;width:1100px">Pour les entreprises qui ont déjà de la traction, et dont l’image ne suit plus.</p>
+  </div>
+</section>
+
+<!-- 02 · Le problème (Figma 3665:986) -->
+<section class="slide">
+  <div class="abs" style="left:64px;top:64px;width:640px;height:952px;display:flex;flex-direction:column;gap:24px">
+    <p class="sub c-orange">Ce que nous observons chez nos clients</p>
+    <h2 class="title" style="flex:1">Votre entreprise vaut mieux que ce qu’elle montre</h2>
+    <p class="headline-13">Le problème n’est presque jamais le design. C’est le flou du message.</p>
+  </div>
+  <div class="abs" style="left:928px;top:64px;width:928px;height:952px;display:flex;flex-direction:column;justify-content:space-between">
+    <div class="loss"><p class="headline-13 c-orange">01</p><p class="headline">Un message qui manque de clarté</p><p class="body-l c-muted">Votre savoir-faire est réel, mais votre site ne dit pas clairement ce que vous faites, pour qui, et pourquoi vous choisir.</p></div>
+    <div class="loss"><p class="headline-13 c-orange">02</p><p class="headline">Un site qui ne performe pas</p><p class="body-l c-muted">Il informe, mais il ne génère ni demandes qualifiées ni visibilité, et personne ne mesure vraiment ce qu’il rapporte.</p></div>
+    <div class="loss"><p class="headline-13 c-orange">03</p><p class="headline">Une dépendance à l’agence</p><p class="body-l c-muted">Chaque modification passe par un prestataire. Le site vieillit plus vite que votre entreprise ne grandit.</p></div>
+  </div>
+</section>
+
+<!-- 03 · Qui sommes-nous (Figma 3666:1000) -->
+<section class="slide dots-dark">
+  <div class="abs" style="left:64px;top:64px;width:1792px;display:flex;justify-content:space-between;align-items:flex-start">
+    <h2 class="title c-light">Une équipe resserrée, trois expertises</h2>
+    <p class="sub c-light">Fondée en 2023, entre Lille et Paris</p>
+  </div>
+  <div class="abs team" style="left:64px;width:555px"><img src="assets/team/louis.webp" alt="Louis Montagne"><div><p class="headline c-light">Louis Montagne</p><p class="body c-lm">Cofondateur · Stratégie web, Webflow, SEO et GEO, automatisation et IA.</p></div></div>
+  <div class="abs team" style="left:683px;width:555px"><img src="assets/team/theophile.webp" alt="Théophile Lamouret"><div><p class="headline c-light">Théophile Lamouret</p><p class="body c-lm">Cofondateur · Positionnement, copywriting et stratégie de contenu.</p></div></div>
+  <div class="abs team" style="left:1301px;width:555px"><img src="assets/team/clement.avif" alt="Clément Saint-Hilaire"><div><p class="headline c-light">Clément Saint-Hilaire</p><p class="body c-lm">Directeur artistique · Direction artistique, interface et expérience utilisateur.</p></div></div>
+</section>
+
+<!-- 04 · Repères (Figma 3665:953) -->
+<section class="slide">
+  <div class="abs" style="left:928px;top:64px;width:928px;border-left:1px solid var(--ink);padding-left:64px;height:105px;display:flex;gap:32px;align-items:center">
+    <p class="display" style="line-height:1.1;padding-bottom:38px;white-space:nowrap;width:330px;font-size:80px">30+</p>
+    <p class="headline-13" style="flex:1">clients accompagnés depuis 2023</p>
+  </div>
+  <div class="abs" style="left:928px;top:233px;width:928px;border-left:1px solid var(--ink);padding-left:64px;height:105px;display:flex;gap:32px;align-items:center">
+    <p class="display" style="line-height:1.1;padding-bottom:38px;white-space:nowrap;width:330px;font-size:80px">1 000+</p>
+    <p class="headline-13" style="flex:1">demandes qualifiées générées par le site du Crayon Groupe</p>
+  </div>
+  <div class="abs" style="left:928px;top:403px;width:928px;border-left:1px solid var(--ink);padding-left:64px;height:105px;display:flex;gap:32px;align-items:center">
+    <p class="display" style="line-height:1.1;padding-bottom:38px;white-space:nowrap;width:330px;font-size:80px">×2,2</p>
+    <p class="headline-13" style="flex:1">de revenu récurrent pour le Club Casa Zanoni après la refonte</p>
+  </div>
+  <div class="abs" style="left:928px;top:573px;width:928px;border-left:1px solid var(--ink);padding-left:64px;height:105px;display:flex;gap:32px;align-items:center">
+    <p class="display" style="line-height:1.1;padding-bottom:38px;white-space:nowrap;width:330px;font-size:80px">38 → 6</p>
+    <p class="headline-13" style="flex:1">position moyenne sur Google pour l’Hôtel Eiffel Ségur</p>
+  </div>
+  <div class="abs" style="left:64px;top:64px;width:740px;height:952px;display:flex;flex-direction:column;gap:24px">
+    <p class="sub">Orem en quelques repères</p>
+    <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end">
+      <p class="headline-13" style="font-family:var(--sans)">“Nous avons confié la création de notre site à Orem, et le résultat est au-delà de nos attentes. Notre nouveau site reflète parfaitement l’esprit créatif du groupe.”</p>
+    </div>
+    <p class="body-l">Wallerand Moullé-Berteaux, CEO, Le Crayon Groupe</p>
+  </div>
+</section>
+
+<!-- 05 · Différenciateurs (Figma 3666:1716) -->
+<section class="slide dots-dark">
+  <div class="abs" style="left:64px;top:64px;width:1791px;display:flex;justify-content:space-between;align-items:flex-start">
+    <h2 class="title c-light">Ce qui nous distingue</h2>
+    <p class="sub c-light">Trois engagements</p>
+  </div>
+  <div class="abs" style="left:64px;top:233px;width:1791px;height:782px;display:flex;gap:64px">
+    <div class="col-rule" style="flex:1">
+      <p class="headline-13 c-orange" style="flex:1">01</p>
+      <p class="headline c-light">Un directeur artistique dans l’équipe</p>
+      <p class="body-l c-lm">Clément conçoit chaque direction artistique en interne. Pas de sous-traitance, pas de template : un univers pensé pour votre marque, du positionnement à l’interface.</p>
+    </div>
+    <div class="col-rule" style="flex:1">
+      <p class="headline-13 c-orange" style="flex:1">02</p>
+      <p class="headline c-light">La méthode Zero-Lock</p>
+      <p class="body-l c-lm">Votre site vous appartient. Webflow, formation à la prise en main, documentation : vous restez autonome et ne dépendez jamais de l’agence.</p>
+    </div>
+    <div class="col-rule" style="flex:1">
+      <p class="headline-13 c-orange" style="flex:1">03</p>
+      <p class="headline c-light">La méthode O.R.E.M.</p>
+      <p class="body-l c-lm">Orienter, Représenter, Exécuter, Mesurer. Quatre étapes qui relient chaque décision de design à un objectif business.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 06 · Méthode O.R.E.M. (Figma 3665:907) -->
+<section class="slide">
+  <h2 class="abs title" style="left:294px;top:64px;width:1562px">La méthode O.R.E.M.<br>Quatre étapes, un seul fil conducteur</h2>
+  <div class="abs tl-line"></div>
+  <div class="abs" style="left:65px;top:572px;display:flex;gap:111px">
+    <div class="tl-col big" style="width:359px"><i class="tl-dot"></i><p class="headline tl-h"><span class="c-orange">O</span> · Orienter</p><p class="body-l c-muted">Clarifier votre positionnement, vos cibles et votre message.</p></div>
+    <div class="tl-col big" style="width:359px"><i class="tl-dot"></i><p class="headline tl-h"><span class="c-orange">R</span> · Représenter</p><p class="body-l c-muted">Traduire ce positionnement en direction artistique, cohérente sur tous vos supports.</p></div>
+    <div class="tl-col big" style="width:359px"><i class="tl-dot"></i><p class="headline tl-h"><span class="c-orange">E</span> · Exécuter</p><p class="body-l c-muted">Concevoir et mettre en ligne un site qui convertit et se référence.</p></div>
+    <div class="tl-col big" style="width:381px"><i class="tl-dot"></i><p class="headline tl-h"><span class="c-orange">M</span> · Mesurer</p><p class="body-l c-muted">Suivre les résultats et faire vivre le site après la mise en ligne.</p></div>
+  </div>
+</section>
+
+<!-- 07 · Orienter (Figma 3673:2173) -->
+<section class="slide">
+  <div class="split-left">
+    <div><p class="body c-light" style="margin-bottom:8px">Méthode O.R.E.M. · 01</p><h2 class="title c-light">Orienter</h2></div>
+    <div><p class="sub c-ink" style="margin-bottom:8px">Le résultat</p><p class="headline-13 c-ink">Un message que l’on comprend en cinq secondes, et que l’on retient.</p></div>
+  </div>
+  <div class="split-right dots-light">
+    <div class="card" style="left:64px;top:64px;width:538px;height:991px">
+      <p class="label c-accent">Ce que nous faisons</p>
+      <p class="headline" style="min-height:76px">Positionnement et message</p>
+      <div class="grow"></div>
+      <ul class="checks body">
+        <li><svg><use href="#check"/></svg><span>ateliers de cadrage avec les dirigeants</span></li>
+        <li><svg><use href="#check"/></svg><span>analyse des cibles et de la concurrence</span></li>
+        <li><svg><use href="#check"/></svg><span>hiérarchie des messages et arborescence du site</span></li>
+        <li><svg><use href="#check"/></svg><span>plateforme éditoriale et ton de voix</span></li>
+      </ul>
+    </div>
+    <div class="card mini-case" style="left:666px;top:64px;width:538px;height:991px">
+      <p class="label c-accent">Mini cas client</p>
+      <img class="mini-logo" src="assets/logos/concilium.png" alt="Concilium - Le Recruteur">
+      <p class="headline">Deux marques, deux publics : une architecture qui oriente chaque visiteur vers le bon interlocuteur.</p>
+      <div class="grow"></div>
+      <div class="mini-stats"><div><p class="title">12,6 %</p><p class="sub c-muted">taux de clic sur Google</p></div><div><p class="title">6,0</p><p class="sub c-muted">position moyenne</p></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 08 · Représenter -->
+<section class="slide">
+  <div class="split-left">
+    <div><p class="body c-light" style="margin-bottom:8px">Méthode O.R.E.M. · 02</p><h2 class="title c-light">Représenter</h2></div>
+    <div><p class="sub c-ink" style="margin-bottom:8px">Le résultat</p><p class="headline-13 c-ink">Une marque reconnaissable, cohérente sur tous vos supports.</p></div>
+  </div>
+  <div class="split-right dots-light">
+    <div class="card" style="left:64px;top:64px;width:538px;height:991px">
+      <p class="label c-accent">Ce que nous faisons</p>
+      <p class="headline" style="min-height:76px">Direction artistique</p>
+      <div class="grow"></div>
+      <ul class="checks body">
+        <li><svg><use href="#check"/></svg><span>moodboard et direction stratégique</span></li>
+        <li><svg><use href="#check"/></svg><span>logo et identité visuelle</span></li>
+        <li><svg><use href="#check"/></svg><span>système graphique et règles de composition</span></li>
+        <li><svg><use href="#check"/></svg><span>maquettes d’interface et applications</span></li>
+      </ul>
+    </div>
+    <div class="card mini-case" style="left:666px;top:64px;width:538px;height:991px">
+      <p class="label c-accent">Mini cas client</p>
+      <img class="mini-logo" src="assets/logos/le-crayon.avif" alt="Le Crayon Groupe">
+      <p class="headline">Une direction artistique construite from scratch pour réunir trois marques sous une seule signature.</p>
+      <div class="grow"></div>
+      <div class="mini-stats"><div><p class="title">1 000+</p><p class="sub c-muted">demandes qualifiées depuis la mise en ligne</p></div><div><p class="title">70 %</p><p class="sub c-muted">du trafic issu du SEO</p></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 09 · Exécuter -->
+<section class="slide">
+  <div class="split-left">
+    <div><p class="body c-light" style="margin-bottom:8px">Méthode O.R.E.M. · 03</p><h2 class="title c-light">Exécuter</h2></div>
+    <div><p class="sub c-ink" style="margin-bottom:8px">Le résultat</p><p class="headline-13 c-ink">Un site rapide, administrable, pensé pour convertir et être trouvé.</p></div>
+  </div>
+  <div class="split-right dots-light">
+    <div class="card" style="left:64px;top:64px;width:538px;height:991px">
+      <p class="label c-accent">Ce que nous faisons</p>
+      <p class="headline" style="min-height:76px">Site web Webflow</p>
+      <div class="grow"></div>
+      <ul class="checks body">
+        <li><svg><use href="#check"/></svg><span>expérience utilisateur et maquettes Figma</span></li>
+        <li><svg><use href="#check"/></svg><span>développement Webflow et CMS</span></li>
+        <li><svg><use href="#check"/></svg><span>SEO et GEO, pour être visible jusque dans les réponses des IA</span></li>
+        <li><svg><use href="#check"/></svg><span>intégrations : paiement, espace membre, emailing, CRM</span></li>
+      </ul>
+    </div>
+    <div class="card mini-case" style="left:666px;top:64px;width:538px;height:991px">
+      <p class="label c-accent">Mini cas client</p>
+      <img class="mini-logo" src="assets/logos/club-casa-zanoni.png" alt="Club Casa Zanoni">
+      <p class="headline">Migration vers Webflow, espace membre, paiement et emailing : un club d’abonnement enfin monétisé.</p>
+      <div class="grow"></div>
+      <div class="mini-stats"><div><p class="title">×2,2</p><p class="sub c-muted">de revenu récurrent mensuel</p></div><div><p class="title">107</p><p class="sub c-muted">pays touchés</p></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 10 · Mesurer -->
+<section class="slide">
+  <div class="split-left">
+    <div><p class="body c-light" style="margin-bottom:8px">Méthode O.R.E.M. · 04</p><h2 class="title c-light">Mesurer</h2></div>
+    <div><p class="sub c-ink" style="margin-bottom:8px">Le résultat</p><p class="headline-13 c-ink">Un site piloté par les chiffres, qui continue de progresser après la mise en ligne.</p></div>
+  </div>
+  <div class="split-right dots-light">
+    <div class="card" style="left:64px;top:64px;width:538px;height:991px">
+      <p class="label c-accent">Ce que nous faisons</p>
+      <p class="headline" style="min-height:76px">Suivi et amélioration continue</p>
+      <div class="grow"></div>
+      <ul class="checks body">
+        <li><svg><use href="#check"/></svg><span>GA4, Search Console et Tag Manager configurés</span></li>
+        <li><svg><use href="#check"/></svg><span>suivi des conversions réelles</span></li>
+        <li><svg><use href="#check"/></svg><span>points mensuels sur les statistiques</span></li>
+        <li><svg><use href="#check"/></svg><span>axes d’amélioration identifiés et mis en place</span></li>
+      </ul>
+    </div>
+    <div class="card mini-case" style="left:666px;top:64px;width:538px;height:991px">
+      <p class="label c-accent">Mini cas client</p>
+      <img class="mini-logo" src="assets/logos/hotel-eiffel-segur.png" alt="Hôtel Eiffel Ségur">
+      <p class="headline">Un hôtel qui reprend la main sur sa visibilité face aux plateformes de réservation.</p>
+      <div class="grow"></div>
+      <div class="mini-stats"><div><p class="title">38 → 6</p><p class="sub c-muted">position moyenne sur Google</p></div><div><p class="title">398</p><p class="sub c-muted">visiteurs venus d’assistants IA</p></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 11 · Parcours d'offres (Figma 3668:1875) -->
+<section class="slide" style="display:grid;grid-template-columns:1fr 1fr;gap:24px;padding:24px">
+  <div class="opt-frame" style="background-image:url(assets/opt-bg-1.png)">
+    <div class="opt-card" style="min-height:480px;justify-content:center">
+      <div><p class="label c-orange">Porte d’entrée</p><p class="headline-13">Cap Marque</p></div>
+      <p class="body-l">Un sprint conseil de 10 jours pour clarifier votre positionnement et votre message, avant tout chantier de design ou de site.</p>
+      <p class="sub c-muted">L’entrée la plus accessible pour démarrer avec Orem.</p>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-rows:1fr 1fr;gap:24px">
+    <div class="opt-frame" style="background-image:url(assets/opt-bg-2.png)">
+      <div class="opt-card" style="gap:20px;min-height:330px;justify-content:center">
+        <div><p class="sub c-orange">Puis</p><p class="headline-13">Direction artistique et site web</p></div>
+        <p class="body-l">De la stratégie à la mise en ligne : votre direction artistique et votre site Webflow, pensés ensemble.</p>
+      </div>
+    </div>
+    <div class="opt-frame" style="background-image:url(assets/opt-bg-3.png)">
+      <div class="opt-card" style="gap:20px;min-height:330px;justify-content:center">
+        <div><p class="sub c-orange">Et dans la durée</p><p class="headline-13">Nos suivis</p></div>
+        <p class="body-l">Suivi Web, Suivi Marque ou Suivi Web+Marque : faire vivre votre marque et votre site après la livraison.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 12 · Façon de travailler (Figma 3666:1097) -->
+<section class="slide dots-dark">
+  <div class="abs" style="left:64px;top:66px;width:1792px;display:flex;justify-content:space-between;align-items:flex-start"><h2 class="title c-light">Notre façon de travailler</h2><p class="sub c-light">Ce que vous vivez en travaillant avec nous</p></div>
+  <div class="abs" style="left:64px;top:339px;width:1792px;display:flex;flex-direction:column;gap:96px">
+    <div style="display:flex;justify-content:space-between"><p class="headline c-lm" style="width:555px">01 · Co-construction</p><p class="headline c-light" style="width:1173px">Des ateliers avec les fondateurs et notre directeur artistique à chaque étape clé. Vous échangez directement avec ceux qui conçoivent votre projet.</p></div>
+    <div style="display:flex;justify-content:space-between"><p class="headline c-lm" style="width:555px">02 · Autonomie</p><p class="headline c-light" style="width:1173px">Une formation Webflow à la livraison : une trentaine de minutes suffisent pour modifier vos contenus vous-même.</p></div>
+    <div style="display:flex;justify-content:space-between"><p class="headline c-lm" style="width:555px">03 · Accompagnement</p><p class="headline c-light" style="width:1173px">Deux mois de suivi après la mise en ligne, avec un point mensuel sur les statistiques et les améliorations à apporter.</p></div>
+  </div>
+</section>
+
+<!-- 13 · Témoignage (Figma 3665:785) -->
+<section class="slide bg-grad" style="display:flex;align-items:center;justify-content:center;padding:64px">
+  <div style="display:flex;flex-direction:column;align-items:flex-end;gap:32px;width:1560px">
+    <p class="quote" style="color:#fff">“Un grand merci à Clément pour la créativité, à Théophile pour la qualité de sa plume et son expertise SEO, et à Louis pour sa disponibilité et sa réactivité sans faille.”</p>
+    <p class="headline-13" style="color:#fff">Julie Egron, fondatrice, Concilium - Le Recruteur</p>
+  </div>
+</section>
+
+<!-- 14 · Chapitre cas clients (Figma 1433:722) -->
+<section class="slide bg-black">
+  <img class="abs" src="assets/blob-chapter.png" alt="" style="left:42px;top:0;width:1878px;height:1080px">
+  <p class="chap-label eyebrow" style="top:401px">Réalisations</p>
+  <h2 class="chap-title display c-light" style="top:454px">10 cas clients</h2>
+</section>
+
+<!-- 15 · Cas client 01 : Le Crayon Groupe -->
+<section class="slide">
+  <div class="case-left">
+    <p class="label c-accent">Cas client 01 · Média</p>
+    <img class="case-logo" src="assets/logos/le-crayon.avif" alt="Le Crayon Groupe">
+    <h2 class="case-title">Réunir un groupe média et ses marques sous une seule signature</h2>
+    <div class="case-cols">
+      <div><p class="sub c-orange">Contexte</p><p class="body-l">Un écosystème média porté par quatre fondateurs : Le Crayon Média, Le Surligneur et Les Pépites de France. Plus de 6 millions d’abonnés cumulés.</p></div>
+      <div><p class="sub c-orange">Le problème</p><p class="body-l">Un site dépassé par la croissance du groupe : entités mal reliées, image en retrait, personal branding des fondateurs inexploité.</p></div>
+      <div><p class="sub c-orange">Ce que nous avons fait</p><p class="body-l">Direction artistique from scratch, page d’accueil en hub vers les filiales, personal branding des fondateurs intégré, preuves de crédibilité mises en scène.</p></div>
+    </div>
+    <div style="flex:1"></div>
+    <div class="case-stats"><div><p class="display case-num">1 000+</p><p class="sub c-muted">demandes qualifiées depuis la mise en ligne</p></div><div><p class="display case-num">68 408</p><p class="sub c-muted">utilisateurs actifs</p></div><div><p class="display case-num">70 %</p><p class="sub c-muted">du trafic issu du SEO, sans budget média</p></div><div><p class="display case-num">42 803</p><p class="sub c-muted">clics Search Console</p></div></div>
+  </div>
+  <div class="case-right"><img class="case-cover" src="assets/cases/le-crayon-0.webp" alt="Le Crayon Groupe"><div class="case-thumbs"><img src="assets/cases/le-crayon-1.webp" alt=""><img src="assets/cases/le-crayon-2.webp" alt=""></div></div>
+</section>
+
+<!-- 16 · Cas client 02 : Huchet-Demorge -->
+<section class="slide">
+  <div class="case-left">
+    <p class="label c-accent">Cas client 02 · Transaction d’hôtels et de boulangeries</p>
+    <img class="case-logo" src="assets/logos/huchet-demorge.png" alt="Huchet-Demorge">
+    <h2 class="case-title">Aligner l’image d’un cabinet historique sur son prestige</h2>
+    <div class="case-cols">
+      <div><p class="sub c-orange">Contexte</p><p class="body-l">Depuis 1965, plus de 3 500 transactions d’hôtels et de boulangeries réalisées à Paris et dans les grandes villes françaises.</p></div>
+      <div><p class="sub c-orange">Le problème</p><p class="body-l">Un site trop standard pour des opérations à fort enjeu, avec un référencement déjà solide à ne surtout pas casser.</p></div>
+      <div><p class="sub c-orange">Ce que nous avons fait</p><p class="body-l">Direction artistique premium, migration de WordPress vers Webflow sans perte de référencement, site administrable, travail éditorial pour Google et les IA.</p></div>
+    </div>
+    <div style="flex:1"></div>
+    <div class="case-stats"><div><p class="display case-num">~5</p><p class="sub c-muted">demandes qualifiées par semaine</p></div><div><p class="display case-num">11 961</p><p class="sub c-muted">utilisateurs actifs</p></div><div><p class="display case-num">22 825</p><p class="sub c-muted">clics Search Console</p></div><div><p class="display case-num">68 %</p><p class="sub c-muted">du trafic issu du SEO, sans budget média</p></div></div>
+  </div>
+  <div class="case-right"><img class="case-cover" src="assets/cases/huchet-demorge-0.avif" alt="Huchet-Demorge"><div class="case-thumbs"><img src="assets/cases/huchet-demorge-1.avif" alt=""><img src="assets/cases/huchet-demorge-2.avif" alt=""></div></div>
+</section>
+
+<!-- 17 · Cas client 03 : Club Casa Zanoni -->
+<section class="slide">
+  <div class="case-left">
+    <p class="label c-accent">Cas client 03 · Club d’abonnement culinaire</p>
+    <img class="case-logo" src="assets/logos/club-casa-zanoni.png" alt="Club Casa Zanoni">
+    <h2 class="case-title">Transformer un club d’abonnement en vrai business</h2>
+    <div class="case-cols">
+      <div><p class="sub c-orange">Contexte</p><p class="body-l">Le club du chef étoilé Simone Zanoni : recettes et vidéos exclusives, événements digitaux, réduction sur la boutique de produits italiens.</p></div>
+      <div><p class="sub c-orange">Le problème</p><p class="body-l">Une conversion faible, une perception premium insuffisante, et un WordPress lourd en plugins, coûteux à faire évoluer.</p></div>
+      <div><p class="sub c-orange">Ce que nous avons fait</p><p class="body-l">Refonte de l’identité visuelle et du site, migration vers Webflow connecté à Memberstack, Stripe et Brevo, parcours d’adhésion simplifié.</p></div>
+    </div>
+    <div style="flex:1"></div>
+    <div class="case-stats"><div><p class="display case-num">×2,2</p><p class="sub c-muted">de revenu récurrent mensuel après la refonte</p></div><div><p class="display case-num">107</p><p class="sub c-muted">pays touchés</p></div><div><p class="display case-num">11 385</p><p class="sub c-muted">utilisateurs actifs</p></div><div><p class="display case-num">3 min 18</p><p class="sub c-muted">de durée moyenne de visite</p></div></div>
+  </div>
+  <div class="case-right"><img class="case-cover" src="assets/cases/club-casa-zanoni-0.webp" alt="Club Casa Zanoni"><div class="case-thumbs"><img src="assets/cases/club-casa-zanoni-1.webp" alt=""><img src="assets/cases/club-casa-zanoni-2.webp" alt=""></div></div>
+</section>
+
+<!-- 18 · Cas client 04 : Hôtel Eiffel Ségur -->
+<section class="slide">
+  <div class="case-left">
+    <p class="label c-accent">Cas client 04 · Hôtellerie</p>
+    <img class="case-logo" src="assets/logos/hotel-eiffel-segur.png" alt="Hôtel Eiffel Ségur">
+    <h2 class="case-title">Reprendre la main sur sa visibilité face à Booking</h2>
+    <div class="case-cols">
+      <div><p class="sub c-orange">Contexte</p><p class="body-l">Un hôtel 3 étoiles à deux pas de la tour Eiffel, avec une clientèle fidèle, côté loisir comme côté affaires.</p></div>
+      <div><p class="sub c-orange">Le problème</p><p class="body-l">Booking faisait la découverte, le site ne convertissait pas : photos datées, aucune preuve sociale, aucun argument pour réserver en direct.</p></div>
+      <div><p class="sub c-orange">Ce que nous avons fait</p><p class="body-l">Nouveaux visuels, avantages exclusifs à la réservation directe, avis segmentés par profil de voyageur, moteur de réservation intégré, version anglaise.</p></div>
+    </div>
+    <div style="flex:1"></div>
+    <div class="case-stats"><div><p class="display case-num">6,1</p><p class="sub c-muted">position moyenne, contre 38 début 2025</p></div><div><p class="display case-num">3 716</p><p class="sub c-muted">utilisateurs actifs en 4 mois</p></div><div><p class="display case-num">398</p><p class="sub c-muted">visiteurs venus d’assistants IA</p></div><div><p class="display case-num">48 %</p><p class="sub c-muted">de taux d’engagement</p></div></div>
+  </div>
+  <div class="case-right"><img class="case-cover" src="assets/cases/hotel-eiffel-segur-0.avif" alt="Hôtel Eiffel Ségur"><div class="case-thumbs"><img src="assets/cases/hotel-eiffel-segur-1.avif" alt=""><img src="assets/cases/hotel-eiffel-segur-2.avif" alt=""></div></div>
+</section>
+
+<!-- 19 · Cas client 05 : Logical Conseils -->
+<section class="slide">
+  <div class="case-left">
+    <p class="label c-accent">Cas client 05 · Conseil data et IA</p>
+    <img class="case-logo" src="assets/logos/logical-conseils.png" alt="Logical Conseils">
+    <h2 class="case-title">Passer de prestataire technique à partenaire stratégique</h2>
+    <div class="case-cols">
+      <div><p class="sub c-orange">Contexte</p><p class="body-l">Un cabinet de conseil en data, IA, plateformes et gouvernance, fort de plus de cent consultants dans le Nord de la France.</p></div>
+      <div><p class="sub c-orange">Le problème</p><p class="body-l">Un marché saturé où tous les acteurs se ressemblent, et un site daté qui ne convainquait ni les clients ni les talents.</p></div>
+      <div><p class="sub c-orange">Ce que nous avons fait</p><p class="body-l">Deux parcours distincts, client et talent, direction artistique refondue, copywriting expert, preuve sociale au centre, migration vers Webflow.</p></div>
+    </div>
+    <div style="flex:1"></div>
+    <div class="case-stats"><div><p class="display case-num">6,1</p><p class="sub c-muted">position moyenne, contre 51 avant la refonte</p></div><div><p class="display case-num">3 614</p><p class="sub c-muted">utilisateurs actifs</p></div><div><p class="display case-num">1 957</p><p class="sub c-muted">clics Search Console</p></div><div><p class="display case-num">28,7 %</p><p class="sub c-muted">de taux de clic sur les requêtes de marque</p></div></div>
+  </div>
+  <div class="case-right"><img class="case-cover" src="assets/cases/logical-conseils-0.webp" alt="Logical Conseils"><div class="case-thumbs"><img src="assets/cases/logical-conseils-1.webp" alt=""><img src="assets/cases/logical-conseils-2.webp" alt=""></div></div>
+</section>
+
+<!-- 20 · Cas client 06 : Concilium - Le Recruteur -->
+<section class="slide">
+  <div class="case-left">
+    <p class="label c-accent">Cas client 06 · Recrutement et RH</p>
+    <img class="case-logo" src="assets/logos/concilium.png" alt="Concilium - Le Recruteur">
+    <h2 class="case-title">Guider chaque visiteur vers la bonne marque</h2>
+    <div class="case-cols">
+      <div><p class="sub c-orange">Contexte</p><p class="body-l">Deux marques d’un même cabinet : Le Recruteur, recrutement au succès sur le Grand Ouest, et Concilium, développement RH, formation et médiation.</p></div>
+      <div><p class="sub c-orange">Le problème</p><p class="body-l">Un site Canva qui ne générait aucun client, des offres d’emploi impossibles à référencer, aucune distinction entre les deux marques.</p></div>
+      <div><p class="sub c-orange">Ce que nous avons fait</p><p class="body-l">Architecture bi-marque, une page par offre pour le référencement local, page méthode, candidature spontanée, blog, formation Webflow et deux mois de suivi.</p></div>
+    </div>
+    <div style="flex:1"></div>
+    <div class="case-stats"><div><p class="display case-num">12,6 %</p><p class="sub c-muted">de taux de clic sur Google</p></div><div><p class="display case-num">6,0</p><p class="sub c-muted">position moyenne sur Google</p></div></div>
+  </div>
+  <div class="case-right"><img class="case-cover" src="assets/cases/concilium-0.avif" alt="Concilium - Le Recruteur"><div class="case-thumbs"><img src="assets/cases/concilium-1.avif" alt=""><img src="assets/cases/concilium-2.avif" alt=""></div></div>
+</section>
+
+<!-- 21 · Cas client 07 : Dim Sum Entertainment -->
+<section class="slide">
+  <div class="case-left">
+    <p class="label c-accent">Cas client 07 · Production audiovisuelle</p>
+    <img class="case-logo" src="assets/logos/dimsum.png" alt="Dim Sum Entertainment">
+    <h2 class="case-title">Rendre un catalogue de productions lisible en quelques minutes</h2>
+    <div class="case-cols">
+      <div><p class="sub c-orange">Contexte</p><p class="body-l">Une société de production indépendante : fictions télévisées, podcasts et contenus de marque avec son label Plan Cut.</p></div>
+      <div><p class="sub c-orange">Le problème</p><p class="body-l">Un site générique, aucune fiche programme, et chaque mise à jour du catalogue demandait une intervention technique.</p></div>
+      <div><p class="sub c-orange">Ce que nous avons fait</p><p class="body-l">Architecture repensée, CMS catalogue avec une fiche et des filtres par programme, copywriting orienté diffuseurs. En ligne en quatre semaines.</p></div>
+    </div>
+    <div style="flex:1"></div>
+    <div class="case-stats"><div><p class="display case-num">7</p><p class="sub c-muted">demandes entrantes</p></div><div><p class="display case-num">1 200</p><p class="sub c-muted">utilisateurs actifs</p></div><div><p class="display case-num">739</p><p class="sub c-muted">clics Search Console</p></div><div><p class="display case-num">43 500</p><p class="sub c-muted">impressions Search Console</p></div></div>
+  </div>
+  <div class="case-right"><img class="case-cover" src="assets/cases/dimsum-0.webp" alt="Dim Sum Entertainment"><div class="case-thumbs"><img src="assets/cases/dimsum-1.webp" alt=""><img src="assets/cases/dimsum-2.webp" alt=""></div></div>
+</section>
+
+<!-- 22 · Cas client 08 : Bund Médias -->
+<section class="slide">
+  <div class="case-left">
+    <p class="label c-accent">Cas client 08 · Régie publicitaire</p>
+    <img class="case-logo" src="assets/logos/bund-medias.png" alt="Bund Médias">
+    <h2 class="case-title">Donner à une régie une vitrine à la hauteur de ses partenariats</h2>
+    <div class="case-cols">
+      <div><p class="sub c-orange">Contexte</p><p class="body-l">Une régie indépendante d’espaces publicitaires sur les médias digitaux, partenaire du Crayon et de Média Positif.</p></div>
+      <div><p class="sub c-orange">Le problème</p><p class="body-l">Une page devenue obsolète, des médias partenaires invisibles, des formats et des campagnes illustrés nulle part.</p></div>
+      <div><p class="sub c-orange">Ce que nous avons fait</p><p class="body-l">Une page premium centrée sur les médias, les formats et des exemples de campagnes, une structure que l’équipe fait évoluer seule.</p></div>
+    </div>
+    <div style="flex:1"></div>
+    <div class="case-stats"><div><p class="display case-num">3 400</p><p class="sub c-muted">utilisateurs actifs</p></div><div><p class="display case-num">44 %</p><p class="sub c-muted">de taux de clic sur Google</p></div><div><p class="display case-num">3,7</p><p class="sub c-muted">position moyenne sur Google</p></div></div>
+  </div>
+  <div class="case-right"><img class="case-cover" src="assets/cases/bund-medias-0.webp" alt="Bund Médias"><div class="case-thumbs"><img src="assets/cases/bund-medias-1.webp" alt=""><img src="assets/cases/bund-medias-2.webp" alt=""></div></div>
+</section>
+
+<!-- 23 · Cas client 09 : Orem -->
+<section class="slide">
+  <div class="case-left">
+    <p class="label c-accent">Cas client 09 · Notre propre repositionnement</p>
+    <img class="case-logo" src="assets/logo-black.png" alt="Orem" style="height:72px">
+    <h2 class="case-title">D’une agence web parmi d’autres à une agence impossible à confondre</h2>
+    <div class="case-cols">
+      <div><p class="sub c-orange">Contexte</p><p class="body-l">Anciennement ICONOKOM, l’agence accompagnait déjà des cabinets de conseil, des éditeurs tech et des marques premium.</p></div>
+      <div><p class="sub c-orange">Le problème</p><p class="body-l">Un nom qui ne portait ni méthode ni promesse, dans un marché où l’IA a dévalué la simple fabrication de sites.</p></div>
+      <div><p class="sub c-orange">Ce que nous avons fait</p><p class="body-l">Un nom qui encode la méthode O.R.E.M., une offre simplifiée, un site pensé pour Google et les réponses des IA, une migration qui préserve l’autorité acquise.</p></div>
+    </div>
+    <div style="flex:1"></div>
+    <div class="case-stats"><div><p class="display c-orange case-num">O</p><p class="sub c-muted">Orienter</p></div><div><p class="display c-orange case-num">R</p><p class="sub c-muted">Représenter</p></div><div><p class="display c-orange case-num">E</p><p class="sub c-muted">Exécuter</p></div><div><p class="display c-orange case-num">M</p><p class="sub c-muted">Mesurer</p></div></div>
+  </div>
+  <div class="case-right"><img class="case-cover" src="assets/cases/orem-0.png" alt="Orem" style="height:952px"></div>
+</section>
+
+<!-- 24 · Cas client 10 : JUWA -->
+<section class="slide">
+  <div class="case-left">
+    <p class="label c-accent">Cas client 10 · Agence IA, Data et Web</p>
+    <img class="case-logo" src="assets/logos/juwa.png" alt="JUWA">
+    <h2 class="case-title">Rendre lisible une offre complexe</h2>
+    <div class="case-cols">
+      <div><p class="sub c-orange">Contexte</p><p class="body-l">Une agence IA, Data et Web dont le site ne reflétait plus la réalité de l’activité.</p></div>
+      <div><p class="sub c-orange">Le problème</p><p class="body-l">Une offre riche et technique, difficile à comprendre pour des prospects non spécialistes.</p></div>
+      <div><p class="sub c-orange">Ce que nous avons fait</p><p class="body-l">Un accompagnement centré sur la clarté de l’offre et des maquettes claires, modernes et orientées conversion.</p></div>
+    </div>
+    <div style="flex:1"></div>
+    <p class="body-l c-muted case-note">Témoignage client issu de notre site. Les chiffres de ce projet ne sont pas encore publiés.</p>
+  </div>
+  <div class="case-right case-quote"><p class="label c-orange">Témoignage</p><p class="headline-13 c-light">“Nous avions besoin de faire évoluer notre site pour qu’il reflète enfin notre réalité d’agence IA, Data et Web. L’accompagnement a été extrêmement fluide, avec une vraie capacité à rendre notre offre complexe lisible pour nos prospects.”</p><div style="flex:1"></div><div style="display:flex;gap:20px;align-items:center"><img src="assets/team/matheo-juwa.webp" alt="" style="width:72px;height:72px;border-radius:50%;object-fit:cover"><p class="body c-lm">Mathéo Lamblin, fondateur, JUWA</p></div></div>
+</section>
+
+<!-- 25 · Logos clients -->
+<section class="slide">
+  <div class="abs" style="left:64px;top:64px;width:1792px;display:flex;justify-content:space-between;align-items:flex-end">
+    <h2 class="title">Ils nous ont fait confiance</h2>
+    <p class="sub c-muted">Plus de 30 entreprises accompagnées depuis 2023</p>
+  </div>
+  <div class="abs logo-grid" style="left:64px;top:232px;width:1792px;height:784px">
+    <div class="logo-cell"><img src="assets/logos/le-crayon.avif" alt="le-crayon"></div>
+    <div class="logo-cell"><img src="assets/logos/riskintel.webp" alt="riskintel"></div>
+    <div class="logo-cell"><img src="assets/logos/logical-conseils.png" alt="logical-conseils"></div>
+    <div class="logo-cell"><img src="assets/logos/huchet-demorge.png" alt="huchet-demorge"></div>
+    <div class="logo-cell"><img src="assets/logos/aktionnaire.png" alt="aktionnaire"></div>
+    <div class="logo-cell"><img src="assets/logos/sforsales.png" alt="sforsales"></div>
+    <div class="logo-cell"><img src="assets/logos/culinary-agency.png" alt="culinary-agency"></div>
+    <div class="logo-cell"><img src="assets/logos/creative-group.avif" alt="creative-group"></div>
+    <div class="logo-cell"><img src="assets/logos/concilium.png" alt="concilium"></div>
+    <div class="logo-cell"><img src="assets/logos/club-casa-zanoni.png" alt="club-casa-zanoni"></div>
+    <div class="logo-cell"><img src="assets/logos/hotel-eiffel-segur.png" alt="hotel-eiffel-segur"></div>
+    <div class="logo-cell"><img src="assets/logos/dimsum.png" alt="dimsum"></div>
+    <div class="logo-cell"><img src="assets/logos/bund-medias.png" alt="bund-medias"></div>
+    <div class="logo-cell"><img src="assets/logos/les-ombres.png" alt="les-ombres"></div>
+    <div class="logo-cell"><img src="assets/logos/h19.png" alt="h19"></div>
+    <div class="logo-cell"><img src="assets/logos/impulsions-metropole-sud.png" alt="impulsions-metropole-sud"></div>
+    <div class="logo-cell"><img src="assets/logos/24-degres.webp" alt="24-degres"></div>
+    <div class="logo-cell"><img src="assets/logos/juwa.png" alt="juwa"></div>
+    <div class="logo-cell"><img src="assets/logos/jared.png" alt="jared"></div>
+    <div class="logo-cell"><img src="assets/logos/mtc-nord.png" alt="mtc-nord"></div>
+    <div class="logo-cell"><img src="assets/logos/jean-francois-badias.png" alt="jean-francois-badias"></div>
+    <div class="logo-cell"><img src="assets/logos/valere-avocats.png" alt="valere-avocats"></div>
+    <div class="logo-cell"><img src="assets/logos/serenitine.png" alt="serenitine"></div>
+    <div class="logo-cell"><img src="assets/logos/creative-balance.png" alt="creative-balance"></div>
+  </div>
+</section>
+
+<!-- 26 · Prochaine étape (Figma 3665:983) -->
+<section class="slide bg-grad" style="display:flex;align-items:center;justify-content:center;padding:64px">
+  <div style="width:1692px;height:952px;border-radius:24px;background:var(--cream);padding:64px;display:flex;gap:64px">
+    <div style="flex:1;display:flex;flex-direction:column">
+      <p class="eyebrow" style="margin-bottom:16px">Prochaine étape</p>
+      <h2 class="title">Parlons de votre projet</h2>
+      <p class="body-l c-muted" style="margin-top:24px;width:820px">Un premier appel de 30 minutes pour comprendre vos enjeux, et voir ensemble si Orem est la bonne agence pour vous accompagner.</p>
+      <div style="margin-top:40px;display:flex"><a class="pill-cta" href="https://www.agence-orem.fr/">Réserver un appel de 30 minutes <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M7 17L17 7M17 7H8M17 7v9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a></div>
+      <div style="flex:1"></div>
+      <div style="display:flex;gap:64px;border-top:1px solid var(--stroke);padding-top:32px">
+        <div><p class="headline">Louis Montagne</p><p class="body-l c-muted">Cofondateur</p><p class="body" style="margin-top:12px"><a href="mailto:louis@agence-orem.fr">louis@agence-orem.fr</a><br><a href="tel:+33750371572">07 50 37 15 72</a></p></div>
+        <div><p class="headline">Théophile Lamouret</p><p class="body-l c-muted">Cofondateur</p><p class="body" style="margin-top:12px"><a href="mailto:theophile@agence-orem.fr">theophile@agence-orem.fr</a><br><a href="tel:+33771673947">07 71 67 39 47</a></p></div>
+      </div>
+    </div>
+    <div style="width:440px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:40px">
+      <img src="assets/logo-gradient.png" alt="" style="width:410px;height:400px">
+      <p class="sub c-muted"><a href="https://www.agence-orem.fr/">agence-orem.fr</a> · Orem, marque d’ICONOKOM</p>
+    </div>
+  </div>
+</section>
+
+</main>
+<script>
+(function(){
+  var deck=document.getElementById('deck'), root=document.documentElement;
+  deck.querySelectorAll('.slide').forEach(function(sl){
+    var w=document.createElement('div'); w.className='slide-wrap';
+    sl.parentNode.insertBefore(w,sl); w.appendChild(sl);
+  });
+  function fit(){root.style.setProperty('--s',Math.min(1,(window.innerWidth-48)/1920));}
+  window.addEventListener('resize',fit); fit();
+  window.addEventListener('beforeprint',function(){root.style.setProperty('--s',1)});
+  window.addEventListener('afterprint',fit);
+})();
+</script>
+</body>
+</html>
