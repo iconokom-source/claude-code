@@ -143,6 +143,16 @@ ul{list-style:none}
 .case-visual{background:var(--paper-2);border-radius:24px;overflow:hidden;display:flex;align-items:center;justify-content:center}
 .case-visual img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:var(--paper-2)}
 
+.next-list{margin-top:24px;display:flex;flex-direction:column;gap:10px}
+.next-list li{display:flex;gap:16px;font-family:var(--serif);font-size:28px;line-height:1.25}
+.next-list li span{flex:none;width:40px}
+.qr-card{display:flex;gap:32px;border-radius:24px;padding:36px;text-decoration:none;color:inherit}
+.qr-main{flex:1.45;background:var(--ink)}
+.qr-alt{flex:1;background:#fff;border:1px solid var(--stroke)}
+.qr-box{flex:none;align-self:center;background:#fff;border-radius:16px;padding:18px}
+.qr-alt .qr-box{padding:0}
+.qr-box img{width:100%;height:100%;display:block}
+
 /* Bouton PDF */
 .pdf-btn{position:fixed;right:24px;bottom:24px;z-index:10;font-family:var(--sans);font-size:16px;font-weight:400;letter-spacing:-.3px;background:var(--light);color:#000;border:0;border-radius:999px;padding:12px 18px 12px 20px;display:flex;gap:8px;align-items:center;cursor:pointer;box-shadow:0 8px 30px rgba(0,0,0,.35)}
 @media print{
@@ -464,18 +474,41 @@ ul{list-style:none}
 
 <!-- 11 · La prochaine étape (Figma 3665:983) -->
 <section class="slide bg-grad" style="display:flex;align-items:center;justify-content:center;padding:64px">
-  <div style="width:1692px;height:952px;border-radius:24px;background:var(--cream);padding:64px;display:flex;flex-direction:column">
-    <p class="eyebrow" style="margin-bottom:16px">La prochaine étape</p>
-    <h2 class="title" style="width:1300px">La suite : vous montrer ce que cela donnerait concrètement pour Au P’tit Louis</h2>
-    <p class="body-l c-muted" style="margin-top:24px;width:1100px">Si vous le souhaitez, nous pouvons vous présenter une recommandation plus concrète, adaptée à vos boutiques, à votre fonctionnement et à vos priorités commerciales. L’objectif de cet échange est simple :</p>
-    <div style="flex:1"></div>
-    <div style="display:flex;gap:32px">
-      <div class="step"><p class="headline-13 c-orange">01</p><p class="headline">Vous montrer les actions à mettre en place en priorité</p></div>
-      <div class="step"><p class="headline-13 c-orange">02</p><p class="headline">Vous présenter une structure de site pensée pour vos clients</p></div>
-      <div class="step"><p class="headline-13 c-orange">03</p><p class="headline">Vous aider à transformer le site en vrai outil commercial</p></div>
+  <div style="width:1692px;height:952px;border-radius:24px;background:var(--cream);padding:64px;display:flex;gap:64px">
+    <div style="flex:1;display:flex;flex-direction:column">
+      <p class="eyebrow" style="margin-bottom:16px">La prochaine étape</p>
+      <h2 class="title" style="font-size:56px;letter-spacing:-1.68px">La suite : vous montrer ce que cela donnerait concrètement pour Au P’tit Louis</h2>
+      <p class="body-l c-muted" style="margin-top:24px">Si vous le souhaitez, nous pouvons vous présenter une recommandation plus concrète, adaptée à vos boutiques, à votre fonctionnement et à vos priorités commerciales. L’objectif de cet échange est simple :</p>
+      <ul class="next-list">
+        <li><span class="c-orange">01</span>vous montrer les actions à mettre en place en priorité</li>
+        <li><span class="c-orange">02</span>vous présenter une structure de site pensée pour vos clients</li>
+        <li><span class="c-orange">03</span>vous aider à transformer le site en vrai outil commercial</li>
+      </ul>
+      <div style="flex:1"></div>
+      <div style="border-top:1px solid var(--stroke);padding-top:28px">
+        <p class="sub c-orange" style="margin-bottom:8px">Une question ? Appelez-moi directement</p>
+        <p class="headline" style="font-size:32px;white-space:nowrap">Louis Montagne, fondateur d’Orem · <a href="tel:+33750371572" style="color:inherit;text-decoration:none;white-space:nowrap">07 50 37 15 72</a></p>
+      </div>
     </div>
-    <div style="margin-top:64px;display:flex">
-      <p class="pill body">Échange de 30 minutes, sur place ou en visio</p>
+    <div style="width:700px;display:flex;flex-direction:column;gap:24px">
+      <a class="qr-card qr-main" href="https://www.loom.com/share/e26a60bb6cbb4cc8bfbd301676a91f3f">
+        <div style="flex:1;display:flex;flex-direction:column;gap:12px">
+          <p class="sub c-orange">À voir en premier</p>
+          <p class="headline c-light">La vidéo qui explique tout ce document</p>
+          <div style="flex:1"></div>
+          <p class="body-l c-lm">Plus de contexte et de détails, en moins de 10 minutes. Scannez le QR code avec votre téléphone.</p>
+        </div>
+        <div class="qr-box" style="width:300px;height:300px"><img src="assets/qr-video.svg" alt="QR code vers la vidéo Loom"></div>
+      </a>
+      <a class="qr-card qr-alt" href="https://app.iclosed.io/e/Orem/au-ptit-louis">
+        <div style="flex:1;display:flex;flex-direction:column;gap:12px">
+          <p class="sub c-accent">Prendre rendez-vous</p>
+          <p class="headline">Réserver un échange de 30 minutes en visio</p>
+          <div style="flex:1"></div>
+          <p class="body-l c-muted">Ou sur place, en boutique, si vous préférez.</p>
+        </div>
+        <div class="qr-box" style="width:200px;height:200px"><img src="assets/qr-rdv.svg" alt="QR code vers la prise de rendez-vous"></div>
+      </a>
     </div>
   </div>
 </section>
