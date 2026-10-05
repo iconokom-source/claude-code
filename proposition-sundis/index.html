@@ -104,6 +104,17 @@ ul{list-style:none}
 /* Étapes */
 .step{flex:1;border-left:1px solid var(--ink);padding-left:32px;display:flex;flex-direction:column;gap:24px}
 
+
+/* Comparatif */
+.cmp-head,.cmp-row{display:grid;grid-template-columns:240px 1fr 1fr 1fr;gap:32px;padding:16px 8px;position:relative;z-index:1}
+.cmp-head{padding:0 8px 24px;border-bottom:1px solid var(--stroke);align-items:end;margin-bottom:16px}
+.cmp>.cmp-row:nth-child(odd){background:var(--paper-2)}
+.cmp-total p:not(.c-muted){font-weight:500}
+.cmp-big{align-items:center}
+.cmp-loose .cmp-row{padding:36px 8px}
+.cmp-loose .cmp-big .headline{font-size:44px}
+.cmp-reco{position:absolute;z-index:2;pointer-events:none;top:-16px;bottom:-16px;left:569.7px;width:305.7px;border:1.5px solid var(--orange);border-radius:16px}
+
 /* Bouton PDF */
 .pdf-btn{position:fixed;right:24px;bottom:24px;z-index:10;font-family:var(--sans);font-size:16px;font-weight:400;letter-spacing:-.3px;background:var(--light);color:#000;border:0;border-radius:999px;padding:12px 18px 12px 20px;display:flex;gap:8px;align-items:center;cursor:pointer;box-shadow:0 8px 30px rgba(0,0,0,.35)}
 @media print{
@@ -136,62 +147,40 @@ ul{list-style:none}
   </div>
 </section>
 
-<!-- 02 · Chapitre Synthèse (Figma 1433:722) -->
-<section class="slide bg-black">
-  <img class="abs" src="assets/blob-chapter.png" alt="" style="left:42px;top:0;width:1878px;height:1080px">
-  <p class="chap-label eyebrow" style="top:401px">01 · Synthèse exécutive</p>
-  <h2 class="chap-title display c-light" style="top:454px;padding:0 120px">Repenser le site Sundis comme un outil de clarté, de crédibilité et de contact</h2>
-</section>
-
-<!-- 03 · Synthèse (Figma 3682:4649) -->
+<!-- 02 · Synthèse exécutive : la décision en une page -->
 <section class="slide dots-dark">
-  <div class="abs" style="left:64px;top:64px;width:1792px;height:508px;display:flex;gap:32px">
+  <div class="abs" style="left:64px;top:64px;width:1792px;display:flex;justify-content:space-between;align-items:flex-start">
+    <h2 class="title c-light">La décision en une page</h2>
+    <p class="sub c-light">Synthèse exécutive</p>
+  </div>
+  <div class="abs" style="left:64px;top:233px;width:1792px;height:420px;display:flex;gap:32px">
     <div style="flex:1;display:flex;flex-direction:column;gap:32px">
-      <p class="headline c-lm">Constat</p>
-      <p class="headline c-light">Aujourd’hui, le site de Sundis ne reflète ni le niveau réel de l’entreprise, ni la qualité de son outil industriel, ni la solidité de son positionnement.</p>
-    </div>
-    <div style="flex:1;display:flex;flex-direction:column;gap:32px">
-      <p class="headline c-lm">Freins</p>
-      <p class="headline c-light">Le discours reste trop générique, les contenus sont partiellement obsolètes, la navigation peut être simplifiée, et plusieurs signaux nuisent à la crédibilité du site, notamment à l’international.</p>
+      <p class="headline c-lm">Le problème</p>
+      <p class="headline c-light">Le site ne reflète ni le niveau réel de Sundis, ni son outil industriel, ni la solidité de son positionnement. Discours générique, contenus obsolètes, crédibilité fragilisée à l’international.</p>
     </div>
     <div style="flex:1;display:flex;flex-direction:column;gap:32px">
       <p class="headline c-lm">Notre recommandation</p>
-      <ul class="headline c-light dash tight">
-        <li>Recentrer l’image et le discours de Sundis autour d’un positionnement plus clair, plus cohérent et plus crédible.</li>
-        <li>Refondre le site vitrine pour en faire un outil orienté professionnels, capable de rassurer, orienter et générer des prises de contact qualifiées.</li>
-      </ul>
-    </div>
-  </div>
-  <div class="abs" style="left:64px;top:672px;width:1792px;height:344px;display:flex;gap:32px">
-    <div style="flex:1;display:flex;flex-direction:column;gap:32px">
-      <p class="headline c-lm">Deux briques complémentaires</p>
-      <p class="headline c-light">Une brique Image / Direction artistique, avec 3 niveaux de profondeur, et une brique Site vitrine Webflow, pensée comme le socle digital de cette nouvelle présentation de marque.</p>
+      <p class="headline c-light">Recentrer l’image et le discours sur les professionnels, puis refondre le site vitrine pour rassurer, orienter et générer des prises de contact qualifiées.</p>
     </div>
     <div style="flex:1;display:flex;flex-direction:column;gap:32px">
-      <p class="headline c-lm">Une articulation recommandée</p>
-      <p class="headline c-light">Les deux prestations peuvent être engagées indépendamment. En pratique, nous recommandons fortement de les articuler, afin de garantir un résultat cohérent, durable et réellement aligné avec les ambitions de Sundis.</p>
+      <p class="headline c-lm">Ce que ça change</p>
+      <p class="headline c-light">Pas un simple nouveau site : un outil mesurable, qui améliore la qualité des prises de contact, l’engagement des visiteurs et l’exploitation du trafic international.</p>
+    </div>
+  </div>
+  <div class="abs" style="left:64px;top:722px;width:1792px;height:294px;display:flex;gap:32px;border-top:1.5px solid var(--light-muted);padding-top:48px">
+    <div style="flex:1;display:flex;flex-direction:column;gap:24px">
+      <p class="headline c-orange">Le choix à faire</p>
+      <p class="headline c-light">Brique 1 · Option 2 Brand Kit Structuré<br>+ Brique 2 · Refonte du site vitrine Webflow<br>+ pilotage par KPI dès la mise en ligne</p>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+      <p class="headline c-orange">Investissement recommandé</p>
+      <p class="display c-light" style="white-space:nowrap">9 108 € HT</p>
+      <p class="body-l c-lm">Au lieu de 10 120 € HT : remise de synergie de 10 % incluse.</p>
     </div>
   </div>
 </section>
 
-<!-- 04 · Recommandation (Figma 3670:2083) -->
-<section class="slide dots-light">
-  <div class="abs" style="left:50%;top:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;gap:24px">
-    <p class="eyebrow" style="margin-bottom:16px">Notre recommandation pour Sundis aujourd’hui</p>
-    <div style="display:flex;gap:20px;align-items:center"><svg style="width:48px;height:48px;color:var(--ink);flex:none"><use href="#check"/></svg><p class="title" style="white-space:nowrap">Brand Kit Structuré</p></div>
-    <div style="display:flex;gap:20px;align-items:center"><svg style="width:48px;height:48px;color:var(--ink);flex:none"><use href="#check"/></svg><p class="title" style="white-space:nowrap">Refonte du site vitrine Webflow</p></div>
-    <div style="display:flex;gap:20px;align-items:center"><svg style="width:48px;height:48px;color:var(--ink);flex:none"><use href="#check"/></svg><p class="title" style="white-space:nowrap">Pilotage par KPI dès la mise en ligne</p></div>
-  </div>
-</section>
-
-<!-- 05 · Chapitre Observations (Figma 1433:1011) -->
-<section class="slide">
-  <img class="abs" src="assets/logo-gradient.png" alt="" style="left:1445px;top:342px;width:410px;height:400px">
-  <p class="abs eyebrow" style="left:64px;top:339px">02 · Ce que nous avons observé</p>
-  <h2 class="abs display" style="left:64px;top:398px;width:1250px">Un site qui informe, mais qui ne joue pas encore pleinement son rôle</h2>
-</section>
-
-<!-- 06 · Constats 3.1 / 3.2 (Figma 3682:4668 / 3673:2173) -->
+<!-- 03 · Constats 01-02 (Figma 3673:2173) -->
 <section class="slide">
   <div class="split-left">
     <h2 class="title c-light">Ce que nous avons observé</h2>
@@ -221,11 +210,11 @@ ul{list-style:none}
   </div>
 </section>
 
-<!-- 07 · Constats 3.3 / 3.4 -->
+<!-- 04 · Constats 03-04 -->
 <section class="slide">
   <div class="split-left">
     <h2 class="title c-light">Ce que nous avons observé</h2>
-    <p class="body c-ink">À l’issue de nos échanges, plusieurs constats ressortent clairement.</p>
+    <p class="body c-ink">Autrement dit : le site existe, mais il n’est pas encore pleinement exploité comme un levier commercial, de marque et de recrutement.</p>
   </div>
   <div class="split-right dots-light">
     <div class="card" style="left:64px;top:64px;width:538px;height:991px">
@@ -257,23 +246,7 @@ ul{list-style:none}
   </div>
 </section>
 
-<!-- 08 · Citation (Figma 3665:785) -->
-<section class="slide bg-grad" style="display:flex;align-items:center;justify-content:center;padding:64px">
-  <div style="display:flex;flex-direction:column;align-items:flex-end;gap:32px;width:1480px">
-    <p class="quote" style="color:#fff">“Le site existe, mais il n’est pas encore pleinement exploité comme un levier commercial, de marque et de recrutement.”</p>
-    <p class="headline-13" style="color:#fff">Autrement dit</p>
-  </div>
-</section>
-
-<!-- 09 · Chapitre Recommandation (Figma 1433:726) -->
-<section class="slide bg-grad">
-  <div class="chap-center">
-    <p class="eyebrow">03 · Notre recommandation</p>
-    <h2 class="display c-light" style="padding:0 140px">Refaire le site, oui. Mais surtout clarifier ce qu’il doit dire, à qui, et dans quel ordre.</h2>
-  </div>
-</section>
-
-<!-- 10 · Priorités 1 à 3 (Figma 3666:1716) -->
+<!-- 05 · Priorités 1-3 (Figma 3666:1716) -->
 <section class="slide dots-dark">
   <div class="abs" style="left:64px;top:64px;width:1791px;height:105px;display:flex;justify-content:space-between;align-items:flex-start">
     <h2 class="title c-light">5 priorités pour le futur site</h2>
@@ -324,8 +297,7 @@ ul{list-style:none}
   </div>
 </section>
 
-
-<!-- 11 · Priorités 4 et 5 (Figma 3666:1716) -->
+<!-- 06 · Priorités 4-5 + finalité -->
 <section class="slide dots-dark">
   <div class="abs" style="left:64px;top:64px;width:1791px;height:105px;display:flex;justify-content:space-between;align-items:flex-start">
     <h2 class="title c-light">5 priorités pour le futur site</h2>
@@ -359,132 +331,89 @@ ul{list-style:none}
         </ul>
       </div>
     </div>
-    <div style="flex:1"></div>
+    <div class="col-rule" style="flex:1">
+      <p class="headline-13 c-orange" style="flex:1">Finalité</p>
+      <p class="headline c-light">Un outil mesurable, pas un simple nouveau site</p>
+      <div class="body-l c-lm" style="display:flex;flex-direction:column;gap:16px">
+        <p>Ce projet n’a pas vocation à simplement refondre le site, mais à créer un outil capable d’améliorer :</p>
+        <ul class="dash"><li>la qualité des prises de contact,</li><li>l’engagement des visiteurs,</li><li>l’exploitation du trafic international.</li></ul>
+      </div>
+    </div>
   </div>
 </section>
 
-<!-- 12 · Chapitre Brique 1 (Figma 1433:722) -->
-<section class="slide bg-black">
-  <img class="abs" src="assets/blob-chapter.png" alt="" style="left:42px;top:0;width:1878px;height:1080px">
-  <p class="chap-label eyebrow" style="top:401px">04 · Brique 1</p>
-  <h2 class="chap-title display c-light" style="top:454px">Image &amp; direction artistique</h2>
-</section>
-
-<!-- 13 · Brique 1 intro (Figma 3665:986) -->
+<!-- 07 · Brique 1 : comparatif des options -->
 <section class="slide">
-  <div class="abs" style="left:64px;top:64px;width:561px;height:952px;display:flex;flex-direction:column;gap:24px;justify-content:flex-end">
-    <h2 class="title" style="flex:1">Donner au site un socle de marque cohérent, exploitable et crédible</h2>
-    <p class="sub c-orange">3 niveaux de profondeur</p>
-    <ul class="sub dash" style="--g:0">
-      <li style="padding-left:30px">Identité Essentielle</li>
-      <li style="padding-left:30px;margin-top:0">Brand Kit Structuré, recommandé pour Sundis</li>
-      <li style="padding-left:30px;margin-top:0">Système de Marque Premium</li>
-    </ul>
+  <div class="abs" style="left:64px;top:66px;width:555px">
+    <p class="sub c-orange" style="margin-bottom:16px">Brique 1 · Image / direction artistique</p>
+    <h2 class="title">Trois options, un arbitrage</h2>
   </div>
-  <div class="abs" style="left:928px;top:64px;display:flex;flex-direction:column;gap:64px">
-    <div style="border-left:1px solid var(--ink);padding-left:64px;min-height:105px;display:flex;align-items:center"><p class="headline-13" style="width:928px">La refonte du site peut être engagée seule.</p></div>
-    <div style="border-left:1px solid var(--ink);padding-left:64px;min-height:105px;display:flex;align-items:center"><p class="headline-13" style="width:928px">Mais dans un projet comme celui de Sundis, la qualité du rendu final dépend fortement de la clarté du socle de marque sur lequel il repose.</p></div>
-    <div style="border-left:1px solid var(--ink);padding-left:64px;min-height:105px;display:flex;align-items:center"><p class="headline-13" style="width:928px">Autrement dit : on peut refaire un site sans reprendre la direction artistique.</p></div>
-    <div style="border-left:1px solid var(--ink);padding-left:64px;min-height:105px;display:flex;align-items:center"><p class="headline-13" style="width:928px">Mais si l’objectif est d’obtenir un site plus cohérent, plus solide et plus crédible, alors il est fortement recommandé d’y associer un niveau de travail sur l’image.</p></div>
+  <p class="abs body c-muted" style="left:64px;top:1016px;transform:translateY(-100%);width:555px">La refonte du site peut être engagée seule. Mais la qualité du rendu final dépend fortement de la clarté du socle de marque sur lequel il repose.</p>
+  <div class="abs cmp" style="left:683px;top:66px;width:1173px">
+    <div class="cmp-reco"></div>
+    <div class="cmp-head body c-muted"><p>Critère</p><p>Option 1<br><span class="c-ink">Identité Essentielle</span></p><p><span class="c-orange">Option 2 · Recommandée</span><br><span class="c-ink">Brand Kit Structuré</span></p><p>Option 3<br><span class="c-ink">Système de Marque Premium</span></p></div>
+    <div class="cmp-row body"><p class="c-muted">Niveau de structuration</p><p>Socle essentiel</p><p>Charte complète et déclinable</p><p>Système de marque étendu</p></div>
+    <div class="cmp-row body"><p class="c-muted">Livrables clés</p><p>Moodboard, couleurs, typographie, logo</p><p>+ direction stratégique, base éditoriale, 8 à 10 applications</p><p>+ public brand kit, UI kit, illustrations</p></div>
+    <div class="cmp-row body"><p class="c-muted">Usage conseillé</p><p>Remise à niveau simple</p><p>Refonte du site + cohérence de marque</p><p>Déploiement multi-supports et multi-équipes</p></div>
+    <div class="cmp-row body"><p class="c-muted">Pertinence pour Sundis</p><p>Limitée</p><p>Recommandée</p><p>Ambitieuse, au-delà du site</p></div>
+    <div class="cmp-row body"><p class="c-muted">Risque</p><p>Un site plus propre, mais pas plus cohérent</p><p>Équilibre visé</p><p>Un périmètre plus large que le besoin actuel</p></div>
+    <div class="cmp-row body"><p class="c-muted">Investissement</p><p>1 490 € HT</p><p>3 490 € HT</p><p>6 990 € HT</p></div>
+    <div class="cmp-row body cmp-total"><p class="c-muted">Avec la Brique 2, remise incluse</p><p>7 714 € HT</p><p>9 108 € HT</p><p>11 577 € HT</p></div>
   </div>
 </section>
 
-<!-- 14 · 3 niveaux (Figma 3666:1693) -->
+<!-- 08 · Brique 1 : contenu de chaque option -->
 <section class="slide dots-dark">
-  <div class="abs" style="left:64px;top:64px;width:561px;height:952px;display:flex;flex-direction:column;gap:24px;justify-content:flex-end">
-    <p class="sub c-light">Brique 1 · Image / Direction artistique</p>
-    <h2 class="title c-light" style="flex:1;display:flex;align-items:flex-end">Nous proposons pour cela 3 niveaux de profondeur.</h2>
+  <div class="abs" style="left:64px;top:64px;width:1791px;height:105px;display:flex;justify-content:space-between;align-items:flex-start">
+    <h2 class="title c-light">Le contenu de chaque option</h2>
+    <p class="sub c-light">Brique 1 · Image / direction artistique</p>
   </div>
-  <div class="abs" style="left:682px;top:64px;width:1173px;display:flex;gap:32px">
-    <div class="col-rule" style="flex:1;height:951px">
+  <div class="abs" style="left:64px;top:233px;width:1791px;height:782px;display:flex;gap:64px">
+    <div class="col-rule" style="flex:1;gap:40px">
       <p class="headline-13 c-orange" style="flex:1">Option 1</p>
-      <p class="headline-13 c-light">Identité<br>Essentielle</p>
-      <div class="body-l c-lm" style="display:flex;flex-direction:column;gap:24px">
-        <ul class="dash"><li>Poser un socle propre et cohérent.</li></ul>
-        <p class="headline c-light">1 490 € HT</p>
-      </div>
-    </div>
-    <div class="col-rule" style="flex:1;height:951px">
-      <p class="headline-13 c-orange" style="flex:1">Option 2 · Recommandée</p>
-      <p class="headline-13 c-light">Brand Kit<br>Structuré</p>
-      <div class="body-l c-lm" style="display:flex;flex-direction:column;gap:24px">
-        <ul class="dash"><li>Construire une charte exploitable, pensée pour un site ambitieux.</li></ul>
-        <p class="headline c-light">3 490 € HT</p>
-      </div>
-    </div>
-    <div class="col-rule" style="flex:1;height:951px">
-      <p class="headline-13 c-orange" style="flex:1">Option 3</p>
-      <p class="headline-13 c-light">Système de<br>Marque Premium</p>
-      <div class="body-l c-lm" style="display:flex;flex-direction:column;gap:24px">
-        <ul class="dash"><li>Déployer une architecture de marque plus complète.</li></ul>
-        <p class="headline c-light">6 990 € HT</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- 15 · Option 1 (Figma 3673:2173) -->
-<section class="slide">
-  <div class="split-left">
-    <div>
-      <p class="body c-light" style="margin-bottom:8px">Option 1</p>
-      <h2 class="title c-light">Identité Essentielle</h2>
-    </div>
-    <div>
-      <p class="body c-ink">Poser un socle propre et cohérent.</p>
-      <p class="body c-ink" style="margin-top:24px">Investissement</p>
-      <p class="title c-ink">1 490 € HT</p>
-    </div>
-  </div>
-  <div class="split-right dots-light">
-    <div class="card" style="left:64px;top:64px;width:538px;height:991px">
-      <p class="headline" style="min-height:76px">Ce que permet cette option</p>
-      <div class="body" style="display:flex;flex-direction:column;gap:20px">
-        <p>Cette option permet de donner au site une base visuelle plus claire, plus homogène et plus exploitable rapidement.</p>
-        <p>Elle convient à un besoin de remise à niveau simple, lorsque l’objectif est surtout :</p>
-        <ul class="checks">
-          <li><svg><use href="#check"/></svg><span>de clarifier les fondamentaux,</span></li>
-          <li><svg><use href="#check"/></svg><span>d’unifier le rendu,</span></li>
-          <li><svg><use href="#check"/></svg><span>et de repartir sur une base propre sans reconstruire toute l’architecture de marque.</span></li>
-        </ul>
-      </div>
-      <div class="grow"></div>
-      <p class="label c-accent">Quand cette option est pertinente</p>
-      <p class="body-l c-muted">Cette option est adaptée si Sundis souhaite aller à l’essentiel et poser une base plus propre, sans engager un travail complet de marque.</p>
-    </div>
-    <div class="card" style="left:666px;top:64px;width:538px;height:991px">
-      <p class="headline" style="min-height:76px">Ce que comprend cette option</p>
-      <ul class="checks body">
-        <li><svg><use href="#check"/></svg><span>Un moodboard de référence</span></li>
-        <li><svg><use href="#check"/></svg><span>Une base couleur structurée</span></li>
-        <li><svg><use href="#check"/></svg><span>Une base typographique</span></li>
-        <li><svg><use href="#check"/></svg><span>Un socle iconographique simple</span></li>
-        <li><svg><use href="#check"/></svg><span>Des principes de composition web</span></li>
-        <li><svg><use href="#check"/></svg><span>Un socle logo / variantes essentielles</span></li>
+      <p class="headline c-light">Identité Essentielle</p>
+      <ul class="dash tight body-l c-lm">
+        <li>Un moodboard de référence</li><li>Une base couleur structurée</li><li>Une base typographique</li><li>Un socle iconographique simple</li><li>Des principes de composition web</li><li>Un socle logo / variantes essentielles</li>
       </ul>
+      <p class="headline c-light">1 490 € HT</p>
+    </div>
+    <div class="col-rule" style="flex:1;gap:40px">
+      <p class="headline-13 c-orange" style="flex:1">Option 2 · Recommandée</p>
+      <p class="headline c-light">Brand Kit Structuré</p>
+      <ul class="dash tight body-l c-lm">
+        <li>Un moodboard plus détaillé</li><li>Une direction stratégique synchronisée avec le positionnement</li><li>Une base éditoriale</li><li>Une palette structurée</li><li>Une hiérarchie typographique complète</li><li>Des règles de composition</li><li>Une iconographie définie</li><li>Des objets de style</li><li>Un logo et ses déclinaisons</li><li>8 à 10 applications visuelles</li>
+      </ul>
+      <p class="headline c-light">3 490 € HT</p>
+    </div>
+    <div class="col-rule" style="flex:1;gap:40px">
+      <p class="headline-13 c-orange" style="flex:1">Option 3</p>
+      <p class="headline c-light">Système de Marque Premium</p>
+      <ul class="dash tight body-l c-lm">
+        <li>Une architecture de marque plus complète</li><li>Une direction éditoriale approfondie</li><li>Un système typographique plus riche</li><li>Des règles avancées de composition</li><li>Une iconographie plus développée</li><li>Des éléments d’illustration</li><li>Un public brand kit</li><li>Un UI kit</li><li>Et davantage d’applications</li>
+      </ul>
+      <p class="headline c-light">6 990 € HT</p>
     </div>
   </div>
 </section>
 
-<!-- 16 · Option 2 -->
+<!-- 09 · Brique 1 : pourquoi l’option 2 -->
 <section class="slide">
   <div class="split-left">
     <div>
-      <p class="body c-light" style="margin-bottom:8px">Option 2 · Recommandée</p>
-      <h2 class="title c-light">Brand Kit Structuré</h2>
+      <p class="body c-light" style="margin-bottom:8px">Brique 1 · Option 2 · Recommandée</p>
+      <h2 class="title c-light">Pourquoi le Brand Kit Structuré</h2>
     </div>
     <div>
-      <p class="body c-ink">Construire une charte exploitable, pensée pour un site ambitieux.</p>
-      <p class="body c-ink" style="margin-top:24px">Investissement</p>
-      <p class="title c-ink">3 490 € HT</p>
+      <p class="body c-ink">L’option 2 offre à Sundis le meilleur équilibre entre niveau de structuration, cohérence de marque et maîtrise de l’investissement.</p>
+      <p class="title c-ink" style="margin-top:24px">3 490 € HT</p>
     </div>
   </div>
   <div class="split-right dots-light">
     <div class="card" style="left:64px;top:64px;width:538px;height:991px">
-      <p class="headline" style="min-height:76px">C’est l’option que nous recommandons pour Sundis</p>
-      <div class="body" style="display:flex;flex-direction:column;gap:20px">
-        <p>Elle permet de construire une charte de marque claire, déclinable et réellement utilisable dans le temps, aussi bien pour le site que pour les futurs supports.</p>
-        <p>Cette option apporte un niveau de structuration plus cohérent avec les enjeux du projet :</p>
+      <p class="label c-accent">Ce qu’elle apporte</p>
+      <p class="headline" style="min-height:76px">Une charte claire, déclinable et utilisable dans le temps</p>
+      <div class="body" style="display:flex;flex-direction:column;gap:20px;margin-top:16px">
+        <p>Pour le site comme pour les futurs supports, avec un niveau de structuration cohérent avec les enjeux du projet :</p>
         <ul class="checks">
           <li><svg><use href="#check"/></svg><span>clarifier l’image,</span></li>
           <li><svg><use href="#check"/></svg><span>mieux refléter le positionnement,</span></li>
@@ -493,264 +422,117 @@ ul{list-style:none}
         </ul>
       </div>
       <div class="grow"></div>
-      <p class="label c-accent">Pourquoi nous la recommandons</p>
-      <p class="body-l c-muted">Parce qu’elle offre le meilleur équilibre entre ambition, cohérence et niveau d’investissement. C’est, selon nous, le bon niveau pour ne pas sous-traiter l’image du site tout en restant dans un cadre raisonnable.</p>
+      <p class="label c-accent">Notre lecture</p>
+      <p class="body-l c-muted">C’est le bon niveau pour ne pas sous-traiter l’image du site tout en restant dans un cadre raisonnable.</p>
     </div>
-    <div class="card" style="left:666px;top:64px;width:538px;height:991px">
-      <p class="headline" style="min-height:76px">Ce que comprend cette option</p>
-      <ul class="checks body">
-        <li><svg><use href="#check"/></svg><span>Un moodboard plus détaillé</span></li>
-        <li><svg><use href="#check"/></svg><span>Une direction stratégique synchronisée avec le positionnement</span></li>
-        <li><svg><use href="#check"/></svg><span>Une base éditoriale</span></li>
-        <li><svg><use href="#check"/></svg><span>Une palette structurée</span></li>
-        <li><svg><use href="#check"/></svg><span>Une hiérarchie typographique complète</span></li>
-        <li><svg><use href="#check"/></svg><span>Des règles de composition</span></li>
-        <li><svg><use href="#check"/></svg><span>Une iconographie définie</span></li>
-        <li><svg><use href="#check"/></svg><span>Des objets de style</span></li>
-        <li><svg><use href="#check"/></svg><span>Un logo et ses déclinaisons</span></li>
-        <li><svg><use href="#check"/></svg><span>8 à 10 applications visuelles</span></li>
-      </ul>
-    </div>
-  </div>
-</section>
-
-<!-- 17 · Option 3 -->
-<section class="slide">
-  <div class="split-left">
-    <div>
-      <p class="body c-light" style="margin-bottom:8px">Option 3</p>
-      <h2 class="title c-light">Système de Marque Premium</h2>
-    </div>
-    <div>
-      <p class="body c-ink">Déployer une architecture de marque plus complète.</p>
-      <p class="body c-ink" style="margin-top:24px">Investissement</p>
-      <p class="title c-ink">6 990 € HT</p>
-    </div>
-  </div>
-  <div class="split-right dots-light">
-    <div class="card" style="left:64px;top:64px;width:538px;height:991px">
-      <p class="headline" style="min-height:76px">Ce que permet cette option</p>
-      <div class="body" style="display:flex;flex-direction:column;gap:20px">
-        <p>Cette option va plus loin dans la profondeur du système de marque.</p>
-        <p>Elle convient davantage à des marques :</p>
-        <ul class="checks">
-          <li><svg><use href="#check"/></svg><span>plus exposées,</span></li>
-          <li><svg><use href="#check"/></svg><span>avec plus d’équipes ou de prestataires,</span></li>
-          <li><svg><use href="#check"/></svg><span>ou avec un besoin de déploiement large sur plusieurs supports et contextes.</span></li>
-        </ul>
-      </div>
+    <div class="card" style="left:666px;top:64px;width:538px;height:991px;gap:0">
+      <p class="label c-accent" style="margin-bottom:8px">Pourquoi pas moins</p>
+      <p class="headline">Option 1 : insuffisante pour l’enjeu</p>
+      <p class="body-l" style="margin-top:24px">Elle remet à niveau les fondamentaux, mais ne structure ni le positionnement, ni la base éditoriale. Le site gagnerait en propreté visuelle sans gagner en cohérence de marque, alors que c’est précisément le décalage identifié chez Sundis.</p>
       <div class="grow"></div>
-      <p class="label c-accent">Quand cette option est pertinente</p>
-      <p class="body-l c-muted">Cette option est pertinente si Sundis souhaite faire de cette refonte le point de départ d’un système de marque plus large, au-delà du seul site.</p>
-    </div>
-    <div class="card" style="left:666px;top:64px;width:538px;height:991px">
-      <p class="headline" style="min-height:76px">Ce que comprend cette option</p>
-      <ul class="checks body">
-        <li><svg><use href="#check"/></svg><span>Une architecture de marque plus complète</span></li>
-        <li><svg><use href="#check"/></svg><span>Une direction éditoriale approfondie</span></li>
-        <li><svg><use href="#check"/></svg><span>Un système typographique plus riche</span></li>
-        <li><svg><use href="#check"/></svg><span>Des règles avancées de composition</span></li>
-        <li><svg><use href="#check"/></svg><span>Une iconographie plus développée</span></li>
-        <li><svg><use href="#check"/></svg><span>Des éléments d’illustration</span></li>
-        <li><svg><use href="#check"/></svg><span>Un public brand kit</span></li>
-        <li><svg><use href="#check"/></svg><span>Un UI kit</span></li>
-        <li><svg><use href="#check"/></svg><span>Et davantage d’applications</span></li>
-      </ul>
+      <div style="border-top:1px solid var(--stroke);margin:0 0 40px"></div>
+      <p class="label c-accent" style="margin-bottom:8px">Pourquoi pas plus</p>
+      <p class="headline">Option 3 : surdimensionnée aujourd’hui</p>
+      <p class="body-l" style="margin-top:24px">Elle répond à un besoin de déploiement large : plusieurs équipes, plusieurs prestataires, de nombreux supports. Ce n’est pas l’enjeu prioritaire de Sundis à date. Elle reste une suite logique, activable plus tard sur la base du Brand Kit.</p>
     </div>
   </div>
 </section>
 
-<!-- 18 · Chapitre Brique 2 (Figma 1433:1011) -->
-<section class="slide">
-  <img class="abs" src="assets/logo-gradient.png" alt="" style="left:1445px;top:342px;width:410px;height:400px">
-  <p class="abs eyebrow" style="left:64px;top:339px">05 · Brique 2</p>
-  <h2 class="abs display" style="left:64px;top:398px;width:1250px">Refonte du site vitrine Webflow</h2>
-</section>
-
-<!-- 19 · Pourquoi Webflow (Figma 3670:2083) -->
-<section class="slide dots-light">
-  <div class="abs" style="left:50%;top:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;gap:24px;width:1100px">
-    <p class="eyebrow">Construire un site plus clair, plus crédible et plus facile à faire évoluer</p>
-    <p class="body-l c-muted" style="margin-bottom:16px">En parallèle du travail sur l’image, nous proposons la refonte du site vitrine de Sundis sous Webflow. Ce choix permet de concilier :</p>
-    <div style="display:flex;gap:20px;align-items:center"><svg style="width:48px;height:48px;color:var(--ink);flex:none"><use href="#check"/></svg><p class="title" style="white-space:nowrap">Qualité d’exécution</p></div>
-    <div style="display:flex;gap:20px;align-items:center"><svg style="width:48px;height:48px;color:var(--ink);flex:none"><use href="#check"/></svg><p class="title" style="white-space:nowrap">Liberté de design</p></div>
-    <div style="display:flex;gap:20px;align-items:center"><svg style="width:48px;height:48px;color:var(--ink);flex:none"><use href="#check"/></svg><p class="title" style="white-space:nowrap">Autonomie côté client</p></div>
-    <div style="display:flex;gap:20px;align-items:center"><svg style="width:48px;height:48px;color:var(--ink);flex:none"><use href="#check"/></svg><p class="title" style="white-space:nowrap">Capacité d’évolution dans le temps</p></div>
-  </div>
-</section>
-
-<!-- 20 · Périmètre (Figma 3668:1898) -->
+<!-- 10 · Brique 2 : périmètre et bénéfices -->
 <section class="slide">
   <div class="split-left">
-    <h2 class="title c-light">Le périmètre proposé</h2>
     <div>
-      <p class="body c-ink">Investissement du site vitrine</p>
+      <p class="body c-light" style="margin-bottom:8px">Brique 2</p>
+      <h2 class="title c-light">Refonte du site vitrine Webflow</h2>
+    </div>
+    <div>
+      <p class="body c-ink">Webflow concilie qualité d’exécution, liberté de design, autonomie côté client et capacité d’évolution dans le temps.</p>
+      <p class="body c-ink" style="margin-top:24px">Investissement du site vitrine</p>
       <p class="title c-ink">6 630 € HT</p>
     </div>
   </div>
   <div class="split-right dots-light">
     <div class="card" style="left:64px;top:64px;width:537.5px;height:444px">
-      <p class="label c-accent">01</p>
-      <p class="headline">Socle du site vitrine</p>
+      <p class="label c-accent">01 · Socle du site vitrine</p>
+      <p class="headline">Poser une base claire, administrable et durable</p>
       <div class="grow"></div>
-      <ul class="dash tight body-l c-muted"><li>Page d’accueil</li><li>Page “Nos produits”</li><li>Mentions légales</li><li>Page 404</li><li>Formation à la prise en main</li><li>2 mois d’accompagnement post-lancement</li></ul>
+      <p class="body-l c-muted">Page d’accueil, page “Nos produits”, mentions légales, page 404, formation à la prise en main, 2 mois d’accompagnement post-lancement.</p>
     </div>
     <div class="card" style="left:665.5px;top:64px;width:537.5px;height:444px">
-      <p class="label c-accent">02</p>
-      <p class="headline">Pages standards</p>
+      <p class="label c-accent">02 · Pages standards</p>
+      <p class="headline">Rassurer, expliquer, crédibiliser</p>
       <div class="grow"></div>
-      <ul class="dash tight body-l c-muted"><li>Histoire</li><li>Savoir-faire</li><li>Engagements RSE</li><li>Pourquoi nous rejoindre</li><li>Contact avec prise de rendez-vous</li></ul>
+      <p class="body-l c-muted">Histoire, Savoir-faire, Engagements RSE, Pourquoi nous rejoindre, Contact avec prise de rendez-vous.</p>
     </div>
     <div class="card" style="left:64px;top:572px;width:537.5px;height:444px">
-      <p class="label c-accent">03</p>
-      <p class="headline">Collections CMS</p>
+      <p class="label c-accent">03 · Collections CMS</p>
+      <p class="headline">Structurer l’offre et faciliter les évolutions</p>
       <div class="grow"></div>
-      <ul class="dash tight body-l c-muted"><li>Une collection Produits</li><li>Une collection Catégories</li><li>Une collection Offres d’emploi</li></ul>
+      <p class="body-l c-muted">Produits, Catégories, Offres d’emploi. Sundis fait évoluer le site plus facilement, à moindre coût, sans reconstruire la structure à chaque ajout.</p>
     </div>
     <div class="card" style="left:665.5px;top:572px;width:537.5px;height:444px">
-      <p class="label c-accent">04</p>
-      <p class="headline">International</p>
+      <p class="label c-accent">04 · International</p>
+      <p class="headline">Rendre le trafic étranger enfin exploitable</p>
       <div class="grow"></div>
-      <ul class="dash tight body-l c-muted"><li>Intégration des versions anglaise et espagnole</li></ul>
+      <p class="body-l c-muted">Intégration des versions anglaise et espagnole, sur une architecture propre pour le référencement.</p>
     </div>
   </div>
 </section>
 
-<!-- 21 · Note de recommandation (Figma 3665:676) -->
-<section class="slide bg-black" style="display:flex;align-items:center;justify-content:center;padding:64px">
-  <img class="abs" src="assets/blob-chapter.png" alt="" style="left:-60px;top:-40px;width:2100px;height:1208px">
-  <div style="position:relative;width:1792px">
-    <p class="eyebrow" style="margin-bottom:32px">Note de recommandation</p>
-    <p class="quote c-light">“Nous avons privilégié une logique CMS pour les catégories et contenus évolutifs. L’objectif est simple : permettre à Sundis de faire évoluer le site dans le temps plus facilement, à moindre coût, sans devoir reconstruire la structure à chaque ajout.”</p>
-  </div>
-</section>
-
-<!-- 22 · Chapitre Articulation (Figma 1433:726) -->
-<section class="slide bg-grad">
-  <div class="chap-center">
-    <p class="eyebrow">06 · Articulation entre les deux briques</p>
-    <h2 class="display c-light" style="padding:0 140px">Deux prestations distinctes, mais un projet plus fort lorsqu’elles sont pensées ensemble</h2>
-  </div>
-</section>
-
-<!-- 23 · Remise de synergie (Figma 3665:953) -->
+<!-- 11 · Articulation et remise de synergie -->
 <section class="slide">
   <div class="abs" style="left:928px;top:64px;width:928px;border-left:1px solid var(--ink);padding-left:64px;height:105px;display:flex;gap:32px;align-items:center">
     <p class="display" style="line-height:1.1;padding-bottom:38px;white-space:nowrap;width:190px">5 %</p>
-    <p class="headline-13" style="flex:1">Identité Essentielle</p>
+    <p class="headline-13" style="flex:1">avec l’option 1 · Identité Essentielle</p>
   </div>
   <div class="abs" style="left:928px;top:233px;width:928px;border-left:1px solid var(--ink);padding-left:64px;height:105px;display:flex;gap:32px;align-items:center">
-    <p class="display" style="line-height:1.1;padding-bottom:38px;white-space:nowrap;width:190px">10 %</p>
-    <p class="headline-13" style="flex:1">Brand Kit Structuré</p>
+    <p class="display c-orange" style="line-height:1.1;padding-bottom:38px;white-space:nowrap;width:190px">10 %</p>
+    <p class="headline-13" style="flex:1">avec l’option 2 · Brand Kit Structuré</p>
   </div>
   <div class="abs" style="left:928px;top:403px;width:928px;border-left:1px solid var(--ink);padding-left:64px;height:105px;display:flex;gap:32px;align-items:center">
     <p class="display" style="line-height:1.1;padding-bottom:38px;white-space:nowrap;width:190px">15 %</p>
-    <p class="headline-13" style="flex:1">Système de Marque Premium</p>
+    <p class="headline-13" style="flex:1">avec l’option 3 · Système de Marque Premium</p>
   </div>
-  <p class="abs body-l c-muted" style="left:928px;top:580px;width:880px">Remise de synergie appliquée selon le pack Image choisi, lorsque les deux briques sont engagées ensemble.</p>
+  <div class="abs" style="left:928px;top:620px;width:928px;display:flex;flex-direction:column;gap:16px">
+    <p class="sub c-orange">Pourquoi une remise</p>
+    <p class="headline-13">Ce n’est pas un geste commercial. Engagées ensemble, les deux briques partagent un seul cadrage, un seul système graphique et un seul circuit de validation. Le projet est plus cohérent, donc plus efficace à produire : la remise répercute ce gain.</p>
+  </div>
   <div class="abs" style="left:64px;top:64px;width:740px;height:952px;display:flex;flex-direction:column;gap:24px">
     <p class="sub">Articulation entre les deux briques</p>
-    <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:24px">
-      <p class="headline-13" style="font-family:var(--sans)">La brique Image et la brique Site sont proposées comme deux prestations distinctes. En pratique, sur un projet comme celui de Sundis, elles se renforcent directement :</p>
+    <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:32px">
+      <p class="title">Deux prestations distinctes, un projet plus fort lorsqu’elles sont pensées ensemble.</p>
       <ul class="dash body-l">
         <li>la direction artistique donne au site sa cohérence,</li>
         <li>le site donne à la direction artistique son terrain d’expression,</li>
         <li>et les deux, ensemble, permettent un rendu plus juste, plus lisible et plus crédible.</li>
       </ul>
     </div>
-    <p class="body-l c-muted">C’est pour cette raison qu’une remise de synergie est appliquée lorsque les deux briques sont engagées ensemble.</p>
   </div>
 </section>
 
-<!-- 24 · Chapitre Scénarios (Figma 1433:722) -->
-<section class="slide bg-black">
-  <img class="abs" src="assets/blob-chapter.png" alt="" style="left:42px;top:0;width:1878px;height:1080px">
-  <p class="chap-label eyebrow" style="top:401px">07 · Scénarios financiers</p>
-  <h2 class="chap-title display c-light" style="top:454px">Trois niveaux d’ambition possibles</h2>
-</section>
-
-<!-- 25 · Graphique (Figma 1433:1127) -->
+<!-- 12 · Scénarios financiers -->
 <section class="slide">
-  <h2 class="abs title" style="left:64px;top:64px;width:619px">Trois niveaux d’ambition possibles</h2>
-  <p class="abs headline-13" style="left:64px;top:787px;transform:translateY(-100%);width:619px">Option 2 recommandée</p>
-  <p class="abs body-l c-muted" style="left:64px;top:787px;width:619px">Site vitrine Webflow + Brand Kit Structuré : le meilleur équilibre entre ambition, cohérence et niveau d’investissement.</p>
-  <div class="abs" style="left:968px;top:24px;width:928px;height:1032px;display:flex;gap:16px;align-items:flex-end">
-    <div class="bar" style="height:614px"><p class="sub c-lm">Option 1</p><p class="headline c-light">7 714 € HT</p></div>
-    <div class="bar" style="height:725px"><p class="sub c-orange">Option 2 · Recommandée</p><p class="headline c-light">9 108 € HT</p></div>
-    <div class="bar" style="height:921px"><p class="sub c-lm">Option 3</p><p class="headline c-light">11 577 € HT</p></div>
+  <div class="abs" style="left:64px;top:66px;width:555px">
+    <p class="sub c-orange" style="margin-bottom:16px">Investissement</p>
+    <h2 class="title">Scénarios financiers</h2>
+  </div>
+  <p class="abs body c-muted" style="left:64px;top:1016px;transform:translateY(-100%);width:555px">Remise de synergie appliquée lorsque les deux briques sont engagées ensemble. La Brique 2 est au même prix dans les trois scénarios : 6 630 € HT.</p>
+  <div class="abs cmp cmp-loose" style="left:683px;top:66px;width:1173px">
+    <div class="cmp-reco"></div>
+    <div class="cmp-head body c-muted"><p>Ligne</p><p>Option 1</p><p><span class="c-orange">Option 2 · Recommandée</span></p><p>Option 3</p></div>
+    <div class="cmp-row body"><p class="c-muted">Brique 2 · Site vitrine Webflow</p><p>6 630 € HT</p><p>6 630 € HT</p><p>6 630 € HT</p></div>
+    <div class="cmp-row body"><p class="c-muted">Brique 1 · Image</p><p>Identité Essentielle<br>1 490 € HT</p><p>Brand Kit Structuré<br>3 490 € HT</p><p>Système de Marque Premium<br>6 990 € HT</p></div>
+    <div class="cmp-row body"><p class="c-muted">Total brut</p><p>8 120 € HT</p><p>10 120 € HT</p><p>13 620 € HT</p></div>
+    <div class="cmp-row body"><p class="c-muted">Remise de synergie</p><p>5 % · -406 €</p><p>10 % · -1 012 €</p><p>15 % · -2 043 €</p></div>
+    <div class="cmp-row cmp-big"><p class="body c-muted">Total facturé</p><p class="headline">7 714 € HT</p><p class="headline">9 108 € HT</p><p class="headline">11 577 € HT</p></div>
   </div>
 </section>
 
-<!-- 26 · Scénarios détaillés (Figma 3668:1875) -->
-<section class="slide" style="display:grid;grid-template-columns:1fr 1fr;gap:24px;padding:24px">
-  <div class="opt-frame" style="background-image:url(assets/opt-bg-1.png)">
-    <div class="opt-card">
-      <div><p class="label c-orange">Option 2 · Recommandée</p><p class="headline-13">Site vitrine + Brand Kit Structuré</p></div>
-      <ul class="dash tight body-l"><li>Site vitrine Webflow : 6 630 € HT</li><li>Brand Kit Structuré : 3 490 € HT</li><li>Total brut : 10 120 € HT</li><li>Remise de synergie 10 % : -1 012 €</li></ul>
-      <div><p class="sub c-muted">Total facturé</p><p class="title">9 108 € HT</p></div>
-    </div>
-  </div>
-  <div style="display:grid;grid-template-rows:1fr 1fr;gap:24px">
-    <div class="opt-frame" style="background-image:url(assets/opt-bg-2.png)">
-      <div class="opt-card" style="gap:20px">
-        <div><p class="sub c-orange">Option 1</p><p class="headline-13">Site vitrine + Identité Essentielle</p></div>
-        <ul class="dash tight body-l"><li>Site vitrine Webflow : 6 630 € HT</li><li>Identité Essentielle : 1 490 € HT</li><li>Total brut : 8 120 € HT</li><li>Remise de synergie 5 % : -406 €</li></ul>
-        <p class="sub c-muted" style="display:flex;align-items:baseline;gap:12px">Total facturé <span class="headline c-ink">7 714 € HT</span></p>
-      </div>
-    </div>
-    <div class="opt-frame" style="background-image:url(assets/opt-bg-3.png)">
-      <div class="opt-card" style="gap:20px">
-        <div><p class="sub c-orange">Option 3</p><p class="headline-13">Site vitrine + Système de Marque Premium</p></div>
-        <ul class="dash tight body-l"><li>Site vitrine Webflow : 6 630 € HT</li><li>Système de Marque Premium : 6 990 € HT</li><li>Total brut : 13 620 € HT</li><li>Remise de synergie 15 % : -2 043 €</li></ul>
-        <p class="sub c-muted" style="display:flex;align-items:baseline;gap:12px">Total facturé <span class="headline c-ink">11 577 € HT</span></p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- 27 · Tableau (Figma 3666:1367) -->
-<section class="slide">
-  <h2 class="abs title" style="left:64px;top:66px;width:555px">Scénarios financiers</h2>
-  <p class="abs body c-muted" style="left:64px;top:1016px;transform:translateY(-100%);width:555px">Remise de synergie appliquée lorsque les deux briques sont engagées ensemble.</p>
-  <div class="abs body c-muted tbl-head" style="left:683px;top:66px;width:1161px">
-    <p>Ligne</p><p>Option 1</p><p>Option 2 · Recommandée</p><p>Option 3</p>
-  </div>
-  <div class="abs body tbl" style="left:683px;top:194px;width:1161px">
-    <div><p>Site vitrine Webflow</p><p>6 630 € HT</p><p>6 630 € HT</p><p>6 630 € HT</p></div>
-    <div><p>Pack Image</p><p>Identité Essentielle</p><p>Brand Kit Structuré</p><p>Système Premium</p></div>
-    <div><p>Prix du pack Image</p><p>1 490 € HT</p><p>3 490 € HT</p><p>6 990 € HT</p></div>
-    <div><p>Total brut</p><p>8 120 € HT</p><p>10 120 € HT</p><p>13 620 € HT</p></div>
-    <div><p>Taux de remise</p><p>5 %</p><p>10 %</p><p>15 %</p></div>
-    <div><p>Remise de synergie</p><p>-406 €</p><p>-1 012 €</p><p>-2 043 €</p></div>
-    <div class="tbl-total"><p>Total facturé</p><p>7 714 € HT</p><p>9 108 € HT</p><p>11 577 € HT</p></div>
-  </div>
-</section>
-
-<!-- 28 · Chapitre KPI (Figma 1433:1011) -->
-<section class="slide">
-  <img class="abs" src="assets/logo-gradient.png" alt="" style="left:1445px;top:342px;width:410px;height:400px">
-  <p class="abs eyebrow" style="left:64px;top:339px">08 · KPI attendus et pilotage des résultats</p>
-  <h2 class="abs display" style="left:64px;top:398px;width:1250px">Mesurer ce qui compte vraiment</h2>
-</section>
-
-<!-- 29 · Familles de KPI (Figma 3665:771) -->
-<section class="slide">
-  <div class="abs" style="left:64px;top:64px;width:864px;height:952px;display:flex;flex-direction:column;justify-content:center;gap:40px">
-    <h2 class="title">L’objectif du projet n’est pas simplement de “mettre en ligne un nouveau site”.</h2>
-    <p class="body-l c-muted" style="width:700px">L’objectif est de rendre le site plus lisible, plus utile commercialement, plus crédible et plus pilotable. C’est pourquoi nous recommandons de suivre, dès la mise en ligne, plusieurs familles de KPI.</p>
-  </div>
-  <img class="abs" src="assets/circles.png" alt="" style="left:992px;top:107.5px;width:864px;height:864px">
-  <p class="abs body-l circ" style="top:228px">Conversion</p>
-  <p class="abs body-l circ" style="top:425px">Usage et<br>engagement</p>
-  <p class="abs body-l circ" style="top:652px">SEO et<br>international</p>
-  <p class="abs body-l circ" style="top:839px">Pilotage des résultats<br>dès la mise en ligne</p>
-</section>
-
-<!-- 30 · Indicateurs suivis (Figma 3666:1716) -->
+<!-- 13 · KPI : indicateurs suivis -->
 <section class="slide dots-dark">
   <div class="abs" style="left:64px;top:64px;width:1791px;height:105px;display:flex;justify-content:space-between;align-items:flex-start">
-    <h2 class="title c-light">Indicateurs suivis</h2>
-    <p class="sub c-light">Dès la mise en ligne</p>
+    <h2 class="title c-light">Mesurer ce qui compte vraiment</h2>
+    <p class="sub c-light">Pilotage · Indicateurs suivis dès la mise en ligne</p>
   </div>
   <div class="abs" style="left:64px;top:233px;width:1791px;height:782px;display:flex;gap:64px">
     <div class="col-rule" style="flex:1">
@@ -800,9 +582,9 @@ ul{list-style:none}
   </div>
 </section>
 
-<!-- 31 · Tendances attendues (Figma 3666:1097) -->
+<!-- 14 · KPI : tendances attendues -->
 <section class="slide dots-dark">
-  <h2 class="abs title c-light" style="left:64px;top:66px;width:1792px">Tendances attendues</h2>
+  <div class="abs" style="left:64px;top:66px;width:1792px;display:flex;justify-content:space-between;align-items:flex-start"><h2 class="title c-light">Tendances attendues</h2><p class="sub c-light">Pilotage</p></div>
   <div class="abs" style="left:64px;top:300px;width:1792px;display:flex;flex-direction:column;gap:72px">
     <div style="display:flex;justify-content:space-between"><p class="headline c-lm" style="width:555px">01 · Conversion</p><p class="headline c-light" style="width:1173px">Augmentation du nombre de prises de contact qualifiées, augmentation du nombre de demandes ciblées par produit, meilleure qualité des leads entrants, meilleure exploitation commerciale du trafic existant.</p></div>
     <div style="display:flex;justify-content:space-between"><p class="headline c-lm" style="width:555px">02 · Usage et engagement</p><p class="headline c-light" style="width:1173px">Augmentation du temps de consultation sur les pages stratégiques, amélioration de l’engagement global, baisse de la friction dans les parcours, meilleure compréhension de l’offre par les visiteurs.</p></div>
@@ -810,30 +592,10 @@ ul{list-style:none}
   </div>
 </section>
 
-<!-- 32 · Chapitre Méthodologie (Figma 1433:726) -->
-<section class="slide bg-grad">
-  <div class="chap-center">
-    <p class="eyebrow">09 · Méthodologie de travail</p>
-    <h2 class="display c-light">Une approche structurée<br>en 4 temps</h2>
-  </div>
-</section>
-
-<!-- 33 · Méthodologie (Figma 3665:907) -->
+<!-- 15 · Planning (Figma 3665:881) -->
 <section class="slide">
-  <h2 class="abs title" style="left:294px;top:64px;width:1562px">Une approche structurée<br>en 4 temps</h2>
-  <div class="abs tl-line"></div>
-  <div class="abs" style="left:65px;top:572px;display:flex;gap:111px">
-    <div class="tl-col big" style="width:359px"><i class="tl-dot"></i><p class="headline tl-h">Orienter</p><p class="body-l c-muted">Nous clarifions les objectifs, les cibles, les messages prioritaires et la structure du site.</p></div>
-    <div class="tl-col big" style="width:359px"><i class="tl-dot"></i><p class="headline tl-h">Représenter</p><p class="body-l c-muted">Nous traduisons ce positionnement dans une direction artistique, un langage visuel et une logique éditoriale cohérente.</p></div>
-    <div class="tl-col big" style="width:359px"><i class="tl-dot"></i><p class="headline tl-h">Exécuter</p><p class="body-l c-muted">Nous concevons, intégrons et mettons en ligne un site clair, fluide, responsive et administrable.</p></div>
-    <div class="tl-col big" style="width:381px"><i class="tl-dot"></i><p class="headline tl-h">Mesurer</p><p class="body-l c-muted">Nous configurons les outils de suivi, observons les premiers résultats et posons les bases d’amélioration continue.</p></div>
-  </div>
-</section>
-
-<!-- 34 · Planning (Figma 3665:881) -->
-<section class="slide">
-  <h2 class="abs title" style="left:64px;top:64px;width:1300px">Un projet pensé pour être cadré, produit, lancé puis mesuré</h2
-  ><p class="abs body-l c-muted" style="left:64px;top:240px;width:1100px">Le planning détaillé sera affiné une fois l’option retenue validée. À ce stade, nous projetons le travail en 5 grandes phases.</p>
+  <h2 class="abs title" style="left:64px;top:64px;width:1300px">Un projet cadré, produit, lancé puis mesuré</h2
+  ><p class="abs body-l c-muted" style="left:64px;top:240px;width:1100px">Une méthode en 4 temps : orienter, représenter, exécuter, mesurer. Le planning détaillé sera affiné une fois l’option retenue validée.</p>
   <div class="abs tl-line"></div>
   <div class="abs" style="left:64px;top:572px;width:1792px;display:flex;gap:48px">
     <div class="tl-col" style="flex:1"><i class="tl-dot"></i><p class="label c-accent">Phase 01</p><p class="headline">Cadrage</p><ul class="dash tight body-l c-muted"><li>objectifs,</li><li>arborescence,</li><li>hiérarchisation des messages,</li><li>priorités du site.</li></ul></div>
@@ -844,32 +606,20 @@ ul{list-style:none}
   </div>
 </section>
 
-<!-- 35 · Équipe (Figma 3666:1000) -->
-<section class="slide dots-dark">
-  <h2 class="abs title c-light" style="left:64px;top:64px;width:1792px">Équipe projet</h2>
-  <div class="abs team" style="left:64px;width:555px"><img src="assets/team-clement.png" alt="Clément Saint-Hilaire"><div><p class="headline c-light">Clément Saint-Hilaire</p><p class="body c-lm">Directeur de création.</p></div></div>
-  <div class="abs team" style="left:683px;width:547px"><img src="assets/team-theophile.png" alt="Théophile Lamouret"><div><p class="headline c-light">Théophile Lamouret</p><p class="body c-lm">Cofondateur &amp; directeur éditorial.</p></div></div>
-  <div class="abs team" style="left:1301px;width:555px"><img src="assets/team-louis.png" alt="Louis Montagne"><div><p class="headline c-light">Louis Montagne</p><p class="body c-lm">Cofondateur &amp; développeur.</p></div></div>
-</section>
-
-<!-- 36 · Références (Figma 3665:727) -->
-<section class="slide bg-black">
-  <img class="abs" src="assets/references.png" alt="Des sites conçus pour faire travailler les entreprises B2B." style="left:0;top:0;width:1920px;height:1080px">
-</section>
-
-<!-- 37 · Recommandation finale (Figma 3665:974) -->
+<!-- 16 · Recommandation finale (Figma 3665:974) -->
 <section class="slide bg-grad" style="display:flex;align-items:center;justify-content:center;padding:64px">
   <div style="width:1692px;height:952px;border-radius:24px;background:var(--graphite);padding:64px;display:flex;flex-direction:column;gap:56px">
     <div>
-      <p class="eyebrow" style="margin-bottom:16px">10 · Recommandation finale</p>
+      <p class="eyebrow" style="margin-bottom:16px">Recommandation finale</p>
       <h2 class="title c-light">Notre recommandation pour Sundis</h2>
+      <p class="body-l c-lm" style="margin-top:16px;width:1100px">L’option 2 offre à Sundis le meilleur équilibre entre niveau de structuration, cohérence de marque et maîtrise de l’investissement.</p>
     </div>
     <div style="display:flex;gap:96px;flex:1">
       <div style="flex:1;display:flex;flex-direction:column;gap:32px">
         <p class="body-l c-lm">Au regard de vos enjeux actuels, nous recommandons :</p>
         <ul class="checks headline c-light" style="--check-stroke:#1d1d1d">
           <li style="margin-top:0"><svg style="width:32px;height:32px;margin-top:6px;color:var(--light)"><use href="#check"/></svg><span>la refonte du site vitrine Webflow selon le périmètre présenté,</span></li>
-          <li style="margin-top:24px"><svg style="width:32px;height:32px;margin-top:6px;color:var(--light)"><use href="#check"/></svg><span>le choix du Brand Kit Structuré pour sécuriser la cohérence de l’image,</span></li>
+          <li style="margin-top:24px"><svg style="width:32px;height:32px;margin-top:6px;color:var(--light)"><use href="#check"/></svg><span>le choix de l’option 2 · Brand Kit Structuré pour sécuriser la cohérence de l’image,</span></li>
           <li style="margin-top:24px"><svg style="width:32px;height:32px;margin-top:6px;color:var(--light)"><use href="#check"/></svg><span>la mise en place d’un suivi KPI dès la mise en ligne.</span></li>
         </ul>
       </div>
@@ -887,10 +637,10 @@ ul{list-style:none}
   </div>
 </section>
 
-<!-- 38 · Prochaines étapes (Figma 3665:983) -->
+<!-- 17 · Prochaines étapes (Figma 3665:983) -->
 <section class="slide bg-grad" style="display:flex;align-items:center;justify-content:center;padding:64px">
   <div style="width:1692px;height:952px;border-radius:24px;background:var(--cream);padding:64px;display:flex;flex-direction:column">
-    <p class="eyebrow" style="margin-bottom:16px">11 · Prochaines étapes</p>
+    <p class="eyebrow" style="margin-bottom:16px">Prochaines étapes</p>
     <h2 class="title">Pour avancer</h2>
     <p class="body-l c-muted" style="margin-top:24px;width:900px">Si cette proposition vous semble alignée avec vos enjeux, la suite est simple :</p>
     <div style="flex:1"></div>
@@ -904,9 +654,17 @@ ul{list-style:none}
   </div>
 </section>
 
-<!-- 39 · Contact (Figma 3665:858) -->
+<!-- 18 · Contact (Figma 3665:858) -->
 <section class="slide bg-black">
   <img class="abs" src="assets/contact-louis.png" alt="Contact : Louis Montagne, louis@agence-orem.fr, +33 7 71 67 39 47" style="left:0;top:0;width:1920px;height:1080px">
+</section>
+
+<!-- 19 · Annexe : équipe projet (Figma 3666:1000) -->
+<section class="slide dots-dark">
+  <h2 class="abs title c-light" style="left:64px;top:64px;width:1792px">Annexe · Équipe projet</h2>
+  <div class="abs team" style="left:64px;width:555px"><img src="assets/team-clement.png" alt="Clément Saint-Hilaire"><div><p class="headline c-light">Clément Saint-Hilaire</p><p class="body c-lm">Directeur de création.</p></div></div>
+  <div class="abs team" style="left:683px;width:547px"><img src="assets/team-theophile.png" alt="Théophile Lamouret"><div><p class="headline c-light">Théophile Lamouret</p><p class="body c-lm">Cofondateur &amp; directeur éditorial.</p></div></div>
+  <div class="abs team" style="left:1301px;width:555px"><img src="assets/team-louis.png" alt="Louis Montagne"><div><p class="headline c-light">Louis Montagne</p><p class="body c-lm">Cofondateur &amp; développeur.</p></div></div>
 </section>
 
 </main>
