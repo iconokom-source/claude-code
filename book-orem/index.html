@@ -158,6 +158,16 @@ a{color:inherit;text-decoration:none}
   .slide{transform:none!important;break-after:auto;page-break-after:auto}
   .pdf-btn{display:none}
 }
+.site-btn{position:absolute;right:0;top:0;display:inline-flex;gap:10px;align-items:center;border:1px solid var(--ink);color:var(--ink);border-radius:999px;padding:12px 22px;font-family:var(--sans);font-size:20px;letter-spacing:-.4px;text-decoration:none}
+.site-btn svg{width:18px;height:18px}
+.avis-grid{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(2,1fr);gap:24px}
+.avis{background:rgba(255,255,255,.94);border-radius:24px;padding:40px;display:flex;flex-direction:column;gap:24px}
+.avis .stars{color:var(--orange);font-size:22px;letter-spacing:4px}
+.avis .who{display:flex;gap:18px;align-items:center;border-top:1px solid var(--stroke);padding-top:24px}
+.avis .who img{width:64px;height:64px;border-radius:50%;object-fit:cover;object-position:center 20%}
+.offer{background:#fff;border-radius:24px;padding:48px;display:flex;flex-direction:column;gap:20px}
+.offer .letter{font-family:var(--serif);font-size:64px;line-height:1;color:var(--orange)}
+.offer .checks li{margin:0}
 </style>
 </head>
 <body>
@@ -177,9 +187,9 @@ a{color:inherit;text-decoration:none}
   <img class="abs" src="assets/logo-black.png" alt="Orem" style="left:1749px;top:64px;width:107px;height:105px">
   <p class="abs sub c-light" style="left:64px;top:64px">Orem · Book de présentation<br>2026</p>
   <div class="abs" style="left:64px;bottom:53px;width:1814px">
-    <p class="eyebrow" style="margin-bottom:24px">Agence de stratégie, de direction artistique et de sites Webflow pour les PME B2B</p>
-    <h1 class="display c-light">Des sites qui font travailler les entreprises B2B</h1>
-    <p class="body c-light" style="margin-top:24px;width:1100px">Pour les entreprises qui ont déjà de la traction, et dont l’image ne suit plus.</p>
+    <p class="eyebrow" style="margin-bottom:24px">Agence de conseil, de direction artistique et de sites web pour les entreprises B2B</p>
+    <h1 class="display c-light" style="width:1500px">Une image à la hauteur de ce que vaut votre entreprise</h1>
+    <p class="body c-light" style="margin-top:24px;width:1240px">Nous clarifions votre message, construisons votre direction artistique et votre site, puis les faisons progresser dans la durée. Pour les entreprises qui ont déjà de la traction, et dont l’image ne suit plus.</p>
   </div>
 </section>
 
@@ -208,19 +218,19 @@ a{color:inherit;text-decoration:none}
   <div class="abs team" style="left:1301px;width:555px"><img src="assets/team/clement.jpg" alt="Clément Saint-Hilaire"><div><p class="headline c-light">Clément Saint-Hilaire</p><p class="body c-lm">Directeur artistique · Direction artistique, interface et expérience utilisateur.</p></div></div>
 </section>
 
-<!-- 04 · Repères (Figma 3665:953) -->
+<!-- 04 · Repères -->
 <section class="slide">
   <div class="abs" style="left:928px;top:64px;width:928px;border-left:1px solid var(--ink);padding-left:64px;height:105px;display:flex;gap:32px;align-items:center">
-    <p class="display" style="line-height:1.1;padding-bottom:38px;white-space:nowrap;width:330px;font-size:80px">30+</p>
+    <p class="display" style="line-height:1.1;padding-bottom:38px;white-space:nowrap;width:330px;font-size:80px">40+</p>
     <p class="headline-13" style="flex:1">clients accompagnés depuis 2023</p>
   </div>
   <div class="abs" style="left:928px;top:233px;width:928px;border-left:1px solid var(--ink);padding-left:64px;height:105px;display:flex;gap:32px;align-items:center">
-    <p class="display" style="line-height:1.1;padding-bottom:38px;white-space:nowrap;width:330px;font-size:80px">1 000+</p>
-    <p class="headline-13" style="flex:1">demandes qualifiées générées par le site du Crayon Groupe</p>
+    <p class="display" style="line-height:1.1;padding-bottom:38px;white-space:nowrap;width:330px;font-size:80px">100 %</p>
+    <p class="headline-13" style="flex:1">de satisfaction client</p>
   </div>
   <div class="abs" style="left:928px;top:403px;width:928px;border-left:1px solid var(--ink);padding-left:64px;height:105px;display:flex;gap:32px;align-items:center">
-    <p class="display" style="line-height:1.1;padding-bottom:38px;white-space:nowrap;width:330px;font-size:80px">×2,2</p>
-    <p class="headline-13" style="flex:1">de revenu récurrent pour le Club Casa Zanoni après la refonte</p>
+    <p class="display" style="line-height:1.1;padding-bottom:38px;white-space:nowrap;width:330px;font-size:80px">1 000+</p>
+    <p class="headline-13" style="flex:1">demandes qualifiées générées par le site du Crayon Groupe</p>
   </div>
   <div class="abs" style="left:928px;top:573px;width:928px;border-left:1px solid var(--ink);padding-left:64px;height:105px;display:flex;gap:32px;align-items:center">
     <p class="display" style="line-height:1.1;padding-bottom:38px;white-space:nowrap;width:330px;font-size:80px">38 → 6</p>
@@ -228,10 +238,13 @@ a{color:inherit;text-decoration:none}
   </div>
   <div class="abs" style="left:64px;top:64px;width:740px;height:952px;display:flex;flex-direction:column;gap:24px">
     <p class="sub">Orem en quelques repères</p>
-    <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end">
-      <p class="headline-13" style="font-family:var(--sans)">“Nous avons confié la création de notre site à Orem, et le résultat est au-delà de nos attentes. Notre nouveau site reflète parfaitement l’esprit créatif du groupe.”</p>
+    <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:40px">
+      <p class="headline-13" style="font-family:var(--sans)">“Nous avons confié la création de notre site à Orem, et le résultat est au-delà de nos attentes. Louis et Théophile sont à l’écoute et minutieux sur chaque détail. Un partenariat de confiance que nous recommandons vivement !”</p>
     </div>
-    <p class="body-l">Wallerand Moullé-Berteaux, CEO, Le Crayon Groupe</p>
+    <div style="display:flex;gap:24px;align-items:center">
+      <img src="assets/avis/wallerand.jpg" alt="Wallerand Moullé-Berteaux" style="width:120px;height:120px;border-radius:50%;object-fit:cover;object-position:center 20%">
+      <div><p class="headline">Wallerand Moullé-Berteaux</p><p class="body-l c-muted">Fondateur et CEO, Le Crayon Groupe</p></div>
+    </div>
   </div>
 </section>
 
@@ -244,13 +257,13 @@ a{color:inherit;text-decoration:none}
   <div class="abs" style="left:64px;top:233px;width:1791px;height:782px;display:flex;gap:64px">
     <div class="col-rule" style="flex:1">
       <p class="headline-13 c-orange" style="flex:1">01</p>
-      <p class="headline c-light">Un directeur artistique dans l’équipe</p>
-      <p class="body-l c-lm">Clément conçoit chaque direction artistique en interne. Pas de sous-traitance, pas de template : un univers pensé pour votre marque, du positionnement à l’interface.</p>
+      <p class="headline c-light">Une équipe resserrée qui couvre tous les champs</p>
+      <p class="body-l c-lm">Stratégie, copywriting, direction artistique, Webflow, SEO et GEO : tout est fait en interne. Pas d’intermédiaire ni de chef de projet écran, vous échangez directement avec ceux qui conçoivent votre projet.</p>
     </div>
     <div class="col-rule" style="flex:1">
       <p class="headline-13 c-orange" style="flex:1">02</p>
-      <p class="headline c-light">La méthode Zero-Lock</p>
-      <p class="body-l c-lm">Votre site vous appartient. Webflow, formation à la prise en main, documentation : vous restez autonome et ne dépendez jamais de l’agence.</p>
+      <p class="headline c-light">Votre site vous appartient, vous êtes libres</p>
+      <p class="body-l c-lm">Le site est à votre nom, sans abonnement captif ni code propriétaire. Formés à la prise en main, vous le modifiez vous-même et restez libres de travailler avec qui vous voulez.</p>
     </div>
     <div class="col-rule" style="flex:1">
       <p class="headline-13 c-orange" style="flex:1">03</p>
@@ -384,27 +397,36 @@ a{color:inherit;text-decoration:none}
   </div>
 </section>
 
-<!-- 11 · Parcours d'offres (Figma 3668:1875) -->
-<section class="slide" style="display:grid;grid-template-columns:1fr 1fr;gap:24px;padding:24px">
-  <div class="opt-frame" style="background-image:url(assets/opt-bg-1.jpg)">
-    <div class="opt-card" style="min-height:480px;justify-content:center">
-      <div><p class="label c-orange">Porte d’entrée</p><p class="headline-13">Cap Marque</p></div>
-      <p class="body-l">Un sprint conseil de 10 jours pour clarifier votre positionnement et votre message, avant tout chantier de design ou de site.</p>
-      <p class="sub c-muted">L’entrée la plus accessible pour démarrer avec Orem.</p>
-    </div>
+<!-- 11 · Nos offres -->
+<section class="slide dots-light">
+  <div class="abs" style="left:64px;top:64px;width:1792px;display:flex;justify-content:space-between;align-items:flex-end">
+    <h2 class="title">Trois offres, un même fil conducteur</h2>
+    <p class="sub c-muted" style="width:600px;text-align:right">Chaque projet démarre par une phase de conseil, incluse : nous clarifions votre message avant de concevoir quoi que ce soit.</p>
   </div>
-  <div style="display:grid;grid-template-rows:1fr 1fr;gap:24px">
-    <div class="opt-frame" style="background-image:url(assets/opt-bg-2.jpg)">
-      <div class="opt-card" style="gap:20px;min-height:330px;justify-content:center">
-        <div><p class="sub c-orange">Puis</p><p class="headline-13">Direction artistique et site web</p></div>
-        <p class="body-l">De la stratégie à la mise en ligne : votre direction artistique et votre site Webflow, pensés ensemble.</p>
-      </div>
+  <div class="abs" style="left:64px;top:232px;width:1792px;height:784px;display:grid;grid-template-columns:repeat(3,1fr);gap:24px">
+    <div class="offer">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start"><p class="letter">R</p><p class="label c-accent">Représenter</p></div>
+      <p class="headline-13">Direction artistique</p>
+      <p class="body-l c-muted" style="margin-bottom:16px">Nous donnons une forme claire à ce que votre entreprise est devenue, pour que votre image exprime enfin votre niveau et vos ambitions.</p>
+      <ul class="checks body"><li><svg><use href="#check"/></svg><span>plateforme de marque et direction stratégique</span></li><li><svg><use href="#check"/></svg><span>logo, couleurs, typographies</span></li><li><svg><use href="#check"/></svg><span>brand guidelines et applications</span></li><li><svg><use href="#check"/></svg><span>trois niveaux de profondeur selon vos enjeux</span></li></ul>
+      <div style="flex:1"></div>
+      <div style="border-top:1px solid var(--stroke);padding-top:24px"><p class="sub c-orange" style="margin-bottom:8px">Le résultat</p><p class="headline">Une marque reconnaissable, cohérente sur tous vos supports.</p></div>
     </div>
-    <div class="opt-frame" style="background-image:url(assets/opt-bg-3.jpg)">
-      <div class="opt-card" style="gap:20px;min-height:330px;justify-content:center">
-        <div><p class="sub c-orange">Et dans la durée</p><p class="headline-13">Nos suivis</p></div>
-        <p class="body-l">Suivi Web, Suivi Marque ou Suivi Web+Marque : faire vivre votre marque et votre site après la livraison.</p>
-      </div>
+    <div class="offer">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start"><p class="letter">E</p><p class="label c-accent">Exécuter</p></div>
+      <p class="headline-13">Site web</p>
+      <p class="body-l c-muted">Nous concevons un site sur-mesure qui clarifie votre valeur et transforme vos visiteurs en prospects.</p>
+      <ul class="checks body"><li><svg><use href="#check"/></svg><span>architecture, messages et copywriting</span></li><li><svg><use href="#check"/></svg><span>design Figma et développement Webflow</span></li><li><svg><use href="#check"/></svg><span>SEO, GEO et suivi des conversions</span></li><li><svg><use href="#check"/></svg><span>formation et deux mois d’assistance</span></li></ul>
+      <div style="flex:1"></div>
+      <div style="border-top:1px solid var(--stroke);padding-top:24px"><p class="sub c-orange" style="margin-bottom:8px">Le résultat</p><p class="headline">Un site qui vous présente clairement et génère des demandes qualifiées.</p></div>
+    </div>
+    <div class="offer">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start"><p class="letter">M</p><p class="label c-accent">Mesurer</p></div>
+      <p class="headline-13">Évolution</p>
+      <p class="body-l c-muted">Un accompagnement mensuel pour faire progresser votre site et votre marque, au lieu de les laisser vieillir.</p>
+      <ul class="checks body"><li><svg><use href="#check"/></svg><span>une visio de pilotage par mois</span></li><li><svg><use href="#check"/></svg><span>lecture des résultats et priorisation</span></li><li><svg><use href="#check"/></svg><span>améliorations exécutées chaque mois</span></li><li><svg><use href="#check"/></svg><span>réservé aux clients Orem</span></li></ul>
+      <div style="flex:1"></div>
+      <div style="border-top:1px solid var(--stroke);padding-top:24px"><p class="sub c-orange" style="margin-bottom:8px">Le résultat</p><p class="headline">Des actifs qui gagnent de la valeur au lieu d’en perdre.</p></div>
     </div>
   </div>
 </section>
@@ -419,11 +441,19 @@ a{color:inherit;text-decoration:none}
   </div>
 </section>
 
-<!-- 13 · Témoignage (Figma 3665:785) -->
-<section class="slide bg-grad" style="display:flex;align-items:center;justify-content:center;padding:64px">
-  <div style="display:flex;flex-direction:column;align-items:flex-end;gap:32px;width:1560px">
-    <p class="quote" style="color:#fff">“Un grand merci à Clément pour la créativité, à Théophile pour la qualité de sa plume et son expertise SEO, et à Louis pour sa disponibilité et sa réactivité sans faille.”</p>
-    <p class="headline-13" style="color:#fff">Julie Egron, fondatrice, Concilium - Le Recruteur</p>
+<!-- 13 · Avis clients -->
+<section class="slide bg-grad">
+  <div class="abs" style="left:64px;top:64px;width:1792px;display:flex;justify-content:space-between;align-items:flex-end">
+    <h2 class="title" style="color:#fff">Ce que disent nos clients</h2>
+    <p class="sub" style="color:#fff">100 % de satisfaction client · avis Google</p>
+  </div>
+  <div class="abs avis-grid" style="left:64px;top:232px;width:1792px;height:784px">
+    <div class="avis"><p class="stars">★★★★★</p><p class="body" style="flex:1">“Un grand merci à Clément pour la créativité, à Théophile pour sa plume et son expertise SEO, et à Louis pour sa réactivité sans faille. Je recommande sans hésiter !”</p><div class="who"><img src="assets/avis/julie.jpg" alt="Julie Egron"><div><p class="body" style="font-weight:500">Julie Egron</p><p class="sub c-muted">Fondatrice, Concilium - Le Recruteur</p></div></div></div>
+    <div class="avis"><p class="stars">★★★★★</p><p class="body" style="flex:1">“Équipe de pro et de très bons conseils. Ils ont compris tout de suite nos enjeux, ont été réactifs et ont respecté les délais. Prise en main du site très simple.”</p><div class="who"><img src="assets/avis/hugo.jpg" alt="Hugo Demorge"><div><p class="body" style="font-weight:500">Hugo Demorge</p><p class="sub c-muted">Négociateur hôtellerie, Huchet-Demorge</p></div></div></div>
+    <div class="avis"><p class="stars">★★★★★</p><p class="body" style="flex:1">“Un travail de dingue : pro, carré, hyper efficace, avec une vraie force de proposition. Si vous cherchez une équipe fiable, foncez les yeux fermés !”</p><div class="who"><img src="assets/avis/justine.jpg" alt="Justine Timbert"><div><p class="body" style="font-weight:500">Justine Timbert</p><p class="sub c-muted">Fondatrice, H19</p></div></div></div>
+    <div class="avis"><p class="stars">★★★★★</p><p class="body" style="flex:1">“Leur professionnalisme, leur écoute et leur disponibilité ont fait toute la différence. Notre site reflète désormais pleinement l’identité de notre agence.”</p><div class="who"><img src="assets/avis/virginie.jpg" alt="Virginie Hilssone-Lévy"><div><p class="body" style="font-weight:500">Virginie Hilssone-Lévy</p><p class="sub c-muted">Fondatrice, 24 Degrés</p></div></div></div>
+    <div class="avis"><p class="stars">★★★★★</p><p class="body" style="flex:1">“Un duo de choc mêlant efficacité et créativité. Un contact permanent par WhatsApp si besoin, une organisation structurée et respectée, un résultat au top.”</p><div class="who"><img src="assets/avis/gautier.jpg" alt="Gautier Hubert"><div><p class="body" style="font-weight:500">Gautier Hubert</p><p class="sub c-muted">Fondateur, Serenitine</p></div></div></div>
+    <div class="avis"><p class="stars">★★★★★</p><p class="body" style="flex:1">“Une prestation remarquablement organisée et réalisée avec une grande rapidité. Le rendu visuel, soigné et élégant, nous apporte entière satisfaction.”</p><div class="who"><img src="assets/avis/poinsignon.jpg" alt="Louis Poinsignon"><div><p class="body" style="font-weight:500">Louis Poinsignon</p><p class="sub c-muted">Fondateur, Les Ombres</p></div></div></div>
   </div>
 </section>
 
@@ -431,12 +461,13 @@ a{color:inherit;text-decoration:none}
 <section class="slide bg-black">
   <img class="abs" src="assets/blob-chapter.jpg" alt="" style="left:42px;top:0;width:1878px;height:1080px">
   <p class="chap-label eyebrow" style="top:401px">Réalisations</p>
-  <h2 class="chap-title display c-light" style="top:454px">10 cas clients</h2>
+  <h2 class="chap-title display c-light" style="top:454px">9 cas clients</h2>
 </section>
 
 <!-- 15 · Cas client 01 : Le Crayon Groupe -->
 <section class="slide">
   <div class="case-left">
+    <a class="site-btn" href="https://www.lecrayongroupe.fr/" target="_blank" rel="noopener">Voir le site <svg viewBox="0 0 24 24" fill="none"><path d="M7 17L17 7M17 7H8M17 7v9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
     <p class="label c-accent">Cas client 01 · Média</p>
     <img class="case-logo" src="assets/logos/le-crayon.avif" alt="Le Crayon Groupe">
     <h2 class="case-title">Réunir un groupe média et ses marques sous une seule signature</h2>
@@ -454,6 +485,7 @@ a{color:inherit;text-decoration:none}
 <!-- 16 · Cas client 02 : Huchet-Demorge -->
 <section class="slide">
   <div class="case-left">
+    <a class="site-btn" href="https://www.huchet-demorge.fr/" target="_blank" rel="noopener">Voir le site <svg viewBox="0 0 24 24" fill="none"><path d="M7 17L17 7M17 7H8M17 7v9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
     <p class="label c-accent">Cas client 02 · Transaction d’hôtels et de boulangeries</p>
     <img class="case-logo" src="assets/logos/huchet-demorge.png" alt="Huchet-Demorge">
     <h2 class="case-title">Aligner l’image d’un cabinet historique sur son prestige</h2>
@@ -471,6 +503,7 @@ a{color:inherit;text-decoration:none}
 <!-- 17 · Cas client 03 : Club Casa Zanoni -->
 <section class="slide">
   <div class="case-left">
+    <a class="site-btn" href="https://www.club-casa-zanoni.com/" target="_blank" rel="noopener">Voir le site <svg viewBox="0 0 24 24" fill="none"><path d="M7 17L17 7M17 7H8M17 7v9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
     <p class="label c-accent">Cas client 03 · Club d’abonnement culinaire</p>
     <img class="case-logo" src="assets/logos/club-casa-zanoni.png" alt="Club Casa Zanoni">
     <h2 class="case-title">Transformer un club d’abonnement en vrai business</h2>
@@ -488,6 +521,7 @@ a{color:inherit;text-decoration:none}
 <!-- 18 · Cas client 04 : Hôtel Eiffel Ségur -->
 <section class="slide">
   <div class="case-left">
+    <a class="site-btn" href="https://www.paris-hotel-eiffel-segur.com/" target="_blank" rel="noopener">Voir le site <svg viewBox="0 0 24 24" fill="none"><path d="M7 17L17 7M17 7H8M17 7v9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
     <p class="label c-accent">Cas client 04 · Hôtellerie</p>
     <img class="case-logo" src="assets/logos/hotel-eiffel-segur.png" alt="Hôtel Eiffel Ségur">
     <h2 class="case-title">Reprendre la main sur sa visibilité face à Booking</h2>
@@ -505,6 +539,7 @@ a{color:inherit;text-decoration:none}
 <!-- 19 · Cas client 05 : Logical Conseils -->
 <section class="slide">
   <div class="case-left">
+    <a class="site-btn" href="https://logical-conseils.com/" target="_blank" rel="noopener">Voir le site <svg viewBox="0 0 24 24" fill="none"><path d="M7 17L17 7M17 7H8M17 7v9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
     <p class="label c-accent">Cas client 05 · Conseil data et IA</p>
     <img class="case-logo" src="assets/logos/logical-conseils.png" alt="Logical Conseils">
     <h2 class="case-title">Passer de prestataire technique à partenaire stratégique</h2>
@@ -522,6 +557,7 @@ a{color:inherit;text-decoration:none}
 <!-- 20 · Cas client 06 : Concilium - Le Recruteur -->
 <section class="slide">
   <div class="case-left">
+    <a class="site-btn" href="https://www.byconcilium.com/le-recruteur" target="_blank" rel="noopener">Voir le site <svg viewBox="0 0 24 24" fill="none"><path d="M7 17L17 7M17 7H8M17 7v9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
     <p class="label c-accent">Cas client 06 · Recrutement et RH</p>
     <img class="case-logo" src="assets/logos/concilium.png" alt="Concilium - Le Recruteur">
     <h2 class="case-title">Guider chaque visiteur vers la bonne marque</h2>
@@ -539,6 +575,7 @@ a{color:inherit;text-decoration:none}
 <!-- 21 · Cas client 07 : Dim Sum Entertainment -->
 <section class="slide">
   <div class="case-left">
+    <a class="site-btn" href="https://www.dimsum-entertainment.com/" target="_blank" rel="noopener">Voir le site <svg viewBox="0 0 24 24" fill="none"><path d="M7 17L17 7M17 7H8M17 7v9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
     <p class="label c-accent">Cas client 07 · Production audiovisuelle</p>
     <img class="case-logo" src="assets/logos/dimsum.png" alt="Dim Sum Entertainment">
     <h2 class="case-title">Rendre un catalogue de productions lisible en quelques minutes</h2>
@@ -548,7 +585,7 @@ a{color:inherit;text-decoration:none}
       <div><p class="sub c-orange">Ce que nous avons fait</p><p class="body-l">Architecture repensée, CMS catalogue avec une fiche et des filtres par programme, copywriting orienté diffuseurs. En ligne en quatre semaines.</p></div>
     </div>
     <div style="flex:1"></div>
-    <div class="case-stats"><div><p class="display case-num">7</p><p class="sub c-muted">demandes entrantes</p></div><div><p class="display case-num">1 200</p><p class="sub c-muted">utilisateurs actifs</p></div><div><p class="display case-num">739</p><p class="sub c-muted">clics Search Console</p></div><div><p class="display case-num">43 500</p><p class="sub c-muted">impressions Search Console</p></div></div>
+    <div class="case-stats"><div><p class="display case-num">4 sem.</p><p class="sub c-muted">de la refonte à la mise en ligne</p></div><div><p class="display case-num">1 200</p><p class="sub c-muted">utilisateurs actifs</p></div><div><p class="display case-num">739</p><p class="sub c-muted">clics Search Console</p></div><div><p class="display case-num">43 500</p><p class="sub c-muted">impressions Search Console</p></div></div>
   </div>
   <div class="case-right"><img class="case-cover" src="assets/cases/dimsum-0.jpg" alt="Dim Sum Entertainment"><div class="case-thumbs"><img src="assets/cases/dimsum-1.jpg" alt=""><img src="assets/cases/dimsum-2.jpg" alt=""></div></div>
 </section>
@@ -556,6 +593,7 @@ a{color:inherit;text-decoration:none}
 <!-- 22 · Cas client 08 : Bund Médias -->
 <section class="slide">
   <div class="case-left">
+    <a class="site-btn" href="https://www.bund-medias.fr/" target="_blank" rel="noopener">Voir le site <svg viewBox="0 0 24 24" fill="none"><path d="M7 17L17 7M17 7H8M17 7v9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
     <p class="label c-accent">Cas client 08 · Régie publicitaire</p>
     <img class="case-logo" src="assets/logos/bund-medias.png" alt="Bund Médias">
     <h2 class="case-title">Donner à une régie une vitrine à la hauteur de ses partenariats</h2>
@@ -573,6 +611,7 @@ a{color:inherit;text-decoration:none}
 <!-- 23 · Cas client 09 : Orem -->
 <section class="slide">
   <div class="case-left">
+    <a class="site-btn" href="https://www.agence-orem.fr/" target="_blank" rel="noopener">Voir le site <svg viewBox="0 0 24 24" fill="none"><path d="M7 17L17 7M17 7H8M17 7v9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
     <p class="label c-accent">Cas client 09 · Notre propre repositionnement</p>
     <img class="case-logo" src="assets/logo-black.png" alt="Orem" style="height:72px">
     <h2 class="case-title">D’une agence web parmi d’autres à une agence impossible à confondre</h2>
@@ -587,28 +626,11 @@ a{color:inherit;text-decoration:none}
   <div class="case-right"><img class="case-cover" src="assets/cases/orem-0.jpg" alt="Orem" style="height:952px"></div>
 </section>
 
-<!-- 24 · Cas client 10 : JUWA -->
-<section class="slide">
-  <div class="case-left">
-    <p class="label c-accent">Cas client 10 · Agence IA, Data et Web</p>
-    <img class="case-logo" src="assets/logos/juwa.png" alt="JUWA">
-    <h2 class="case-title">Rendre lisible une offre complexe</h2>
-    <div class="case-cols">
-      <div><p class="sub c-orange">Contexte</p><p class="body-l">Une agence IA, Data et Web dont le site ne reflétait plus la réalité de l’activité.</p></div>
-      <div><p class="sub c-orange">Le problème</p><p class="body-l">Une offre riche et technique, difficile à comprendre pour des prospects non spécialistes.</p></div>
-      <div><p class="sub c-orange">Ce que nous avons fait</p><p class="body-l">Un accompagnement centré sur la clarté de l’offre et des maquettes claires, modernes et orientées conversion.</p></div>
-    </div>
-    <div style="flex:1"></div>
-    <p class="body-l c-muted case-note">Témoignage client issu de notre site. Les chiffres de ce projet ne sont pas encore publiés.</p>
-  </div>
-  <div class="case-right case-quote"><p class="label c-orange">Témoignage</p><p class="headline-13 c-light">“Nous avions besoin de faire évoluer notre site pour qu’il reflète enfin notre réalité d’agence IA, Data et Web. L’accompagnement a été extrêmement fluide, avec une vraie capacité à rendre notre offre complexe lisible pour nos prospects.”</p><div style="flex:1"></div><div style="display:flex;gap:20px;align-items:center"><img src="assets/team/matheo-juwa.jpg" alt="" style="width:72px;height:72px;border-radius:50%;object-fit:cover"><p class="body c-lm">Mathéo Lamblin, fondateur, JUWA</p></div></div>
-</section>
-
 <!-- 25 · Logos clients -->
 <section class="slide">
   <div class="abs" style="left:64px;top:64px;width:1792px;display:flex;justify-content:space-between;align-items:flex-end">
     <h2 class="title">Ils nous ont fait confiance</h2>
-    <p class="sub c-muted">Plus de 30 entreprises accompagnées depuis 2023</p>
+    <p class="sub c-muted">Plus de 40 clients accompagnés depuis 2023</p>
   </div>
   <div class="abs logo-grid" style="left:64px;top:232px;width:1792px;height:784px">
     <div class="logo-cell"><img src="assets/logos/le-crayon.avif" alt="le-crayon"></div>
@@ -628,13 +650,13 @@ a{color:inherit;text-decoration:none}
     <div class="logo-cell"><img src="assets/logos/h19.png" alt="h19"></div>
     <div class="logo-cell"><img src="assets/logos/impulsions-metropole-sud.png" alt="impulsions-metropole-sud"></div>
     <div class="logo-cell"><img src="assets/logos/24-degres.webp" alt="24-degres"></div>
-    <div class="logo-cell"><img src="assets/logos/juwa.png" alt="juwa"></div>
     <div class="logo-cell"><img src="assets/logos/jared.png" alt="jared"></div>
     <div class="logo-cell"><img src="assets/logos/mtc-nord.png" alt="mtc-nord"></div>
     <div class="logo-cell"><img src="assets/logos/jean-francois-badias.png" alt="jean-francois-badias"></div>
     <div class="logo-cell"><img src="assets/logos/valere-avocats.png" alt="valere-avocats"></div>
     <div class="logo-cell"><img src="assets/logos/serenitine.png" alt="serenitine"></div>
     <div class="logo-cell"><img src="assets/logos/creative-balance.png" alt="creative-balance"></div>
+    <div class="logo-cell" style="background:var(--ink);flex-direction:column;gap:4px"><p class="title c-light" style="font-size:48px">40+</p><p class="sub c-lm">clients depuis 2023</p></div>
   </div>
 </section>
 
@@ -645,8 +667,8 @@ a{color:inherit;text-decoration:none}
       <p class="eyebrow" style="margin-bottom:16px">Prochaine étape</p>
       <h2 class="title">Parlons de votre projet</h2>
       <p class="body-l c-muted" style="margin-top:24px;width:820px">Un premier appel de 30 minutes pour comprendre vos enjeux, et voir ensemble si Orem est la bonne agence pour vous accompagner.</p>
-      <div style="margin-top:40px;display:flex"><a class="pill-cta" href="https://www.agence-orem.fr/">Réserver un appel de 30 minutes <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M7 17L17 7M17 7H8M17 7v9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a></div>
-      <div style="flex:1"></div>
+      <div style="margin-top:40px;display:flex"><a class="pill-cta" href="https://app.iclosed.io/e/Orem/rdv-30min" target="_blank" rel="noopener">Réserver un appel de 30 minutes <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M7 17L17 7M17 7H8M17 7v9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a></div>
+      <div style="flex:1;display:flex;align-items:center;gap:32px"><img src="assets/qr-rdv.svg" alt="QR code de prise de rendez-vous" style="width:200px;height:200px"><p class="body-l c-muted" style="width:300px">Scannez pour réserver votre créneau directement dans notre agenda.</p></div>
       <div style="display:flex;gap:64px;border-top:1px solid var(--stroke);padding-top:32px">
         <div><p class="headline">Louis Montagne</p><p class="body-l c-muted">Cofondateur</p><p class="body" style="margin-top:12px"><a href="mailto:louis@agence-orem.fr">louis@agence-orem.fr</a><br><a href="tel:+33750371572">07 50 37 15 72</a></p></div>
         <div><p class="headline">Théophile Lamouret</p><p class="body-l c-muted">Cofondateur</p><p class="body" style="margin-top:12px"><a href="mailto:theophile@agence-orem.fr">theophile@agence-orem.fr</a><br><a href="tel:+33771673947">07 71 67 39 47</a></p></div>
