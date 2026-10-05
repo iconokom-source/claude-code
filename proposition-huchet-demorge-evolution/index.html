@@ -1,0 +1,577 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Huchet-Demorge · Suivi Évolution</title>
+<style>
+@font-face{font-family:'Trykker';font-style:normal;font-weight:400;font-display:block;src:url(assets/fonts/trykker-latin.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Trykker';font-style:normal;font-weight:400;font-display:block;src:url(assets/fonts/trykker-latin-ext.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:'Lexend Deca';font-style:normal;font-weight:100 900;font-display:block;src:url(assets/fonts/lexend-deca-latin.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Lexend Deca';font-style:normal;font-weight:100 900;font-display:block;src:url(assets/fonts/lexend-deca-latin-ext.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+:root{
+  --ink:#000012;
+  --paper:#ffffff;
+  --paper-2:#f8f8f7;
+  --cream:#f9f5f1;
+  --graphite:#1d1d1d;
+  --muted:rgba(67,66,66,.6);
+  --light:#f2f2f2;
+  --light-muted:rgba(242,242,242,.6);
+  --orange:#ff6200;
+  --accent:#092482;
+  --stroke:#cdcdcd;
+  --serif:'Trykker',Georgia,serif;
+  --sans:'Lexend Deca',system-ui,sans-serif;
+  --grad:linear-gradient(180deg,#050c1c 0%,#04132f 17%,#041e48 28%,#05336c 39%,#115695 50%,#3484b9 61%,#6cb5d7 72%,#a1d6e9 83%,#caebf6 94%,#d3edf5 100%);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#2b2b2b}
+body{-webkit-print-color-adjust:exact;print-color-adjust:exact;-webkit-font-smoothing:antialiased}
+.deck{padding:24px 0;display:flex;flex-direction:column;align-items:center;gap:24px}
+.slide-wrap{width:calc(1920px * var(--s,1));height:calc(1080px * var(--s,1));flex:none;overflow:hidden}
+.slide-wrap>.slide{transform:scale(var(--s,1));transform-origin:0 0}
+.slide{position:relative;width:1920px;height:1080px;overflow:hidden;background:var(--paper);color:var(--ink);break-after:page;page-break-after:always;flex:none}
+.abs{position:absolute}
+img{display:block}
+ul{list-style:none}
+
+/* Typo ramp (Figma: Slide typeramp) */
+.display{font-family:var(--serif);font-size:94px;line-height:1.2;letter-spacing:-2.82px;font-weight:400}
+.title{font-family:var(--serif);font-size:64px;line-height:1.2;letter-spacing:-1.92px;font-weight:400}
+.quote{font-family:var(--serif);font-size:72px;line-height:1.2;letter-spacing:-2.16px;font-weight:400}
+.headline{font-family:var(--serif);font-size:37px;line-height:1.2;font-weight:400}
+.headline-13{font-family:var(--serif);font-size:37px;line-height:1.3;font-weight:400}
+.body{font-family:var(--sans);font-size:24px;line-height:1.2;letter-spacing:-.48px;font-weight:400}
+.body-l{font-family:var(--sans);font-size:24px;line-height:1.2;letter-spacing:-.48px;font-weight:350}
+.sub{font-family:var(--sans);font-size:20px;line-height:1.2;letter-spacing:-.4px;font-weight:400}
+.label{font-family:var(--sans);font-size:17px;line-height:1.1;letter-spacing:-.34px;font-weight:400}
+.eyebrow{font-family:var(--sans);font-size:24px;line-height:1.2;letter-spacing:-.48px;font-weight:350;color:var(--orange)}
+.c-light{color:var(--light)} .c-lm{color:var(--light-muted)} .c-muted{color:var(--muted)} .c-orange{color:var(--orange)} .c-accent{color:var(--accent)} .c-ink{color:var(--ink)}
+
+/* Backgrounds */
+.bg-black{background:#000}
+.bg-grad{background:var(--grad)}
+.dots-dark{background-color:#000;background-image:radial-gradient(circle at center,#0d0d0d 0 3.5px,transparent 4px);background-size:48px 48px;background-position:-24px -12px}
+.dots-light{background-color:#fff;background-image:radial-gradient(circle at center,#ededed 0 3.5px,transparent 4px);background-size:48px 48px;background-position:-24px -12px}
+
+/* Bullets */
+.dash li{position:relative;padding-left:36px}
+.dash li::before{content:"";position:absolute;left:12px;top:.5em;width:5px;height:5px;border-radius:50%;background:currentColor}
+.dash li+li{margin-top:12px}
+.dash.tight li+li{margin-top:4px}
+.checks li{display:flex;gap:16px;align-items:flex-start}
+.checks li+li{margin-top:8px}
+.checks svg{flex:none;width:25px;height:25px;margin-top:2px}
+
+/* Chapitre */
+.chap-label{position:absolute;left:0;width:1920px;text-align:center}
+.chap-title{position:absolute;left:0;width:1920px;text-align:center}
+
+.chap-center .eyebrow{position:absolute;left:0;right:0;bottom:calc(100% + 57px)}
+
+/* Split (versus / cartes) */
+.split-left{position:absolute;left:0;top:0;width:653px;height:1080px;padding:24px;display:flex;flex-direction:column;justify-content:space-between;background:var(--grad)}
+.split-right{position:absolute;left:653px;top:0;width:1267px;height:1080px}
+.card{position:absolute;background:var(--paper-2);padding:24px;display:flex;flex-direction:column;gap:8px}
+.card .grow{flex:1}
+
+/* Liste sombre */
+.col-rule{border-left:1.5px solid var(--light-muted);padding-left:32px;display:flex;flex-direction:column;gap:64px;overflow:hidden}
+
+
+/* Graphique */
+.bar{flex:1;border-radius:999px;background:#000;box-shadow:inset -30px -40px 90px 0 rgba(203,211,240,.25),inset 30px 50px 120px 0 rgba(9,36,130,.9);padding:80px 32px;display:flex;flex-direction:column;gap:8px;align-items:center;text-align:center}
+/* Cartes options */
+.opt-frame{position:relative;border-radius:9px;overflow:hidden;background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center}
+.opt-card{width:539px;background:#fff;border-radius:28px;padding:32px;display:flex;flex-direction:column;gap:32px;box-shadow:0 0 4px rgba(0,0,18,.3),0 16px 90px 5px rgba(0,0,18,.15)}
+/* Tableau */
+.tbl-head{display:flex;gap:32px;height:75px;padding-bottom:32px;border-bottom:1px solid var(--stroke);align-items:flex-end}
+.tbl-head p,.tbl p{flex:1;min-width:0}
+.tbl>div{display:flex;gap:32px;padding:16px 8px;align-items:center}
+.tbl>div:nth-child(odd){background:var(--paper-2)}
+.tbl-total p{font-weight:500}
+/* Cercles */
+
+/* Chronologie */
+.tl-line{left:0;top:508px;width:1920px;height:1.5px;background:var(--ink)}
+.tl-col{position:relative;display:flex;flex-direction:column;gap:16px}
+.tl-col.big{gap:64px}
+.tl-col.big .tl-h{min-height:88.8px}
+.tl-dot{position:absolute;left:0;top:-74px;width:20px;height:20px;border-radius:50%;background:var(--ink)}
+/* Équipe */
+.team{top:233px;display:flex;flex-direction:column;gap:30.956px}
+.team img{width:100%;aspect-ratio:620/733;object-fit:cover;border-radius:30.956px}
+.team div{display:flex;flex-direction:column;gap:15.478px}
+/* Étapes */
+.step{flex:1;border-left:1px solid var(--ink);padding-left:32px;display:flex;flex-direction:column;gap:24px}
+
+
+/* Comparatif */
+.cmp-head,.cmp-row{display:grid;grid-template-columns:240px 1fr 1fr 1fr;gap:32px;padding:16px 8px;position:relative;z-index:1}
+.cmp-head{padding:0 8px 24px;border-bottom:1px solid var(--stroke);align-items:end;margin-bottom:16px}
+.cmp>.cmp-row:nth-child(odd){background:var(--paper-2)}
+.cmp-total p:not(.c-muted){font-weight:500}
+.cmp-big{align-items:center}
+.cmp-loose .cmp-row{padding:36px 8px}
+.cmp-loose .cmp-big .headline{font-size:44px}
+.cmp-reco{position:absolute;z-index:2;pointer-events:none;top:-16px;bottom:-16px;left:569.7px;width:305.7px;border:1.5px solid var(--orange);border-radius:16px}
+
+.kpi{gap:36px}
+.kpi>.headline-13{flex:1}
+.kpi .label{margin-bottom:10px}
+
+
+/* Au P'tit Louis */
+.loss{border-left:1px solid var(--ink);padding-left:64px;display:flex;flex-direction:column;gap:12px}
+.kw-list{display:flex;flex-direction:column;align-items:flex-start;gap:12px;margin-top:16px}
+.kw{font-family:var(--sans);font-size:24px;letter-spacing:-.48px;line-height:1.2;background:#fff;border:1px solid var(--stroke);border-radius:999px;padding:10px 22px}
+.big-checks{display:flex;flex-direction:column;gap:28px}
+.big-checks li{display:flex;gap:20px;align-items:flex-start;font-family:var(--serif);font-size:37px;line-height:1.2}
+.big-checks svg{flex:none;width:32px;height:32px;margin-top:6px;color:var(--ink)}
+.kw-rows{display:flex;flex-direction:column;gap:16px}
+.kw-rows p{border-left:1px solid var(--ink);padding:6px 0 6px 32px}
+.case-col{flex:1;display:flex;flex-direction:column;gap:24px}
+.reco-grid{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:1fr 1fr;gap:32px}
+.reco{background:var(--paper-2);padding:24px;display:flex;flex-direction:column;gap:8px}
+.change-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px 64px}
+.change-grid li+li{margin-top:0}
+.change-grid svg{width:32px;height:32px;margin-top:6px}
+.pill{background:var(--ink);color:var(--light);border-radius:999px;padding:14px 26px}
+
+
+.case-visual{background:var(--paper-2);border-radius:24px;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.case-visual img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:var(--paper-2)}
+
+.next-list{margin-top:24px;display:flex;flex-direction:column;gap:10px}
+.next-list li{display:flex;gap:16px;font-family:var(--serif);font-size:28px;line-height:1.25}
+.next-list li span{flex:none;width:40px}
+.qr-card{display:flex;gap:32px;border-radius:24px;padding:36px;text-decoration:none;color:inherit}
+.qr-main{flex:1.45;background:var(--ink)}
+.qr-alt{flex:1;background:#fff;border:1px solid var(--stroke)}
+.qr-box{flex:none;align-self:center;background:#fff;border-radius:16px;padding:18px}
+.qr-alt .qr-box{padding:0}
+.qr-box img{width:100%;height:100%;display:block}
+
+
+/* Huchet-Demorge · Évolution */
+.col{display:flex;flex-direction:column}
+.screen{position:absolute;overflow:hidden;background:#fff}
+.screen img{width:100%;height:100%;object-fit:cover;object-position:center top}
+.photo{position:absolute;overflow:hidden;border-radius:24px}
+.photo img{width:100%;height:100%;object-fit:cover}
+.risk-grid{display:grid;grid-template-columns:1fr 1fr;gap:32px}
+.risk{border-top:1.5px solid var(--light-muted);padding-top:28px;display:flex;flex-direction:column;gap:16px}
+.flow{display:flex;flex-direction:column;gap:0}
+.flow-row{display:flex;align-items:center;gap:40px;padding:26px 0;border-bottom:1px solid var(--stroke)}
+.flow-row:first-child{border-top:1px solid var(--stroke)}
+.flow-row .num{font-family:var(--serif);font-size:37px;color:var(--orange);width:56px;flex:none}
+.flow-row .verb{font-family:var(--serif);font-size:44px;line-height:1.15;letter-spacing:-1px;width:340px;flex:none}
+.duo{position:absolute;border-radius:24px;padding:48px;display:flex;flex-direction:column;gap:20px}
+.duo .who{display:flex;align-items:center;gap:16px}
+.duo .tag{font-family:var(--sans);font-size:17px;letter-spacing:-.34px;border-radius:999px;padding:8px 16px}
+.tags{display:flex;flex-wrap:wrap;gap:12px}
+.chip{font-family:var(--sans);font-size:22px;letter-spacing:-.44px;line-height:1.2;border-radius:999px;padding:10px 20px;border:1px solid var(--stroke);background:#fff}
+.chip.dark{background:rgba(242,242,242,.08);border-color:rgba(242,242,242,.25);color:var(--light)}
+.subj{display:grid;grid-template-columns:1fr 1fr;gap:20px 40px}
+.subj li{display:flex;gap:16px;align-items:flex-start}
+.subj li span.n{flex:none;font-family:var(--sans);font-size:17px;color:var(--orange);width:28px;margin-top:5px}
+.steps-row{display:flex;gap:32px}
+.step .big{font-family:var(--serif);font-size:120px;line-height:1;letter-spacing:-3px;color:var(--orange)}
+.price-card{background:#fff;border-radius:28px;padding:48px;display:flex;flex-direction:column;gap:28px;box-shadow:0 0 4px rgba(0,0,18,.3),0 16px 90px 5px rgba(0,0,18,.25)}
+.price{font-family:var(--serif);font-size:120px;line-height:1;letter-spacing:-4px}
+.versus{position:absolute;border-radius:24px;padding:48px;display:flex;flex-direction:column;gap:24px}
+.xlist li,.okl li{display:flex;gap:18px;align-items:flex-start}
+.xlist li+li,.okl li+li{margin-top:22px}
+.xlist svg,.okl svg{flex:none;width:30px;height:30px;margin-top:4px}
+.mosaic{position:absolute;display:grid;gap:16px}
+.mosaic div{overflow:hidden;border-radius:16px}
+.mosaic img{width:100%;height:100%;object-fit:cover}
+.because li{display:flex;gap:20px;align-items:baseline}
+.because li+li{margin-top:16px}
+.because span{flex:none;font-family:var(--sans);font-size:17px;color:var(--orange);width:30px}
+.goal{display:flex;gap:24px;align-items:baseline;padding:22px 0;border-bottom:1px solid var(--stroke)}
+.goal:first-child{border-top:1px solid var(--stroke)}
+.goal span{flex:none;font-family:var(--sans);font-size:17px;color:var(--orange);width:30px}
+.contact-card{position:absolute;display:flex;gap:40px;border-radius:24px;padding:40px;text-decoration:none;color:inherit;background:var(--ink)}
+/* Bouton PDF */
+.pdf-btn{position:fixed;right:24px;bottom:24px;z-index:10;font-family:var(--sans);font-size:16px;font-weight:400;letter-spacing:-.3px;background:var(--light);color:#000;border:0;border-radius:999px;padding:12px 18px 12px 20px;display:flex;gap:8px;align-items:center;cursor:pointer;box-shadow:0 8px 30px rgba(0,0,0,.35)}
+@media print{
+  @page{size:1920px 1080px;margin:0}
+  html,body{background:#fff}
+  :root{--s:1!important}
+  .deck{padding:0;gap:0}
+  .slide-wrap{width:1920px;height:1080px;break-after:page;page-break-after:always}
+  .slide{transform:none!important;break-after:auto;page-break-after:auto}
+  .pdf-btn{display:none}
+}
+</style>
+</head>
+<body>
+<button class="pdf-btn" onclick="window.print()">Télécharger en PDF
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M7 17L17 7M17 7H8M17 7v9" stroke="#000" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+</button>
+
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="currentColor"/><path d="M7.6 12.4l3 3 5.8-6.3" fill="none" stroke="var(--check-stroke,#fff)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="cross" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.25" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8.8 8.8l6.4 6.4M15.2 8.8l-6.4 6.4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+</svg>
+
+<main class="deck" id="deck">
+
+<!-- 00 · Couverture -->
+<section class="slide">
+  <img class="abs" src="assets/cover-bg.jpg" alt="" style="left:0;top:0;width:1920px;height:1080px">
+  <img class="abs" src="assets/logo-black.png" alt="Orem" style="left:1749px;top:64px;width:107px;height:105px">
+  <p class="abs sub c-light" style="left:64px;top:64px">Préparé par Orem pour Hugo Demorge · Cabinet Huchet-Demorge</p>
+  <div class="photo" style="left:1236px;top:300px;width:620px;height:420px;box-shadow:0 30px 90px rgba(0,0,18,.45)"><img src="assets/hd/huchet-demorge-0.jpg" alt="Le site Huchet-Demorge"></div>
+  <div class="abs" style="left:64px;bottom:53px;width:1300px">
+    <p class="eyebrow" style="margin-bottom:24px">Proposition de suivi Évolution · 490 € HT / mois</p>
+    <h1 class="display c-light">Faire évoluer le site <span style="white-space:nowrap">Huchet-Demorge</span>, mois après mois</h1>
+  </div>
+</section>
+
+<!-- 01 · Faire évoluer un système qui fonctionne déjà -->
+<section class="slide">
+  <div class="abs col" style="left:64px;top:64px;width:620px;height:952px;gap:28px">
+    <p class="sub c-orange">01 · Le point de départ</p>
+    <h2 class="title">Faire évoluer un système qui fonctionne déjà</h2>
+    <p class="body-l c-muted">Aujourd’hui, le site Huchet-Demorge fonctionne. La refonte a permis de remettre une base saine :</p>
+    <ul class="checks body">
+      <li><svg><use href="#check"/></svg><span>le site a repris en qualité</span></li>
+      <li><svg><use href="#check"/></svg><span>les signaux sont bons</span></li>
+      <li><svg><use href="#check"/></svg><span>les demandes entrent</span></li>
+      <li><svg><use href="#check"/></svg><span>l’ensemble est plus solide qu’avant</span></li>
+    </ul>
+    <div style="flex:1"></div>
+    <p class="headline-13" style="font-size:32px">Le sujet n’est donc pas de « refaire ».</p>
+    <p class="body-l c-muted">Le sujet, maintenant, c’est de faire évoluer intelligemment ce qui existe déjà pour que le site, les parcours, les supports et les outils restent alignés avec les enjeux du cabinet.</p>
+  </div>
+  <div class="screen" style="left:785px;top:146px;width:1043px;height:587px"><img src="assets/hd/huchet-demorge-0.jpg" alt="Page d’accueil du site Huchet-Demorge"></div>
+  <img class="abs" src="assets/studio-display.png" alt="" style="left:756px;top:117px;width:1100px;height:847px;pointer-events:none">
+</section>
+
+<!-- 02 · Le vrai risque -->
+<section class="slide dots-dark">
+  <div class="abs" style="left:64px;top:64px;width:1792px;display:flex;justify-content:space-between;align-items:flex-start;gap:64px">
+    <h2 class="title c-light" style="width:1560px">Le vrai risque maintenant : laisser le site se figer</h2>
+    <p class="sub c-orange" style="white-space:nowrap">02 · Le risque</p>
+  </div>
+  <p class="abs headline c-lm" style="left:64px;top:290px;width:1100px">Un site ne devient pas obsolète d’un coup. Il se dégrade progressivement quand :</p>
+  <div class="abs risk-grid" style="left:64px;top:410px;width:1792px">
+    <div class="risk"><p class="headline-13 c-orange">01</p><p class="headline c-light">le business évolue mais le site reste figé</p></div>
+    <div class="risk"><p class="headline-13 c-orange">02</p><p class="headline c-light">des demandes concrètes apparaissent mais ne sont jamais traitées</p></div>
+    <div class="risk"><p class="headline-13 c-orange">03</p><p class="headline c-light">des opportunités de conversion ne sont pas exploitées</p></div>
+    <div class="risk"><p class="headline-13 c-orange">04</p><p class="headline c-light">les contenus, parcours ou supports ne suivent plus le niveau réel de l’activité</p></div>
+  </div>
+  <div class="abs" style="left:64px;top:840px;width:1792px;height:176px;border-radius:24px;background:var(--graphite);padding:40px 48px;display:flex;gap:64px;align-items:center">
+    <p class="headline-13 c-lm" style="flex:1">Autrement dit : ce n’est pas la refonte qui crée la valeur dans le temps.</p>
+    <p class="headline-13 c-light" style="flex:1.3">C’est la capacité à faire évoluer le système après sa mise en ligne.</p>
+  </div>
+</section>
+
+<!-- 03 · Ce que nous proposons -->
+<section class="slide">
+  <div class="split-left">
+    <div>
+      <p class="body c-light" style="margin-bottom:8px">03 · Notre proposition</p>
+      <h2 class="title c-light">Ce que nous proposons : un suivi d’évolution mensuel</h2>
+    </div>
+    <div>
+      <p class="sub c-ink" style="margin-bottom:12px">En une phrase</p>
+      <p class="headline-13 c-ink">On ne vend pas quelques mises à jour. On vend une logique d’évolution continue.</p>
+    </div>
+  </div>
+  <div class="split-right dots-light">
+    <div class="abs col" style="left:96px;top:64px;width:1075px;height:952px;justify-content:center">
+      <p class="headline" style="margin-bottom:16px">L’idée n’est pas de fonctionner « au coup par coup » à chaque micro-besoin.</p>
+      <p class="body-l c-muted" style="margin-bottom:56px">L’idée, c’est de mettre en place un cadre de suivi mensuel pour :</p>
+      <div class="flow" style="background:#fff">
+        <div class="flow-row"><span class="num">01</span><span class="verb">Lire</span><span class="body-l c-muted">les signaux utiles</span></div>
+        <div class="flow-row"><span class="num">02</span><span class="verb">Identifier</span><span class="body-l c-muted">les bonnes priorités</span></div>
+        <div class="flow-row"><span class="num">03</span><span class="verb">Décider</span><span class="body-l c-muted">quoi faire</span></div>
+        <div class="flow-row"><span class="num">04</span><span class="verb">Exécuter</span><span class="body-l c-muted">les améliorations</span></div>
+        <div class="flow-row"><span class="num">05</span><span class="verb">Documenter</span><span class="body-l c-muted">ce qui a été fait</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 04 · Virgil / Orem -->
+<section class="slide dots-light">
+  <div class="abs" style="left:64px;top:64px;width:1792px;display:flex;justify-content:space-between;align-items:flex-start;gap:64px">
+    <h2 class="title" style="width:1350px">Ce suivi est pensé pour compléter l’accompagnement de Virgil</h2>
+    <p class="sub c-orange" style="white-space:nowrap">04 · Le cadre</p>
+  </div>
+  <div class="duo" style="left:64px;top:300px;width:700px;height:470px;background:var(--paper-2)">
+    <div class="who"><span class="tag" style="background:#fff;border:1px solid var(--stroke)">Virgil</span></div>
+    <p class="headline">Virgil garde la main sur</p>
+    <div style="flex:1"></div>
+    <ul class="checks body" style="--check-stroke:#fff">
+      <li><svg style="color:var(--accent)"><use href="#check"/></svg><span>le SEO éditorial</span></li>
+      <li><svg style="color:var(--accent)"><use href="#check"/></svg><span>les Ads</span></li>
+      <li><svg style="color:var(--accent)"><use href="#check"/></svg><span>la logique d’acquisition</span></li>
+      <li><svg style="color:var(--accent)"><use href="#check"/></svg><span>les contenus et sujets liés à son périmètre</span></li>
+    </ul>
+  </div>
+  <div class="duo" style="left:796px;top:300px;width:1060px;height:470px;background:var(--ink)">
+    <div class="who"><span class="tag" style="background:var(--orange);color:#fff">Orem</span></div>
+    <p class="headline c-light">De notre côté, nous intervenons en complément sur</p>
+    <div style="flex:1"></div>
+    <div class="tags">
+      <span class="chip dark" style="font-size:24px">la conversion</span><span class="chip dark" style="font-size:24px">les parcours</span><span class="chip dark" style="font-size:24px">les formulaires</span><span class="chip dark" style="font-size:24px">la technique</span><span class="chip dark" style="font-size:24px">l’intégration</span><span class="chip dark" style="font-size:24px">les évolutions UX</span><span class="chip dark" style="font-size:24px">certains supports</span>
+    </div>
+    <p class="body-l c-lm">et les sujets transverses qui améliorent la performance globale du dispositif.</p>
+  </div>
+  <div class="abs" style="left:64px;top:834px;width:1792px;height:182px;border-top:1px solid var(--stroke);padding-top:40px;display:flex;gap:64px;align-items:baseline">
+    <p class="sub c-orange" style="white-space:nowrap">Autrement dit</p>
+    <p class="headline-13" style="font-size:44px;letter-spacing:-.8px"><span class="c-accent">Virgil attire.</span> Nous, nous faisons évoluer ce qui transforme, clarifie et soutient le business derrière.</p>
+  </div>
+</section>
+
+<!-- 05 · Concrètement chez Huchet-Demorge -->
+<section class="slide">
+  <div class="abs" style="left:0;top:0;width:760px;height:1080px;background:var(--paper-2);overflow:hidden">
+    <img src="assets/hd/huchet-demorge-systeme.jpg" alt="Identité, site et supports Huchet-Demorge réalisés par Orem" style="width:100%;height:100%;object-fit:cover;object-position:50% center">
+  </div>
+  <div class="abs col" style="left:840px;top:64px;width:1016px;height:952px;gap:24px">
+    <p class="sub c-orange">05 · Concrètement</p>
+    <h2 class="title">Ce que ce suivi permet concrètement chez <span style="white-space:nowrap">Huchet-Demorge</span></h2>
+    <p class="body-l c-muted">Ce suivi permet de traiter, au fil des mois, les sujets qui ont le plus d’impact. Par exemple :</p>
+    <ul class="subj body" style="margin-top:16px;gap:28px 40px">
+      <li><span class="n">01</span><span>améliorer la gestion des demandes entrantes</span></li>
+      <li><span class="n">02</span><span>faire évoluer les formulaires et les emails de contact</span></li>
+      <li><span class="n">03</span><span>optimiser certains parcours clés du site</span></li>
+      <li><span class="n">04</span><span>intégrer de nouvelles pages plus orientées conversion</span></li>
+      <li><span class="n">05</span><span>remettre en route proprement la newsletter</span></li>
+      <li><span class="n">06</span><span>concevoir des outils utiles pour les acquéreurs ou investisseurs</span></li>
+      <li><span class="n">07</span><span>adapter les supports commerciaux ou certains éléments de marque si nécessaire</span></li>
+    </ul>
+    <div style="flex:1"></div>
+    <div style="border-top:1px solid var(--stroke);padding-top:28px">
+      <p class="body-l c-muted" style="margin-bottom:10px">Le principe n’est pas de tout faire en même temps.</p>
+      <p class="headline-13">Le principe, c’est de prioriser ce qui crée le plus de valeur au bon moment.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 06 · Le fonctionnement mensuel -->
+<section class="slide" style="background:var(--cream)">
+  <div class="abs" style="left:64px;top:64px;width:1792px;display:flex;justify-content:space-between;align-items:flex-start;gap:64px">
+    <div>
+      <h2 class="title">Le fonctionnement mensuel</h2>
+      <p class="headline c-muted" style="margin-top:12px">Chaque mois, on suit la même logique :</p>
+    </div>
+    <p class="sub c-orange" style="white-space:nowrap">06 · La méthode</p>
+  </div>
+  <div class="abs steps-row" style="left:64px;top:330px;width:1792px;height:420px">
+    <div class="step"><p class="big">1</p><p class="title" style="font-size:52px">Lire</p><p class="body-l c-muted">On regarde les données, les retours, l’actualité business et les irritants concrets.</p></div>
+    <div class="step"><p class="big">2</p><p class="title" style="font-size:52px">Décider</p><p class="body-l c-muted">On choisit ensemble la priorité principale du mois, puis les ajustements secondaires.</p></div>
+    <div class="step"><p class="big">3</p><p class="title" style="font-size:52px">Exécuter</p><p class="body-l c-muted">On met en œuvre les évolutions retenues dans le périmètre défini.</p></div>
+    <div class="step"><p class="big">4</p><p class="title" style="font-size:52px">Documenter</p><p class="body-l c-muted">On garde une trace claire de ce qui a été décidé, fait, mesuré ou préparé.</p></div>
+  </div>
+  <div class="abs" style="left:64px;top:880px;width:1792px;height:136px;border-radius:24px;background:var(--ink);padding:0 48px;display:flex;gap:48px;align-items:center">
+    <p class="sub c-orange" style="white-space:nowrap">L’objectif</p>
+    <p class="headline c-light">Sortir d’une logique de demandes ponctuelles pour entrer dans une logique de pilotage.</p>
+  </div>
+</section>
+
+<!-- 07 · Inclus à 490 € -->
+<section class="slide">
+  <div class="abs col" style="left:64px;top:64px;width:860px;height:952px;gap:24px">
+    <p class="sub c-orange">07 · Le niveau 1</p>
+    <h2 class="title">Ce qui est inclus dans le niveau à 490 €/mois</h2>
+    <p class="body-l c-muted">Le niveau 1 à 490 € HT / mois comprend un cadre complet : pilotage, arbitrage, exécution et documentation.</p>
+    <div style="flex:1"></div>
+    <p class="sub c-orange" style="margin-bottom:8px">Le format est adapté aux sujets comme</p>
+    <div class="kw-rows">
+      <p class="headline" style="font-size:32px">corrections ciblées</p>
+      <p class="headline" style="font-size:32px">optimisations UX</p>
+      <p class="headline" style="font-size:32px">évolutions de pages ou sections</p>
+      <p class="headline" style="font-size:32px">amélioration des parcours</p>
+      <p class="headline" style="font-size:32px">formulaires</p>
+      <p class="headline" style="font-size:32px">supports utiles au business</p>
+      <p class="headline" style="font-size:32px">petits chantiers d’évolution continus</p>
+    </div>
+  </div>
+  </div>
+  <div class="abs" style="left:988px;top:64px;width:868px;height:952px;border-radius:24px;overflow:hidden;background:#000 url(assets/blob-chapter.jpg) center/cover;display:flex;align-items:center;justify-content:center">
+    <div class="price-card" style="width:640px">
+      <div>
+        <p class="sub c-orange" style="margin-bottom:12px">Suivi Évolution · Niveau 1</p>
+        <p class="price">490 €</p>
+        <p class="headline c-muted" style="margin-top:8px">HT / mois</p>
+      </div>
+      <div style="border-top:1px solid var(--stroke)"></div>
+      <ul class="checks body" style="--check-stroke:#fff">
+        <li><svg style="color:var(--ink)"><use href="#check"/></svg><span>1 visio de pilotage par mois</span></li>
+        <li><svg style="color:var(--ink)"><use href="#check"/></svg><span>environ 5 interventions / améliorations par mois</span></li>
+        <li><svg style="color:var(--orange)"><use href="#check"/></svg><span><b style="font-weight:500">1 priorité principale</b></span></li>
+        <li><svg style="color:var(--ink)"><use href="#check"/></svg><span>3 à 4 améliorations secondaires</span></li>
+        <li><svg style="color:var(--ink)"><use href="#check"/></svg><span>le suivi, l’arbitrage, l’exécution et la documentation</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 08 · À la demande vs suivi mensuel -->
+<section class="slide dots-light">
+  <div class="abs" style="left:64px;top:64px;width:1792px;display:flex;justify-content:space-between;align-items:flex-start;gap:64px">
+    <h2 class="title" style="width:1400px">Pourquoi ce modèle est plus pertinent qu’un fonctionnement à la demande</h2>
+    <p class="sub c-orange" style="white-space:nowrap">08 · Le comparatif</p>
+  </div>
+  <div class="versus" style="left:64px;top:300px;width:800px;height:500px;background:var(--paper-2)">
+    <p class="label c-muted">Fonctionnement « à la demande »</p>
+    <p class="headline">Crée souvent trois problèmes</p>
+    <div style="flex:1"></div>
+    <ul class="xlist body c-muted">
+      <li><svg style="color:var(--muted)"><use href="#cross"/></svg><span>les sujets remontent quand ils deviennent irritants</span></li>
+      <li><svg style="color:var(--muted)"><use href="#cross"/></svg><span>les arbitrages se font au fil de l’eau, sans vraie priorisation</span></li>
+      <li><svg style="color:var(--muted)"><use href="#cross"/></svg><span>les améliorations restent ponctuelles au lieu de s’inscrire dans une progression</span></li>
+    </ul>
+  </div>
+  <div class="versus" style="left:896px;top:300px;width:960px;height:500px;background:var(--ink);outline:1.5px solid var(--orange);outline-offset:8px">
+    <p class="label c-orange">Suivi mensuel</p>
+    <p class="headline c-light">Permet l’inverse</p>
+    <div style="flex:1"></div>
+    <ul class="okl body c-light" style="--check-stroke:var(--ink)">
+      <li><svg style="color:var(--light)"><use href="#check"/></svg><span>un rythme</span></li>
+      <li><svg style="color:var(--light)"><use href="#check"/></svg><span>une lecture régulière</span></li>
+      <li><svg style="color:var(--light)"><use href="#check"/></svg><span>des décisions plus propres</span></li>
+      <li><svg style="color:var(--light)"><use href="#check"/></svg><span>des optimisations continues</span></li>
+      <li><svg style="color:var(--light)"><use href="#check"/></svg><span>un site qui reste vivant au lieu de vieillir</span></li>
+    </ul>
+  </div>
+  <div class="abs" style="left:64px;top:860px;width:1792px;height:156px;border-top:1px solid var(--stroke);padding-top:40px;display:flex;gap:64px;align-items:baseline">
+    <p class="headline-13 c-muted" style="flex:1">En fait, ce qu’on achète ici, ce n’est pas juste du temps.</p>
+    <p class="title" style="font-size:52px;letter-spacing:-1.5px">C’est de la continuité.</p>
+  </div>
+</section>
+
+<!-- 09 · Pourquoi ça a du sens -->
+<section class="slide dots-dark">
+  <div class="abs col" style="left:64px;top:64px;width:980px;height:952px;gap:28px">
+    <p class="sub c-orange">09 · Le contexte</p>
+    <h2 class="title c-light">Pourquoi ça a du sens pour Huchet-Demorge</h2>
+    <p class="body-l c-lm">Huchet-Demorge n’est pas dans une logique « site vitrine figé ». Le cabinet est sur :</p>
+    <ul class="checks c-light" style="--check-stroke:#000;display:flex;flex-direction:column;gap:14px">
+      <li class="headline" style="font-size:32px"><svg style="color:var(--orange);width:28px;height:28px;margin-top:6px"><use href="#check"/></svg><span>une audience exigeante</span></li>
+      <li class="headline" style="font-size:32px;margin:0"><svg style="color:var(--orange);width:28px;height:28px;margin-top:6px"><use href="#check"/></svg><span>des enjeux de crédibilité élevés</span></li>
+      <li class="headline" style="font-size:32px;margin:0"><svg style="color:var(--orange);width:28px;height:28px;margin-top:6px"><use href="#check"/></svg><span>des demandes réelles</span></li>
+      <li class="headline" style="font-size:32px;margin:0"><svg style="color:var(--orange);width:28px;height:28px;margin-top:6px"><use href="#check"/></svg><span>une visibilité déjà installée</span></li>
+      <li class="headline" style="font-size:32px;margin:0"><svg style="color:var(--orange);width:28px;height:28px;margin-top:6px"><use href="#check"/></svg><span>un site qui peut devenir un vrai levier d’optimisation continue</span></li>
+    </ul>
+    <div style="flex:1"></div>
+    <div style="border-top:1.5px solid var(--light-muted);padding-top:32px">
+      <p class="headline c-light" style="margin-bottom:24px">C’est précisément le bon contexte pour un suivi d’évolution :</p>
+      <ul class="because body c-light">
+        <li><span>01</span>parce que la base existe déjà</li>
+        <li><span>02</span>parce que les enjeux business sont réels</li>
+        <li><span>03</span>et parce qu’il y a déjà des sujets concrets à traiter sans attendre une future refonte</li>
+      </ul>
+    </div>
+  </div>
+  <div class="mosaic" style="left:1124px;top:64px;width:732px;height:952px;grid-template-columns:1fr 1fr;grid-template-rows:1.25fr 1fr 1fr">
+    <div style="grid-column:1/3"><img src="assets/hd/huchet-demorge-0.jpg" alt="Façade et logo Huchet-Demorge"></div>
+    <div style="grid-row:2/4"><img src="assets/hd/huchet-demorge-1.jpg" alt="Site Huchet-Demorge sur mobile"></div>
+    <div><img src="assets/hd/huchet-demorge-3.jpg" alt="Monogramme Huchet-Demorge"></div>
+    <div><img src="assets/hd/huchet-demorge-2.jpg" alt="Stand Huchet-Demorge"></div>
+  </div>
+</section>
+
+<!-- 10 · Notre recommandation -->
+<section class="slide bg-grad" style="display:flex;align-items:center;justify-content:center;padding:64px">
+  <div style="width:1792px;height:952px;border-radius:24px;background:var(--cream);padding:64px;display:flex;gap:80px">
+    <div style="flex:1;display:flex;flex-direction:column">
+      <p class="eyebrow" style="margin-bottom:16px">10 · Notre recommandation</p>
+      <h2 class="title">Notre recommandation est simple</h2>
+      <p class="body-l c-muted" style="margin-top:24px">Mettre en place un suivi Évolution à 490 € HT / mois, avec un engagement initial de 3 mois, pour installer un rythme de travail utile et traiter les priorités au fil de l’eau.</p>
+      <div style="flex:1"></div>
+      <div style="display:flex;gap:24px">
+        <div style="flex:1;background:var(--ink);border-radius:20px;padding:40px">
+          <p class="label c-orange" style="margin-bottom:12px">Suivi Évolution</p>
+          <p class="title c-light" style="font-size:96px;line-height:1">490 €</p>
+          <p class="sub c-lm" style="margin-top:10px">HT / mois</p>
+        </div>
+        <div style="flex:1;background:#fff;border:1px solid var(--stroke);border-radius:20px;padding:40px">
+          <p class="label c-accent" style="margin-bottom:12px">Engagement initial</p>
+          <p class="title" style="font-size:96px;line-height:1">3 mois</p>
+          <p class="sub c-muted" style="margin-top:10px">pour installer le rythme</p>
+        </div>
+      </div>
+    </div>
+    <div style="width:760px;display:flex;flex-direction:column">
+      <p class="sub c-orange" style="margin-bottom:16px">L’objectif des 3 premiers mois</p>
+      <div>
+        <div class="goal"><span>01</span><p class="headline">absorber les premiers irritants concrets</p></div>
+        <div class="goal"><span>02</span><p class="headline">structurer la méthode de travail</p></div>
+        <div class="goal"><span>03</span><p class="headline">faire évoluer les parcours et supports utiles</p></div>
+        <div class="goal"><span>04</span><p class="headline">voir rapidement les premiers gains</p></div>
+      </div>
+      <div style="flex:1"></div>
+      <p class="headline-13">Ensuite, on continue ou non selon la valeur créée.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 11 · En une phrase -->
+<section class="slide bg-black">
+  <img class="abs" src="assets/blob-chapter.jpg" alt="" style="left:42px;top:0;width:1878px;height:1080px;opacity:.85">
+  <img class="abs" src="assets/logo-gradient.png" alt="" style="left:64px;top:64px;width:82px;height:80px">
+  <p class="abs eyebrow" style="left:64px;top:300px">11 · En une phrase</p>
+  <p class="abs quote c-light" style="left:64px;top:360px;width:1500px">Nous ne laissons pas le site redevenir figé après sa mise en ligne.</p>
+  <p class="abs headline-13 c-lm" style="left:64px;top:720px;width:1180px">Chaque mois, nous lisons les priorités avec vous, décidons quoi faire, l’exécutons et faisons évoluer ce qui doit l’être pour que l’outil reste au niveau de votre activité.</p>
+</section>
+
+<!-- 12 · Contact -->
+<section class="slide bg-grad" style="display:flex;align-items:center;justify-content:center;padding:64px">
+  <div style="width:1792px;height:952px;border-radius:24px;background:var(--cream);padding:64px;display:flex;gap:64px">
+    <div style="flex:1;display:flex;flex-direction:column">
+      <p class="eyebrow" style="margin-bottom:16px">La prochaine étape</p>
+      <h2 class="title">Lancer le suivi Évolution pour Huchet-Demorge</h2>
+      <p class="body-l c-muted" style="margin-top:24px">Un échange de 30 minutes suffit pour caler la première priorité du mois et démarrer les 3 premiers mois.</p>
+      <ul class="big-checks" style="margin-top:56px;gap:20px">
+        <li style="font-size:32px"><svg><use href="#check"/></svg><span>Suivi Évolution à 490 € HT / mois</span></li>
+        <li style="font-size:32px"><svg><use href="#check"/></svg><span>Engagement initial de 3 mois</span></li>
+        <li style="font-size:32px"><svg><use href="#check"/></svg><span>1 visio de pilotage et environ 5 améliorations par mois</span></li>
+      </ul>
+      <div style="flex:1"></div>
+      <div style="display:flex;gap:32px;align-items:center;border-top:1px solid var(--stroke);padding-top:32px">
+        <img src="assets/louis.jpg" alt="Louis Montagne" style="width:150px;height:150px;border-radius:50%;object-fit:cover;object-position:center 20%">
+        <div>
+          <p class="headline">Louis Montagne</p>
+          <p class="body-l c-muted" style="margin-top:6px">Fondateur d’Orem</p>
+          <p class="headline" style="margin-top:14px"><a href="tel:+33750371572" style="color:inherit;text-decoration:none;white-space:nowrap">07 50 37 15 72</a></p>
+        </div>
+      </div>
+    </div>
+    <a class="qr-card qr-main" href="https://app.iclosed.io/e/Orem/rdv-30min" style="width:820px;flex:none;flex-direction:column;padding:48px">
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <p class="sub c-orange">Prendre rendez-vous</p>
+        <p class="title c-light">Réserver un appel de 30 minutes</p>
+      </div>
+      <div style="flex:1"></div>
+      <div style="display:flex;gap:40px;align-items:flex-end">
+        <div class="qr-box" style="width:380px;height:380px;align-self:flex-end"><img src="assets/qr-rdv.svg" alt="QR code vers la prise de rendez-vous"></div>
+        <p class="body-l c-lm" style="flex:1">Scannez le QR code avec votre téléphone, ou cliquez sur cette carte.</p>
+      </div>
+    </a>
+  </div>
+</section>
+
+</main>
+<script>
+(function(){
+  var deck=document.getElementById('deck'), root=document.documentElement;
+  deck.querySelectorAll('.slide').forEach(function(sl){
+    var w=document.createElement('div'); w.className='slide-wrap';
+    sl.parentNode.insertBefore(w,sl); w.appendChild(sl);
+  });
+  function fit(){root.style.setProperty('--s',Math.min(1,(window.innerWidth-48)/1920));}
+  window.addEventListener('resize',fit); fit();
+  window.addEventListener('beforeprint',function(){root.style.setProperty('--s',1)});
+  window.addEventListener('afterprint',fit);
+})();
+</script>
+</body>
+</html>
