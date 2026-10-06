@@ -202,13 +202,13 @@ Les outils Google Drive « natifs » exigent le fichier en base64 dans la requê
 3. Composio (compte Google Drive de Louis déjà connecté) : `COMPOSIO_SEARCH_TOOLS` puis `COMPOSIO_MULTI_EXECUTE_TOOL` avec `GOOGLEDRIVE_UPLOAD_FROM_URL` : `source_url`, `name` (nom lisible avec extension), `mime_type: application/pdf`, `parent_folder_id`. Plusieurs fichiers en un seul appel.
 4. Donner à l'utilisateur le lien `webViewLink` de chaque fichier.
 
-**Règle de rangement (demandée par Louis)** : les PDF ne vont jamais à côté des Google Docs. Dans chaque dossier, ils vont dans un sous-dossier `PDF` (le créer s'il n'existe pas, avec `mcp__Google_Drive__create_file` et `contentMimeType: application/vnd.google-apps.folder`). Pour réorganiser, `GOOGLEDRIVE_MOVE_FILE` avec `add_parents` et `remove_parents`.
+**Règle de rangement (demandée par Louis)** : les PDF sont posés directement dans le dossier, visibles en premier. Les Google Docs sources vont dans un sous-dossier `Google Docs` (le créer s'il n'existe pas : `mcp__Google_Drive__create_file` avec `contentMimeType: application/vnd.google-apps.folder`). Pour déplacer ou renommer : `mcp__Google_Drive__update_file` (`parentId`, `title`).
 
 Dossiers utiles (ESPACE ICONOKOM `1aOOGVtUg95vVtxoOpjEOnunnG0SgH7Vv`) :
 - OREM MAJ 2027 : `1SSwvrE3MtLHE2BXXmtHbht-n0jB05UyJ` (documents Orem du moment, book)
-- OREM MAJ 2027 › PDF : `13YceJoaDa0gcCBLqFOjpcvD5Oy5Z7bQZ` (book, ICP, Empathy Map, 30 pains)
+- OREM MAJ 2027 : PDF à la racine (book, ICP, Empathy Map, 30 pains) ; sous-dossier Google Docs : `13YceJoaDa0gcCBLqFOjpcvD5Oy5Z7bQZ`
 - OREM MAJ 2027 › OFFRES : `15PDRU0rzeXNJT4g4OtOThbAGu1YdvYJ-`
-- OREM MAJ 2027 › OFFRES › PDF : `1CxSVW6Ra2dN064CJHIZj4FdYMesTeaNy`
+- OREM MAJ 2027 › OFFRES › Google Docs : `1CxSVW6Ra2dN064CJHIZj4FdYMesTeaNy` (les 4 PDF offres sont à la racine d'OFFRES)
 - 02_CLIENTS : `13QNsgI0thP0cGKiqdcjnOS31PuqVqje1` (chercher le sous-dossier du client avec `GOOGLEDRIVE_FIND_FILE`)
 - PROSPECTION : `1HVh3UFnaUf9FLtgGUD_scEj3Q7Is9X5Q`
 
