@@ -13,7 +13,6 @@
   --ink:#000012;
   --paper:#ffffff;
   --paper-2:#f8f8f7;
-  --cream:#f9f5f1;
   --graphite:#1d1d1d;
   --muted:rgba(67,66,66,.6);
   --light:#f2f2f2;
@@ -46,8 +45,8 @@ ul{list-style:none}
 .body-l{font-family:var(--sans);font-size:24px;line-height:1.2;letter-spacing:-.48px;font-weight:350}
 .sub{font-family:var(--sans);font-size:20px;line-height:1.2;letter-spacing:-.4px;font-weight:400}
 .label{font-family:var(--sans);font-size:17px;line-height:1.1;letter-spacing:-.34px;font-weight:400}
-.eyebrow{font-family:var(--sans);font-size:24px;line-height:1.2;letter-spacing:-.48px;font-weight:350;color:var(--orange)}
-.c-light{color:var(--light)} .c-lm{color:var(--light-muted)} .c-muted{color:var(--muted)} .c-orange{color:var(--orange)} .c-accent{color:var(--accent)} .c-ink{color:var(--ink)}
+.eyebrow{font-family:var(--sans);font-size:24px;line-height:1.2;letter-spacing:-.48px;font-weight:350;color:var(--hl)}
+.c-light{color:var(--light)} .c-lm{color:var(--light-muted)} .c-muted{color:var(--muted)} .c-orange{color:var(--hl)} .c-accent{color:var(--accent)} .c-ink{color:var(--ink)}
 
 /* Backgrounds */
 .bg-black{background:#000}
@@ -115,7 +114,7 @@ ul{list-style:none}
 .cmp-big{align-items:center}
 .cmp-loose .cmp-row{padding:36px 8px}
 .cmp-loose .cmp-big .headline{font-size:44px}
-.cmp-reco{position:absolute;z-index:2;pointer-events:none;top:-16px;bottom:-16px;left:569.7px;width:305.7px;border:1.5px solid var(--orange);border-radius:16px}
+.cmp-reco{position:absolute;z-index:2;pointer-events:none;top:-16px;bottom:-16px;left:569.7px;width:305.7px;border:1.5px solid var(--hl);border-radius:16px}
 
 .kpi{gap:36px}
 .kpi>.headline-13{flex:1}
@@ -162,11 +161,11 @@ a{color:inherit;text-decoration:none}
 .site-btn svg{width:18px;height:18px}
 .avis-grid{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(2,1fr);gap:24px}
 .avis{background:rgba(255,255,255,.94);border-radius:24px;padding:40px;display:flex;flex-direction:column;gap:24px}
-.avis .stars{color:var(--orange);font-size:22px;letter-spacing:4px}
+.avis .stars{color:var(--hl);font-size:22px;letter-spacing:4px}
 .avis .who{display:flex;gap:18px;align-items:center;border-top:1px solid var(--stroke);padding-top:24px}
 .avis .who img{width:64px;height:64px;border-radius:50%;object-fit:cover;object-position:center 20%}
 .offer{background:#fff;border-radius:24px;padding:36px;display:flex;flex-direction:column;gap:20px}
-.offer .letter{font-family:var(--serif);font-size:64px;line-height:1;color:var(--orange)}
+.offer .letter{font-family:var(--serif);font-size:64px;line-height:1;color:var(--hl)}
 .offer .checks li{margin:0}
 .offers4 .offer{min-height:0;height:784px;gap:14px;padding:32px}
 .offers4 .letter{font-size:52px}
@@ -175,6 +174,14 @@ a{color:inherit;text-decoration:none}
 .offers4 .checks svg{width:22px;height:22px}
 .offers4 .headline{font-size:28px}
 .contacts3 .headline{font-size:30px;white-space:nowrap}
+
+/* === Garde-fou DA Orem ===
+   Accent : bleu (--accent) sur fond clair, orange (--orange) sur fond sombre. Le token --hl porte l'accent du contexte. */
+.slide,.on-light,.card,.offer,.avis,.opt-card,.logo-cell,.box:not(.ink):not(.glass),
+[style*="background:#fff"],[style*="background: #fff"],[style*="background:var(--paper)"],[style*="background:var(--paper-2)"],[style*="background:rgba(255,255,255,.9"]{--hl:var(--accent)}
+.on-dark,.bg-black,.dots-dark,.bg-grad,.split-left,.case-quote,.box.ink,.box.glass,.node.hl,
+.slide:has(> img[src*="cover-bg"]),[style*="background:var(--ink)"],[style*="background:#000"],[style*="background:var(--accent)"],[style*="background:var(--graphite)"]{--hl:var(--orange)}
+.c-orange,.eyebrow{color:var(--hl)!important}
 </style>
 </head>
 <body>
@@ -274,27 +281,9 @@ a{color:inherit;text-decoration:none}
     </div>
     <div class="col-rule" style="flex:1">
       <p class="headline-13 c-orange" style="flex:1">03</p>
-      <p class="headline c-light">La méthode O.R.E.M.</p>
-      <p class="body-l c-lm">Quatre étapes qui relient chaque décision de design à un objectif business :</p>
-      <ul class="body-l c-lm" style="display:flex;flex-direction:column;gap:14px;margin-top:-40px">
-        <li><span class="c-orange">O · Orienter</span> : clarifier votre positionnement, votre offre et votre message avant de produire quoi que ce soit.</li>
-        <li><span class="c-orange">R · Représenter</span> : traduire cette clarté en direction artistique.</li>
-        <li><span class="c-orange">E · Exécuter</span> : concevoir un site qui convertit et se référence.</li>
-        <li><span class="c-orange">M · Mesurer</span> : lire les résultats et faire évoluer site et marque chaque mois.</li>
-      </ul>
+      <p class="headline c-light">Visibles sur Google et dans les réponses des IA</p>
+      <p class="body-l c-lm">Le SEO et le GEO sont pensés dès l’architecture du site : structure, contenus clairs et citables, données structurées. Résultat : l’Hôtel Eiffel Ségur est passé de la 38<sup>e</sup> à la 6<sup>e</sup> position moyenne sur Google et reçoit déjà des visiteurs envoyés par les assistants IA.</p>
     </div>
-  </div>
-</section>
-
-<!-- 06 · Méthode O.R.E.M. (Figma 3665:907) -->
-<section class="slide">
-  <h2 class="abs title" style="left:294px;top:64px;width:1562px">La méthode O.R.E.M.<br>Quatre étapes, un seul fil conducteur</h2>
-  <div class="abs tl-line"></div>
-  <div class="abs" style="left:65px;top:572px;display:flex;gap:111px">
-    <div class="tl-col big" style="width:359px"><i class="tl-dot"></i><p class="headline tl-h"><span class="c-orange">O</span> · Orienter</p><p class="body-l c-muted">Clarifier votre positionnement, vos cibles et votre message.</p></div>
-    <div class="tl-col big" style="width:359px"><i class="tl-dot"></i><p class="headline tl-h"><span class="c-orange">R</span> · Représenter</p><p class="body-l c-muted">Traduire ce positionnement en direction artistique, cohérente sur tous vos supports.</p></div>
-    <div class="tl-col big" style="width:359px"><i class="tl-dot"></i><p class="headline tl-h"><span class="c-orange">E</span> · Exécuter</p><p class="body-l c-muted">Concevoir et mettre en ligne un site qui convertit et se référence.</p></div>
-    <div class="tl-col big" style="width:381px"><i class="tl-dot"></i><p class="headline tl-h"><span class="c-orange">M</span> · Mesurer</p><p class="body-l c-muted">Suivre les résultats et faire vivre le site après la mise en ligne.</p></div>
   </div>
 </section>
 
@@ -683,7 +672,7 @@ a{color:inherit;text-decoration:none}
 
 <!-- 26 · Prochaine étape (Figma 3665:983) -->
 <section class="slide bg-grad" style="display:flex;align-items:center;justify-content:center;padding:64px">
-  <div style="width:1692px;height:952px;border-radius:24px;background:var(--cream);padding:64px;display:flex;gap:64px">
+  <div style="width:1692px;height:952px;border-radius:24px;background:#fff;padding:64px;display:flex;gap:64px">
     <div style="flex:1;display:flex;flex-direction:column">
       <p class="eyebrow" style="margin-bottom:16px">Prochaine étape</p>
       <h2 class="title">Parlons de votre projet</h2>
