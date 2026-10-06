@@ -192,3 +192,20 @@ Le script utilise Chromium (`/opt/pw-browsers/chromium`). **Ne jamais lancer `pl
 - Commiter le dossier (HTML, assets, PDF) sur la branche de travail.
 - Envoyer le PDF via SendUserFile.
 - Lister à l'utilisateur les textes ajoutés au-delà de ce qu'il a fourni, pour validation.
+
+## Déposer un document dans le Google Drive
+
+Les outils Google Drive « natifs » exigent le fichier en base64 dans la requête : impossible au-delà de quelques centaines de Ko. Méthode fiable, testée :
+
+1. Commiter et pousser le PDF sur la branche de travail.
+2. URL brute : `https://raw.githubusercontent.com/iconokom-source/claude-code/<branche>/<chemin/fichier.pdf>` (le repo est public, l'URL est donc lisible sans jeton).
+3. Composio (compte Google Drive de Louis déjà connecté) : `COMPOSIO_SEARCH_TOOLS` puis `COMPOSIO_MULTI_EXECUTE_TOOL` avec `GOOGLEDRIVE_UPLOAD_FROM_URL` : `source_url`, `name` (nom lisible avec extension), `mime_type: application/pdf`, `parent_folder_id`. Plusieurs fichiers en un seul appel.
+4. Donner à l'utilisateur le lien `webViewLink` de chaque fichier.
+
+Dossiers utiles (ESPACE ICONOKOM `1aOOGVtUg95vVtxoOpjEOnunnG0SgH7Vv`) :
+- OREM MAJ 2027 : `1SSwvrE3MtLHE2BXXmtHbht-n0jB05UyJ` (documents Orem du moment, book)
+- OREM MAJ 2027 › OFFRES : `15PDRU0rzeXNJT4g4OtOThbAGu1YdvYJ-`
+- 02_CLIENTS : `13QNsgI0thP0cGKiqdcjnOS31PuqVqje1` (chercher le sous-dossier du client avec `GOOGLEDRIVE_FIND_FILE`)
+- PROSPECTION : `1HVh3UFnaUf9FLtgGUD_scEj3Q7Is9X5Q`
+
+Même logique pour joindre un PDF à un mail : passer par Composio Gmail plutôt que par l'outil Gmail natif.
