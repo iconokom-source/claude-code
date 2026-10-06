@@ -13,7 +13,6 @@
   --ink:#000012;
   --paper:#ffffff;
   --paper-2:#f8f8f7;
-  --cream:#f9f5f1;
   --graphite:#1d1d1d;
   --muted:rgba(67,66,66,.6);
   --light:#f2f2f2;
@@ -46,8 +45,8 @@ ul{list-style:none}
 .body-l{font-family:var(--sans);font-size:24px;line-height:1.2;letter-spacing:-.48px;font-weight:350}
 .sub{font-family:var(--sans);font-size:20px;line-height:1.2;letter-spacing:-.4px;font-weight:400}
 .label{font-family:var(--sans);font-size:17px;line-height:1.1;letter-spacing:-.34px;font-weight:400}
-.eyebrow{font-family:var(--sans);font-size:24px;line-height:1.2;letter-spacing:-.48px;font-weight:350;color:var(--orange)}
-.c-light{color:var(--light)} .c-lm{color:var(--light-muted)} .c-muted{color:var(--muted)} .c-orange{color:var(--orange)} .c-accent{color:var(--accent)} .c-ink{color:var(--ink)}
+.eyebrow{font-family:var(--sans);font-size:24px;line-height:1.2;letter-spacing:-.48px;font-weight:350;color:var(--hl)}
+.c-light{color:var(--light)} .c-lm{color:var(--light-muted)} .c-muted{color:var(--muted)} .c-orange{color:var(--hl)} .c-accent{color:var(--accent)} .c-ink{color:var(--ink)}
 
 /* Backgrounds */
 .bg-black{background:#000}
@@ -115,7 +114,7 @@ ul{list-style:none}
 .cmp-big{align-items:center}
 .cmp-loose .cmp-row{padding:36px 8px}
 .cmp-loose .cmp-big .headline{font-size:44px}
-.cmp-reco{position:absolute;z-index:2;pointer-events:none;top:-16px;bottom:-16px;left:569.7px;width:305.7px;border:1.5px solid var(--orange);border-radius:16px}
+.cmp-reco{position:absolute;z-index:2;pointer-events:none;top:-16px;bottom:-16px;left:569.7px;width:305.7px;border:1.5px solid var(--hl);border-radius:16px}
 
 .kpi{gap:36px}
 .kpi>.headline-13{flex:1}
@@ -162,25 +161,33 @@ a{color:inherit;text-decoration:none}
 .site-btn svg{width:18px;height:18px}
 .avis-grid{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(2,1fr);gap:24px}
 .avis{background:rgba(255,255,255,.94);border-radius:24px;padding:40px;display:flex;flex-direction:column;gap:24px}
-.avis .stars{color:var(--orange);font-size:22px;letter-spacing:4px}
+.avis .stars{color:var(--hl);font-size:22px;letter-spacing:4px}
 .avis .who{display:flex;gap:18px;align-items:center;border-top:1px solid var(--stroke);padding-top:24px}
 .avis .who img{width:64px;height:64px;border-radius:50%;object-fit:cover;object-position:center 20%}
 .offer{background:#fff;border-radius:24px;padding:48px;display:flex;flex-direction:column;gap:20px}
-.offer .letter{font-family:var(--serif);font-size:64px;line-height:1;color:var(--orange)}
+.offer .letter{font-family:var(--serif);font-size:64px;line-height:1;color:var(--hl)}
 .offer .checks li{margin:0}
 /* Composants ajoutés (book v2) */
 .site-btn{position:absolute;right:0;top:0;display:inline-flex;gap:10px;align-items:center;border:1px solid var(--ink);color:var(--ink);border-radius:999px;padding:12px 22px;font-family:var(--sans);font-size:20px;letter-spacing:-.4px;text-decoration:none}
 .site-btn svg{width:18px;height:18px}
 .avis-grid{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(2,1fr);gap:24px}
 .avis{background:rgba(255,255,255,.94);border-radius:24px;padding:40px;display:flex;flex-direction:column;gap:24px}
-.avis .stars{color:var(--orange);font-size:22px;letter-spacing:4px}
+.avis .stars{color:var(--hl);font-size:22px;letter-spacing:4px}
 .avis .who{display:flex;gap:18px;align-items:center;border-top:1px solid var(--stroke);padding-top:24px}
 .avis .who img{width:64px;height:64px;border-radius:50%;object-fit:cover;object-position:center 20%}
 .offer{background:#fff;border-radius:24px;padding:48px;display:flex;flex-direction:column;gap:20px}
-.offer .letter{font-family:var(--serif);font-size:64px;line-height:1;color:var(--orange)}
+.offer .letter{font-family:var(--serif);font-size:64px;line-height:1;color:var(--hl)}
 .screen{position:absolute;width:880px;height:677px}
 .screen>.shot{position:absolute;left:23px;top:23px;width:835px;height:470px;object-fit:cover;object-position:top;background:#fff}
 .screen>.frame{position:absolute;inset:0;width:100%;height:100%}
+
+/* === Garde-fou DA Orem ===
+   Accent : bleu (--accent) sur fond clair, orange (--orange) sur fond sombre. Le token --hl porte l'accent du contexte. */
+.slide,.on-light,.card,.offer,.avis,.opt-card,.logo-cell,.box:not(.ink):not(.glass),
+[style*="background:#fff"],[style*="background: #fff"],[style*="background:var(--paper)"],[style*="background:var(--paper-2)"],[style*="background:rgba(255,255,255,.9"]{--hl:var(--accent)}
+.on-dark,.bg-black,.dots-dark,.bg-grad,.split-left,.case-quote,.box.ink,.box.glass,.node.hl,
+.slide:has(> img[src*="cover-bg"]),[style*="background:var(--ink)"],[style*="background:#000"],[style*="background:var(--accent)"],[style*="background:var(--graphite)"]{--hl:var(--orange)}
+.c-orange,.eyebrow{color:var(--hl)!important}
 </style>
 </head>
 <body>
@@ -316,7 +323,7 @@ a{color:inherit;text-decoration:none}
       <div style="flex:1"></div>
       <div style="border-top:1px solid var(--stroke);padding-top:24px"><p class="sub c-orange" style="margin-bottom:8px">Le résultat</p><p class="headline">[Résultat.]</p></div>
     </div>
-    <div class="offer" style="outline:1.5px solid var(--orange)">
+    <div class="offer" style="outline:1.5px solid var(--hl)">
       <div style="display:flex;justify-content:space-between;align-items:flex-start"><p class="letter">M</p><p class="label c-accent">Mesurer</p></div>
       <p class="headline-13">Évolution</p>
       <p class="body-l c-muted" style="margin-bottom:16px">[Promesse.]</p>
@@ -440,7 +447,7 @@ a{color:inherit;text-decoration:none}
 
 <!-- P16 · Prochaine étape / contact -->
 <section class="slide bg-grad" style="display:flex;align-items:center;justify-content:center;padding:64px">
-  <div style="width:1692px;height:952px;border-radius:24px;background:var(--cream);padding:64px;display:flex;gap:64px">
+  <div style="width:1692px;height:952px;border-radius:24px;background:#fff;padding:64px;display:flex;gap:64px">
     <div style="flex:1;display:flex;flex-direction:column">
       <p class="eyebrow" style="margin-bottom:16px">Prochaine étape</p>
       <h2 class="title">[Parlons de votre projet]</h2>

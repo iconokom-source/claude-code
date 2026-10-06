@@ -68,13 +68,27 @@ Copie le gabarit et tous les assets (polices, fonds, logos, photos) dans le doss
 | Token | Valeur | Usage |
 |---|---|---|
 | `--ink` | #000012 | texte principal, cartes sombres, CTA |
-| `--orange` | #ff6200 | accent unique : numéros, surtitres, « Le résultat », option recommandée |
-| `--accent` | #092482 | libellés de cartes `.label` |
+| `--orange` | #ff6200 | accent **sur fond sombre uniquement** : numéros, surtitres, « Le résultat », option recommandée |
+| `--accent` | #092482 | accent **sur fond clair uniquement** (même rôles que l'orange) |
 | `--paper-2` | #f8f8f7 | fond de carte claire |
-| `--cream` | #f9f5f1 | cadre CTA, slides douces |
 | `--muted` / `--light-muted` | gris 60 % | texte secondaire sur clair / sombre |
 | `--stroke` | #cdcdcd | filets |
 | `--grad` | dégradé nuit vers ciel | `.bg-grad`, `.split-left` |
+
+**Ces tokens sont la palette complète.** Aucune autre couleur n'est autorisée : pas de crème, pas de bleu clair inventé, pas de teinte intermédiaire. Seules exceptions : les teintes internes du dégradé `--grad` (jamais isolées en aplat) et les transparences de blanc ou d'encre (`rgba(255,255,255,.06)`, `rgba(0,0,18,.08)`) pour les cartes « verre » et les filets.
+
+**Règle des deux accents (comme sur agence-orem.fr)**
+- Fond clair (blanc, `--paper-2`, carte blanche) : accent **bleu** `--accent`. Jamais d'orange.
+- Fond sombre (noir, encre, `.dots-dark`, `.bg-grad` côté sombre, carte encre, couverture) : accent **orange** `--orange`.
+- Le gabarit l'applique tout seul : `.c-orange`, `.eyebrow` et tous les composants utilisent le token `--hl`, qui vaut bleu dans un contexte clair et orange dans un contexte sombre (bloc « Garde-fou DA Orem » en fin de CSS). **N'écrivez jamais `var(--orange)` ni `#ff6200` en dur dans une slide : utilisez `var(--hl)` ou `.c-orange`.**
+- Le contexte est détecté sur les classes connues (`.bg-black`, `.dots-dark`, `.bg-grad`, `.split-left`, `.box.ink`, `.case-quote`, couverture) et sur les styles inline `background:var(--ink)`, `#000`, `#fff`, `var(--paper-2)`. Pour un nouveau conteneur dont le fond vient d'une classe CSS, ajoutez `class="on-dark"` ou `class="on-light"`.
+- Un contour d'accent posé sur fond clair (ex. carte recommandée) utilise `var(--accent)`, même si la carte elle-même est sombre.
+- Pas d'orange en aplat de fond (une petite pastille de tag reste tolérée sur fond sombre).
+
+**Logo**
+- Fond sombre : `assets/logo-white.png` (blanc).
+- Fond clair : `assets/logo-black.png`, ou `assets/logo-gradient.png` en grand format sur une carte claire.
+- Couverture : le logo est posé dans la zone claire du visuel `cover-bg`, donc `logo-black.png`. Si la zone est sombre, passez en blanc.
 
 Fonds : `.bg-grad`, `.bg-black`, `.dots-dark`, `.dots-light`, `assets/cover-bg.jpg` (couverture), `assets/blob-chapter.jpg` (intercalaire), `assets/opt-bg-1/2/3.jpg` (cadres d'options).
 
@@ -92,7 +106,7 @@ Fonds : `.bg-grad`, `.bg-black`, `.dots-dark`, `.dots-light`, `assets/cover-bg.j
 | `.body` / `.body-l` | texte courant (regular / light 350) | 24px |
 | `.sub` | sous-titres, légendes | 20px |
 | `.label` | libellés de carte | 17px |
-| `.eyebrow` | surtitre orange | 24px |
+| `.eyebrow` | surtitre d'accent (bleu ou orange selon le fond) | 24px |
 
 Couleurs de texte : `.c-light .c-lm .c-muted .c-orange .c-accent .c-ink`. **Ne pas descendre sous 17px.** Ne pas inventer de nouvelles tailles, sauf `.case-title` (52px) et les chiffres à 80px (`.display` réduit).
 
@@ -119,14 +133,14 @@ Couleurs de texte : `.c-light .c-lm .c-muted .c-orange .c-accent .c-ink`. **Ne p
 
 | ID | Modèle | Usage |
 |---|---|---|
-| P01 | Couverture (fond cover-bg, logo, surtitre orange, titre display) | toujours en premier |
+| P01 | Couverture (fond cover-bg, logo, surtitre d'accent, titre display) | toujours en premier |
 | P02 | Intercalaire de chapitre (blob, titre centré) | changer de partie |
 | P03 | Titre à gauche, 3 points numérotés à droite | constat, problème, enjeux |
 | P04 | 3 colonnes sur fond sombre pointillé | différenciateurs, piliers |
 | P05 | Split dégradé et deux cartes (liste cochée et chiffres) | une étape de méthode, un service |
 | P06 | Chronologie en 4 étapes | méthode, planning, cycle mensuel |
 | P07 | Chiffres clés et citation avec photo | preuve, repères |
-| P08 | 3 cartes d'offres ou d'options, la recommandée cerclée d'orange | offres, packs |
+| P08 | 3 cartes d'offres ou d'options, la recommandée cerclée d'accent | offres, packs |
 | P09 | Tableau comparatif à trois options | décision, chiffrage |
 | P10 | Grille de 6 avis clients avec photos | réassurance (très important) |
 | P11 | Citation plein écran sur dégradé | respiration, témoignage fort |
@@ -167,6 +181,7 @@ Le script utilise Chromium (`/opt/pw-browsers/chromium`). **Ne jamais lancer `pl
 - aucun texte coupé, superposé ou collé à un bord (marge de 64px) ;
 - un seul message par slide, le titre lisible en 3 secondes ;
 - des cartes d'une même rangée alignées et de hauteur égale, sans grand vide disgracieux (sinon ajouter un bloc « Le résultat » ou agrandir la typo d'un cran) ;
+- bleu sur fond clair, orange sur fond sombre, nulle part ailleurs ; aucune couleur hors palette ; logo blanc sur fond sombre ;
 - l'orange réservé aux accents, jamais en aplat de fond ;
 - pas d'ombre portée floue (`box-shadow` à grand flou) : dans le PDF, Aperçu l'affiche comme un rectangle gris autour de l'élément. Préférer un filet `0 0 0 1px rgba(0,0,18,.08)` ;
 - des liens cliquables (`<a href>`) sur les CTA et les « Voir le site », qui restent actifs dans le PDF ;
