@@ -165,9 +165,16 @@ a{color:inherit;text-decoration:none}
 .avis .stars{color:var(--orange);font-size:22px;letter-spacing:4px}
 .avis .who{display:flex;gap:18px;align-items:center;border-top:1px solid var(--stroke);padding-top:24px}
 .avis .who img{width:64px;height:64px;border-radius:50%;object-fit:cover;object-position:center 20%}
-.offer{background:#fff;border-radius:24px;padding:48px;display:flex;flex-direction:column;gap:20px}
+.offer{background:#fff;border-radius:24px;padding:36px;display:flex;flex-direction:column;gap:20px}
 .offer .letter{font-family:var(--serif);font-size:64px;line-height:1;color:var(--orange)}
 .offer .checks li{margin:0}
+.offers4 .offer{min-height:0;height:784px;gap:14px;padding:32px}
+.offers4 .letter{font-size:52px}
+.offers4 .body-l,.offers4 .checks.body{font-size:20px;letter-spacing:-.4px}
+.offers4 .checks li+li{margin-top:8px}
+.offers4 .checks svg{width:22px;height:22px}
+.offers4 .headline{font-size:28px}
+.contacts3 .headline{font-size:30px;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -215,7 +222,7 @@ a{color:inherit;text-decoration:none}
   </div>
   <div class="abs team" style="left:64px;width:555px"><img src="assets/team/louis.jpg" alt="Louis Montagne"><div><p class="headline c-light">Louis Montagne</p><p class="body c-lm">Cofondateur · Stratégie web, Webflow, SEO et GEO, automatisation et IA.</p></div></div>
   <div class="abs team" style="left:683px;width:555px"><img src="assets/team/theophile.jpg" alt="Théophile Lamouret"><div><p class="headline c-light">Théophile Lamouret</p><p class="body c-lm">Cofondateur · Positionnement, copywriting et stratégie de contenu.</p></div></div>
-  <div class="abs team" style="left:1301px;width:555px"><img src="assets/team/clement.jpg" alt="Clément Saint-Hilaire"><div><p class="headline c-light">Clément Saint-Hilaire</p><p class="body c-lm">Directeur artistique · Direction artistique, interface et expérience utilisateur.</p></div></div>
+  <div class="abs team" style="left:1301px;width:555px"><img src="assets/team/clement.jpg" alt="Clément Saint-Hilaire"><div><p class="headline c-light">Clément Saint-Hilaire</p><p class="body c-lm">Directeur artistique · Identités visuelles, interfaces et expérience utilisateur.</p></div></div>
 </section>
 
 <!-- 04 · Repères -->
@@ -268,7 +275,13 @@ a{color:inherit;text-decoration:none}
     <div class="col-rule" style="flex:1">
       <p class="headline-13 c-orange" style="flex:1">03</p>
       <p class="headline c-light">La méthode O.R.E.M.</p>
-      <p class="body-l c-lm">Orienter, Représenter, Exécuter, Mesurer. Quatre étapes qui relient chaque décision de design à un objectif business.</p>
+      <p class="body-l c-lm">Quatre étapes qui relient chaque décision de design à un objectif business :</p>
+      <ul class="body-l c-lm" style="display:flex;flex-direction:column;gap:14px;margin-top:-40px">
+        <li><span class="c-orange">O · Orienter</span> : clarifier votre positionnement, votre offre et votre message avant de produire quoi que ce soit.</li>
+        <li><span class="c-orange">R · Représenter</span> : traduire cette clarté en direction artistique.</li>
+        <li><span class="c-orange">E · Exécuter</span> : concevoir un site qui convertit et se référence.</li>
+        <li><span class="c-orange">M · Mesurer</span> : lire les résultats et faire évoluer site et marque chaque mois.</li>
+      </ul>
     </div>
   </div>
 </section>
@@ -400,10 +413,18 @@ a{color:inherit;text-decoration:none}
 <!-- 11 · Nos offres -->
 <section class="slide dots-light">
   <div class="abs" style="left:64px;top:64px;width:1792px;display:flex;justify-content:space-between;align-items:flex-end">
-    <h2 class="title">Trois offres, un même fil conducteur</h2>
-    <p class="sub c-muted" style="width:600px;text-align:right">Chaque projet démarre par une phase de conseil, incluse : nous clarifions votre message avant de concevoir quoi que ce soit.</p>
+    <h2 class="title">Quatre offres, un même fil conducteur</h2>
+    <p class="sub c-muted" style="width:600px;text-align:right">Le Conseil ouvre chaque projet. Il est inclus dans la Direction artistique et le Site web, ou proposé seul.</p>
   </div>
-  <div class="abs" style="left:64px;top:232px;width:1792px;height:784px;display:grid;grid-template-columns:repeat(3,1fr);gap:24px">
+  <div class="abs offers4" style="left:64px;top:232px;width:1792px;height:784px;display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:1fr;gap:24px">
+    <div class="offer">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start"><p class="letter">O</p><p class="label c-accent">Orienter</p></div>
+      <p class="headline-13">Conseil</p>
+      <p class="body-l c-muted" style="margin-bottom:16px">Nous clarifions votre positionnement, votre offre et vos messages pour identifier les décisions qui auront le plus d’impact.</p>
+      <ul class="checks body"><li><svg><use href="#check"/></svg><span>diagnostic du positionnement, de l’offre et du discours</span></li><li><svg><use href="#check"/></svg><span>message central et différence</span></li><li><svg><use href="#check"/></svg><span>architecture d’offre</span></li><li><svg><use href="#check"/></svg><span>plan d’actions priorisé</span></li></ul>
+      <div style="flex:1"></div>
+      <div style="border-top:1px solid var(--stroke);padding-top:24px"><p class="sub c-orange" style="margin-bottom:8px">Le résultat</p><p class="headline">Une direction claire avant d’investir dans votre image ou votre site.</p></div>
+    </div>
     <div class="offer">
       <div style="display:flex;justify-content:space-between;align-items:flex-start"><p class="letter">R</p><p class="label c-accent">Représenter</p></div>
       <p class="headline-13">Direction artistique</p>
@@ -629,7 +650,7 @@ a{color:inherit;text-decoration:none}
 <!-- 25 · Logos clients -->
 <section class="slide">
   <div class="abs" style="left:64px;top:64px;width:1792px;display:flex;justify-content:space-between;align-items:flex-end">
-    <h2 class="title">Ils nous ont fait confiance</h2>
+    <h2 class="title">Ils nous font confiance</h2>
     <p class="sub c-muted">Plus de 40 clients accompagnés depuis 2023</p>
   </div>
   <div class="abs logo-grid" style="left:64px;top:232px;width:1792px;height:784px">
@@ -669,13 +690,14 @@ a{color:inherit;text-decoration:none}
       <p class="body-l c-muted" style="margin-top:24px;width:820px">Un premier appel de 30 minutes pour comprendre vos enjeux, et voir ensemble si Orem est la bonne agence pour vous accompagner.</p>
       <div style="margin-top:40px;display:flex"><a class="pill-cta" href="https://app.iclosed.io/e/Orem/rdv-30min" target="_blank" rel="noopener">Réserver un appel de 30 minutes <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M7 17L17 7M17 7H8M17 7v9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a></div>
       <div style="flex:1;display:flex;align-items:center;gap:32px"><img src="assets/qr-rdv.svg" alt="QR code de prise de rendez-vous" style="width:200px;height:200px"><p class="body-l c-muted" style="width:300px">Scannez pour réserver votre créneau directement dans notre agenda.</p></div>
-      <div style="display:flex;gap:64px;border-top:1px solid var(--stroke);padding-top:32px">
+      <div class="contacts3" style="display:flex;gap:40px;border-top:1px solid var(--stroke);padding-top:32px">
         <div><p class="headline">Louis Montagne</p><p class="body-l c-muted">Cofondateur</p><p class="body" style="margin-top:12px"><a href="mailto:louis@agence-orem.fr">louis@agence-orem.fr</a><br><a href="tel:+33750371572">07 50 37 15 72</a></p></div>
         <div><p class="headline">Théophile Lamouret</p><p class="body-l c-muted">Cofondateur</p><p class="body" style="margin-top:12px"><a href="mailto:theophile@agence-orem.fr">theophile@agence-orem.fr</a><br><a href="tel:+33771673947">07 71 67 39 47</a></p></div>
+        <div><p class="headline">Clément Saint-Hilaire</p><p class="body-l c-muted">Directeur artistique</p><p class="body" style="margin-top:12px"><a href="mailto:clement@agence-orem.fr">clement@agence-orem.fr</a><br><a href="tel:+33695625925">06 95 62 59 25</a></p></div>
       </div>
     </div>
-    <div style="width:440px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:40px">
-      <img src="assets/logo-gradient.png" alt="" style="width:410px;height:400px">
+    <div style="width:340px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:40px">
+      <img src="assets/logo-gradient.png" alt="" style="width:320px;height:312px">
       <p class="sub c-muted"><a href="https://www.agence-orem.fr/">agence-orem.fr</a> · Orem, marque d’ICONOKOM</p>
     </div>
   </div>
