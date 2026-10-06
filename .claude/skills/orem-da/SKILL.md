@@ -202,10 +202,18 @@ Les outils Google Drive « natifs » exigent le fichier en base64 dans la requê
 3. Composio (compte Google Drive de Louis déjà connecté) : `COMPOSIO_SEARCH_TOOLS` puis `COMPOSIO_MULTI_EXECUTE_TOOL` avec `GOOGLEDRIVE_UPLOAD_FROM_URL` : `source_url`, `name` (nom lisible avec extension), `mime_type: application/pdf`, `parent_folder_id`. Plusieurs fichiers en un seul appel.
 4. Donner à l'utilisateur le lien `webViewLink` de chaque fichier.
 
+**Règle de rangement (demandée par Louis)** : les PDF ne vont jamais à côté des Google Docs. Dans chaque dossier, ils vont dans un sous-dossier `PDF` (le créer s'il n'existe pas, avec `mcp__Google_Drive__create_file` et `contentMimeType: application/vnd.google-apps.folder`). Pour réorganiser, `GOOGLEDRIVE_MOVE_FILE` avec `add_parents` et `remove_parents`.
+
 Dossiers utiles (ESPACE ICONOKOM `1aOOGVtUg95vVtxoOpjEOnunnG0SgH7Vv`) :
 - OREM MAJ 2027 : `1SSwvrE3MtLHE2BXXmtHbht-n0jB05UyJ` (documents Orem du moment, book)
+- OREM MAJ 2027 › PDF : `13YceJoaDa0gcCBLqFOjpcvD5Oy5Z7bQZ` (book, ICP, Empathy Map, 30 pains)
 - OREM MAJ 2027 › OFFRES : `15PDRU0rzeXNJT4g4OtOThbAGu1YdvYJ-`
+- OREM MAJ 2027 › OFFRES › PDF : `1CxSVW6Ra2dN064CJHIZj4FdYMesTeaNy`
 - 02_CLIENTS : `13QNsgI0thP0cGKiqdcjnOS31PuqVqje1` (chercher le sous-dossier du client avec `GOOGLEDRIVE_FIND_FILE`)
 - PROSPECTION : `1HVh3UFnaUf9FLtgGUD_scEj3Q7Is9X5Q`
 
 Même logique pour joindre un PDF à un mail : passer par Composio Gmail plutôt que par l'outil Gmail natif.
+
+## Documents A4 (fiches, guides, documents internes)
+
+Pour un document texte (pas un deck), utiliser le format A4 : `scripts/a4_doc.py` contient la fonction `render(doc)` (couverture sombre logo blanc, essentiel en 30 secondes, sections numérotées, tableaux à filets, citations, encadrés, cartes, bloc « À retenir ») et des exemples complets (les quatre offres). Blocs disponibles : `sec`, `lead`, `p`, `h3`, `ul`, `quote`, `callout`, `table` (classes `c3`, `c4`, `cmp`, `pains`), `cards`, `prices`, `duo`, `final`. Les assets nécessaires : `assets/fonts`, `logo-white.png`, `blob-chapter.jpg`. Export : `NODE_PATH=$(npm root -g) node scripts/pdf_a4.js /abs/doc.html` (PDF A4 vectoriel, environ 500 Ko).
