@@ -62,7 +62,8 @@ qui avance d'un cran à chaque message. Chaque message :
 - reste **compréhensible seul** (le prospect n'a peut-être pas lu le précédent) : chaque email
   rappelle le constat en une demi-phrase dès sa première ligne ;
 - ne contient **aucune date relative figée** (« il y a dix jours ») : la variable part plus tard ;
-- ne répète pas mot pour mot ce qui a déjà été dit.
+- ne répète pas mot pour mot ce qui a déjà été dit, **y compris la phrase de rappel du
+  constat** : chaque email la formule autrement.
 
 Progression type :
 | Étape | Rôle dans le fil rouge |
@@ -83,22 +84,26 @@ Ils sont pour Louis, pas pour le prospect : ils ne suivent pas les règles de lo
 
 ### Règle de décision (identique dans les tâches 16 et 17, évaluée dans cet ordre)
 
+0. **Revérifier le constat** (le site du prospect) avant tout Email 3, appel ou breakup. S'il
+   n'est plus vrai → arrêter les envois automatiques, Louis écrit à la main.
 1. **Le prospect a répondu, quoi qu'il dise** → sortir le lead de la séquence, Louis répond à la
    main. Jamais d'Email 3 automatique après une réponse.
 2. **Signaux d'intérêt** → warm call. Seuil unique : au moins 3 ouvertures d'un même email, OU un
    clic, OU LinkedIn accepté sans réponse au message LinkedIn depuis 3 jours ouvrés.
 3. **Au moins une ouverture, sans signal** → Email 3. Loom pertinent = oui si l'observation se
-   montre mieux à l'écran (page, parcours, comparaison) ; non (RDV) si le sujet est plutôt
-   stratégique. La tâche donne la recommandation pour CE prospect et pourquoi.
+   montre mieux à l'écran (page, parcours, comparaison) ; non (RDV) si ce n'est plus montrable à
+   l'écran ou si le sujet est stratégique par nature. Critère observable, jamais « au feeling ». La tâche donne la recommandation pour CE prospect et pourquoi.
 4. **Aucune ouverture** → relance simple = Email breakup.
 
 ### Les textes
 
 - **Tâche « Évaluer »** : 4 à 10 lignes. Reprend la règle ci-dessus, appliquée à CE prospect.
 - **Tâche « Warm call si signaux »** : 4 à 8 lignes. Mêmes déclencheurs que la règle (étape 2),
-  quand appeler, phrase d'ouverture, renvoi au script, et **l'issue de l'appel** : RDV → sortir de
-  la séquence ; refus → clore ; messagerie → laisser le message, puis Email breakup quelques
-  jours plus tard.
+  revérification du constat, quand appeler, phrase d'ouverture, renvoi au script, et **chaque issue
+  de l'appel** : RDV → sortir de la séquence ; refus → clore ; rappel convenu → mettre le lead en
+  pause dans lemlist (pas de breakup avant le rappel) ; échange sans RDV ni refus → sortir de la
+  séquence, suite à la main ; messagerie → laisser le message, puis Email breakup quelques jours
+  plus tard.
 - **Script de warm call** : à dire, pas à lire. Ouverture qui dit **qui appelle : prénom, nom et
   Orem** (le prospect ne nous connaît pas), pourquoi j'appelle, lien avec les mails ; demande de
   permission ; le constat ; une question ouverte ; proposition de RDV 30 min ; 2 à 4 objections
