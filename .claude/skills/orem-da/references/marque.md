@@ -12,29 +12,22 @@ ou expliquer la marque. Pour le visuel, voir `tokens.md`.
 
 ## Qui est Orem
 
-Agence de design et de développement web qui conçoit des sites et identités pour des
-entreprises B2B (PME de service, SaaS, tech, marques premium, studios, indépendants).
-Équipe : direction de création, direction éditoriale, développement (Webflow).
+Studio de **clarté stratégique, d'image et d'exécution pilotée** pour PME B2B ambitieuses
+(Lille et Paris ; anciennement ICONOKOM, « Orem, marque d'ICONOKOM »). Orem vend la décision,
+la visibilité et le résultat, pas la fabrication de pages. Méthode **O.R.E.M. : Orienter,
+Représenter, Exécuter, Mesurer**. Offres : Conseil (Diagnostic de clarté), Image de marque,
+Site web (Webflow), SEO/GEO, Évolution (accompagnement mensuel). Équipe : Louis Montagne et
+Théophile Lamouret (cofondateurs), Clément Saint-Hilaire (direction de création).
+**Offre détaillée, références chiffrées, témoignages et bios : `contenus-orem.md`.**
 
-- **Promesse** : des sites conçus pour faire travailler les entreprises B2B. On commence
-  par le fond (positionnement, message, structure de l'offre) avant de concevoir quoi que
-  ce soit.
-- **Positionnement** : qualité et services haut de gamme pour un budget juste. « Le prix
-  reflète la valeur : pas d'esbroufe, du résultat. » L'excellente qualité des livrables ne
-  devrait pas être un luxe.
-- **Vision** : un design rigoureux, de haute qualité, accessible à tous, qui ne se limite pas
-  à l'apparence mais au fonctionnement ; la recherche au même niveau que la conception ; les
-  enjeux UX à chaque étape ; le biomimétisme en design d'interface.
-- **Mission** : concevoir des expériences digitales qui servent, pour les indépendants comme
-  les grands groupes. Allier utilité, élégance et performance : des identités et interfaces
-  claires, fluides et durables, où chaque détail est intentionnel et chaque choix guidé par
-  la fonction.
-- **Proposition de valeur** : identités et interfaces réfléchies, précises et efficaces, où la
-  fonction guide la forme. Une approche méthodique où la recherche prend autant de place que
-  la réalisation, pour améliorer réellement la clarté, la crédibilité et la performance d'une
-  marque, à un prix honnête.
-- **Citation signature** : « On préfère refuser un projet que livrer quelque chose qui ne
-  correspond pas. »
+- **Promesse** : faire du site et de l'image de vrais outils commerciaux. On commence par le
+  fond (positionnement, message, structure de l'offre) avant de concevoir quoi que ce soit.
+- **Positionnement** : qualité haut de gamme pour un budget juste. « Le prix reflète la valeur :
+  pas d'esbroufe, du résultat. »
+- **Mission** : concevoir des expériences digitales qui servent, où chaque détail est
+  intentionnel et chaque choix guidé par la fonction.
+- **Citations signature** : « On préfère refuser un projet que livrer quelque chose qui ne
+  correspond pas. » · « Une marque claire est une marque qu'on ne peut plus confondre. »
 
 ### Les six valeurs
 

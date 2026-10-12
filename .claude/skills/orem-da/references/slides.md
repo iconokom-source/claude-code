@@ -1,82 +1,109 @@
-# Orem : présentations (decks, propositions commerciales, keynotes)
+# Orem : decks (propositions commerciales, recommandations, ateliers, présentations)
 
-Format : **16:9, cadre 1920×1080**. Chaque mise en page ci-dessous a une image de référence
-dans `assets/reference/` (captures du Figma) : l'ouvrir avant de composer une slide inédite.
+Les decks Orem sont des **pages HTML 1920×1080 rendues en PDF par Chromium** (PDF de
+1440×810 pt, une slide par page). C'est la méthode qui produit les decks validés par l'équipe
+(Terrebrune, FIDEwine, Huchet-Demorge, Au P'tit Louis, Oh My Run) : elle seule rend fidèlement
+les dégradés, la trame de points, les formes et la typographie.
 
-## Outils
-- **HTML / PDF** : partir de `assets/templates/slides.html` (13 mises en page prêtes, échelle
-  automatique, export PDF 1 slide = 1 page via l'impression Chromium).
-- **PowerPoint / Keynote / Google Slides** : `scripts/orem_pptx.py` génère un .pptx à partir
-  d'un spec JSON (`python3 scripts/orem_pptx.py --demo demo.pptx` pour voir toutes les mises en
-  page). Mises en page : `cover, chapter, intro, rows, bullets, cards, steps, kpis, quote, table,
-  timeline, contact`. Les fonds complexes (dégradés, formes) y sont des images de
-  `assets/backgrounds/`, le texte reste éditable.
-- Vérifier le rendu : `soffice --headless --convert-to pdf deck.pptx` puis `pdftoppm -r 50 -png`.
+## Méthode (par défaut, quel que soit le format demandé « PDF », « deck », « présentation », « document »)
+1. Copier `assets/orem-deck.css`, `assets/backgrounds/`, `assets/logo/png/` à côté du livrable
+   (ou garder les chemins `../` si le HTML est créé dans `assets/templates/`).
+2. Partir de `assets/templates/deck.html` : 18 mises en page prêtes. Dupliquer les `<section
+   class="slide">` utiles, réécrire le contenu, supprimer le reste. **Ne pas réinventer les
+   styles** : n'utiliser que les classes du kit, et des `style=""` seulement pour placer.
+3. Rendre : `node scripts/render_pdf.cjs deck.html deck.pdf --png apercus/`.
+4. **Ouvrir les PNG et vérifier chaque slide** : pas de texte qui déborde ou se chevauche, pas
+   de chiffre isolé sur une ligne (forcer `<br>`), polices Trykker/Lexend bien chargées (le
+   script prévient sinon), équilibre des colonnes. Corriger puis re-rendre.
+5. QR codes : `python3 scripts/qr.py "https://…" qr.svg` puis `<img src="qr.svg">`.
 
-## Principes de composition
-1. **Une idée par slide.** Beaucoup de vide, peu de texte. Le vide fait partie de la marque.
-2. **Alterner les ambiances** pour rythmer : noir (chapitres, contenus denses), dégradé bleu
-   (chapitres, cartes, citations), blanc (contenus, chiffres, tableaux). Éviter trois slides
-   identiques d'affilée.
-3. **Surtitre orange + titre Trykker** est la signature de toute slide d'ouverture de section.
-4. Texte à gauche, aligné sur la marge de 64 px. Le centrage est réservé aux couvertures,
-   chapitres et citations courtes.
-5. Pas de puces décoratives, pas d'icônes clipart, pas d'ombres portées dures, pas de
-   pictogrammes colorés. Les visuels sont des captures de projets (rayon 24) ou des formes
-   organiques.
-6. Le symbole Orem (bulles) se place en haut à droite (x = 1749, y = 64, ~107 px) sur la
-   couverture ; pas besoin de logo sur chaque slide.
+PowerPoint (`scripts/orem_pptx.py`) seulement si un **.pptx éditable** est explicitement
+demandé : rendu correct mais moins riche (pas de cartes complexes ni de trames vectorielles).
 
-## Catalogue des mises en page
+## La grammaire visuelle (à respecter sur chaque slide)
+- **Cadre** : 1920×1080, marges 64 px ; panneau latéral 653 px avec marge interne 24 px.
+- **Titre de slide** : Trykker 64 px, en haut à gauche (x 64, y ≈ 62), 1–2 lignes, phrase
+  complète qui dit l'idée (« Une projection prudente, fondée sur vos chiffres réels »).
+- **Étiquette en haut à droite** (`.tag`) : Lexend 20 px, contexte de la slide (« Projection de
+  performance », « Planning indicatif, calé ensemble au lancement »).
+- **Surtitre** (`.eyebrow`) : **orange `#FF6200` sur fond sombre, dégradé ou couverture ; bleu
+  `#092482` sur fond clair et dans les cartes blanches/papier.** Formats : « Le contexte »,
+  « 03 · Notre proposition », « Levier 1 · Acquisition », « Cas client · Secteur ».
+- **Hiérarchie** : Trykker 94 (couverture) / 64 (titres, grands chiffres) / 48 (énoncés) /
+  37 (titres de blocs, phrases fortes, numéros) ; Lexend 24 (texte) / 20 (légendes) / 17 (labels).
+- **Texte secondaire** : `#434242` à 60 % sur clair, `#F2F2F2` à 60 % sur sombre (`.muted`).
+- **Conclusion de bloc** : filet fin, puis label bleu « Le résultat » / « L'effet combiné » /
+  « En une phrase » + phrase Trykker 37. C'est une signature : la mettre dès qu'un bloc argumente.
+- **Numérotation** : « 01 02 03 » en Trykker bleu (clair) ou orange (sombre) ; « A B C D » pour un
+  diagnostic.
+- **Listes** : `.checks` (rond plein + coche) pour les bénéfices et livrables ; `.dots-list`
+  (puce fine, texte gris) pour le détail.
+- **Blocs** : carte blanche rayon 24 sur dégradé (`.card`), papier `#F8F8F7` à angle droit sur
+  fond à points (`.paper`), bloc marine `#050C1C` rayon 24 pour la mise en avant sur fond clair
+  (`.navy`), colonnes à filet vertical (`.ruled`), chiffres à filet (`.kpi`).
+- **Mot clé coloré** dans une phrase Trykker : bleu `.hl` sur clair, orange `.hl-or` sur sombre
+  (« Chacun doit avoir une bonne raison de dire <span>oui</span>. »). Une fois par slide au plus.
+- **Fonds** : alterner noir à points, blanc (à points ou uni), dégradé bleu, split dégradé/blanc,
+  forme organique. Couverture et dernière slide ont toujours un fond « image ».
 
-| # | Mise en page | Fond | Composition | Référence |
-|---|---|---|---|---|
-| 1 | **Couverture** | Dégradé flou « hero » + grain | Symbole noir en haut à droite. Titre Trykker 94 px `#F2F2F2` en bas à gauche (x 64, bas à 53 px), 2 lignes max | `02-couverture-hero-degrade.jpg` |
-| 1b | Couverture forme | Noir + grande forme organique | Surtitre orange + titre Trykker 94 centrés | `01-couverture-blob.jpg` |
-| 2 | **Chapitre sombre** | Noir + forme organique | Surtitre orange 24 px + titre Trykker 94 centré, 2 lignes | `03-chapitre-blob.jpg` |
-| 3 | Chapitre dégradé | Dégradé bleu vertical | Idem, texte `#F2F2F2` dans le tiers haut | `04-chapitre-degrade.jpg` |
-| 4 | Chapitre clair | Blanc | Surtitre + titre à gauche (x 64), symbole en dégradé bleu à droite | `05-chapitre-clair-symbole.jpg` |
-| 5 | **Intro texte + visuels** | Blanc ou noir | Colonne gauche 924 px : surtitre, titre Trykker 72, paragraphe Lexend 24 gris 60 %, phrase forte en SemiBold. À droite : captures de projets (rayon 24) ou panneau dégradé | `06-…sombre.jpg`, `07-…clair.jpg` |
-| 6 | Schéma cible | Blanc ou noir | Titre Trykker à gauche ; à droite cercles concentriques en pointillés (trait 1,5, tirets 20/20) avec libellés Lexend 24 | `08-schema-cercles-pointilles.jpg` |
-| 7 | **Texte label / valeur** | Noir + trame de points | Titre Trykker 94 (lh 110 %), chapeau Trykker 37 à 60 %. Lignes : label Trykker 37 à 60 % (x 64) / valeur Trykker 37 (x 684). Tout en Trykker | `21-texte-label-valeur-sombre.jpg` |
-| 8 | Texte listes | Noir + trame de points | Titre + 2 colonnes : label gris puis liste à puces « • » Trykker 37 | `22-texte-listes-sombre.jpg` |
-| 9 | **Cartes options** | Dégradé bleu | 3 cartes blanches rayon 24, ombre douce : « Opt 1 » orange 20 px, titre Trykker 37, puces Lexend 24, note grise en pied | `11-…verre-degrade.jpg`, `12-cartes-blanches.jpg` |
-| 9b | Options colonnes | Noir | Titre Lexend 64 en bas à gauche, 3 colonnes séparées par filets verticaux : « Option 1 » Trykker 37 orange en haut, titre + puces en bas | `13-options-colonnes-sombre.jpg` |
-| 10 | **Étapes** | Panneau dégradé 653 px + blanc | Titre Lexend 64 `#F2F2F2` dans le panneau ; grille 2×2 : « Étape 01 » orange 17 px, titre Trykker 37, texte Lexend 24 | `09-etapes-split-degrade.jpg` |
-| 11 | Problème / constat | Noir + forme, ou blanc | Surtitre « Le problème » + deux affirmations Lexend 64 avec ✓ et ✕ | `10-probleme-check-croix.jpg` |
-| 12 | **Chiffres clés** | Blanc | Légende 20 px en haut à gauche ; à droite (x 928) 3 lignes : filet vertical 1,5 px + chiffre Trykker 94 + libellé Trykker 37. Témoignage Lexend 37 en bas à gauche + auteur | `18-chiffres-cles.jpg` |
-| 13 | **Citation** | Dégradé bleu ou forme organique | Citation Trykker 72 blanche entre guillemets “ ”, signature « Orem » Trykker 37 alignée à droite | `14-…blob.jpg`, `15-…degrade.jpg` |
-| 14 | **Tableau** | Blanc | Titre Trykker 64 à gauche (x 64) ; tableau à x 684 : en-têtes Lexend Light 20 gris, lignes alternées `#F8F8F7`, aucun quadrillage ; note grise en bas à gauche | `23-tableau.jpg` |
-| 15 | Versus / comparaison | Panneau dégradé + blanc à trame de points | Titre Trykker 64 dans le panneau ; deux cartes `#F8F8F7` à angle droit avec listes ✓ / ✕ | `24-versus.jpg` |
-| 16 | **Chronologie** | Blanc | Titre Trykker 64 ; ligne horizontale 1,5 px `#000012` à mi-hauteur, points de 20 px, titres Trykker 37, textes Lexend 20 gris | `19-chronologie.jpg` |
-| 17 | Process + équipe | Moitié blanche / moitié noire à points | Bulles d'étapes `#F8F8F7` rayon 24 en quinconce (« étape 1 » bleu `#092482`) ; photos d'équipe reliées par des courbes fines | `20-process-equipe.jpg` |
-| 18 | Étude de cas | Panneau dégradé + grille | Panneau gauche : nom du projet Trykker 64, contexte en bas. Grille 2×2 de cartes `#F8F8F7` : Enjeu, Notre intervention, Résultats, Ce qui fait écho | `16-etude-de-cas-grille.jpg`, `17-…texte-sombre.jpg` |
-| 19 | Équipe | Noir + trame de points | Titre Trykker 64 ; 3 photos rayon 24 ; nom Trykker 24 + rôle Lexend 18 à 60 % | `25-equipe.jpg` |
-| 20 | Références | Noir | Mosaïque de captures de sites en cartes rayon 24 dispersées, titre Lexend 64 centré | `28-mosaique-references.jpg` |
-| 21 | Graphique | Blanc | Titre Trykker 64 ; barres en pilules arrondies (dégradé bleu nuit → noir, grain) | `27-graphique-barres.jpg` |
-| 22 | **Contact** | Halo graphite + formes bleues | Carte verre centrale 474×598 : surtitre orange, nom Trykker 37, email/téléphone à 60 %, bouton pilule blanc « Prochaine étape ↗ » | `26-contact-carte-verre.jpg` |
+## Catalogue (`assets/templates/deck.html`, références `assets/reference/deck/NN-*.jpg`)
+| # | Mise en page | Usage |
+|---|---|---|
+| 01 | Couverture : dégradé flou, « Préparé par Orem pour X / date » en haut à gauche, symbole noir en haut à droite, surtitre orange, titre 94, sous-titre 24 | Toujours en premier |
+| 02 | Contexte : titre 64 + phrase en bas à gauche ; 3 constats numérotés à filet à droite | Ouvrir sur ce qui existe |
+| 03 | Diagnostic : noir à points, 4 colonnes à filet, repères A–D orange, textes ancrés en bas à hauteurs variables | Constat, analyse |
+| 04 | Chiffres : titre à gauche, 4 chiffres Trykker à filet avec libellé à droite, source en gris | KPI de départ |
+| 05 | Split leviers : panneau dégradé (titre + conclusion en bas) + 2 cartes papier sur points avec coches et « Le résultat » | Deux axes d'action |
+| 06 | Affirmation sombre : 2 enjeux numérotés + grande phrase finale avec mots orange | Recommandation |
+| 07 | Périmètre : grille 4×2 de cartes papier + un bloc marine « 2 mois offerts » | Ce que comprend l'offre |
+| 08 | Méthode : split dégradé + lignes 01–05 (verbe Trykker + complément gris) | Process, fonctionnement |
+| 09 | Projection : dégradé, 3 cartes blanches (aujourd'hui / après / potentiel), carte centrale bordée de bleu | Chiffrage d'impact |
+| 10 | Phases : 5 colonnes à filet (numéro, titre, puces grises) + « Le résultat » | Planning |
+| 11 | Cas client : texte + 3 colonnes Avant / Ce que nous avons fait / Le résultat + chiffres ; visuels + encart marine « Le parallèle avec votre projet » | Preuve, référence |
+| 12 | Investissement : prix Trykker 94 + TTC + modalités ; bloc marine du potentiel | Prix d'un projet |
+| 13 | Offre mensuelle : colonnes à filet de ce qui est inclus ; carte prix blanche sur forme sombre | Abonnement, suivi |
+| 14 | Témoignages : dégradé, 6 cartes blanches (étoiles, citation, nom) | Avis clients |
+| 15 | Engagements : « ce que nous ne promettons pas » (gris) / « ce sur quoi nous nous engageons » (bloc marine à coches) | Réassurance honnête |
+| 16 | Question finale : forme organique, phrase Trykker 48 centrée | Avant la conclusion |
+| 17 | Énoncé sur forme : symbole blanc en haut à gauche, phrase 64, texte gris | Phrase de synthèse |
+| 18 | Prochaine étape : carte blanche sur dégradé, CTA pilule, QR, deux contacts, symbole dégradé, « agence-orem.fr · Orem, marque d'ICONOKOM » | Toujours en dernier |
 
-Vue d'ensemble du brand book : `00-brandbook-vue-ensemble.jpg`.
+D'autres compositions vues dans les decks validés, à construire avec les mêmes classes :
+deux cibles côte à côte (B2C / B2B) en cartes papier et marine ; questions numérotées 01–10 en
+deux colonnes (atelier) ; « avant → après » en deux cartes reliées par une flèche ; architecture
+de site en deux listes de pages sur fond noir (nom de page + requête SEO en gris) ; tableau de
+KPI « Comprendre / Convertir / Acquérir / Cibler / Piloter » ; maquette du site dans un écran
+(capture rayon 24) avec légende.
 
-## Trame type d'une proposition commerciale Orem
-1. Couverture (« Recommandation stratégique & opérationnelle pour le futur site [Client] »)
-2. Ce que nous avons compris du projet (label / valeur)
-3. Le rôle que doit jouer le futur site (listes)
-4. Challenge du plan de site & constat UX (label / valeur)
-5. Notre lecture / approche éditoriale
-6. Méthode : étapes ou chronologie, puis équipe projet
-7. Études de cas (contexte, enjeu, intervention, résultats, ce qui fait écho)
-8. Chiffres clés et témoignage
-9. Multilingue, accessibilité, performance, conformité
-10. Visibilité et pilotage du projet ; extensions possibles
-11. Investissement (ce que couvre le montant, options, coûts récurrents)
-12. Après la mise en ligne : faire vivre le site
-13. Contact / prochaine étape
+## Trame d'une proposition commerciale Orem (12 à 22 slides)
+1. **Couverture** : « Faire du site X un vrai canal de vente », sous-titre de la promesse.
+2. **Contexte** : ce qui existe déjà et fonctionne (on part du réel, jamais de zéro).
+3. **Constat / diagnostic** : 3 à 4 points, chiffrés si possible.
+4. **Chiffres de départ** (sources citées, valeurs « ~ » quand estimées).
+5. **Notre lecture** : les leviers, avec « Le résultat » pour chacun.
+6. **Recommandation** : l'enjeu en une phrase forte.
+7. **Ce que comprend le projet** (périmètre) puis **architecture cible** si site.
+8. **Objectifs à 3, 6, 12 mois** et **projection prudente** (jamais de promesse chiffrée garantie).
+9. **Références / cas clients** avec le parallèle explicite avec le prospect.
+10. **Comment nous limitons le risque**, **phases** et validations.
+11. **Investissement** (HT, TTC, modalités) et ce qu'il couvre.
+12. **Témoignages**, **engagements honnêtes**, **question finale**.
+13. **Prochaine étape** : un appel de 30 minutes, QR, contacts.
 
-## Pièges fréquents
-- Mettre du texte sombre sur la moitié haute du dégradé (illisible) ou du `#FFFFFF` pur pour un
-  long paragraphe sur noir (utiliser `#F2F2F2`).
-- Employer l'orange pour un titre ou un fond : il reste un accent de petite taille.
-- Multiplier les tailles : s'en tenir à l'échelle 94 / 64 / 37 / 24 / 20 / 17.
-- Oublier l'interlettrage négatif sur les grands titres Trykker (ils paraissent alors lâches).
-- Utiliser ↗ ou ᵉ dans PowerPoint : Lexend Deca et Trykker n'ont pas ces glyphes.
+## Écriture des slides
+- Titres = l'idée complète, pas un mot-clé (« Le site freine X sur quatre niveaux », pas « Constat »).
+- Une affirmation par bloc, puis la preuve, puis la conséquence (« Autrement dit : … »).
+- Chiffres prudents et sourcés ; jamais de chiffre inventé : laisser `[à compléter]` si inconnu.
+- Ton direct, honnête, sans superlatif (« Ce ne serait pas honnête. »).
+- Contacts par défaut : Louis Montagne (cofondateur, louis@agence-orem.fr, 07 50 37 15 72) et
+  Théophile Lamouret (cofondateur, theophile@agence-orem.fr, 07 71 67 39 47) ; pied de page
+  « agence-orem.fr · Orem, marque d'ICONOKOM ».
+
+## Pièges
+- Dégradé : toujours la classe `.bg-gradient` / `.panel-gradient` (20 paliers relevés) ou
+  `backgrounds/degrade-bleu.png` ; ne jamais composer un dégradé « à la main » à 3 couleurs.
+- Couverture : l'image `backgrounds/couverture-hero.jpg` (ou `-2`), pas un dégradé CSS.
+- Formes organiques : `backgrounds/blob-sombre.jpg`, pas de cercles flous improvisés.
+- Surtitre orange sur fond blanc : non (bleu). Orange en titre, en fond ou en paragraphe : non.
+- Texte sombre sur la moitié haute d'un dégradé, texte clair sur sa moitié basse : illisible.
+- PowerPoint : pas de ↗ ni de ᵉ (glyphes absents des polices).

@@ -7,7 +7,8 @@ filets fins. Aucune couleur sauf l'orange pour un surtitre et le bleu `#092482` 
 ## Choisir le format
 | Besoin | Outil |
 |---|---|
-| PDF à envoyer, rendu exact | `assets/templates/document-a4.html` → PDF via Chromium (Playwright `page.pdf({format: 'A4', printBackground: true})`) |
+| PDF A4 à envoyer, rendu exact | `assets/templates/document-a4.html` → `scripts/render_pdf.cjs --a4` |
+| Document client en paysage (proposition, recommandation, bilan) | C'est un deck : `references/slides.md` |
 | Fichier Word éditable (.docx) | `scripts/orem_docx.py` (spec JSON ou API Python) |
 | Google Docs | Générer le .docx avec `orem_docx.py` puis l'importer ; sinon appliquer les styles ci-dessous à la main |
 | Markdown / Notion / email | Pas de mise en page possible : appliquer seulement le ton (`marque.md`) et la structure |
@@ -51,14 +52,9 @@ filets fins. Aucune couleur sauf l'orange pour un surtitre et le bleu `#092482` 
 
 ## Export PDF depuis le gabarit HTML
 ```bash
-node -e "
-const { chromium } = require('playwright');
-(async () => { const b = await chromium.launch(); const p = await b.newPage();
-  await p.goto('file://' + process.argv[1], { waitUntil: 'networkidle' });
-  await p.pdf({ path: process.argv[2], format: 'A4', printBackground: true, margin: {top:0,right:0,bottom:0,left:0} });
-  await b.close(); })();" "$PWD/document.html" document.pdf
+node scripts/render_pdf.cjs document.html document.pdf --a4 --png apercus/
 ```
-Pour les slides HTML, même commande avec `width: '1920px', height: '1080px'` au lieu de `format`.
+Vérifier les aperçus PNG (une image par `.page`) avant de livrer.
 
 ## Polices hors-ligne
 Les gabarits HTML chargent les polices depuis Google Fonts. Sans réseau, décommenter les

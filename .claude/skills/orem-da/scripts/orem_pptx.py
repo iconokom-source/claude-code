@@ -41,7 +41,7 @@ LOGO = ASSETS / "logo" / "png"
 
 PX = 6350  # EMU par pixel Figma (12 192 000 EMU / 1920 px)
 
-# Couleurs
+# Couleurs — surtitres : orange sur fond sombre, bleu Orem sur fond clair
 BLACK = "000000"
 INK = "000012"
 LIGHT = "F2F2F2"
@@ -204,7 +204,7 @@ def l_chapter(d: Deck, c):
     style = c.get("style", "blob")
     if style == "light":
         s = d.slide(WHITE)
-        d.text(s, 64, 330, 1200, 40, c.get("eyebrow", ""), size=24, color=ORANGE)
+        d.text(s, 64, 330, 1200, 40, c.get("eyebrow", ""), size=24, color=BLUE)
         d.text(s, 64, 380, 1300, 300, c["title"], font=SERIF, size=94, color=INK, tracking=-0.03, line=1.15)
         d.logo(s, "symbole", "noir", x=1350, y=330, w=420)
         return s
@@ -222,7 +222,7 @@ def l_intro(d: Deck, c):
     s = d.slide(BLACK if dark else WHITE)
     fg = LIGHT if dark else INK
     sec = LIGHT if dark else GREY_TXT
-    d.text(s, 64, 230, 860, 40, c.get("eyebrow", ""), size=24, color=ORANGE)
+    d.text(s, 64, 230, 860, 40, c.get("eyebrow", ""), size=24, color=ORANGE if dark else BLUE)
     d.text(s, 64, 280, 860, 330, c["title"], font=SERIF, size=72, color=fg, tracking=-0.03, anchor="bottom")
     if c.get("body"):
         d.text(s, 64, 660, 860, 150, c["body"], size=24, color=sec, alpha=0.6)
@@ -283,7 +283,7 @@ def l_cards(d: Deck, c):
     for i, card in enumerate(cards):
         x = 64 + i * (w + gap)
         d.rect(s, x, top, w, 520, WHITE, radius=24, shadow=True)
-        d.text(s, x + 40, top + 40, w - 80, 30, card.get("tag", f"Opt {i + 1}"), font=SANS, size=20, color=ORANGE)
+        d.text(s, x + 40, top + 40, w - 80, 30, card.get("tag", f"Opt {i + 1}"), font=SANS, size=17, color=BLUE)
         d.text(s, x + 40, top + 80, w - 80, 110, card["title"], font=SERIF, size=37, color=INK, tracking=0, line=1.3)
         y_items = top + 190
         if card.get("price"):  # ex. "290 €" + price_unit "HT / mois"
@@ -310,7 +310,7 @@ def l_steps(d: Deck, c):
     for i, st in enumerate(steps):
         x = 869 + (i % 2) * 452
         y = 330 + (i // 2) * 250
-        d.text(s, x, y, 420, 30, st.get("tag", f"Étape {i + 1:02d}"), font=SANS, size=17, color=ORANGE)
+        d.text(s, x, y, 420, 30, st.get("tag", f"Étape {i + 1:02d}"), font=SANS, size=17, color=BLUE)
         d.text(s, x, y + 45, 420, 60, st["title"], font=SERIF, size=37, color=INK, tracking=0, line=1.3)
         d.text(s, x, y + 110, 420, 110, st.get("text", ""), font=SANS, size=24, color=INK)
     return s

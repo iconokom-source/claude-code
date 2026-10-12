@@ -36,17 +36,20 @@ spectre (nuit → aube), pas comme une valeur fixe. L'orange est l'énergie : un
 
 ### Bleu Orem (couleur fondatrice)
 Spectre « dégradé japonais » : bleu nuit `#051026` → **bleu Orem `#092482`** → bleu aube `#C5E6F1`.
-Paliers utilisés dans les dégradés de slides (du haut vers le bas) :
-`#020105 · #000B1D · #010F27 · #00122F · #00163B · #022257 · #022F79 · #0143B0 · #0166B0 · #0186B0 · #63C2E0 · #A0DAEC · #BDE7F4 · #D7F4FE · #FFFFFF`
-- `#092482` : lueur des formes organiques, data-viz (traits, aires à faible opacité), étiquettes
-  « étape 1 » sur fond clair, focus d'UI.
+**Dégradé officiel des decks** (relevé sur les PDF validés, 21 paliers réguliers de 0 à 100 %) :
+`#050C1C · #050E22 · #041027 · #04122D · #041636 · #041B41 · #04224F · #052B5F · #063670 · #0C4682 · #115695 · #216BA5 · #3180B6 · #4896C4 · #62ACD2 · #7ABEDC · #93CDE4 · #A8DAEB · #BBE3F1 · #CCEBF6 · #D3EDF5`
+Ne jamais le remplacer par un dégradé à 3 couleurs : il devient bandé et trop saturé.
+- `#050C1C` (nuit) : aussi la couleur des blocs « marine » posés sur fond clair.
+- `#092482` : **surtitres et petits labels sur fond clair** (« Le résultat », « Levier 1 ·
+  Acquisition », « Prochaine étape »), numéros 01/02 sur clair, mots surlignés dans une phrase,
+  data-viz, focus d'UI, lueur des formes organiques.
 - `#D2EDF6` : fond bleu ciel uni (slide de cartes blanches).
 
 ### Orange Orem (accent)
 Spectre : `#210E03` (minéral) → **`#FF6200`** → `#FCDFCE` (solaire).
-- `#FF6200` **en petite surface uniquement** : surtitres (« Notre approche », « Cible »,
-  « Programme partenaire »), numéros d'options (« Opt 1 », « Option 1 »), « Étape 01 »,
-  mention « À noter », focus clavier. Jamais en aplat de fond de slide, jamais pour un paragraphe.
+- `#FF6200` **en petite surface uniquement, sur fond sombre, dégradé ou couverture** : surtitres
+  (« Proposition commerciale · … »), repères A/B/C/D et numéros 01/02 sur noir, mots clés d'une
+  phrase sur noir. Sur fond blanc, le surtitre passe en bleu `#092482`. Jamais en aplat de fond de slide, jamais pour un paragraphe.
 - `#FCDFCE` : fond de badge chaleureux.
 - Le dégradé orange (noir → `#210E03` → `#FF6200` → `#FCDFCE`) existe dans le brand book ;
   le réserver à un visuel d'exception, pas aux supports courants.
@@ -65,10 +68,10 @@ du texte essentiel de petite taille. L'orange `#FF6200` sur blanc ≈ 3:1 : OK p
 | Fond | Description | Asset |
 |---|---|---|
 | Dégradé bleu vertical | Nuit en haut → aube en bas, transitions douces (voir paliers) | `--orem-gradient-blue`, `assets/backgrounds/degrade-bleu.png` |
-| Couverture « hero » | Dégradé flou très diffus : noir en bas à gauche, bleu au centre, blanc lumineux en haut à droite, grain | `assets/backgrounds/couverture-hero.jpg` |
-| Forme organique | Grande forme noire sur fond noir, bord éclairé en bleu `#092482`, grain | `assets/shapes/blob-*-bleu.svg`, `assets/backgrounds/blob-sombre*.jpg` |
+| Couverture « hero » | Image de dégradé flou (noir en bas à gauche, bleu, blanc lumineux en haut à droite) | `assets/backgrounds/couverture-hero.jpg` (ou `-2`) : images officielles, ne pas recréer en CSS |
+| Forme organique | Grande forme noire sur fond noir, bord éclairé en bleu | `assets/backgrounds/blob-sombre.jpg` (officielle) ; `shapes/blob-*-bleu.svg` en secours |
 | Halo graphite | Dégradé radial `#2A2A2A` → noir, pour les slides contact | `--orem-gradient-graphite`, `assets/backgrounds/contact-halo.jpg` |
-| Trame de points | Fond uni + points de ~3 px tous les 26 px (12 % clair sur noir, 10 % encre sur blanc) | `.orem-dots`, `assets/backgrounds/trame-points-*.png` |
+| Trame de points | Points de 4 px tous les 48 px : `#EDEDED` sur blanc, `#161616` sur noir | `.dots` (orem-deck.css), `assets/backgrounds/trame-points-*.png` |
 | Bleu ciel | Aplat `#D2EDF6` | `.orem-bg-sky` |
 
 En CSS : `background: var(--orem-gradient-blue);`. Le texte posé sur la moitié haute du

@@ -52,7 +52,7 @@ le mouvement sert la compréhension.
 // tailwind.config.js — extrait
 theme: { extend: {
   colors: {
-    ink: '#000012', light: '#F2F2F2', paper: '#F8F8F7', graphite: '#181818',
+    navy: '#050C1C', ink: '#000012', light: '#F2F2F2', paper: '#F8F8F7', graphite: '#181818',
     orem: { blue: '#092482', night: '#051026', dawn: '#C5E6F1', sky: '#D2EDF6',
             orange: '#FF6200', 'orange-light': '#FCDFCE', 'orange-deep': '#210E03' },
   },
@@ -60,7 +60,7 @@ theme: { extend: {
   borderRadius: { card: '24px' },
   letterSpacing: { tight: '-0.03em', snug: '-0.02em' },
   boxShadow: { card: '0 16px 90px 5px rgba(0,0,18,.15), 0 0 4px rgba(0,0,18,.30)' },
-  backgroundImage: { 'orem-gradient': 'linear-gradient(180deg,#020105 0%,#00122F 21%,#022257 34%,#0143B0 49%,#0186B0 62%,#63C2E0 72%,#A0DAEC 80%,#D7F4FE 94%,#EAF8FD 100%)' },
+  backgroundImage: { 'orem-gradient': 'linear-gradient(180deg,#050C1C 0%,#041636 20%,#04224F 30%,#063670 40%,#115695 50%,#3180B6 60%,#62ACD2 70%,#93CDE4 80%,#BBE3F1 90%,#D3EDF5 100%)' },
 }}
 ```
 

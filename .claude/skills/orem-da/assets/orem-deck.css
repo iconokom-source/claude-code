@@ -1,0 +1,176 @@
+/* ==========================================================================
+   Orem — kit de présentation (slides HTML 1920×1080 → PDF 1440×810 pt)
+   Mesures relevées sur les decks Orem validés (Terrebrune, FIDEwine,
+   Huchet-Demorge, Au P'tit Louis, Oh My Run). Tout est en px du cadre 1920×1080.
+   Dépend de : orem.css (tokens). Polices : Trykker + Lexend Deca.
+   ========================================================================== */
+
+/* Polices locales (repli si Google Fonts est inaccessible) : garder assets/fonts/ à côté du CSS */
+@font-face { font-family: "Trykker"; src: local("Trykker"), url("fonts/Trykker-Regular.ttf") format("truetype"); font-weight: 400; }
+@font-face { font-family: "Lexend Deca"; src: local("Lexend Deca"), url("fonts/LexendDeca-Variable.ttf") format("truetype"); font-weight: 100 900; }
+
+/* ---------- Écran / impression ---------- */
+html, body { margin: 0; padding: 0; }
+body.deck { background: #1a1a1a; }
+@page { size: 1920px 1080px; margin: 0; }
+.slide {
+  position: relative; width: 1920px; height: 1080px; overflow: hidden;
+  box-sizing: border-box; padding: 64px;
+  font-family: "Lexend Deca", Arial, sans-serif; font-weight: 300;
+  font-size: 24px; line-height: 1.2; letter-spacing: -0.02em;
+  background: #000; color: #F2F2F2;
+  break-after: page; page-break-after: always;
+  -webkit-font-smoothing: antialiased; text-rendering: geometricPrecision;
+}
+@media screen { body.deck { display: flex; flex-direction: column; align-items: center; gap: 32px; padding: 32px 0; }
+                .slide { zoom: var(--deck-zoom, .5); } }
+@media print { body.deck { background: none; } }
+.slide *, .slide *::before, .slide *::after { box-sizing: border-box; }
+.slide p, .slide h1, .slide h2, .slide h3, .slide ul, .slide ol { margin: 0; }
+
+/* ---------- Fonds ---------- */
+.bg-dark   { background: #000; color: #F2F2F2; }
+.bg-light  { background: #fff; color: #000012; }
+/* Trame de points : 4 px tous les 48 px (#F3F3F3 sur blanc, #161616 sur noir) */
+.dots.bg-light, .bg-light.dots { background: #fff radial-gradient(circle at 2px 2px, #EDEDED 2px, transparent 2.2px) 0 0 / 48px 48px; }
+.dots.bg-dark,  .bg-dark.dots  { background: #000 radial-gradient(circle at 2px 2px, #161616 2px, transparent 2.2px) 0 0 / 48px 48px; }
+/* Dégradé bleu Orem : spectre continu nuit → aube (20 paliers relevés) */
+.bg-gradient, .panel-gradient {
+  background: linear-gradient(180deg, #050C1C 0%, #050E22 5%, #041027 10%, #04122D 15%, #041636 20%,
+    #041B41 25%, #04224F 30%, #052B5F 35%, #063670 40%, #0C4682 45%, #115695 50%, #216BA5 55%,
+    #3180B6 60%, #4896C4 65%, #62ACD2 70%, #7ABEDC 75%, #93CDE4 80%, #A8DAEB 85%, #BBE3F1 90%,
+    #CCEBF6 95%, #D3EDF5 100%);
+  color: #F2F2F2;
+}
+/* Couverture : image de dégradé flou (assets/backgrounds/couverture-hero*.jpg) */
+.bg-cover  { background: #050C1C center / cover no-repeat; color: #F2F2F2; }
+/* Forme organique bleue sur noir (assets/backgrounds/blob-sombre.jpg) */
+.bg-blob   { background: #000 center / cover no-repeat; color: #F2F2F2; }
+
+/* ---------- Texte ---------- */
+.serif { font-family: Trykker, Georgia, serif; font-weight: 400; letter-spacing: -0.03em; }
+.t-94  { font-family: Trykker, Georgia, serif; font-weight: 400; font-size: 94px; line-height: 1.2; letter-spacing: -0.03em; }
+.t-64  { font-family: Trykker, Georgia, serif; font-weight: 400; font-size: 64px; line-height: 1.2; letter-spacing: -0.03em; }
+.t-48  { font-family: Trykker, Georgia, serif; font-weight: 400; font-size: 48px; line-height: 1.2; letter-spacing: -0.03em; }
+.t-37  { font-family: Trykker, Georgia, serif; font-weight: 400; font-size: 37px; line-height: 1.2; letter-spacing: 0; }
+.body  { font-size: 24px; line-height: 1.2; }
+.sub   { font-size: 20px; line-height: 1.2; }
+.cap   { font-size: 17px; line-height: 1.1; }
+.reg   { font-weight: 400; }
+.med   { font-weight: 500; }
+.muted { color: rgba(67, 66, 66, .6); }                 /* sur fond clair */
+.bg-dark .muted, .bg-blob .muted, .bg-cover .muted, .on-dark .muted { color: rgba(242, 242, 242, .6); }
+.white { color: #fff; }
+.ink   { color: #000012; }
+.hl    { color: #092482; }    /* mot surligné en bleu dans une phrase Trykker sur clair */
+.hl-or { color: #FF6200; }    /* mot surligné en orange sur sombre */
+
+/* Surtitre : orange sur fond sombre / couverture, bleu Orem sur fond clair et dans les cartes blanches */
+.eyebrow { display: block; font-size: 24px; font-weight: 300; color: #FF6200; margin-bottom: 8px; }
+.eyebrow.sm { font-size: 20px; }
+.eyebrow.xs { font-size: 17px; }
+.bg-light .eyebrow, .card .eyebrow, .paper .eyebrow { color: #092482; }
+.bg-light .navy .eyebrow, .navy .eyebrow { color: #FF6200; }
+
+/* En-tête standard : titre 64 en haut à gauche, étiquette discrète en haut à droite */
+.head { position: absolute; left: 64px; right: 64px; top: 62px; display: flex; justify-content: space-between; align-items: flex-start; gap: 64px; }
+.head .t-64 { max-width: 1300px; }
+.tag { font-size: 20px; font-weight: 400; white-space: nowrap; margin-top: 5px; }
+.bg-light .tag { color: rgba(67, 66, 66, .6); }
+.lede { margin-top: 24px; max-width: 1200px; }          /* chapeau 24 px sous le titre */
+
+/* ---------- Mises en page ---------- */
+.abs { position: absolute; }
+.fill { position: absolute; inset: 64px; }
+.bottom { position: absolute; left: 64px; right: 64px; bottom: 64px; }
+
+/* Panneau dégradé gauche 653 px + contenu (split) */
+.split { padding: 0; display: grid; grid-template-columns: 653px 1fr; background: #fff; color: #000012; }
+.split > .panel { padding: 24px; display: flex; flex-direction: column; justify-content: space-between; color: #F2F2F2; }
+.split > .panel.panel-gradient { color: #F2F2F2; }
+.split > .panel .foot { color: #000012; }               /* le bas du dégradé est clair : texte encre */
+.split > .content { position: relative; padding: 87px 64px 64px 88px; }
+.split > .content.dots { background: #fff radial-gradient(circle at 2px 2px, #EDEDED 2px, transparent 2.2px) 0 0 / 48px 48px; }
+
+/* Grilles */
+.cols { display: grid; gap: 40px; }
+.cols-2 { grid-template-columns: repeat(2, 1fr); }
+.cols-3 { grid-template-columns: repeat(3, 1fr); }
+.cols-4 { grid-template-columns: repeat(4, 1fr); }
+.cols-5 { grid-template-columns: repeat(5, 1fr); }
+
+/* Colonnes à filet vertical (diagnostic, phases) : contenu en haut (repère) et en bas (texte) */
+.ruled > * { border-left: 1px solid currentColor; padding: 0 32px; display: flex; flex-direction: column; }
+.bg-dark .ruled > *, .on-dark.ruled > * { border-left-color: rgba(242, 242, 242, .6); }
+.ruled .mark { font-family: Trykker, Georgia, serif; font-size: 37px; color: #FF6200; }
+.bg-light .ruled .mark { color: #092482; }
+.ruled .push { margin-top: auto; }
+
+/* Cartes */
+.card  { background: #fff; color: #000012; border-radius: 24px; padding: 48px; box-shadow: 0 16px 90px 5px rgba(0,0,18,.15), 0 0 4px rgba(0,0,18,.3); }
+.card.flat { box-shadow: none; }
+.card.outline { border: 1.5px solid #092482; }         /* carte mise en avant */
+.paper { background: #F8F8F7; color: #000012; padding: 32px; }    /* angle droit, sur fond à points */
+.paper.r { border-radius: 24px; }
+.navy  { background: #050C1C; color: #F2F2F2; border-radius: 24px; padding: 40px; }   /* bloc sombre sur fond clair */
+.navy .muted { color: rgba(242, 242, 242, .6); }
+.glass { background: rgba(255,255,255,.04); border: 1px solid rgba(242,242,242,.2); border-radius: 24px; backdrop-filter: blur(30px); padding: 40px; }
+.sep { border: 0; border-top: 1px solid rgba(188, 186, 185, .5); margin: 32px 0; }
+.bg-dark .sep, .navy .sep { border-top-color: rgba(242, 242, 242, .2); }
+
+/* Listes à coche (rond plein + coche) */
+.checks { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 9px; }
+.checks li { position: relative; padding-left: 41px; font-weight: 400; }
+.checks li::before { content: ""; position: absolute; left: 0; top: 3px; width: 22px; height: 22px; border-radius: 50%;
+  background: currentColor url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'><path d='M6.5 11.3l3 3 6-6.4' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/></svg>") center / 22px no-repeat; }
+.checks.on-dark li::before, .navy .checks li::before { background-color: #F2F2F2;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'><path d='M6.5 11.3l3 3 6-6.4' fill='none' stroke='%23050C1C' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/></svg>"); }
+.checks.orange li::before { background-color: #FF6200; }
+/* Puces fines */
+.dots-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.dots-list li { position: relative; padding-left: 36px; }
+.dots-list li::before { content: "•"; position: absolute; left: 10px; opacity: .6; }
+
+/* Lignes numérotées « 01 Titre — complément » séparées par des filets */
+.rows { display: flex; flex-direction: column; }
+.rows > div { display: grid; grid-template-columns: 66px 260px 1fr; align-items: baseline; padding: 22px 0; border-top: 1px solid rgba(188,186,185,.5); }
+.rows > div:last-child { border-bottom: 1px solid rgba(188,186,185,.5); }
+.bg-dark .rows > div { border-color: rgba(242,242,242,.2); }
+.rows .n { font-family: Trykker, Georgia, serif; font-size: 37px; color: #092482; }
+.bg-dark .rows .n { color: #FF6200; }
+.rows .k { font-family: Trykker, Georgia, serif; font-size: 37px; }
+.rows .v { font-size: 20px; }
+
+/* Lignes label / valeur (texte dense sur noir à points) */
+.lv { display: grid; grid-template-columns: 560px 1fr; row-gap: 72px; font-family: Trykker, Georgia, serif; font-size: 37px; line-height: 1.25; letter-spacing: 0; }
+.lv > :nth-child(odd) { color: rgba(242,242,242,.6); }
+.bg-light .lv > :nth-child(odd) { color: rgba(67,66,66,.6); }
+
+/* Chiffres : filet vertical + valeur Trykker + libellé */
+.kpi { border-left: 1px solid currentColor; padding-left: 24px; }
+.kpi .v { font-family: Trykker, Georgia, serif; font-size: 64px; line-height: 1.1; letter-spacing: -0.03em; display: block; }
+.kpi .l { font-size: 20px; display: block; margin-top: 8px; }
+.kpi-row { display: flex; flex-direction: column; gap: 40px; }
+.kpi-row .kpi { display: grid; grid-template-columns: 330px 1fr; align-items: center; column-gap: 24px; }
+
+/* Prix */
+.price .v { font-family: Trykker, Georgia, serif; font-size: 94px; line-height: 1; letter-spacing: -0.03em; }
+.price .u { font-family: Trykker, Georgia, serif; font-size: 37px; color: rgba(67,66,66,.6); }
+
+/* Bouton pilule */
+.btn { display: inline-flex; align-items: center; gap: 14px; height: 64px; padding: 0 28px; border-radius: 999px;
+  background: #000012; color: #F2F2F2; font-size: 24px; font-weight: 400; text-decoration: none; white-space: nowrap; }
+.btn::after { content: ""; width: 14px; height: 14px; background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'><path d='M3 11L11 3M5 3h6v6' fill='none' stroke='%23F2F2F2' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></svg>") center / contain no-repeat; }
+.btn.light { background: #fff; color: #000012; }
+.btn.light::after { filter: invert(1); }
+.btn.ghost { background: transparent; color: #000012; border: 1px solid #000012; height: 44px; font-size: 20px; padding: 0 20px; }
+.btn.ghost::after { filter: invert(1) brightness(0); }
+
+/* Logos */
+.symbol { position: absolute; right: 64px; top: 64px; width: 107px; height: auto; }
+.symbol.tl { right: auto; left: 64px; }
+.foot-note { font-size: 20px; color: rgba(67,66,66,.6); }
+
+/* Images de projets / maquettes */
+.shot { border-radius: 24px; overflow: hidden; display: block; object-fit: cover; }
+.ph { border-radius: 24px; background: #E9E9E7; display: flex; align-items: center; justify-content: center; color: #777; font-size: 20px; }

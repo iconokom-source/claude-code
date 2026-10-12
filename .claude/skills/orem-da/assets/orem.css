@@ -21,6 +21,7 @@
   --orem-paper: #F8F8F7;        /* surface claire (cartes, lignes de tableau) */
   --orem-graphite: #181818;     /* surface sombre (panneaux) */
   --orem-graphite-2: #1E1E1E;
+  --orem-navy: #050C1C;         /* bloc sombre posé sur fond clair (cartes « mise en avant ») */
   --orem-rule-light: rgba(188, 186, 185, 0.25); /* filet sur fond clair */
   --orem-rule-dark: rgba(242, 242, 242, 0.20);  /* filet sur fond sombre */
 
@@ -55,9 +56,9 @@
 
   /* --- Dégradés ---------------------------------------------------------- */
   --orem-gradient-blue: linear-gradient(180deg,
-      #020105 0%, #000B1D 8%, #010F27 15%, #00122F 21%, #00163B 27%,
-      #022257 34%, #022F79 41%, #0143B0 49%, #0166B0 56%, #0186B0 62%,
-      #63C2E0 72%, #A0DAEC 80%, #BDE7F4 87%, #D7F4FE 94%, #EAF8FD 100%);
+      #050C1C 0%, #050E22 5%, #041027 10%, #04122D 15%, #041636 20%, #041B41 25%, #04224F 30%,
+      #052B5F 35%, #063670 40%, #0C4682 45%, #115695 50%, #216BA5 55%, #3180B6 60%, #4896C4 65%,
+      #62ACD2 70%, #7ABEDC 75%, #93CDE4 80%, #A8DAEB 85%, #BBE3F1 90%, #CCEBF6 95%, #D3EDF5 100%);
   --orem-gradient-orange: linear-gradient(180deg,
       #000000 0%, #210E03 22%, #7A2A00 42%, #FF6200 62%, #FFA066 80%, #FCDFCE 100%);
   /* Halo pour cartes de contact / fonds sombres */
@@ -100,7 +101,8 @@
   --rule: var(--orem-rule-light);
   --accent: var(--orem-orange);
   --brand: var(--orem-blue);
-  --dot-grid: rgba(0, 0, 18, 0.10);
+  --dot-grid: #EDEDED;
+  --eyebrow: var(--orem-blue);  /* surtitre bleu sur clair, orange sur sombre */
 }
 
 /* Thème sombre : appliquer data-theme="dark" (ou .orem-dark) sur un conteneur */
@@ -110,7 +112,8 @@
   --text: var(--orem-light);
   --text-secondary: rgba(242, 242, 242, 0.60);
   --rule: var(--orem-rule-dark);
-  --dot-grid: rgba(242, 242, 242, 0.12);
+  --dot-grid: #161616;
+  --eyebrow: var(--orem-orange);
 }
 
 /* --- Base ---------------------------------------------------------------- */
@@ -153,7 +156,7 @@
   font-weight: 400;
   font-size: 0.875rem;
   letter-spacing: var(--orem-tracking);
-  color: var(--accent);
+  color: var(--eyebrow, var(--accent));
   display: block;
   margin-bottom: 0.75em;
 }
@@ -250,8 +253,8 @@
 
 /* Trame de points (fonds texte sombres ou clairs) */
 .orem-dots {
-  background-image: radial-gradient(circle, var(--dot-grid) 1.4px, transparent 1.6px);
-  background-size: 26px 26px;
+  background-image: radial-gradient(circle at 2px 2px, var(--dot-grid) 2px, transparent 2.2px);
+  background-size: 48px 48px;
 }
 
 /* Forme organique bleue (blob) : fond noir + ombre intérieure bleue + grain.
