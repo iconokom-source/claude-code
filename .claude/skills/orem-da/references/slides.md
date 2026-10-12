@@ -6,16 +6,24 @@ Les decks Orem sont des **pages HTML 1920×1080 rendues en PDF par Chromium** (P
 les dégradés, la trame de points, les formes et la typographie.
 
 ## Méthode (par défaut, quel que soit le format demandé « PDF », « deck », « présentation », « document »)
-1. Copier `assets/orem-deck.css`, `assets/backgrounds/`, `assets/logo/png/` à côté du livrable
-   (ou garder les chemins `../` si le HTML est créé dans `assets/templates/`).
-2. Partir de `assets/templates/deck.html` : 18 mises en page prêtes. Dupliquer les `<section
-   class="slide">` utiles, réécrire le contenu, supprimer le reste. **Ne pas réinventer les
-   styles** : n'utiliser que les classes du kit, et des `style=""` seulement pour placer.
+1. `sh scripts/new_deck.sh dossier-du-livrable/` : copie `deck.html` (20 mises en page),
+   `orem-deck.css`, `fonts/`, `backgrounds/`, `logo/` avec des chemins déjà corrects.
+2. Dans `deck.html`, garder les `<section class="slide">` utiles, les réordonner, réécrire le
+   contenu, supprimer le reste. **Ne pas réinventer les styles** : n'utiliser que les classes du
+   kit, et des `style=""` seulement pour placer. **Tout texte entre [crochets] et tous les chiffres
+   du gabarit sont des exemples** : les remplacer par le brief ou `contenus-orem.md`, sinon
+   écrire `[à compléter]`. Ne jamais livrer un chiffre, un délai ou une modalité d'exemple.
 3. Rendre : `node scripts/render_pdf.cjs deck.html deck.pdf --png apercus/`.
 4. **Ouvrir les PNG et vérifier chaque slide** : pas de texte qui déborde ou se chevauche, pas
-   de chiffre isolé sur une ligne (forcer `<br>`), polices Trykker/Lexend bien chargées (le
-   script prévient sinon), équilibre des colonnes. Corriger puis re-rendre.
-5. QR codes : `python3 scripts/qr.py "https://…" qr.svg` puis `<img src="qr.svg">`.
+   de mot ou de chiffre isolé sur une ligne (raccourcir le titre ou forcer `<br>`), titres sur 2
+   lignes maximum, polices chargées (le script prévient sinon). Le grand vide de certaines mises en
+   page (chiffres, affirmation, projection) est voulu : ne pas le « remplir ». Corriger, re-rendre.
+5. QR codes : `python3 scripts/qr.py "https://…" qr.svg` (dépend de `pip install segno`). Le lien
+   de réservation (Calendly…) n'est pas connu du skill : le demander, sinon pointer vers
+   agence-orem.fr et adapter la légende.
+6. Images : le cas client (11) et le split avec visuels attendent des captures du site livré.
+   Utiliser celles fournies par l'utilisateur ; sans image, remplacer les blocs `.ph` par une
+   seconde référence en carte papier avec ses chiffres, jamais par des rectangles gris.
 
 PowerPoint (`scripts/orem_pptx.py`) seulement si un **.pptx éditable** est explicitement
 demandé : rendu correct mais moins riche (pas de cartes complexes ni de trames vectorielles).
@@ -67,6 +75,11 @@ demandé : rendu correct mais moins riche (pas de cartes complexes ni de trames 
 | 16 | Question finale : forme organique, phrase Trykker 48 centrée | Avant la conclusion |
 | 17 | Énoncé sur forme : symbole blanc en haut à gauche, phrase 64, texte gris | Phrase de synthèse |
 | 18 | Prochaine étape : carte blanche sur dégradé, CTA pilule, QR, deux contacts, symbole dégradé, « agence-orem.fr · Orem, marque d'ICONOKOM » | Toujours en dernier |
+| 19 | Architecture cible : noir à points, deux panneaux verre listant les pages (nom + requête visée en gris) | Plan de site |
+| 20 | Objectifs 3 / 6 / 12 mois : ligne de temps pleine largeur, valeurs Trykker 64 par jalon | Objectifs chiffrés |
+
+Adapter le nombre de colonnes : changer `cols-5` en `cols-4`, `cols-3`… (phases, diagnostic,
+périmètre) et supprimer les blocs en trop ; les colonnes se redistribuent seules.
 
 D'autres compositions vues dans les decks validés, à construire avec les mêmes classes :
 deux cibles côte à côte (B2C / B2B) en cartes papier et marine ; questions numérotées 01–10 en
@@ -91,6 +104,10 @@ KPI « Comprendre / Convertir / Acquérir / Cibler / Piloter » ; maquette du si
 13. **Prochaine étape** : un appel de 30 minutes, QR, contacts.
 
 ## Écriture des slides
+- Ton des decks : « nous » pour l'agence, « on » accepté dans les phrases orales fortes
+  (« On ne refond pas le site pour… »). Vouvoiement du client.
+- Citations et témoignages : guillemets anglais typographiques “ ” comme dans les decks validés ;
+  « » pour citer une question ou une expression dans le texte courant.
 - Titres = l'idée complète, pas un mot-clé (« Le site freine X sur quatre niveaux », pas « Constat »).
 - Une affirmation par bloc, puis la preuve, puis la conséquence (« Autrement dit : … »).
 - Chiffres prudents et sourcés ; jamais de chiffre inventé : laisser `[à compléter]` si inconnu.

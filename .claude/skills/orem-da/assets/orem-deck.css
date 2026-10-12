@@ -2,7 +2,7 @@
    Orem — kit de présentation (slides HTML 1920×1080 → PDF 1440×810 pt)
    Mesures relevées sur les decks Orem validés (Terrebrune, FIDEwine,
    Huchet-Demorge, Au P'tit Louis, Oh My Run). Tout est en px du cadre 1920×1080.
-   Dépend de : orem.css (tokens). Polices : Trykker + Lexend Deca.
+   Autonome (n'a pas besoin d'orem.css). Polices : Google Fonts ou fonts/ à côté du CSS.
    ========================================================================== */
 
 /* Polices locales (repli si Google Fonts est inaccessible) : garder assets/fonts/ à côté du CSS */
@@ -34,7 +34,7 @@ body.deck { background: #1a1a1a; }
 /* Trame de points : 4 px tous les 48 px (#F3F3F3 sur blanc, #161616 sur noir) */
 .dots.bg-light, .bg-light.dots { background: #fff radial-gradient(circle at 2px 2px, #EDEDED 2px, transparent 2.2px) 0 0 / 48px 48px; }
 .dots.bg-dark,  .bg-dark.dots  { background: #000 radial-gradient(circle at 2px 2px, #161616 2px, transparent 2.2px) 0 0 / 48px 48px; }
-/* Dégradé bleu Orem : spectre continu nuit → aube (20 paliers relevés) */
+/* Dégradé bleu Orem : spectre continu nuit → aube (21 paliers relevés) */
 .bg-gradient, .panel-gradient {
   background: linear-gradient(180deg, #050C1C 0%, #050E22 5%, #041027 10%, #04122D 15%, #041636 20%,
     #041B41 25%, #04224F 30%, #052B5F 35%, #063670 40%, #0C4682 45%, #115695 50%, #216BA5 55%,
@@ -121,7 +121,7 @@ body.deck { background: #1a1a1a; }
 /* Listes à coche (rond plein + coche) */
 .checks { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 9px; }
 .checks li { position: relative; padding-left: 41px; font-weight: 400; }
-.checks li::before { content: ""; position: absolute; left: 0; top: 3px; width: 22px; height: 22px; border-radius: 50%;
+.checks li::before { content: ""; position: absolute; left: 0; top: calc(0.6em - 11px); width: 22px; height: 22px; border-radius: 50%;
   background: currentColor url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'><path d='M6.5 11.3l3 3 6-6.4' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/></svg>") center / 22px no-repeat; }
 .checks.on-dark li::before, .navy .checks li::before { background-color: #F2F2F2;
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'><path d='M6.5 11.3l3 3 6-6.4' fill='none' stroke='%23050C1C' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/></svg>"); }

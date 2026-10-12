@@ -12,6 +12,8 @@ Témoignages, Offres, Membres).
 - Vend **la décision, la visibilité et le résultat**, pas la fabrication de pages : en 2026,
   produire une page ne coûte plus rien ; ce qui compte est la clarté du message et le pilotage.
 - Site : agence-orem.fr · Tél. 07 50 37 15 72 · Diagnostic gratuit en porte d'entrée.
+- Lien de prise de rendez-vous : **non renseigné** (à demander à l'équipe) ; défaut : agence-orem.fr/contact.
+- Modalités de règlement standard : **non renseignées** : écrire `[à compléter]` plutôt que de les supposer.
 - Signature récurrente : « Une marque claire est une marque qu'on ne peut plus confondre. »
 
 ## La méthode O.R.E.M.
@@ -74,7 +76,7 @@ expliquent, le troisième décide »).
 - « Un duo de choc mêlant efficacité et créativité […] une organisation structurée et respectée, un résultat au top. » — **Gautier Hubert**, fondateur, Serenitine
 - « J'ai connu Orem par recommandation. Équipe engagée dans la compréhension et la satisfaction des besoins de ses clients. » — **Julia Auriault**, avocate associée, Valere Avocats
 
-(Les guillemets droits et « ! » des verbatims sont conservés : ce sont des citations clients.)
+Dans un deck, les présenter entre “ ” ; le « ! » final peut rester (citation client) ou être retiré pour un extrait.
 
 ## Équipe
 | Nom | Rôle | En une phrase (bio du site) | Contact |

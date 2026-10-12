@@ -51,8 +51,10 @@ témoignages, équipe) : `references/contenus-orem.md`.**
    | Texte seul (email, post, accroche, microcopy) | `references/marque.md` | — |
    | Logo, favicon, visuels, photos | `references/logo-photo.md` | `assets/logo/` |
    Valeurs exactes (échelles, paliers, effets) : `references/tokens.md`.
-2. **Partir du gabarit et de ses classes**, ne pas réinventer les styles : copier les assets
-   nécessaires à côté du livrable (`orem-deck.css` / `orem.css`, `backgrounds/`, `logo/png/`).
+2. **Partir du gabarit et de ses classes**, ne pas réinventer les styles :
+   `sh scripts/new_deck.sh dossier/ [deck|document|app]` prépare le livrable avec tous ses assets
+   (CSS, fonts/, backgrounds/, logo/) et des chemins corrects. Les chiffres et textes [entre
+   crochets] du gabarit sont des exemples à remplacer.
 3. **Remplir avec du contenu réel** (brief + `contenus-orem.md`). Inconnu = `[à compléter]`.
 4. **Rendre et regarder** : `node scripts/render_pdf.cjs deck.html deck.pdf --png apercus/` puis
    ouvrir les PNG. Vérifier : polices chargées, aucun débordement ni chevauchement, chiffres non
@@ -60,8 +62,9 @@ témoignages, équipe) : `references/contenus-orem.md`.**
 
 ## Scripts
 - `scripts/render_pdf.cjs page.html sortie.pdf [--a4] [--png dossier/]` : HTML → PDF (Playwright).
-- `scripts/qr.py "url" qr.svg` : QR code encre (segno).
-- `scripts/orem_pptx.py spec.json deck.pptx` : deck éditable, 12 mises en page (`--demo`).
+- `scripts/new_deck.sh dossier/ [deck|document|app]` : prépare un livrable avec ses assets.
+- `scripts/qr.py "url" qr.svg` : QR code encre (`pip install segno`).
+- `scripts/orem_pptx.py spec.json deck.pptx` : deck éditable, 12 mises en page (`--demo`). Dépendances Python : `pip install python-pptx python-docx segno`.
 - `scripts/orem_docx.py spec.json doc.docx` : document A4 Word (`--demo`).
 - `scripts/install_fonts.sh` : polices pour Office/LibreOffice.
 
@@ -70,10 +73,11 @@ témoignages, équipe) : `references/contenus-orem.md`.**
 assets/
   orem-deck.css            kit de slides 1920×1080 (fonds, typo, cartes, listes, chiffres, boutons)
   orem.css                 tokens + composants web/app (thèmes clair/sombre)
-  templates/deck.html      18 mises en page de proposition (référence : reference/deck/*.jpg)
+  templates/deck.html      20 mises en page de proposition (référence : reference/deck/*.jpg)
   templates/document-a4.html, templates/app.html
   backgrounds/             couverture-hero(.jpg, -2), blob-sombre.jpg, degrade-bleu(.png, -vertical), trames de points
   logo/                    monogramme + symbole SVG ; logo/png/ dont orem-symbole-degrade.png
+  shapes/                  formes organiques SVG (silhouettes + versions à lueur bleue) pour le web
   fonts/                   Trykker, Lexend Deca (OFL)
   reference/deck/          captures des 18 mises en page ; reference/*.jpg captures du Figma
 ```
