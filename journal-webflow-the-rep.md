@@ -36,3 +36,18 @@
 - row-gap n'accepte pas de variable : utiliser grid-row-gap
 - set_style avec 2 classes globales échoue : elles sont traitées comme combo
 - Instance de composant : pas de set_visibility
+
+## Mise à jour (après redémarrages)
+- Home : textes de toutes les sections existantes faits (fondateur, newsletter, système, membres fondateurs, FAQ 6 questions, navbar, footer + mention légale).
+- Variables créées : radius/card (2.8125rem), space/3-rem, space/2-5-rem
+- Classes créées : stack_component, section-header_component, card-grid_list (+ medium 2 col, small 1 col), card-grid_card, card-grid_subtitle, text-style-accent, compare_list (+ small 1 col), compare_card (+ is-outline, small padding), compare_row, compare_outro, text-size-caption is-accent, text-color-accent
+- Section L'écart insérée après le hero : `fad4e16a-2ff1-b448-1eb2-630adf6cb9d3`
+  - À faire : créer `section_ecart` et `compare_rows` (non créées par whtml), ajouter les Kickers (L'ÉCART, SON STAFF, VOTRE STAFF)
+- Restent : sections Votre staff + L'application (composant carte), ordre, CapUS, responsive, rapport
+
+## Enseignements (suite)
+- data_whtml_builder sans CSS : réutilise les classes existantes, **ignore** les classes inconnues (pas de doublon, mais classe manquante) → créer toutes les classes avant
+- Éléments créés avec children par data_element_builder : un nœud texte par défaut (« Lorem ipsum », « This is some text… ») est ajouté → toujours relire et nettoyer
+- set_text sur TextBlock/ListItem échoue : viser le nœud String enfant
+- Insertion "after" une instance de composant refusée : utiliser append sur le parent
+- Demandes d'autorisation : règle d'organisation → mode Auto conseillé
