@@ -70,5 +70,11 @@
     neuve, c'est normal »).
   - **Respecter les contraintes du métier du prospect** (ex. la confidentialité des missions dans
     le conseil RH). Les reconnaître est souvent la phrase qui crée la confiance.
+  - **L'angle de la fiche, c'est celui de Louis : il ne change pas en route.** Le fil rouge est
+    l'« Angle à pousser » de la fiche. L'insight sert à prouver cet angle (le chiffre, la
+    comparaison qui le rend concret), jamais à le remplacer par un autre problème. Si le
+    rédacteur pense qu'un autre angle est plus fort, il le propose à Louis au lieu de l'écrire.
+    (Test Halbrook : angle « l'offre est introuvable sur le site, les logos ne racontent rien » →
+    la séquence avait dérivé vers « absent de ChatGPT et Google ».)
   - **Pas d'objet condescendant** envers ce que le prospect a construit (« six logos que personne
     ne lit »).

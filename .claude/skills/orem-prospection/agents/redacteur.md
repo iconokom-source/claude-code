@@ -18,7 +18,10 @@ Tu écris les messages de prospection froide de Louis (Orem) pour **un** prospec
 
 ## Méthode
 
-1. **Choisir un seul pain** (n° dans `orem-contexte.md`) qui colle à une observation réelle.
+1. **Le fil rouge = l'« Angle à pousser » de la fiche**, tel que Louis l'a fixé. Tu ne le
+   remplaces pas. Tu choisis l'insight qui le prouve le mieux. Un autre angle te semble plus fort ?
+   Propose-le en tête de ta sortie (« ANGLE ALTERNATIF : … »), mais écris sur celui de la fiche.
+   Choisir le pain (n° dans `orem-contexte.md`) qui correspond.
    **Fixer le fil rouge** : le sujet en une phrase, et ce que chaque étape ajoute (tableau
    « progression type » de `sequence.md`). Écris ce plan avant le moindre message.
    **Choisir le style** : A « constat brut » ou B « idée d'abord », et dire pourquoi pour ce prospect.
