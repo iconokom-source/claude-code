@@ -64,3 +64,10 @@
 - Podcast masqué (accord utilisateur). Section L'application créée (`921a2140-5f7e-be86-3228-6ca4e6b75eee`) : Kicker, titre, intro, 4 Cartes Pilier, note. Newsletter déplacée après L'application → ordre conforme V2.
 - Snapshot en échec (timeout) : vérifier visuellement dans le Designer. Grille auto-fit 12rem OK pour 4 cartes.
 - Reste : CapUS, responsive des nouvelles sections, rapport.
+
+## Responsive (tablette ≤ 991 / mobile ≤ 767)
+- Constat : quasi aucune surcharge responsive sur le site, variables sans modes.
+- Typography : modes Tablette (auto medium) et Mobile (auto small) → titres 4xl 57→48→36 px, 3xl 43→38→32, 2xl 34→30→26, xl, l, display, roadmap + interlignes.
+- Spacing : modes Tablette/Mobile (liaison breakpoint refusée par Webflow → appliqués sur `page-wrapper` en medium/small). margin 8→3→1.25 rem, space/10→7→5, 6→4.5→3.5, 4→3→2.5, 3→2.5→2, 2.5→2→1.75, 2→2→1.5.
+- Classes : split_component (+is-equal) 1 colonne, split_divider masqué, split_visual hauteur auto + image-wrapper 28/20 rem, hero_letter en flux (plus en absolu), hero min-height auto, pain-points 1 colonne non sticky, method_heading 100 %, method_card plus étroites en mobile, tracker empilé, system 44/30 rem, roadmap empilé (timeline 26 rem), footer colonnes empilées, navbar menu ouvert en colonne sur fond blanc, CTA navbar masqué en mobile.
+- À vérifier visuellement (captures impossibles) : hero lettre, section système (schéma), roadmap, menu burger.

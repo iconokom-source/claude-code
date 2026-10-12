@@ -38,6 +38,8 @@ Travailler **en autonomie et vite** : peu d'appels, beaucoup d'actions par appel
 - `data_element_builder` avec `children` ajoute un texte par défaut (« Lorem ipsum », « This is some text… ») → le supprimer ou le remplacer.
 - `row-gap` / `column-gap` refusent une variable sur une nouvelle classe → `grid-row-gap` / `grid-column-gap`.
 - `set_style` avec deux classes globales échoue (traité comme combo) → créer une combo `is-*`.
+- `create_variable_mode` avec `breakpoint_id` ne marche que pour une collection : pour les autres, créer le mode sans breakpoint puis `set_style_variable_mode` sur `page-wrapper` en `medium` / `small`.
+- Vérifier d'abord si les variables ont des modes Tablette/Mobile : sinon les créer (titres et espacements s'adaptent d'un coup), puis seulement corriger les grilles, hauteurs fixes et positions absolues.
 - Pas de `set_visibility` sur une instance de composant, pas d'insertion `after` une instance (utiliser `append` sur le parent).
 
 ## Ne demander à l'utilisateur que si
