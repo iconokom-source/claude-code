@@ -61,3 +61,6 @@
 - Votre staff : composant « Carte Pilier » (a0016d0b-3e01-da83-407e-96ab0ee340f3, props Numéro/Titre/Sous-titre/Texte liés), 5 cartes remplies, Kicker OK.
 - Reste : section L'application (4 Cartes Pilier + note), ordre (Podcast à valider), CapUS, responsive, rapport.
 - Skill simplifié (SKILL.md court, 3 étapes, pièges outils intégrés).
+- Podcast masqué (accord utilisateur). Section L'application créée (`921a2140-5f7e-be86-3228-6ca4e6b75eee`) : Kicker, titre, intro, 4 Cartes Pilier, note. Newsletter déplacée après L'application → ordre conforme V2.
+- Snapshot en échec (timeout) : vérifier visuellement dans le Designer. Grille auto-fit 12rem OK pour 4 cartes.
+- Reste : CapUS, responsive des nouvelles sections, rapport.
