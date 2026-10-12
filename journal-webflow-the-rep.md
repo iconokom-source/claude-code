@@ -58,3 +58,6 @@
 - Section Votre staff insérée après « Cinq situations » : `445637ed-7e63-2ea6-a284-99e66b907261` avec 1 carte modèle (La tête)
   - À faire : Kicker « VOTRE STAFF », transformer la carte en composant « Carte Pilier » (props Numéro/Titre/Sous-titre/Texte), 4 autres instances
 - Puis : section L'application (4 cartes, même composant), ordre des sections, CapUS
+- Votre staff : composant « Carte Pilier » (a0016d0b-3e01-da83-407e-96ab0ee340f3, props Numéro/Titre/Sous-titre/Texte liés), 5 cartes remplies, Kicker OK.
+- Reste : section L'application (4 Cartes Pilier + note), ordre (Podcast à valider), CapUS, responsive, rapport.
+- Skill simplifié (SKILL.md court, 3 étapes, pièges outils intégrés).
