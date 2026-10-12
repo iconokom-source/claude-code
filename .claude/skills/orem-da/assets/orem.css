@@ -1,0 +1,270 @@
+/* ==========================================================================
+   Orem — design tokens & base CSS
+   Source : Figma « Orem » (pages Brand, Slides, Documents).
+   Usage : copier ce fichier tel quel, ou n'en garder que les tokens (:root).
+   ========================================================================== */
+
+@import url("https://fonts.googleapis.com/css2?family=Lexend+Deca:wght@200;300;400;500;600&family=Trykker&display=swap");
+
+/* Repli hors-ligne : décommenter et pointer vers assets/fonts/ du skill.
+@font-face { font-family: "Trykker"; src: url("fonts/Trykker-Regular.ttf") format("truetype"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Lexend Deca"; src: url("fonts/LexendDeca-Variable.ttf") format("truetype"); font-weight: 100 900; font-display: swap; }
+*/
+
+:root {
+  /* --- Primitives : monochrome ------------------------------------------ */
+  --orem-black: #000000;        /* fond sombre principal */
+  --orem-ink: #000012;          /* texte sur fond clair (noir bleuté) */
+  --orem-light: #F2F2F2;        /* texte sur fond sombre */
+  --orem-grey: #777777;         /* gris neutre (monochrome brand book) */
+  --orem-white: #FFFFFF;
+  --orem-paper: #F8F8F7;        /* surface claire (cartes, lignes de tableau) */
+  --orem-graphite: #181818;     /* surface sombre (panneaux) */
+  --orem-graphite-2: #1E1E1E;
+  --orem-rule-light: rgba(188, 186, 185, 0.25); /* filet sur fond clair */
+  --orem-rule-dark: rgba(242, 242, 242, 0.20);  /* filet sur fond sombre */
+
+  /* --- Primitives : bleu Orem (spectre « dégradé japonais » nuit → aube) - */
+  --orem-blue-night: #051026;
+  --orem-blue: #092482;         /* bleu Orem : formes organiques, data-viz, accents froids */
+  --orem-blue-dawn: #C5E6F1;
+  --orem-blue-sky: #D2EDF6;     /* fond bleu ciel uni */
+  --orem-blue-0: #020105;
+  --orem-blue-1: #000B1D;
+  --orem-blue-2: #010F27;
+  --orem-blue-3: #00122F;
+  --orem-blue-4: #00163B;
+  --orem-blue-5: #022257;
+  --orem-blue-6: #022F79;
+  --orem-blue-7: #0143B0;
+  --orem-blue-8: #0166B0;
+  --orem-blue-9: #0186B0;
+  --orem-blue-10: #63C2E0;
+  --orem-blue-11: #A0DAEC;
+  --orem-blue-12: #BDE7F4;
+  --orem-blue-13: #D7F4FE;
+
+  /* --- Primitives : orange Orem (spectre minéral → solaire) -------------- */
+  --orem-orange-deep: #210E03;
+  --orem-orange: #FF6200;       /* accent : surtitres, numéros d'option, focus */
+  --orem-orange-light: #FCDFCE;
+
+  /* --- États (UI) -------------------------------------------------------- */
+  --orem-success: #34C759;
+  --orem-danger: #FF383C;
+
+  /* --- Dégradés ---------------------------------------------------------- */
+  --orem-gradient-blue: linear-gradient(180deg,
+      #020105 0%, #000B1D 8%, #010F27 15%, #00122F 21%, #00163B 27%,
+      #022257 34%, #022F79 41%, #0143B0 49%, #0166B0 56%, #0186B0 62%,
+      #63C2E0 72%, #A0DAEC 80%, #BDE7F4 87%, #D7F4FE 94%, #EAF8FD 100%);
+  --orem-gradient-orange: linear-gradient(180deg,
+      #000000 0%, #210E03 22%, #7A2A00 42%, #FF6200 62%, #FFA066 80%, #FCDFCE 100%);
+  /* Halo pour cartes de contact / fonds sombres */
+  --orem-gradient-graphite: radial-gradient(120% 90% at 30% 40%, #2A2A2A 0%, #000000 100%);
+
+  /* --- Typographie ------------------------------------------------------- */
+  --orem-font-serif: "Trykker", Georgia, "Times New Roman", serif;          /* titres, prises de parole */
+  --orem-font-sans: "Lexend Deca", "Helvetica Neue", Arial, sans-serif;    /* corps, UI, labels */
+  --orem-tracking-tight: -0.03em;  /* titres ≥ 54px */
+  --orem-tracking: -0.02em;        /* corps & petits titres */
+  --orem-tracking-soft: -0.01em;
+
+  /* Échelle web (brand book p.33) */
+  --orem-web-h1: 54px;  --orem-web-h2: 43px;  --orem-web-h3: 34px;
+  --orem-web-h4: 27px;  --orem-web-h5: 22px;  --orem-web-h6: 18px;
+  --orem-web-p: 14px;   --orem-web-button: 11px; --orem-web-caption: 11px;
+  /* Pour une app interne lisible, le corps peut monter à 15–16px. */
+
+  /* Échelle slide 1920×1080 (brand book p.34) */
+  --orem-slide-title: 164px; --orem-slide-quote: 82px; --orem-slide-titre: 64px;
+  --orem-slide-headline: 37px; --orem-slide-body: 24px; --orem-slide-subbody: 20px;
+  --orem-slide-caption: 17px;
+
+  /* --- Espacements & formes --------------------------------------------- */
+  --orem-space-1: 4px;  --orem-space-2: 8px;  --orem-space-3: 12px;
+  --orem-space-4: 16px; --orem-space-5: 24px; --orem-space-6: 32px;
+  --orem-space-7: 48px; --orem-space-8: 64px; --orem-space-9: 96px;
+  --orem-radius-sm: 4px;
+  --orem-radius-md: 8px;
+  --orem-radius-lg: 24px;   /* cartes, images, panneaux */
+  --orem-radius-pill: 999px;
+  --orem-shadow-card: 0 16px 90px 5px rgba(0, 0, 18, 0.15), 0 0 4px rgba(0, 0, 18, 0.30);
+  --orem-shadow-soft: 0 8px 30px rgba(0, 0, 18, 0.30), 0 0 4px rgba(0, 0, 18, 0.20);
+
+  /* --- Tokens sémantiques (thème clair par défaut) ----------------------- */
+  --bg: var(--orem-white);
+  --bg-subtle: var(--orem-paper);
+  --text: var(--orem-ink);
+  --text-secondary: rgba(67, 66, 66, 0.60);
+  --rule: var(--orem-rule-light);
+  --accent: var(--orem-orange);
+  --brand: var(--orem-blue);
+  --dot-grid: rgba(0, 0, 18, 0.10);
+}
+
+/* Thème sombre : appliquer data-theme="dark" (ou .orem-dark) sur un conteneur */
+[data-theme="dark"], .orem-dark {
+  --bg: var(--orem-black);
+  --bg-subtle: var(--orem-graphite);
+  --text: var(--orem-light);
+  --text-secondary: rgba(242, 242, 242, 0.60);
+  --rule: var(--orem-rule-dark);
+  --dot-grid: rgba(242, 242, 242, 0.12);
+}
+
+/* --- Base ---------------------------------------------------------------- */
+.orem, .orem-dark, [data-theme] {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--orem-font-sans);
+  font-weight: 300;
+  letter-spacing: var(--orem-tracking);
+  line-height: 1.2;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "kern";
+}
+
+/* Titres : toujours Trykker Regular (unique graisse), interlettrage serré */
+.orem h1, .orem h2, .orem h3, .orem h4, .orem-serif,
+[data-theme] h1, [data-theme] h2, [data-theme] h3, [data-theme] h4 {
+  font-family: var(--orem-font-serif);
+  font-weight: 400;
+  line-height: 1.2;
+  margin: 0;
+}
+.orem h1, [data-theme] h1 { font-size: var(--orem-web-h1); letter-spacing: var(--orem-tracking-tight); }
+.orem h2, [data-theme] h2 { font-size: var(--orem-web-h2); letter-spacing: var(--orem-tracking-tight); }
+.orem h3, [data-theme] h3 { font-size: var(--orem-web-h3); letter-spacing: var(--orem-tracking); }
+.orem h4, [data-theme] h4 { font-size: var(--orem-web-h4); letter-spacing: var(--orem-tracking); }
+.orem h5, .orem h6, [data-theme] h5, [data-theme] h6 {
+  font-family: var(--orem-font-sans); font-weight: 500; margin: 0;
+}
+.orem h5, [data-theme] h5 { font-size: var(--orem-web-h5); }
+.orem h6, [data-theme] h6 { font-size: var(--orem-web-h6); letter-spacing: var(--orem-tracking-soft); }
+.orem p, [data-theme] p { margin: 0 0 1em; text-align: left; }
+
+/* --- Composants de base ------------------------------------------------- */
+
+/* Surtitre orange au-dessus d'un titre : « Notre approche », « Cible », « Opt 1 » */
+.orem-eyebrow {
+  font-family: var(--orem-font-sans);
+  font-weight: 400;
+  font-size: 0.875rem;
+  letter-spacing: var(--orem-tracking);
+  color: var(--accent);
+  display: block;
+  margin-bottom: 0.75em;
+}
+
+.orem-secondary { color: var(--text-secondary); }
+
+/* Carte : blanche sur fond clair ou dégradé, rayon 24, ombre douce */
+.orem-card {
+  background: var(--orem-white);
+  color: var(--orem-ink);
+  border-radius: var(--orem-radius-lg);
+  box-shadow: var(--orem-shadow-card);
+  padding: var(--orem-space-5);
+}
+/* Carte « papier » à plat (études de cas, process) */
+.orem-card--flat { background: var(--bg-subtle); box-shadow: none; border-radius: 0; color: var(--text); }
+/* Carte verre sur fond sombre / dégradé */
+.orem-card--glass {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--orem-light);
+  border: 1px solid var(--orem-rule-dark);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  box-shadow: inset 1px 1px 1px rgba(255,255,255,.12), inset -1px -1px 1px rgba(255,255,255,.06);
+}
+
+/* Bouton : pilule blanche (sur sombre) ou encre (sur clair), flèche ↗ */
+.orem-button {
+  display: inline-flex; align-items: center; gap: 0.5em;
+  font-family: var(--orem-font-sans); font-weight: 400; font-size: 0.9375rem;
+  letter-spacing: var(--orem-tracking);
+  padding: 0.6em 1.1em;
+  border-radius: var(--orem-radius-pill);
+  border: 1px solid transparent;
+  background: var(--orem-ink); color: var(--orem-light);
+  cursor: pointer; text-decoration: none;
+  transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+.orem-button:hover { background: var(--orem-blue); }
+.orem-button:focus-visible { outline: 2px solid var(--orem-orange); outline-offset: 2px; }
+[data-theme="dark"] .orem-button, .orem-dark .orem-button { background: var(--orem-white); color: var(--orem-ink); }
+[data-theme="dark"] .orem-button:hover, .orem-dark .orem-button:hover { background: var(--orem-blue-dawn); }
+.orem-button--ghost { background: transparent; color: var(--text); border-color: var(--rule); }
+.orem-button--ghost:hover { background: var(--bg-subtle); }
+[data-theme="dark"] .orem-button--ghost, .orem-dark .orem-button--ghost { background: transparent; color: var(--text); border-color: var(--rule); }
+[data-theme="dark"] .orem-button--ghost:hover, .orem-dark .orem-button--ghost:hover { background: var(--bg-subtle); }
+
+/* Ligne label / valeur (slides texte, fiches) : label gris à gauche, valeur à droite */
+.orem-row {
+  display: grid; grid-template-columns: minmax(160px, 1fr) 2.6fr; gap: var(--orem-space-6);
+  padding: var(--orem-space-4) 0;
+}
+.orem-row > :first-child { color: var(--text-secondary); }
+
+/* Filet vertical devant un chiffre ou une affirmation */
+.orem-rule-left { border-left: 1px solid var(--rule); padding-left: var(--orem-space-5); }
+
+/* Tableau : en-têtes gris, lignes alternées papier, aucun quadrillage */
+.orem-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+.orem-table th {
+  text-align: left; font-weight: 300; color: var(--text-secondary);
+  padding: 0.75em 0.75em; border-bottom: 1px solid var(--rule);
+}
+.orem-table td { padding: 0.6em 0.75em; }
+.orem-table tbody tr:nth-child(odd) td { background: var(--bg-subtle); }
+
+/* Liste à puces sobres */
+.orem-list { margin: 0; padding-left: 1.1em; }
+.orem-list li { margin: 0.2em 0; }
+.orem-list li::marker { content: "•  "; color: currentColor; }
+
+/* Champs de formulaire */
+.orem-input {
+  font: inherit; color: var(--text); background: var(--bg);
+  border: 1px solid var(--rule); border-radius: var(--orem-radius-md);
+  padding: 0.6em 0.8em; width: 100%;
+}
+.orem-input:focus { outline: none; border-color: var(--orem-blue); box-shadow: 0 0 0 3px rgba(9, 36, 130, 0.15); }
+[data-theme="dark"] .orem-input:focus, .orem-dark .orem-input:focus { border-color: var(--orem-blue-10); box-shadow: 0 0 0 3px rgba(99, 194, 224, 0.20); }
+
+/* Badge */
+.orem-badge {
+  display: inline-block; font-size: 0.75rem; font-weight: 400;
+  padding: 0.2em 0.65em; border-radius: var(--orem-radius-pill);
+  background: var(--bg-subtle); color: var(--text); border: 1px solid var(--rule);
+}
+.orem-badge--accent { background: var(--orem-orange-light); color: var(--orem-orange-deep); border-color: transparent; }
+.orem-badge--brand { background: var(--orem-blue-dawn); color: var(--orem-blue); border-color: transparent; }
+
+/* --- Fonds signature ---------------------------------------------------- */
+.orem-bg-gradient { background: var(--orem-gradient-blue); color: var(--orem-light); }
+.orem-bg-sky { background: var(--orem-blue-sky); color: var(--orem-ink); }
+.orem-bg-graphite { background: var(--orem-gradient-graphite); color: var(--orem-light); }
+
+/* Trame de points (fonds texte sombres ou clairs) */
+.orem-dots {
+  background-image: radial-gradient(circle, var(--dot-grid) 1.4px, transparent 1.6px);
+  background-size: 26px 26px;
+}
+
+/* Forme organique bleue (blob) : fond noir + ombre intérieure bleue + grain.
+   S'applique à un SVG ou un élément masqué par une forme de assets/shapes/. */
+.orem-blob {
+  background: #000;
+  box-shadow: inset 20px 40px 40px rgba(9, 36, 130, 0.5), inset -10px -10px 70px rgba(203, 211, 240, 0.10);
+}
+
+/* Grain léger à superposer (pseudo-élément) */
+.orem-grain { position: relative; isolation: isolate; }
+.orem-grain::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 1;
+  opacity: .18; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.83 0 0 0 0 0.86 0 0 0 0 1 0 0 0 1 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}

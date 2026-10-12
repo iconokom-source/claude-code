@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="fr" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Orem — Outil interne</title>
+<!-- Gabarit d'application interne Orem : barre latérale noire, contenu clair,
+     cartes, tableau, formulaire. Thème sombre via data-theme="dark" sur <html>. -->
+<link rel="stylesheet" href="../orem.css">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { font-size: 15px; }
+  .shell { display: grid; grid-template-columns: 248px 1fr; min-height: 100vh; }
+
+  /* Barre latérale : toujours sombre, c'est le « cadre de musée » de l'outil */
+  .side { background: var(--orem-black); color: var(--orem-light); padding: 24px 16px; display: flex; flex-direction: column; gap: 32px; }
+  .side .brand { display: flex; align-items: center; gap: 10px; padding: 0 8px; }
+  .side .brand img { height: 18px; }
+  .side .brand .sym { height: 22px; }
+  .side nav { display: flex; flex-direction: column; gap: 2px; }
+  .side nav a { color: rgba(242,242,242,.6); text-decoration: none; padding: 9px 12px; border-radius: var(--orem-radius-md); font-weight: 300; }
+  .side nav a:hover { color: var(--orem-light); background: var(--orem-graphite); }
+  .side nav a[aria-current="page"] { color: var(--orem-light); background: var(--orem-graphite-2); font-weight: 400; }
+  .side .section { font-size: 12px; color: rgba(242,242,242,.4); padding: 0 12px 6px; }
+  .side .foot { margin-top: auto; font-size: 12px; color: rgba(242,242,242,.4); padding: 0 12px; }
+
+  .main { background: var(--bg); color: var(--text); padding: 40px 48px 64px; }
+  .top { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; margin-bottom: 40px; }
+  .top h1 { font-size: 43px; }
+
+  .grid { display: grid; gap: 24px; }
+  .kpis { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 40px; }
+  .kpi { border-left: 1px solid var(--text); padding: 4px 0 4px 20px; }
+  .kpi .v { font-family: var(--orem-font-serif); font-size: 43px; letter-spacing: -0.03em; line-height: 1.1; display: block; }
+  .kpi .l { color: var(--text-secondary); font-size: 13px; }
+
+  .panel { background: var(--bg-subtle); border-radius: var(--orem-radius-lg); padding: 24px; }
+  .panel h2 { font-size: 27px; margin-bottom: 16px; }
+  .cols { grid-template-columns: 2fr 1fr; align-items: start; }
+  @media (max-width: 1000px) { .shell { grid-template-columns: 1fr; } .side { display: none; } .cols { grid-template-columns: 1fr; } .main { padding: 24px 16px; } }
+
+  label { display: block; font-size: 13px; color: var(--text-secondary); margin: 0 0 6px; }
+  .field { margin-bottom: 16px; }
+  .row-actions { display: flex; gap: 8px; margin-top: 8px; }
+  .status { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
+  .status::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  .ok { color: #1F8A3B; } .ko { color: #D92B2F; } .wait { color: var(--orem-orange); }
+  [data-theme="dark"] .ok { color: var(--orem-success); } [data-theme="dark"] .ko { color: var(--orem-danger); }
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="side">
+    <div class="brand"><img class="sym" src="../logo/orem-symbole-clair.svg" alt=""><img src="../logo/orem-monogramme-clair.svg" alt="Orem"></div>
+    <div>
+      <div class="section">Pilotage</div>
+      <nav>
+        <a href="#" aria-current="page">Tableau de bord</a>
+        <a href="#">Projets</a>
+        <a href="#">Clients</a>
+        <a href="#">Facturation</a>
+      </nav>
+    </div>
+    <div class="foot">Outil interne Orem</div>
+  </aside>
+
+  <main class="main">
+    <div class="top">
+      <div>
+        <span class="orem-eyebrow">Octobre 2026</span>
+        <h1>Tableau de bord</h1>
+      </div>
+      <button class="orem-button" type="button">Nouveau projet <span aria-hidden="true">↗</span></button>
+    </div>
+
+    <section class="grid kpis" aria-label="Indicateurs">
+      <div class="kpi"><span class="v">12</span><span class="l">projets actifs</span></div>
+      <div class="kpi"><span class="v">48 k€</span><span class="l">facturé ce mois</span></div>
+      <div class="kpi"><span class="v">3</span><span class="l">devis en attente</span></div>
+      <div class="kpi"><span class="v">96 %</span><span class="l">jalons tenus</span></div>
+    </section>
+
+    <div class="grid cols">
+      <section class="panel">
+        <h2>Projets en cours</h2>
+        <table class="orem-table">
+          <thead><tr><th>Projet</th><th>Client</th><th>Étape</th><th>Statut</th></tr></thead>
+          <tbody>
+            <tr><td>Refonte site</td><td>Client A</td><td>Design</td><td><span class="status ok">Dans les temps</span></td></tr>
+            <tr><td>Identité</td><td>Client B</td><td>Cadrage</td><td><span class="status wait">Validation client</span></td></tr>
+            <tr><td>Landing</td><td>Client C</td><td>Développement</td><td><span class="status ko">En retard</span></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="panel">
+        <h2>Ajout rapide</h2>
+        <form>
+          <div class="field"><label for="n">Nom du projet</label><input id="n" class="orem-input" placeholder="Ex. Refonte site Verdon"></div>
+          <div class="field"><label for="c">Client</label><input id="c" class="orem-input"></div>
+          <div class="row-actions">
+            <button class="orem-button" type="submit">Créer</button>
+            <button class="orem-button orem-button--ghost" type="reset">Annuler</button>
+          </div>
+        </form>
+        <p style="margin-top:16px"><span class="orem-badge orem-badge--brand">Webflow</span> <span class="orem-badge orem-badge--accent">Prioritaire</span> <span class="orem-badge">Interne</span></p>
+      </section>
+    </div>
+  </main>
+</div>
+</body>
+</html>
