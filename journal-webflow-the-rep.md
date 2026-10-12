@@ -51,3 +51,10 @@
 - set_text sur TextBlock/ListItem échoue : viser le nœud String enfant
 - Insertion "after" une instance de composant refusée : utiliser append sur le parent
 - Demandes d'autorisation : règle d'organisation → mode Auto conseillé
+
+## Avancement (suite 2)
+- L'écart : classes section_ecart/compare_rows créées et appliquées, lien CapUS (page), 3 Kickers OK. Capture à refaire (snapshot a échoué).
+- Classes section_staff, section_app créées.
+- Section Votre staff insérée après « Cinq situations » : `445637ed-7e63-2ea6-a284-99e66b907261` avec 1 carte modèle (La tête)
+  - À faire : Kicker « VOTRE STAFF », transformer la carte en composant « Carte Pilier » (props Numéro/Titre/Sous-titre/Texte), 4 autres instances
+- Puis : section L'application (4 cartes, même composant), ordre des sections, CapUS
