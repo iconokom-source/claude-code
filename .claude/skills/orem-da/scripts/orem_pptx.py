@@ -14,7 +14,8 @@ Usage bibliothèque :
     build_deck(spec_dict, "sortie.pptx")
 
 Format du spec (JSON) : {"slides": [ {"layout": "...", ...}, ... ]}
-Mises en page : cover, chapter, intro, rows, bullets, cards, steps, kpis,
+Mises en page : cover, chapter, intro, rows, bullets, cards (prix optionnel :
+"price" + "price_unit"), steps, kpis,
 quote, table, timeline, contact. Voir DEMO_SPEC plus bas pour chaque champ.
 
 Polices : Trykker (titres) et Lexend Deca (corps). Elles doivent être
@@ -284,9 +285,17 @@ def l_cards(d: Deck, c):
         d.rect(s, x, top, w, 520, WHITE, radius=24, shadow=True)
         d.text(s, x + 40, top + 40, w - 80, 30, card.get("tag", f"Opt {i + 1}"), font=SANS, size=20, color=ORANGE)
         d.text(s, x + 40, top + 80, w - 80, 110, card["title"], font=SERIF, size=37, color=INK, tracking=0, line=1.3)
+        y_items = top + 190
+        if card.get("price"):  # ex. "290 €" + price_unit "HT / mois"
+            d.text(s, x + 40, top + 150, w - 80, 90, card["price"], font=SERIF, size=64, color=INK, tracking=-0.03,
+                   line=1.1)
+            if card.get("price_unit"):
+                d.text(s, x + 40, top + 240, w - 80, 30, card["price_unit"], font=SANS_LIGHT, size=20, color=GREY_TXT,
+                       alpha=0.6)
+            y_items = top + 290
         if card.get("items"):
-            d.text(s, x + 40, top + 190, w - 80, 200, card["items"], font=SANS, size=24, color=INK, bullets=True,
-                   space_after=4)
+            d.text(s, x + 40, y_items, w - 80, top + 400 - y_items, card["items"], font=SANS, size=24, color=INK,
+                   bullets=True, space_after=4)
         if card.get("note"):
             d.text(s, x + 40, top + 400, w - 80, 80, card["note"], font=SANS, size=20, color=GREY_TXT, alpha=0.6,
                    anchor="bottom")
@@ -429,7 +438,7 @@ DEMO_SPEC = {
             {"label": "Notre objectif", "items": ["Une parole plus directe", "Davantage de bénéfices concrets", "Plus de preuves"]}]},
         {"layout": "chapter", "style": "gradient", "eyebrow": "Programme partenaire", "title": "Une récompense au choix"},
         {"layout": "cards", "cards": [
-            {"tag": "Opt 1", "title": "Commission cash", "items": ["12 % sur les 2 premiers deals", "17 % à partir du 3e"], "note": "Versé dès encaissement du premier paiement client"},
+            {"tag": "Opt 1", "title": "Commission cash", "price": "12 %", "price_unit": "puis 17 % dès le 3e deal", "items": ["12 % sur les 2 premiers deals", "17 % à partir du 3e"], "note": "Versé dès encaissement du premier paiement client"},
             {"tag": "Opt 2", "title": "Production offerte", "items": ["2 mois d’accompagnement offerts"], "note": "Utilisables pour faire évoluer le site de ses clients"},
             {"tag": "Opt 3", "title": "Avantage sur son site", "items": ["25 % de réduction sur la refonte"], "note": "Un retour direct sur son image"}]},
         {"layout": "steps", "title": "Une introduction.\nOrem gère le reste.", "steps": [
