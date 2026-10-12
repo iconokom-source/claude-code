@@ -16,11 +16,21 @@
 
 ## Cas disponibles
 
-> Source : les réalisations publiées sur https://www.agence-orem.fr/realisations. Ne reprendre que
-> ce qui y est écrit. À compléter avec les autres réalisations du site (Louis), et les résultats
-> chiffrés quand ils existent.
+Chaque cas a sa fiche complète dans `references/cas-clients/` : identité, problème, ce qu'Orem a
+fait, résultats chiffrés, prospects pour qui il est pertinent, angles, formulations prêtes, et
+**ce qu'il ne faut pas dire**. Choisir avec l'index ci-dessous, puis lire la fiche du cas retenu
+avant de l'écrire. Ne citer que des chiffres présents dans la fiche, tels quels.
 
-| Client | Citable par son nom ? | Secteur / taille | Pain(s) n° | Avant | Ce qu'Orem a fait | Résultat (chiffré si possible) | Phrase prête à l'emploi |
-|---|---|---|---|---|---|---|---|
-| **Le Crayon** (Le Crayon Groupe : Le Crayon Média, Le Surligneur, Les Pépites de France) | Oui (publié sur agence-orem.fr/realisations/le-crayon) | Groupe média, 4 fondateurs très exposés, + de 5 M€ de CA, + de 36 collaborateurs, + de 6 M d'abonnés, 140 M de vues / mois | 3, 14, 15, 18 | Site en retrait du niveau réel, « dépassé par la vitesse à laquelle la marque avait grandi ». Entités mal expliquées et mal reliées, image insuffisante pour un groupe de cette taille, personal branding des fondateurs presque pas exploité | Direction artistique from scratch, UX, maquettes, système visuel unique pour les trois entités. Personal branding des fondateurs intégré au design. Accueil transformé en hub vers les trois marques. Pages manifeste, histoire, filiales. Preuves (logos, chiffres, cas clients) mises en scène | Non visible sur la capture : à compléter par Louis | « Chez Le Crayon, le site ne racontait plus la taille du groupe. On l'a transformé en hub qui relie leurs trois marques et met leurs preuves en avant. » |
-| | | | | | | | |
+| Cas | Fiche | Très pertinent pour | Pains | Preuve la plus forte |
+|---|---|---|---|---|
+| **SforSales Academy** (Shannen Boutaleb) | `cas-clients/sforsales.md` | Coachs, experts, formateurs premium, marques personnelles fortes, offres en cohorte, fin de funnel à structurer | 4, 18, 19, 28 | Les cohortes se remplissent rapidement à chaque lancement ; 89 % d'engagement ; chaque canal convertit |
+| **Riskintel Group** | `cas-clients/riskintel.md` | Groupes média, multi-entités, média + événement + agence, site « blog » qui porte un groupe, besoin de captation | 3, 12, 14, 15, 27 | + de 500 leads captés ; trafic organique × 250 entre janvier et août 2026 |
+| **Logical Conseil** | `cas-clients/logical-conseil.md` | ESN, cabinets tech / data, Nord, marchés saturés, double enjeu clients + recrutement | 3, 9, 13, 18, 21, 28 | Position moyenne Google d'environ 51 à environ 8 après la mise en ligne ; page recrutement en position 5,5 (pas de leads : non trackés) |
+| **Le Crayon Groupe** | `cas-clients/le-crayon.md` | Multi-entités, boîtes qui ont grandi plus vite que leur site, fondateurs très exposés, preuves mal mises en scène | 3, 14, 15, 18 | + de 1 000 demandes qualifiées en deux ans ; 70 % du trafic en SEO sans budget média ; témoignage client |
+| **Huchet-Demorge** | `cas-clients/huchet-demorge.md` | Cabinets de conseil / premium, structures historiques ou patrimoniales, fort enjeu de confiance, monter en gamme sans casser le SEO | 3, 8, 9, 15, 27 | Environ 5 demandes qualifiées par semaine ; 68 % du trafic en SEO ; + de 10 000 impressions dans les moteurs IA ; chaque fondateur en position 1 sur son nom |
+| **Club Casa Zanoni** (Simone Zanoni) | `cas-clients/casa-zanoni.md` | Créateurs, chefs, experts, marques personnelles premium, abonnements, clubs, memberships, contenu réservé | 4, 15, 23 | MRR plus que doublé : d'environ 2 500 € à 5 500 € par mois |
+| **Aktionnaire** | `cas-clients/aktionnaire.md` | Médias digitaux, newsletters, gros volume d'articles, forte audience sociale mais site faible | 4, 10, 26 | + de 2 000 inscriptions newsletter via le site ; position moyenne Google divisée par plus de 4 |
+| **Hôtel Eiffel Ségur** | `cas-clients/eiffel-segur.md` | Hôtels indépendants, tourisme, dépendance à Booking / OTA, business où l'image déclenche l'achat | 1, 3, 4, 10 | Position moyenne de 38 à 6,1 ; 398 visiteurs venus d'assistants IA en 4 mois (pas de réservations : non trackées) |
+
+Chaque fiche a une section « À ne pas dire » : la relire avant d'écrire. Le projet Le Crayon a été
+réalisé sous le nom ICONOKOM.
