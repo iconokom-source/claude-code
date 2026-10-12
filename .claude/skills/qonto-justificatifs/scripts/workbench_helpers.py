@@ -4,12 +4,21 @@
 # `run_composio_tool` est fourni par le bac à sable, il ne faut pas l'importer.
 
 import base64
+import contextlib
+import html as _html
 import io
 import re
 import subprocess
 import sys
 
 import requests
+
+
+def _quiet(slug, args):
+    """run_composio_tool imprime ~30 lignes de logs par appel : on les avale ici.
+    Appeler en séquence, pas dans des threads (redirect_stdout est global au processus)."""
+    with contextlib.redirect_stdout(io.StringIO()):
+        return run_composio_tool(slug, args)
 
 
 def _data(res):
@@ -23,13 +32,19 @@ def _data(res):
 def gmail_search(query, max_results=25):
     """Liste les messages Gmail correspondant à une requête (syntaxe Gmail).
     Renvoie une liste compacte : id, sujet, expéditeur, date, pièces jointes."""
-    res, err = run_composio_tool("GMAIL_FETCH_EMAILS", {
+    res, err = _quiet("GMAIL_FETCH_EMAILS", {
         "query": query, "max_results": max_results, "verbose": True, "include_payload": True,
     })
     if err:
         return {"error": str(err)}
+    d = _data(res)
+    msgs = d.get("messages") or []
+    if not msgs:
+        # Une liste vide peut cacher une requête refusée (ex. date before: dans le futur).
+        warn = (res or {}).get("data", {}).get("composio_execution_message") or d.get("composio_execution_message")
+        return {"empty": True, "warning": warn}
     out = []
-    for m in _data(res).get("messages") or []:
+    for m in msgs:
         out.append({
             "message_id": m.get("messageId"),
             "thread_id": m.get("threadId"),
@@ -47,7 +62,7 @@ def gmail_search(query, max_results=25):
 
 def gmail_message(message_id):
     """Message complet : renvoie (html, texte, pièces jointes)."""
-    res, err = run_composio_tool("GMAIL_FETCH_MESSAGE_BY_MESSAGE_ID", {"message_id": message_id, "format": "full"})
+    res, err = _quiet("GMAIL_FETCH_MESSAGE_BY_MESSAGE_ID", {"message_id": message_id, "format": "full"})
     if err:
         raise RuntimeError(err)
     msg = _data(res)
@@ -63,6 +78,8 @@ def gmail_message(message_id):
             walk(p)
 
     walk(msg.get("payload") or {})
+    if not text and html:
+        text = [html_to_text("\n".join(html))]
     atts = msg.get("attachmentList") or []
     if not atts:
         found = []
@@ -77,7 +94,24 @@ def gmail_message(message_id):
 
         walk_att(msg.get("payload") or {})
         atts = found
-    return "\n".join(html), "\n".join(text) or msg.get("messageText", ""), atts
+    texte = "\n".join(text) or html_to_text(msg.get("messageText", ""))
+    return "\n".join(html), texte, atts
+
+
+def html_to_text(html):
+    """Texte lisible d'un email HTML (balises retirées, entités &nbsp; &#8364; décodées)."""
+    t = re.sub(r"(?is)<(script|style).*?</\1>", " ", html or "")
+    t = re.sub(r"(?s)<[^>]+>", " ", t)
+    return re.sub(r"[ \t\r\f\v]+", " ", _html.unescape(t)).strip()
+
+
+def gmail_window(emitted_at, before_days=10, after_days=5):
+    """Bornes after:/before: pour Gmail. before: ne dépasse jamais demain, sinon Gmail
+    via Composio refuse la requête et renvoie une liste vide."""
+    from datetime import date, datetime, timedelta
+    d = datetime.fromisoformat(emitted_at.replace("Z", "+00:00")).date()
+    fin = min(d + timedelta(days=after_days), date.today() + timedelta(days=1))
+    return f"after:{(d - timedelta(days=before_days)):%Y/%m/%d} before:{fin:%Y/%m/%d}"
 
 
 def invoice_links(html):
@@ -97,7 +131,7 @@ def invoice_links(html):
 
 def download_gmail_attachment(message_id, attachment_id, filename):
     """Télécharge une pièce jointe Gmail et renvoie ses octets."""
-    res, err = run_composio_tool("GMAIL_GET_ATTACHMENT", {
+    res, err = _quiet("GMAIL_GET_ATTACHMENT", {
         "message_id": message_id, "attachment_id": attachment_id, "file_name": filename,
     })
     if err:

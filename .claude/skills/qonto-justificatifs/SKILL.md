@@ -27,7 +27,7 @@ plutôt que de produire un rapport à moitié vide.
 Par défaut, les **débits des 30 derniers jours sans pièce jointe**, sur tous les comptes.
 Si l'utilisateur donne une autre période, un compte ou demande les crédits, suivre sa demande.
 
-1. `list_bank_accounts` pour les comptes actifs (ignorer ceux dont le solde et l'activité sont nuls).
+1. `list_bank_accounts` pour les comptes actifs.
 2. Pour chaque compte, `list_transactions` avec `side: debit`, `with_attachments: false`,
    `settled_at_from` = aujourd'hui − 30 jours, `per_page: 100`, en parcourant les pages.
 3. Garder les champs utiles : `id`, `label`, `clean_counterparty_name`, `amount`, `currency`,
@@ -44,21 +44,57 @@ salaire fait perdre du temps et risque un faux rattachement.
 
 ## Étape 3 : chercher les candidats
 
+### 3a. D'abord dans Qonto (factures fournisseurs)
+
+Certains fournisseurs envoient leurs factures directement dans Qonto (e-facturation, transfert
+d'email). C'est la source la plus fiable : montant et fournisseur y sont déjà structurés.
+Appeler `list_supplier_invoices` avec `filter_matched_transactions: false` (et
+`filter_created_at_from` = début de période − 30 jours), puis comparer fournisseur et
+montant TTC aux opérations restantes. Une facture déjà rapprochée d'une autre opération
+n'est pas candidate. Si une facture non rapprochée correspond, télécharger son fichier
+(`get_attachment` sur sa pièce jointe, URL `url` à récupérer dans le bac à sable) et la
+traiter comme les autres candidats.
+
+### 3b. Puis dans Gmail
+
 Ouvrir le bac à sable (session Composio : appeler d'abord `COMPOSIO_SEARCH_TOOLS` avec
 « download an email attachment file from gmail message » pour obtenir un `session_id`), puis
 exécuter le contenu de `scripts/workbench_helpers.py` dans une première cellule. Il définit :
-`gmail_search`, `gmail_message`, `invoice_links`, `download_gmail_attachment`, `download_url`,
-`html_to_pdf`, `pdf_text`, `amount_in_text`, `put_to_qonto`.
+`gmail_search`, `gmail_window`, `gmail_message`, `html_to_text`, `invoice_links`,
+`download_gmail_attachment`, `download_url`, `html_to_pdf`, `pdf_text`, `amount_in_text`,
+`put_to_qonto`.
+
+Deux règles pour le bac à sable :
+- Finir chaque cellule par une variable `output` (texte compact) plutôt que par des `print` en
+  série. Les helpers font déjà taire les logs de Composio ; ne pas rediriger `sys.stdout`
+  soi-même, surtout dans des threads : ça coupe tout l'affichage suivant.
+- N'afficher que ce qui sert à décider (sujet, expéditeur, date, pièces jointes, extrait court) :
+  les boîtes mail contiennent des échanges sans rapport qui n'ont rien à faire dans le contexte.
+
+**Vérifier la boîte mail.** La réponse de `COMPOSIO_SEARCH_TOOLS` indique l'adresse Gmail
+connectée (`toolkit_connection_statuses`). L'annoncer dans le rapport. Si plusieurs comptes
+Gmail sont connectés, chercher dans chacun (paramètre `account`). Si beaucoup de reçus restent
+introuvables, signaler que les factures arrivent peut-être sur une autre adresse, à connecter
+dans Composio.
 
 Pour chaque opération restante, chercher dans Gmail avec une fenêtre de **−10 à +5 jours**
-autour de `emitted_at` (les factures d'abonnement arrivent souvent juste avant le débit) :
+autour de `emitted_at` (les factures d'abonnement arrivent souvent juste avant le débit).
+`gmail_window(emitted_at)` construit ces bornes et empêche `before:` de tomber dans le futur :
+Gmail via Composio refuse alors la requête et renvoie une liste vide, qu'on prendrait à tort
+pour « rien trouvé ». Si `gmail_search` renvoie `{"empty": True, "warning": ...}` avec un
+avertissement, corriger la requête avant de conclure.
 
 ```
-(<nom du fournisseur>) (facture OR invoice OR receipt OR reçu OR "votre commande") after:AAAA/MM/JJ before:AAAA/MM/JJ
+(<nom du fournisseur>) (facture OR invoice OR receipt OR reçu OR "votre commande") -from:qonto.com <gmail_window>
 ```
+
+`-from:qonto.com` est indispensable : les notifications de Qonto (« Vous avez effectué un
+paiement à Apple… ») contiennent le nom du marchand et le mot « reçu ». Ce sont les premiers
+résultats, et ce ne sont jamais des justificatifs.
 
 - Nom du fournisseur : `clean_counterparty_name`, sinon le `label` nettoyé (« APPLE.COM/BILL »
-  devient « apple »). Essayer aussi le domaine (`from:apple.com`).
+  devient « apple »). Essayer aussi le domaine (`from:apple.com`) et les marques connues du
+  fournisseur (Orange → `(orange OR sosh)`).
 - Un numéro de facture dans la `reference` Qonto est l'indice le plus fort : le chercher tel quel.
 - Si rien ne sort, élargir une fois (sans `has:attachment`, sans mots-clés, fenêtre de ±20 jours),
   puis essayer une application reliée (voir `references/fournisseurs.md`). Au-delà, classer
@@ -76,9 +112,13 @@ Pour chaque candidat, obtenir un PDF, dans cet ordre de préférence :
    `invoice.stripe.com/i/...`, ajouter `/pdf`). Vérifier que la réponse est bien un PDF
    (commence par `%PDF`) et pas une page de connexion.
 3. Reçu au format HTML sans pièce jointe (Apple, Uber, etc.) : `html_to_pdf(html)` sur le corps
-   de l'email.
+   de l'email. Seulement si l'email **est** le reçu (détail de l'achat, montant TTC, TVA ou
+   numéro de commande). Une simple notification (« Votre facture est disponible dans votre
+   espace client ») n'est pas un justificatif : classer l'opération « Introuvable », avec
+   « à télécharger dans l'espace client ».
 
-Puis lire le texte (`pdf_text`, ou le texte de l'email pour un reçu HTML) et vérifier les
+Puis lire le texte (`pdf_text`, ou `html_to_text` du corps pour un reçu HTML : les entités
+`&nbsp;` et `&#8364;` empêcheraient de trouver le montant) et vérifier les
 critères ci-dessous. Garder les octets en mémoire dans `READY[transaction_id]`.
 
 ## Étape 5 : décider (sûr, douteux, introuvable)
@@ -120,6 +160,8 @@ Terminer par ce rapport, en français, opérations identifiées par fournisseur,
 
 ```
 ## Justificatifs Qonto : <période>
+
+Boîte(s) mail consultée(s) : <adresse(s)>
 
 **Bilan** : X opérations sans justificatif → A attachées, D à valider, I introuvables, N sans facture attendue.
 
