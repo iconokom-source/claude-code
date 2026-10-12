@@ -63,6 +63,9 @@ CLICHES_COLD = [
     "loom de 2 min",
     "merci pour la connexion",
     "un autre détail",
+    "dernière chose",
+    "une fois écrit",
+    "une fois écrites",
 ]
 
 CTA_LOOM = ["loom", "vidéo", "video"]

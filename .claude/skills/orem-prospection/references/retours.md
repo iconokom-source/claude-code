@@ -54,3 +54,21 @@
     reformulé cinq fois.
   - **Un 4e agent, le prospect simulé** (`agents/prospect.md`), lit la séquence dans la peau du
     destinataire. S'il ne répondrait pas, la séquence repart au rédacteur.
+- 2026-10-12 · (validateur + prospect simulé, test Halbrook v3)
+  - **Cas client : jamais de cause inventée.** Ne pas écrire « une fois X fait, ils ont obtenu Y »
+    si la fiche ne relie pas X et Y. Ne pas dire que le client « était dans le même cas » si la
+    fiche ne le dit pas. Préférer les demandes / le revenu aux impressions, qui ne parlent pas.
+  - **Pas de détail technique non observé** (« une IA ne peut pas lire vos logos ») : dire ce qui
+    se voit.
+  - **Ne jamais demander au prospect une information commerciale** (« quelle question revient le
+    plus, le prix ou la durée ? ») : lui en donner une, et le laisser réagir.
+  - **Le CTA offre ce qu'il ne peut pas obtenir seul** (les requêtes testées et les réponses
+    obtenues, un comparatif), pas ce qu'il trouverait en deux minutes.
+  - **Après l'Email 1, le rappel du constat tient en 8 mots maximum** : le prospect décroche s'il
+    relit le même constat à chaque message.
+  - **L'Email 1 désamorce l'objection immédiate** que le constat va provoquer (ex. « mon offre est
+    neuve, c'est normal »).
+  - **Respecter les contraintes du métier du prospect** (ex. la confidentialité des missions dans
+    le conseil RH). Les reconnaître est souvent la phrase qui crée la confiance.
+  - **Pas d'objet condescendant** envers ce que le prospect a construit (« six logos que personne
+    ne lit »).
