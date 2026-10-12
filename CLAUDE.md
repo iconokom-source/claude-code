@@ -10,12 +10,16 @@ information durable, mettre à jour le fichier concerné (et la mémoire Notion)
 @memoire/cas-clients.md
 @memoire/commercial.md
 @memoire/linkedin.md
+@memoire/projets.md
 
 ## Règles de travail avec Louis
 
-- Langue : français, tutoiement.
+- Langue : français. Tutoiement ou vouvoiement selon le contexte : Louis tutoie Claude dans les échanges de travail ;
+  tout texte destiné à un client ou un prospect est au vouvoiement, sans exception.
 - Louis dicte souvent en vocal : reformuler proprement, sans les hésitations.
 - Écrire « ESUPCOM », jamais « l'ESUPCOM ». Écrire « Orem » (pas « ORM »), « ICONOKOM ».
+- Jamais « studio » pour parler d'Orem : toujours « agence ».
+- CTA client unique : « Réserver un appel de 30 minutes ».
 - Ne jamais inventer de chiffre, de citation ou d'anecdote : prouver plutôt que promettre.
 - Il veut que Claude garde le maximum d'informations d'une session à l'autre :
   enregistrer ici (et dans la mémoire Notion) tout fait durable qu'il partage.

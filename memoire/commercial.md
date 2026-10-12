@@ -1,4 +1,10 @@
-# Commercial — Pipedrive (3 pipelines)
+# Commercial — Pipedrive
+
+Compte Pipedrive « ICONOKOM ». Pipelines actives (oct. 2026) : Prospection Orem — Site web (id 4), Vente Orem (id 6),
+Clients & opportunités (id 5, avec une étape en plus : « Impayé / recouvrement »),
+Growth – Prospection LinkedIn (Théophile) (id 7 : Prospect identifié → Connecté → Conversation ouverte → Callable → Warm call → RDV proposé → RDV fixé).
+Anciennes pipelines encore présentes : Pipeline (1), Setting (2), Sites Concu (3).
+Pour la liste des clients et deals en cours : toujours interroger Pipedrive (ne pas recopier ici, ça périme).
 
 Règle d'or : un deal actif = une seule pipeline. Ne jamais mélanger activité, qualification, closing et relation client.
 

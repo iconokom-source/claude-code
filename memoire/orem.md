@@ -26,7 +26,16 @@ consultent 2–3 acteurs ; décident en 1–4 semaines. Aussi : cabinets, régie
 - **M — Mesurer : Évolution.** Accompagnement mensuel réservé aux clients Orem.
   Niveau 1 : 490 € HT/mois (~5 interventions, 1 visio/mois). Niveau 2 : 890 € HT/mois
   (~10 interventions, visio tous les 15 jours, intros réseau). Engagement 3 mois min.
+  (Ancienne appellation « Retainer Croissance 990 €/mois » abandonnée : le bon prix est 890 €.)
   Boucle Mesurer → Décider → Agir (GA4, GSC, heatmaps). À proposer dès la vente du site.
+
+## Programme partenaire
+Toujours actif : apporteurs d'affaires rémunérés 12 à 17 % de commission, ou avantages en nature.
+
+## Offres abandonnées (ne plus citer)
+- « Cap Marque » (990 €, sprint clarté 10 jours).
+- « Retainer Croissance » 990 €/mois.
+- Toute autre définition de O.R.E.M. (ex. « E = actions de croissance ») est fausse : E = Site web.
 
 ## Engagements distinctifs
 1. Équipe resserrée, tout en interne, pas de chef de projet écran.
