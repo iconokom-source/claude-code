@@ -95,3 +95,20 @@ Utiles en **relance** ou en réponse à une objection, jamais comme accroche.
 Recrutement en cours · nouvelle offre ou nouvelle cible annoncée · levée de fonds · rebranding ·
 ouverture d'un bureau / international · nouveau dirigeant ou nouveau responsable marketing ·
 salon / événement · article de presse · post LinkedIn récent du prospect.
+
+## Insights à chercher (ce que le prospect ne sait pas)
+
+Le constat de l'accroche doit être une information que le prospect n'a pas. À chercher, et à
+noter avec la source et la date dans la fiche prospect :
+
+| Insight | Comment l'obtenir | Pain lié |
+|---|---|---|
+| Absent des réponses IA sur son offre | Demander à ChatGPT / Perplexity « quels cabinets pour [offre] à [ville / cible] ? » et noter qui est cité | 27, 10 |
+| Absent de Google sur son offre | Chercher « [offre] + [cible / ville] » et noter les 3 premiers résultats | 10 |
+| Un concurrent direct montre mieux la même offre | Comparer la page du concurrent (preuves, clarté, CTA) | 9, 3 |
+| Le chemin vers le contact est long | Compter les clics de l'accueil au formulaire, noter ce qui bloque | 4, 12 |
+| Écart entre LinkedIn et le site | Le dirigeant explique mieux l'offre en post que le site | 19, 25 |
+| Une preuve forte cachée | Un gros client, un chiffre, un prix, cité ailleurs mais pas sur le site | 15, 18 |
+
+Le constat « votre nouvelle offre n'est pas sur votre site » est un **signal** (pourquoi
+maintenant), pas un insight : le prospect le sait déjà.

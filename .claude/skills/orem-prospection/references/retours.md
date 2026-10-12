@@ -39,3 +39,18 @@
   constat ; une réponse sort le lead de la séquence ; un seul seuil de warm call ; l'appel s'ouvre
   sur prénom, nom et Orem ; ne jamais promettre une suite que la séquence ne tient pas. Détail
   dans `sequence.md`.
+- 2026-10-12 · **Test du prospect (Louis : « tu es le prospect, tu réponds ? »).** Une séquence
+  conforme aux règles peut ne donner aucune envie de répondre. Désormais :
+  - **L'accroche doit apprendre quelque chose au prospect.** Test « le savait-il déjà ? » : si
+    oui (ex. « votre nouvelle offre n'est pas sur votre site » alors qu'il vient de la lancer),
+    l'accroche est refusée. Chercher une information qu'il n'a pas (voir « Insights à chercher »
+    dans `orem-contexte.md`).
+  - **Le problème doit être assez gros pour justifier un regard extérieur**, sans pitcher. Une
+    page manquante, son équipe la fait seule ; être absent de Google et des IA sur son offre, non.
+  - **Le CTA ne doit pas offrir une sortie.** Test « réponse qui ferme » : si « oui, c'est
+    prévu » ou « non merci » clôt l'échange, le CTA est refusé. Préférer une question qui ouvre
+    (« vous voulez la liste des trois cabinets cités ? »).
+  - **Chaque message apporte une information nouvelle** sur le même problème. Jamais le même fait
+    reformulé cinq fois.
+  - **Un 4e agent, le prospect simulé** (`agents/prospect.md`), lit la séquence dans la peau du
+    destinataire. S'il ne répondrait pas, la séquence repart au rédacteur.

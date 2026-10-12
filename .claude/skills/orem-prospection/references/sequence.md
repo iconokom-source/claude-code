@@ -58,7 +58,8 @@ L'objectif est **fixé à l'Email 3**, pas avant :
 Avant d'écrire, le rédacteur fixe **un fil rouge** : un seul sujet, tiré d'une observation réelle,
 qui avance d'un cran à chaque message. Chaque message :
 - part du **même sujet** que l'Email 1 (pas de nouveau problème sorti du chapeau) ;
-- apporte **un cran de plus** (conséquence, idée, preuve, proposition) ;
+- apporte **une information nouvelle** (un autre insight, une conséquence chiffrée, une
+  comparaison, une preuve), jamais le même fait reformulé ;
 - reste **compréhensible seul** (le prospect n'a peut-être pas lu le précédent) : chaque email
   rappelle le constat en une demi-phrase dès sa première ligne ;
 - ne contient **aucune date relative figée** (« il y a dix jours ») : la variable part plus tard ;

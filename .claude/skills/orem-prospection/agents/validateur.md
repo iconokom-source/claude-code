@@ -52,6 +52,8 @@ Tout `ERREUR` du script = échec. Les `ALERTE` sont à juger avec la grille ci-d
 | 8b | Fil rouge : tous les messages tiennent le même sujet, chacun avance d'un cran, aucun ne sort de nulle part, chacun se comprend seul | rédacteur |
 | 8c | Branches cohérentes : l'Email 2 email-only ne parle pas de LinkedIn ; les deux Emails 3 s'enchaînent avec l'un comme l'autre Email 2 | rédacteur |
 | 8d | Tâches 16, 17 et script : utiles à Louis, concrets pour CE prospect, script naturel à l'oral avec objections et version messagerie | rédacteur |
+| 8e | Accroche = information que le prospect ne connaît pas (test « le savait-il déjà ? ») | rédacteur |
+| 8f | Aucun CTA ne peut recevoir une réponse qui clôt l'échange (« oui c'est prévu », « non merci ») | rédacteur |
 | 9 | Cas client : absent, ou réel, pertinent, dans `cas-clients.md`, citable | rédacteur |
 | 10 | Aucune promesse excessive, aucun chiffre non sourcé | rédacteur |
 | 11 | Chaque message apporte un élément nouveau, sans répéter le précédent | rédacteur |

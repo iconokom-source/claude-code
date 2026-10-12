@@ -22,7 +22,7 @@ Ne charge pas tout d'un coup. Suis le tableau ci-dessous.
 | `references/cas-clients.md` | rédacteur, validateur | quand une preuve est utile |
 | `references/sequence.md` | tout le monde | les 17 livrables, les branches, le fil rouge, le CTA de chaque étape |
 | `references/lemlist.md` | orchestrateur | lecture du lead et envoi des variables |
-| `agents/*.md` | chaque agent | son propre rôle |
+| `agents/*.md` | chaque agent | son propre rôle (rédacteur, humaniseur, validateur, prospect simulé) |
 | `scripts/verifier.py` | validateur | contrôles chiffrés (mots, lignes, formules interdites…) |
 
 ## Déroulé (orchestrateur = toi)
@@ -42,6 +42,9 @@ Ne charge pas tout d'un coup. Suis le tableau ci-dessous.
 7. **Validateur** (`agents/validateur.md`) : lance `scripts/verifier.py` puis la grille complète.
    Chaque échec est renvoyé **à l'agent responsable** (fond → rédacteur, forme → humaniseur),
    puis revalidé. Max 3 allers-retours ; au-delà, présenter à Louis avec le point bloquant.
+7b. **Prospect simulé** (`agents/prospect.md`) : lit la séquence comme le destinataire. S'il ne
+   répondrait à aucun message, ou si un message le braque, ses raisons repartent au rédacteur
+   (puis humaniseur, puis validateur). Max 2 allers-retours ; au-delà, présenter à Louis avec son avis.
 8. **Présenter à Louis** (format ci-dessous) et attendre sa validation, message par message.
 9. **Retours de Louis** : chaque retour devient une règle ajoutée à `references/retours.md`
    (voir la procédure dans ce fichier), puis on relance à l'étape 5 pour les messages concernés.

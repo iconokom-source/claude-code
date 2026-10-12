@@ -21,6 +21,11 @@ Toute information doit être réelle et sourcée. Une case importante vide → d
 - Pourquoi maintenant ?
 - Quel signal déclencheur as-tu observé ?
 
+## Insight (ce qu'il ne sait pas)
+- Insight principal (source, date) :
+- Pourquoi il ne le sait probablement pas :
+- Insights secondaires (un par message, pour que chacun apporte du neuf) :
+
 ## Diagnostic express du site
 - Constat 1 :
 - Constat 2 :

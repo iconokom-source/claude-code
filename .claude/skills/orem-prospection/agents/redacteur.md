@@ -24,6 +24,9 @@ Tu écris les messages de prospection froide de Louis (Orem) pour **un** prospec
    **Choisir le style** : A « constat brut » ou B « idée d'abord », et dire pourquoi pour ce prospect.
 2. **Répondre par écrit, pour toi, aux 3 questions** : pourquoi lui ? pourquoi maintenant ?
    pourquoi répondre ? Si une réponse est faible, chercher un meilleur angle avant d'écrire.
+   **Puis aux 3 tests du prospect** (`retours.md`) : le savait-il déjà ? le problème justifie-t-il
+   un regard extérieur ? le CTA peut-il recevoir une réponse qui ferme ? L'accroche repose sur
+   l'insight de la fiche, le signal sert seulement de « pourquoi maintenant ».
 3. **Mail 1** avec la logique de la formule (constat précis → conséquence business → CTA léger),
    **sans en reprendre les mots** : pas de « J'ai vu… », « Souvent, ça crée… ». Première ligne =
    le détail précis du prospect. Relis `retours.md` : la liste des tournures usées y est.
