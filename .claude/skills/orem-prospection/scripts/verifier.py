@@ -65,18 +65,39 @@ CLICHES_COLD = [
     "un autre détail",
 ]
 
-CTA_RDV = ["30 min", "30 minutes", "échange", "échanger", "appel", "call", "rendez-vous", "rdv", "visio", "en parler"]
 CTA_LOOM = ["loom", "vidéo", "video"]
 
 VARIABLES_NATIVES = {"firstName", "lastName", "companyName", "jobTitle", "companyDomain"}
 
 LIMITES = {
     # type: (mots_min, mots_max, lignes_min, lignes_max, caracteres_max)
-    "mail": (50, 120, 3, 6, None),
-    "relance": (50, 120, 3, 6, None),
+    "email": (50, 120, 3, 6, None),
     "linkedin": (30, 80, 2, 5, None),
     "linkedin_invite": (None, None, None, None, 200),
     "objet": (1, 6, None, None, 50),
+    "script_call": (150, 300, None, None, None),
+    "tache": (15, 150, None, None, None),
+}
+
+# Les 17 livrables attendus (voir references/sequence.md) : variable -> (type, cta).
+LIVRABLES = {
+    "oremObjet1": ("objet", "aucun"),
+    "oremEmail1": ("email", "reponse"),
+    "oremObjet2": ("objet", "aucun"),
+    "oremEmail2": ("email", "reponse"),
+    "oremObjet2Solo": ("objet", "aucun"),
+    "oremEmail2Solo": ("email", "reponse"),
+    "oremLinkedinInvite": ("linkedin_invite", "aucun"),
+    "oremLinkedinMessage": ("linkedin", "reponse"),
+    "oremObjet3Loom": ("objet", "aucun"),
+    "oremEmail3Loom": ("email", "loom"),
+    "oremObjet3Rdv": ("objet", "aucun"),
+    "oremEmail3Rdv": ("email", "rdv"),
+    "oremObjetBreakup": ("objet", "aucun"),
+    "oremEmailBreakup": ("email", "reponse"),
+    "oremScriptCall": ("script_call", "rdv"),
+    "oremTacheEvaluer": ("tache", "aucun"),
+    "oremTacheWarmCall": ("tache", "aucun"),
 }
 
 
@@ -95,9 +116,10 @@ def phrases(texte):
     return [p for p in re.split(r"(?<=[.!?])\s+|\n+", texte) if p.strip()]
 
 
-def verifier_message(msg, objectif, variables_ok):
+def verifier_message(msg, variables_ok):
     constats = []
     var, typ, texte = msg["variable"], msg["type"], msg["texte"]
+    cta_attendu = msg.get("cta", "aucun")
     bas = texte.lower()
 
     def err(t):
@@ -123,6 +145,9 @@ def verifier_message(msg, objectif, variables_ok):
         err(f"{n_lignes} lignes (> {lmax})")
     if cmax is not None and len(texte) > cmax:
         err(f"{len(texte)} caractères (> {cmax})")
+
+    if typ == "tache":
+        return constats
 
     for f in FORMULES_INTERDITES:
         if f in bas:
@@ -161,32 +186,41 @@ def verifier_message(msg, objectif, variables_ok):
 
     nous = len(re.findall(r"\b(nous|notre|nos|orem)\b", bas))
     vous = len(re.findall(r"\b(vous|votre|vos)\b", bas))
-    if nous > 1 and nous >= vous:
+    if typ != "script_call" and nous > 1 and nous >= vous:
         err(f"parle plus de nous ({nous}) que du prospect ({vous})")
 
-    if texte.count("?") > 2:
+    if texte.count("?") > 2 and typ != "script_call":
         alerte(f"{texte.count('?')} questions : risque de demandes multiples")
+
+    if typ == "script_call":
+        if not re.search(r"30 min", bas):
+            err("le script de call doit proposer un RDV de 30 min")
+        if not re.search(r"messagerie|répondeur", bas):
+            err("le script de call doit contenir une version messagerie")
+        return constats
 
     # Le CTA est la dernière ligne : c'est là qu'on cherche l'objectif.
     cta = (lignes_utiles(texte) or [""])[-1].lower()
-    a_rdv = any(k in cta for k in CTA_RDV)
-    a_loom = any(k in cta for k in CTA_LOOM)
-    if typ == "linkedin_invite":
-        if a_rdv or a_loom:
-            err("l'invitation LinkedIn ne doit pas contenir de CTA rdv / loom")
-    else:
-        if objectif == "rdv":
-            if any(k in bas for k in CTA_LOOM):
-                err("objectif = rdv mais le message parle de Loom / vidéo")
-            if not a_rdv:
-                err("objectif = rdv mais aucun CTA rdv 30 min détecté")
-        elif objectif == "loom":
-            if re.search(r"30 min|rendez-vous|\brdv\b|visio|\bcall\b|appel", cta):
-                err("objectif = loom mais le message propose un rdv / appel")
-            if not a_loom:
-                err("objectif = loom mais aucun CTA Loom / vidéo détecté")
-        if "?" not in texte:
-            alerte("aucune question : le CTA est-il bien une question simple ?")
+    parle_loom = any(k in bas for k in CTA_LOOM)
+    parle_rdv = bool(re.search(r"30 min|rendez-vous|\brdv\b|visio|\bcall\b|appel|échange de", bas))
+    if cta_attendu == "aucun":
+        if parle_loom or parle_rdv:
+            err("ce message ne doit proposer ni Loom ni RDV")
+    elif cta_attendu == "reponse":
+        if parle_loom or parle_rdv:
+            err("avant l'Email 3, on demande une réponse : ni Loom ni RDV")
+        if "?" not in cta:
+            err("le CTA (dernière ligne) doit être une question simple")
+    elif cta_attendu == "loom":
+        if parle_rdv:
+            err("branche Loom : aucune mention de RDV / appel")
+        if not any(k in cta for k in CTA_LOOM):
+            err("branche Loom : la dernière ligne doit proposer la vidéo")
+    elif cta_attendu == "rdv":
+        if parle_loom:
+            err("branche RDV : aucune mention de Loom / vidéo")
+        if "30 min" not in cta:
+            err("branche RDV : la dernière ligne doit proposer 30 min")
 
     return constats
 
@@ -198,15 +232,18 @@ def main():
     with open(sys.argv[1], encoding="utf-8") as f:
         data = json.load(f)
 
-    objectif = data.get("objectif")
-    if objectif not in ("rdv", "loom"):
-        print("ERREUR · global · objectif doit valoir 'rdv' ou 'loom'")
-        sys.exit(1)
     variables_ok = VARIABLES_NATIVES | set(data.get("variables_lead", []))
 
     tous = []
+    vus = {m["variable"] for m in data.get("messages", [])}
+    for var in LIVRABLES:
+        if var not in vus:
+            tous.append(("ERREUR", var, "livrable manquant"))
     for msg in data.get("messages", []):
-        tous += verifier_message(msg, objectif, variables_ok)
+        attendu = LIVRABLES.get(msg["variable"])
+        if attendu and (msg.get("type"), msg.get("cta", "aucun")) != attendu:
+            tous.append(("ERREUR", msg["variable"], f"type/cta attendus : {attendu}"))
+        tous += verifier_message(msg, variables_ok)
 
     for niveau, var, texte in tous:
         print(f"{niveau} · {var} · {texte}")

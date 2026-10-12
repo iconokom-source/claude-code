@@ -9,7 +9,7 @@ Le skill ne crée pas de lead, ne lance rien, ne reprend rien : il remplit des v
 - Louis donne un nom de campagne → `get_campaigns` (search) puis `search_campaign_leads`
   (campaignId) pour lister les leads en attente.
 - Garder : `leadId`, `campaignId`, firstName, lastName, jobTitle, companyName, companyDomain,
-  linkedinUrl, et toutes les variables déjà présentes (dont `oremObjectif` et d'éventuelles notes).
+  linkedinUrl, et toutes les variables déjà présentes (et d'éventuelles notes).
 
 ## 2. Lire la séquence
 
@@ -17,22 +17,14 @@ Le skill ne crée pas de lead, ne lance rien, ne reprend rien : il remplit des v
 dans l'objet et le corps. **Ce sont exactement ces variables qu'il faut remplir.**
 Si la campagne utilise la convention ci-dessous, parfait ; sinon, s'aligner sur ses noms.
 
-## 3. Convention de variables Orem (par défaut)
+## 3. Convention de variables Orem
 
-| Variable | Étape | Contenu |
-|---|---|---|
-| `oremObjectif` | - | `rdv` ou `loom` (lu, pas écrit, sauf si Louis le fixe) |
-| `oremObjet1` | Mail 1 | Objet |
-| `oremMail1` | Mail 1 | Corps, de « Bonjour {{firstName}}, » au CTA inclus, sans signature |
-| `oremLinkedinInvite` | Invitation LinkedIn | Note ≤ 200 caractères (ou vide si invitation sans note) |
-| `oremRelance1` | Relance mail (même fil) | Corps |
-| `oremLinkedin1` | Message LinkedIn (si connecté) | Corps |
-| `oremRelance2` | Dernier mail | Corps |
+Les 17 variables et leur ordre sont dans `references/sequence.md` (colonne « Variable lemlist »).
+Les tâches manuelles (16, 17) et le script (15) vont dans le titre ou le contenu des étapes
+« tâche manuelle » / « appel » de lemlist. Les branches (LinkedIn accepté ou non, choix à l'étape
+« Évaluer ») sont des conditions de la séquence lemlist, réglées par Louis.
 
-Séquence type si Louis n'en a pas d'autre : J0 Mail 1 · J2 Invitation LinkedIn · J4 Relance 1 ·
-J7 Message LinkedIn · J11 Relance 2.
-
-Dans la séquence lemlist, chaque étape contient seulement la variable (ex. corps = `{{oremMail1}}`)
+Dans la séquence lemlist, chaque étape contient seulement la variable (ex. corps = `{{oremEmail1}}`)
 et la signature de l'expéditeur.
 
 ## 4. Variables lemlist natives dans les textes

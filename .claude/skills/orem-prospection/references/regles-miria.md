@@ -8,10 +8,10 @@ En cas de conflit : `retours.md` > règles Orem (section 0) > règles Miria.
 - **Prospect froid** : il ne connaît ni Louis ni Orem. Interdit : « comme convenu », « suite à notre
   échange », « je reviens vers vous », « ravi de vous recontacter », tutoiement d'emblée, sous-entendu
   qu'il nous connaît. Vouvoiement par défaut.
-- **CTA = un seul objectif par prospect, sur toute la séquence** :
-  - `rdv` → un échange de **30 min**.
-  - `loom` → une **courte vidéo Loom** que Louis enregistre pour lui.
-  Jamais les deux, ni dans un même message, ni d'un message à l'autre.
+- **CTA : l'objectif se fixe à l'Email 3** (détail dans `sequence.md`). Avant, on demande juste
+  une réponse. À l'Email 3 : Loom (courte vidéo) **ou** RDV de 30 min, selon la branche. Jamais
+  les deux dans un même message.
+- **Fil rouge** : un seul sujet qui avance d'un cran à chaque message (voir `sequence.md`).
 - **Pas de cas client inventé.** Seuls les cas de `cas-clients.md` peuvent être cités, tels quels.
 - **Pas d'observation inventée** sur le prospect. Ce qu'on dit avoir vu doit exister.
 - **Pas de pitch d'offre** (pas de « refonte Webflow », « offre Site », « socle SEO/GEO ») avant que
@@ -87,7 +87,8 @@ Facile, léger. Plus le CTA est gros, plus on demande un mariage au premier date
 
 Non : « Seriez-vous disponible pour une réunion de 45 minutes la semaine prochaine ? »
 
-Oui (adapter à l'objectif du prospect) :
+Oui (selon l'étape, voir `sequence.md`) :
+- réponse : « Je me trompe ? » · « C'est un sujet chez vous en ce moment ? »
 - `loom` : « Je vous montre en vidéo ce que je mettrais à la place ? » ·
   « Je vous fais une courte vidéo dessus ? »
 - `rdv` : « Pertinent qu'on en parle 30 min ? » · « Ouvert à un échange de 30 min là-dessus ? »
@@ -122,12 +123,11 @@ posture de quémandeur.
 
 Les mails sont mauvais parce qu'ils veulent **prendre avant d'avoir donné une raison de répondre**.
 
-## 12. Messages LinkedIn et relances (application des mêmes règles)
+## 12. Messages LinkedIn, relances, breakup
 
-- **Note d'invitation LinkedIn** : 200 caractères max (300 si Premium). Pas de CTA rdv/loom :
-  juste une raison humaine de se connecter, liée à l'observation.
+- **Note d'invitation LinkedIn** : 200 caractères max (300 si Premium). Pas de CTA : juste une
+  raison humaine de se connecter, liée au fil rouge.
 - **Message LinkedIn** : mêmes règles qu'un mail, 30 à 80 mots, pas d'objet.
-- **Relance mail** : même fil que le mail 1 (objet vide ou « Re: »), apporte **un élément nouveau**
-  (autre angle, cas client, observation). Jamais « Je me permets de relancer », jamais « petit up ».
-  Même objectif CTA que le mail 1.
-- **Dernier message** : court, sans culpabiliser, porte ouverte. Même objectif CTA.
+- **Emails 2 et 3** : chacun apporte un cran de plus sur le fil rouge. Jamais « je me permets de
+  relancer », jamais « petit up ».
+- **Breakup** : court, sans culpabiliser, porte ouverte, CTA réponse.

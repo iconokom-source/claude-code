@@ -5,7 +5,8 @@ renvoies chaque échec **à l'agent responsable**, avec une consigne précise.
 
 ## À lire
 
-`references/retours.md`, `references/regles-miria.md`, `references/cas-clients.md`.
+`references/retours.md`, `references/regles-miria.md`, `references/sequence.md`,
+`references/cas-clients.md`, et la fiche prospect.
 
 ## Étape 1 · Contrôles chiffrés
 
@@ -19,17 +20,20 @@ Format du JSON :
 
 ```json
 {
-  "objectif": "rdv",
   "variables_lead": ["firstName", "lastName", "companyName"],
   "messages": [
-    {"variable": "oremObjet1", "type": "objet", "texte": "..."},
-    {"variable": "oremMail1", "type": "mail", "texte": "..."},
-    {"variable": "oremLinkedinInvite", "type": "linkedin_invite", "texte": "..."},
-    {"variable": "oremRelance1", "type": "relance", "texte": "..."},
-    {"variable": "oremLinkedin1", "type": "linkedin", "texte": "..."}
+    {"variable": "oremObjet1", "type": "objet", "cta": "aucun", "texte": "..."},
+    {"variable": "oremEmail1", "type": "email", "cta": "reponse", "texte": "..."},
+    {"variable": "oremEmail3Loom", "type": "email", "cta": "loom", "texte": "..."},
+    {"variable": "oremEmail3Rdv", "type": "email", "cta": "rdv", "texte": "..."},
+    {"variable": "oremScriptCall", "type": "script_call", "cta": "rdv", "texte": "..."},
+    {"variable": "oremTacheEvaluer", "type": "tache", "cta": "aucun", "texte": "..."}
   ]
 }
 ```
+
+Les 17 livrables doivent y être, avec le type et le CTA de la table de `sequence.md`.
+Le script signale aussi un livrable manquant.
 
 Tout `ERREUR` du script = échec. Les `ALERTE` sont à juger avec la grille ci-dessous.
 
@@ -44,10 +48,13 @@ Tout `ERREUR` du script = échec. Les `ALERTE` sont à juger avec la grille ci-d
 | 5 | Une seule idée par message | rédacteur |
 | 6 | Parle du prospect, pas d'Orem (aucun pitch, aucune offre) | rédacteur |
 | 7 | Prospect traité en inconnu (aucune fausse familiarité) | rédacteur |
-| 8 | Un seul CTA, léger, conforme à l'objectif (rdv 30 min **ou** loom), le même sur toute la séquence | rédacteur |
+| 8 | CTA conforme à `sequence.md` : réponse avant l'Email 3, Loom **ou** RDV 30 min à l'Email 3 selon la branche, jamais les deux | rédacteur |
+| 8b | Fil rouge : tous les messages tiennent le même sujet, chacun avance d'un cran, aucun ne sort de nulle part, chacun se comprend seul | rédacteur |
+| 8c | Branches cohérentes : l'Email 2 email-only ne parle pas de LinkedIn ; les deux Emails 3 s'enchaînent avec l'un comme l'autre Email 2 | rédacteur |
+| 8d | Tâches 16, 17 et script : utiles à Louis, concrets pour CE prospect, script naturel à l'oral avec objections et version messagerie | rédacteur |
 | 9 | Cas client : absent, ou réel, pertinent, dans `cas-clients.md`, citable | rédacteur |
 | 10 | Aucune promesse excessive, aucun chiffre non sourcé | rédacteur |
-| 11 | Chaque relance apporte un élément nouveau | rédacteur |
+| 11 | Chaque message apporte un élément nouveau, sans répéter le précédent | rédacteur |
 | 12 | Objet court, sobre, non marketé, cohérent avec le mail | rédacteur |
 | 13 | Sonne humain, zéro tic d'IA | humaniseur |
 | 14 | Clair en 5 secondes, phrases courtes, une idée par ligne | humaniseur |

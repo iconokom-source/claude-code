@@ -20,6 +20,7 @@ Ne charge pas tout d'un coup. Suis le tableau ci-dessous.
 | `references/regles-miria.md` | rédacteur, humaniseur, validateur | à chaque rédaction |
 | `references/orem-contexte.md` | rédacteur | pour choisir l'angle et le pain |
 | `references/cas-clients.md` | rédacteur, validateur | quand une preuve est utile |
+| `references/sequence.md` | tout le monde | les 17 livrables, les branches, le fil rouge, le CTA de chaque étape |
 | `references/lemlist.md` | orchestrateur | lecture du lead et envoi des variables |
 | `agents/*.md` | chaque agent | son propre rôle |
 | `scripts/verifier.py` | validateur | contrôles chiffrés (mots, lignes, formules interdites…) |
@@ -29,12 +30,13 @@ Ne charge pas tout d'un coup. Suis le tableau ci-dessous.
 1. **Lire `references/retours.md`.**
 2. **Récupérer le prospect dans lemlist** (voir `references/lemlist.md`) : identité, poste, entreprise,
    domaine, variables déjà présentes, campagne et étapes de la séquence à remplir.
-3. **Fixer l'objectif CTA du prospect : `rdv` (30 min) OU `loom`. Un seul, pour toute la séquence.**
-   Lis la variable lemlist `oremObjectif`. Absente → demande à Louis. Ne mélange jamais les deux.
+3. **Remplir la fiche prospect** (`references/fiche-prospect.md`) à partir de lemlist, du site et
+   de ce que Louis a fourni. Une case vide qui compte (signal, constat) = demander à Louis.
 4. **Recherche** : visite le site du prospect (et sa page LinkedIn si accessible). Note 1 à 3
    observations **vérifiables** (ce que tu as vu, où). Pas d'observation réelle = pas de mail :
    signale-le à Louis plutôt que d'inventer.
-5. **Rédacteur** (`agents/redacteur.md`) : écrit tous les messages de la séquence.
+5. **Rédacteur** (`agents/redacteur.md`) : fixe le fil rouge, puis écrit **les 17 livrables** de
+   `references/sequence.md`.
 6. **Humaniseur** (`agents/humaniseur.md`) : repasse chaque message jusqu'à ce qu'il sonne
    100 % humain et 100 % clair. Il boucle tout seul (max 4 passes).
 7. **Validateur** (`agents/validateur.md`) : lance `scripts/verifier.py` puis la grille complète.
@@ -58,16 +60,17 @@ rédacteur ne se valide jamais lui-même.
 
 ```
 PROSPECT : Prénom Nom · Poste · Entreprise (domaine) · lead lea_xxx
-OBJECTIF : rdv 30 min | loom
-ANGLE : pain n°X (famille) · ce que j'ai vu : « … » (URL)
+STYLE : A constat brut | B idée d'abord (et pourquoi)
+FIL ROUGE : le sujet en une phrase · pain n°X · observation (URL)
 CAS CLIENT : aucun | <nom du cas> (étape où il apparaît)
 
-[1] oremObjet1 : …
-[2] oremMail1 :
+1. Objet Email 1 : …
+2. Email 1 :
 …
-(XX mots · X lignes · validateur ✅)
+(XX mots · X lignes)
+… jusqu'au 17.
 
-[3] …
+VALIDATEUR : ✅ (n tours)
 ```
 
 Termine par : « Je valide et j'envoie dans lemlist, ou tu as des retours ? »

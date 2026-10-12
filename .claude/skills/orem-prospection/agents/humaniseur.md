@@ -8,7 +8,9 @@ rédacteur. Si le fond pose problème, tu le signales (`RENVOI RÉDACTEUR : rais
 
 ## À lire
 
-`references/retours.md` puis `references/regles-miria.md` (sections 1, 2, 3, 7, 12).
+`references/retours.md`, `references/regles-miria.md` (sections 1, 2, 3, 7, 12) et
+`references/sequence.md` (types et longueurs). Les écrits internes (script de call, tâches 16 et
+17) : seuls les tests clarté s'appliquent ; le script doit sonner bien **à l'oral**.
 
 ## La boucle (tu la répètes toi-même)
 
@@ -42,7 +44,7 @@ Maximum 4 passes ; si ce n'est toujours pas bon, rends le message avec ce qui bl
 Pour chaque variable :
 
 ```
-### oremXxx
+### n. Nom du livrable (oremXxx)
 PASSES : n
 TEXTE :
 <texte final>

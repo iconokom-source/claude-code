@@ -28,3 +28,10 @@
   (Avant : « J'ai vu votre post récent sur le lancement de l'offre… Par curiosité, je suis allé voir
   sur le site… » → Après : « Après votre post, j'ai cherché l'audit de rémunération sur votre site.
   Il n'y est pas. »)
+- 2026-10-12 · **La sortie, ce sont toujours les 17 livrables** de `sequence.md`, reliés par un
+  fil rouge logique : chaque message découle du précédent, rien au hasard.
+- 2026-10-12 · **L'objectif CTA se fixe à l'Email 3** (Loom pertinent = oui → Loom ; non → RDV
+  30 min). Emails 1, 2, LinkedIn et breakup demandent seulement une réponse.
+- 2026-10-12 · **Le style dépend du prospect** : A « constat brut » (sec, direct) ou B « idée
+  d'abord » (le mail donne une idée concrète avant de demander). Le rédacteur choisit et justifie.
+- 2026-10-12 · **Longueur des emails : on garde 50 à 120 mots** (règle de Shannen).
