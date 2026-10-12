@@ -59,7 +59,9 @@ Avant d'écrire, le rédacteur fixe **un fil rouge** : un seul sujet, tiré d'un
 qui avance d'un cran à chaque message. Chaque message :
 - part du **même sujet** que l'Email 1 (pas de nouveau problème sorti du chapeau) ;
 - apporte **un cran de plus** (conséquence, idée, preuve, proposition) ;
-- reste **compréhensible seul** (le prospect n'a peut-être pas lu le précédent) ;
+- reste **compréhensible seul** (le prospect n'a peut-être pas lu le précédent) : chaque email
+  rappelle le constat en une demi-phrase dès sa première ligne ;
+- ne contient **aucune date relative figée** (« il y a dix jours ») : la variable part plus tard ;
 - ne répète pas mot pour mot ce qui a déjà été dit.
 
 Progression type :
@@ -79,13 +81,29 @@ Progression type :
 
 Ils sont pour Louis, pas pour le prospect : ils ne suivent pas les règles de longueur des emails.
 
-- **Tâche « Évaluer »** : 4 à 8 lignes. Les signaux à regarder (ouvertures, clics, LinkedIn
-  accepté, réponse), la recommandation pour CE prospect (Email 3 Loom / Email 3 RDV / call /
-  relance simple) et pourquoi, et le critère « Loom pertinent » : oui si l'observation se montre
-  mieux à l'écran (page, parcours, comparaison), non si le sujet est plutôt stratégique.
-- **Tâche « Warm call si signaux »** : 3 à 6 lignes. Quels signaux déclenchent l'appel, quand
-  appeler, la phrase d'ouverture, renvoi au script.
-- **Script de warm call** : à dire, pas à lire. Ouverture (qui, pourquoi j'appelle, lien avec les
-  mails), demande de permission, le constat, une question ouverte, proposition de RDV 30 min,
-  2 ou 3 objections probables (peurs n°5, 17, 22, 30 de `orem-contexte.md`) avec une réponse
-  courte, et une version messagerie de 20 secondes. 150 à 300 mots.
+### Règle de décision (identique dans les tâches 16 et 17, évaluée dans cet ordre)
+
+1. **Le prospect a répondu, quoi qu'il dise** → sortir le lead de la séquence, Louis répond à la
+   main. Jamais d'Email 3 automatique après une réponse.
+2. **Signaux d'intérêt** → warm call. Seuil unique : au moins 3 ouvertures d'un même email, OU un
+   clic, OU LinkedIn accepté sans réponse au message LinkedIn depuis 3 jours ouvrés.
+3. **Au moins une ouverture, sans signal** → Email 3. Loom pertinent = oui si l'observation se
+   montre mieux à l'écran (page, parcours, comparaison) ; non (RDV) si le sujet est plutôt
+   stratégique. La tâche donne la recommandation pour CE prospect et pourquoi.
+4. **Aucune ouverture** → relance simple = Email breakup.
+
+### Les textes
+
+- **Tâche « Évaluer »** : 4 à 10 lignes. Reprend la règle ci-dessus, appliquée à CE prospect.
+- **Tâche « Warm call si signaux »** : 4 à 8 lignes. Mêmes déclencheurs que la règle (étape 2),
+  quand appeler, phrase d'ouverture, renvoi au script, et **l'issue de l'appel** : RDV → sortir de
+  la séquence ; refus → clore ; messagerie → laisser le message, puis Email breakup quelques
+  jours plus tard.
+- **Script de warm call** : à dire, pas à lire. Ouverture qui dit **qui appelle : prénom, nom et
+  Orem** (le prospect ne nous connaît pas), pourquoi j'appelle, lien avec les mails ; demande de
+  permission ; le constat ; une question ouverte ; proposition de RDV 30 min ; 2 à 4 objections
+  probables pour CE prospect (dont celle que le constat provoque, ex. « c'est déjà prévu / on le
+  fait en interne », et les peurs n°5, 17, 22, 30 de `orem-contexte.md`) avec une réponse courte ;
+  une version messagerie de 20 secondes. 150 à 300 mots.
+- **Ne jamais promettre ce que la séquence ne tient pas** (ex. « je vous envoie une idée par
+  mail » sur la messagerie, alors que le mail suivant est le breakup).

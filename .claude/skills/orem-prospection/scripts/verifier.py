@@ -146,6 +146,9 @@ def verifier_message(msg, variables_ok):
     if cmax is not None and len(texte) > cmax:
         err(f"{len(texte)} caractères (> {cmax})")
 
+    if re.search(r"il y a (\d+|un|une|deux|trois|quatre|cinq|six|sept|huit|neuf|dix|quinze) (jour|semaine|mois)", bas):
+        err("date relative figée (« il y a … ») : la variable part plus tard")
+
     if typ == "tache":
         return constats
 
