@@ -16,9 +16,11 @@
 
 ## Cas disponibles
 
-> ⚠️ À compléter par Louis. Le document « 30 pains clients » décrit des **situations types**, pas
-> des clients nommés avec résultats. Tant que ce tableau est vide, le rédacteur ne cite aucune preuve.
+> Source : les réalisations publiées sur https://www.agence-orem.fr/realisations. Ne reprendre que
+> ce qui y est écrit. À compléter avec les autres réalisations du site (Louis), et les résultats
+> chiffrés quand ils existent.
 
 | Client | Citable par son nom ? | Secteur / taille | Pain(s) n° | Avant | Ce qu'Orem a fait | Résultat (chiffré si possible) | Phrase prête à l'emploi |
 |---|---|---|---|---|---|---|---|
+| **Le Crayon** (Le Crayon Groupe : Le Crayon Média, Le Surligneur, Les Pépites de France) | Oui (publié sur agence-orem.fr/realisations/le-crayon) | Groupe média, 4 fondateurs très exposés, + de 5 M€ de CA, + de 36 collaborateurs, + de 6 M d'abonnés, 140 M de vues / mois | 3, 14, 15, 18 | Site en retrait du niveau réel, « dépassé par la vitesse à laquelle la marque avait grandi ». Entités mal expliquées et mal reliées, image insuffisante pour un groupe de cette taille, personal branding des fondateurs presque pas exploité | Direction artistique from scratch, UX, maquettes, système visuel unique pour les trois entités. Personal branding des fondateurs intégré au design. Accueil transformé en hub vers les trois marques. Pages manifeste, histoire, filiales. Preuves (logos, chiffres, cas clients) mises en scène | Non visible sur la capture : à compléter par Louis | « Chez Le Crayon, le site ne racontait plus la taille du groupe. On l'a transformé en hub qui relie leurs trois marques et met leurs preuves en avant. » |
 | | | | | | | | |
