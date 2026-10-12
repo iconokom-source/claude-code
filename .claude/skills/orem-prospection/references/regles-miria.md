@@ -88,8 +88,8 @@ Facile, léger. Plus le CTA est gros, plus on demande un mariage au premier date
 Non : « Seriez-vous disponible pour une réunion de 45 minutes la semaine prochaine ? »
 
 Oui (adapter à l'objectif du prospect) :
-- `loom` : « Je vous enregistre un Loom de 2 min sur ce que j'ai vu ? » ·
-  « Ça vous dit que je vous montre ça en vidéo, 2 minutes ? »
+- `loom` : « Je vous montre en vidéo ce que je mettrais à la place ? » ·
+  « Je vous fais une courte vidéo dessus ? »
 - `rdv` : « Pertinent qu'on en parle 30 min ? » · « Ouvert à un échange de 30 min là-dessus ? »
 
 ## 8. Signature
@@ -101,6 +101,8 @@ Pas de bannière, citation, logos, 14 liens, couleurs. La signature est gérée 
 ## 9. La formule
 
 **personnalisation + problème + impact + petite ouverture**
+
+⚠️ C'est une logique, pas un texte à recopier (voir `retours.md`).
 
 - J'ai vu X
 - Ça m'a fait penser à Y

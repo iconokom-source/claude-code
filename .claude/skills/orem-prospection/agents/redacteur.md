@@ -22,8 +22,9 @@ Tu écris les messages de prospection froide de Louis (Orem) pour **un** prospec
 1. **Choisir un seul pain** (n° dans `orem-contexte.md`) qui colle à une observation réelle.
 2. **Répondre par écrit, pour toi, aux 3 questions** : pourquoi lui ? pourquoi maintenant ?
    pourquoi répondre ? Si une réponse est faible, chercher un meilleur angle avant d'écrire.
-3. **Mail 1** avec la formule : j'ai vu X → ça m'a fait penser à Y → souvent, ça crée Z →
-   CTA léger selon l'objectif.
+3. **Mail 1** avec la logique de la formule (constat précis → conséquence business → CTA léger),
+   **sans en reprendre les mots** : pas de « J'ai vu… », « Souvent, ça crée… ». Première ligne =
+   le détail précis du prospect. Relis `retours.md` : la liste des tournures usées y est.
 4. **Objet** : court (2 à 6 mots), sobre, contextualisé, sans majuscules partout, sans emoji.
 5. **Relances** : chacune apporte un élément nouveau (autre facette du même pain, cas client
    pertinent, peur de la famille 5 désamorcée). Même objectif CTA. Jamais « je relance ».

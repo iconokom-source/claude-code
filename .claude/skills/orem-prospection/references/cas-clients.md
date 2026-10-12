@@ -11,15 +11,13 @@
   [résultat]. »
 - **Jamais** : inventer un client, un chiffre ou un résultat ; arrondir à la hausse ; citer un
   client marqué « non citable » (dans ce cas : « un cabinet de conseil lillois », sans nom).
-- **Pas de cas réel adapté** → on peut s'appuyer sur ce qu'on observe souvent, sans nom ni chiffre :
-  « On le voit souvent chez des [type d'entreprise] : [pain + impact]. »
-  C'est honnête : cela vient des 30 pains (`orem-contexte.md`).
+- **Pas de cas réel adapté** → pas de preuve du tout. Énoncer la conséquence business directement,
+  sans formule de généralisation (« On le voit souvent chez… » est banni, voir `retours.md`).
 
 ## Cas disponibles
 
 > ⚠️ À compléter par Louis. Le document « 30 pains clients » décrit des **situations types**, pas
-> des clients nommés avec résultats. Tant que ce tableau est vide, le rédacteur n'utilise que la
-> formulation « On le voit souvent chez… ».
+> des clients nommés avec résultats. Tant que ce tableau est vide, le rédacteur ne cite aucune preuve.
 
 | Client | Citable par son nom ? | Secteur / taille | Pain(s) n° | Avant | Ce qu'Orem a fait | Résultat (chiffré si possible) | Phrase prête à l'emploi |
 |---|---|---|---|---|---|---|---|

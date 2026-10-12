@@ -17,4 +17,14 @@
 
 <!-- Format : - AAAA-MM-JJ · Règle. (Avant : « … » → Après : « … ») -->
 
-_Aucun retour pour l'instant._
+- 2026-10-12 · **Pas de « mail de prospection classique ».** Le prospect reconnaît le modèle
+  en une seconde et ne répond pas. Ne pas dérouler la formule Miria phrase par phrase
+  (« J'ai vu… / Par curiosité… / On le voit souvent chez… / Je vous enregistre un Loom de 2 min ? ») :
+  la formule guide la logique, pas les mots. Tournures interdites car usées :
+  « j'ai vu votre post », « par curiosité », « on le voit souvent chez », « si c'est utile »,
+  « dernier message de ma part », « un Loom de 2 min », « merci pour la connexion »,
+  « un autre détail ». Aller droit au constat, avec le détail précis du prospect (une phrase de
+  son site, un chiffre, un nom de page) dès la première ligne.
+  (Avant : « J'ai vu votre post récent sur le lancement de l'offre… Par curiosité, je suis allé voir
+  sur le site… » → Après : « Après votre post, j'ai cherché l'audit de rémunération sur votre site.
+  Il n'y est pas. »)

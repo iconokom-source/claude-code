@@ -53,6 +53,18 @@ MOTS_MARKETING = [
     "offre site",
 ]
 
+# Tournures de cold mail usées (retour de Louis du 2026-10-12).
+CLICHES_COLD = [
+    "j'ai vu votre post",
+    "par curiosité",
+    "on le voit souvent",
+    "si c'est utile",
+    "dernier message de ma part",
+    "loom de 2 min",
+    "merci pour la connexion",
+    "un autre détail",
+]
+
 CTA_RDV = ["30 min", "30 minutes", "échange", "échanger", "appel", "call", "rendez-vous", "rdv", "visio", "en parler"]
 CTA_LOOM = ["loom", "vidéo", "video"]
 
@@ -118,6 +130,10 @@ def verifier_message(msg, objectif, variables_ok):
     for m in MOTS_MARKETING:
         if m in bas:
             err(f"vocabulaire marketé / pitch : « {m} »")
+
+    for c in CLICHES_COLD:
+        if c in bas.replace("’", "'"):
+            err(f"tournure de cold mail usée : « {c} » (voir retours.md)")
 
     if "—" in texte or "–" in texte:
         err("tiret long « — » (tic d'IA) : utiliser une virgule, un point ou deux-points")
