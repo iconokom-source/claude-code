@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__Webflow__*",
+      "mcp__Figma__*"
+    ]
+  }
+}
