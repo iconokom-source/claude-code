@@ -112,6 +112,9 @@ Capture avec `element_snapshot_tool` après chaque section modifiée. Si l'outil
 ## Sections épinglées au défilement (sticky + interaction scroll)
 - Tablette/mobile : désactiver l'interaction avec `conditionalPlayback` `{type:"breakpoint", breakpoints:["medium","small","tiny"], behavior:"dont-animate"}` (garder la règle `prefers-reduced-motion`).
 - Puis repasser la section en flux normal à `medium` : hauteur `auto` (au lieu de 300vh), bloc sticky en `position: relative`, `height: auto`, `overflow: visible`.
-- Pistes horizontales de cartes : défilement au doigt (`overflow-x: auto`, `scrollbar-width: none`, `justify-content: flex-start`), cartes réduites (≈ 20rem tablette, 17,5rem mobile).
+- Pistes horizontales de cartes : **empiler en grille** à `medium` (2 colonnes `minmax(0,1fr)`, `width: 100%`, `flex-basis: auto`) puis 1 colonne à `small`. Pas de défilement horizontal caché : l'utilisateur voit des cartes coupées et un grand vide à droite.
+- **Tout ce qui se déclenche au défilement sur ordinateur doit avoir un équivalent au toucher** : onglets/étapes pilotés par le scroll → une interaction `wf:click` par onglet (actions To : onglet choisi 100 %, autres 25 % ; volet choisi 100 %, autres 0 %), `conditionalPlayback` dont-animate sur `main` ; `cursor: pointer` à `medium`. Vérifier en tapant chaque onglet (Playwright `tap()`).
+- Chaque volet doit avoir son texte : un onglet sans contenu = défaut bloquant (rédiger à partir du reste de la page et le signaler « à valider »).
+- Menu transparent puis noir au défilement : **même effet sur tous les appareils** ; ne pas remettre de fond plein à `medium`, le calque `_bg` + l'interaction scroll suffisent.
 - Colonnes qui défilaient verticalement : empiler les cartes, masquer fondus et éléments décoratifs ; une carte dupliquée pour la boucle se masque avec la pseudo-classe `last-child` au breakpoint `medium`.
 - Grilles positionnées (`grid-row/column` explicites) : réattribuer chaque enfant à sa ligne à `medium`, sinon ils se superposent.
