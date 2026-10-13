@@ -19,26 +19,29 @@ Règles générales :
   	On y cale ensemble tes objectifs, ta cible, le plan du site et les premières pistes graphiques. → [Choisir un créneau](<lien cal.com>)
   </callout>
   ```
-  Si la visio est déjà fixée : « Ta prochaine étape : visio de cadrage le <jour date à heure> » + ce qu'il faut préparer. Le bloc change à chaque étape.
+  Dernière ligne du bloc, en gris : `Étape 1 sur 5 · Démarrage · Dernière mise à jour : <date>`.
+  Si la visio est déjà fixée : « Ta prochaine étape : visio de cadrage le <jour date à heure> » + ce qu'il faut préparer. Le bloc change à chaque étape (mis à jour par `maj-deal-shannen`).
 - **Ma checklist** : sous-titre « 3 actions pour lancer le projet. », rien de coché, dans cet ordre :
   1. `J'ai réservé ma visio de cadrage (1 h).` → `Choisir un créneau [ici](<cal.com>)`
   2. `J'ai déposé mes contenus dans le Drive.` → `[ici](<02-CONTENUS CLIENT>)`
   3. `J'ai réglé l'acompte de X %.` → `Facture [ici](<PDF>) · RIB [ici](<IBAN ICONOKOM.pdf>)`
   Supprimer : la ligne « formulaire de démarrage » et la ligne Webflow (déplacée dans la roadmap), le callout rouge « To do setup ».
 - **Callout de bienvenue** : adapter au registre ; corriger « étapes du projets » → « étapes du projet ».
-- **Accès rapides** : renommer la sous-page sans titre (flèche ↗) en `Faire une demande`.
-- **Roadmap** (toggles) :
+- **Accès rapides** : supprimer la sous-page sans titre (flèche ↗, « Faire une demande ») et le séparateur en trop. Pour la retirer : `notion-move-pages` vers le workspace **avant** d'éditer la page (sinon l'édition est refusée), puis signaler à Louis de la supprimer. Les demandes passent par WhatsApp.
+- **Roadmap** (toggles) : titres avec statut et numéro — `🔵 **1 · Démarrage** · en cours`, `⚪ **2 · Cadrage & design** · à venir`, `⚪ **3 · Construction & mise en ligne** · à venir`, `⚪ **4 · Formation & suivi** · à venir`, `⚪ **5 · Livraison finale** · à venir`, `**+ Suivi après livraison** · option` (✅ = terminé). Pas de jargon : « Démarrage » (pas Onboarding), « Construction » (pas Intégration), « Designer » (pas UX/UI).
   - Onboarding et lancement : remplacer « Remplir le formulaire de démarrage » par `Visio de cadrage : <date>` (ou « date à caler ensemble »).
   - Cadrage & design : `Accéder aux maquettes → [Ici](<Figma>)` si le lien existe, sinon « Les maquettes Figma seront accessibles ici dès le début de la phase de design. »
   - Intégration & mise en ligne : ajouter « Avant l'intégration, tu créeras ton compte Webflow (l'hébergeur du site, abonnement à ta charge) : on t'envoie le tutoriel vidéo au bon moment et on t'aide à choisir la bonne formule. » + « Le lien de prévisualisation du site sera ajouté ici pendant l'intégration. »
-  - Offboarding → titre `Livraison finale` ; Suivi partenaire Webflow → `Suivi après livraison (option)`.
-- **Ton équipe** (avant Programme & Livrables) : 3 colonnes, callouts gris 👤 — Louis (chef de projet, interlocuteur principal) · Théophile (stratégie, textes et suivi) · Clément (designer UX/UI, maquettes). Rôles à confirmer par Louis.
+  - Tuile 6 : « Suivi technique ou évolutif, si tu le souhaites : demande-le-nous sur WhatsApp. » (plus de lien « Nouvelle demande »).
+- **À valider** (avant Ton équipe) : phrase grise « Coche chaque validation quand tu es d'accord : on ne passe à l'étape suivante qu'après ton feu vert. » puis 4 cases non cochées avec date grise « · disponible vers le <date> » : plan du site (arborescence), direction artistique et textes, maquettes (« on peut construire le site »), site avant mise en ligne. Une case cochée par le client vaut validation écrite (historique Notion horodaté).
+- **Cette semaine** (après À valider) : callout gris 🗓️ `**Semaine du <lundi>**` + 1 à 2 phrases sur ce qui a été fait et ce qui vient. Mis à jour par `maj-deal-shannen`.
+- **Ton équipe** (avant Programme & Livrables) : 3 colonnes, callouts gris 👤 — Louis (chef de projet, interlocuteur principal) · Théophile (stratégie, textes et suivi) · Clément (designer, maquettes). Rôles à confirmer par Louis.
 - Sous le titre Programme & Livrables : « Dates indicatives, ajustées ensemble après la visio de cadrage. » (gris).
 
 ## Programme & Livrables (base inline)
 
 - Titre de la base : `Programme & Livrables`. Colonne `Date de livraison` renommée `Date prévue`. Vue renommée `Planning`, triée par date.
-- Options `Étapes` (remplacer Étape 01…06) : `1 · Onboarding`, `2 · Cadrage & design`, `3 · Intégration & mise en ligne`, `4 · Formation & suivi`, `5 · Livraison finale`, `6 · Suivi (option)`. Ajouter les nouvelles options, réaffecter chaque ligne, puis retirer les anciennes.
+- Options `Étapes` (remplacer Étape 01…06) : `1 · Démarrage`, `2 · Cadrage & design`, `3 · Construction & mise en ligne`, `4 · Formation & suivi`, `5 · Livraison finale`, `6 · Suivi (option)`. Ajouter les nouvelles options, réaffecter chaque ligne, puis retirer les anciennes.
 - Lignes (dates calculées à partir du démarrage et des durées de la FAQ) :
 
 | Nom | Phase | État au démarrage | Date prévue (J = démarrage) |
@@ -51,7 +54,7 @@ Règles générales :
 | Direction artistique (couleurs, typographies, style) | 2 | Pas commencé | J+8 |
 | Textes du site (direction éditoriale) | 2 | Pas commencé | J+8 |
 | Maquettes du site (Figma) | 2 | Pas commencé | J+15 |
-| Intégration du site sur Webflow | 3 | Pas commencé | J+28 |
+| Construction du site sur Webflow | 3 | Pas commencé | J+28 |
 | Mise en ligne et remise des accès | 3 | Pas commencé | J+31 |
 | Formation Webflow (visio) | 4 | Pas commencé | J+35 |
 | Livraison finale du site | 5 | Pas commencé | J+38 |
@@ -88,10 +91,13 @@ Facture d'acompte de 50 % : <HT> € HT (<TTC> € TTC), à régler pour lancer 
 
 ## Introduction (sous-page)
 
-`replace_content` avec le texte validé (voir l'espace test Le Crayon) : 5 étapes alignées sur la roadmap (Onboarding · Cadrage & design · Intégration & mise en ligne · Formation & suivi · Livraison finale), bloc Contact avec **un seul** lien WhatsApp par personne (`wa.me`), lien visio cal.com, FAQ sans mention de « Feedbacks » (remplacée par « WhatsApp ou la page Faire une demande »). Adapter au registre.
+`replace_content` avec le texte validé (voir l'espace test Le Crayon) : 5 étapes alignées sur la roadmap (Démarrage · Cadrage & design · Construction & mise en ligne · Formation & suivi · Livraison finale), bloc Contact avec **un seul** lien WhatsApp par personne (`wa.me`), lien visio cal.com, FAQ sans mention de « Feedbacks » ni de « Faire une demande » (tout passe par WhatsApp). Adapter au registre.
 
 ## Autres sous-pages
 
 - Contact & rendez-vous : « Besoin d'une visio en plus ? Réserve un créneau quand tu veux → » ; liens WhatsApp en `wa.me`.
-- Faire une demande : « Une modification, une question, une nouvelle idée ? Clique sur le bouton ci-contre → ».
 - Formation Webflow : titre de la base `💻 Formation pour être autonome` (faute « automne » dans le template).
+
+## Couverture
+
+Si Louis fournit le logo du client avec une URL publique (site du client), `cover` = cette image ; sinon pas de couverture et le signaler dans le récap.

@@ -99,4 +99,19 @@ Avec `references/architecture.md` (ID) et `references/champs.md` (clés de champ
    Fait : … | Planifié seulement : … | Incohérences : …
    ```
 
-Fin : `✅ <n> modifications appliquées — <lien deal>` + erreurs éventuelles. Ne reformule pas le diagnostic.
+## 6. Synchro espace client (si le client en a un)
+
+Uniquement pour un deal client actif qui a un espace dans la Galerie des espaces clients Notion (`notion-search` « Espace client <organisation> »). Pas d'espace → ignore. Format de référence : skill `espace-client`, `references/notion.md`.
+
+À partir des décisions appliquées (activités, étape, notes) et sans rien inventer :
+1. **Bloc « 👉 Ta prochaine étape »** : la prochaine action attendue **du client** (ou la prochaine livraison de l'équipe si rien n'est attendu de lui), avec date ; ligne grise `Étape X sur 5 · <phase> · Dernière mise à jour : <date du jour>`.
+2. **Roadmap** : statuts des tuiles (✅ terminé, 🔵 en cours, ⚪ à venir).
+3. **Programme & Livrables** : `État` (Pas commencé / En cours / Livré) et `Date prévue` recalées sur les activités Pipedrive.
+4. **À valider** : mettre à jour les dates « disponible vers le … » ; ne jamais cocher à la place du client.
+5. **Cette semaine** : remplacer le callout par la semaine en cours (1 à 2 phrases, registre tu/vous de l'espace).
+6. **Qonto** : `list_transactions` (crédits depuis la dernière synchro) ; un virement dont le montant = TTC d'une facture du client → case « acompte réglé » cochée si c'est l'acompte, et « réglée le <date> » sur le callout de la facture dans Documents administratifs.
+7. Propriété `Étapes` de l'espace dans la galerie alignée sur la phase en cours.
+
+Ces modifications sont listées dans la validation rapide (section 4) sous un bloc `## 4. Espace client` et appliquées avec le reste après « ok ».
+
+Fin : `✅ <n> modifications appliquées — <lien deal>` + lien de l'espace client si synchronisé + erreurs éventuelles. Ne reformule pas le diagnostic.
