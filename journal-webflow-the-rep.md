@@ -94,3 +94,5 @@
 - Navbar compacte 992-1279 px : liens 15 px, gap 20 px, padding pilule 18 px, « Débuter avec CapUS » masqué ; rétabli au breakpoint large (≥ 1280 px). Burger natif impossible au-dessus de 991 px.
 - Système : titre max 34rem (dans le cercle) ; schéma centré par marges auto (plus de translate) ; rotation au scroll (scrub, −12° → 12°, i-ba3c9290). Option : schéma en SVG pour animer seulement les flèches.
 - Système : schéma SVG découpé (libellés fixes 6ace2b85…, flèches 6ace2b85…09620832) dans system_cycle ; ancienne image masquée ; rotation ±12° des flèches seules au scroll ; fondu sur system_cycle.
+- Liens posés (17) : logo → accueil ; menu (Le constat, La méthode, Le Manifeste, Feuille de route) → ancres ; Rejoindre ×2, Recevoir le Manifeste/Tracker (sections), Formulaire → ancre Membres fondateurs ; hero → Manifeste / Daily Tracker ; Débuter avec CapUS ×2 + footer CapUS → page CapUS ; footer Haut de page/Méthode/Manifeste/Feuille de route/FAQ → ancres.
+- Liens manquants (infos client) : LinkedIn fondateur, LinkedIn footer, Mail (adresse), Conditions générales, Cookies, Mentions légales (pages inexistantes).
