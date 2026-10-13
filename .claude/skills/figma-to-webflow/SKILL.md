@@ -29,7 +29,7 @@ Travailler **en autonomie et vite** : peu d'appels, beaucoup d'actions par appel
 - Rapport court : ce qui a été fait, puis **ce qu'il manque** (polices, images, textes absents de la maquette, éléments à supprimer), une ligne par point.
 
 ## Règles Client First (résumé)
-- Marge de page (standard agence) : variable `page-padding` = **64 px desktop / 32 px tablette / 16 px mobile**, appliquée sur `padding-global` uniquement (`container-large` sans padding latéral).
+- Marge de page (standard agence) : variable `page-padding` = **64 px desktop / 32 px tablette / 16 px mobile**, appliquée sur `padding-global` uniquement (`container-large` sans padding latéral, sauf si le design a des lignes/cadres sur les côtés : alors variable `container-padding` 32 / 24 / 16 px sur `container-large`, pour que textes et boutons ne touchent jamais les lignes).
 - Structure : `section_[nom] > padding-global > container-large > padding-section-* > [nom]_component`.
 - Classes : `[composant]_[élément]`, combos `is-*`, utilitaires (`heading-style-h2`, `text-size-regular`…). Deux classes identiques = une seule. Valeurs via variables.
 - Détails : `references/client-first.md`, `references/variables.md`, `references/composants.md`.
