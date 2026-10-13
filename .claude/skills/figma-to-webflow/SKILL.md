@@ -58,6 +58,11 @@ Travailler **en autonomie et vite** : peu d'appels, beaucoup d'actions par appel
 - Éléments à largeur fixe (cartes, items de liste en rem) : les passer à 100 % en tablette/mobile, sinon ils débordent et coupent les décors.
 - Une combo nommée `w--open` est renommée `_w--open` (inutile) : pour battre un état Webflow, utiliser une combo maison (`is-burger`).
 - Pas de `set_visibility` sur une instance de composant, pas d'insertion `after` une instance (utiliser `append` sur le parent).
+- Un `Span` ne se lie pas à une propriété (`text` refusé) : le remplacer par un bloc texte (`<div class="…">`) puis lier.
+- Propriété de lien d'un composant : modes `url` / `email` / `phone` seulement → pour une ancre, `url` = `#id-de-section`.
+- `data_whtml_builder` : `href` et `id` écrits en HTML deviennent des attributs bruts → ensuite `set_settings` (`link`) et `set_dom_id`, puis supprimer l'attribut. Un paragraphe ne peut pas être placé directement dans un `Tabs` (le mettre dans un volet).
+- Figma : `get_design_context` est tronqué vers 100 Ko sur une page longue → lire les textes avec `use_figma` en lecture seule (parcourir les enfants de la frame, `findAllWithCriteria({types:['TEXT']})`, ignorer les calques masqués) : une passe, tous les textes par section.
+- Liste d'avantages dans une carte : propriétés `Avantage 1…n` + booléens « Afficher l'avantage n » liés à la visibilité des lignes optionnelles.
 
 ## Ne demander à l'utilisateur que si
 1. le site est introuvable ou ambigu ;

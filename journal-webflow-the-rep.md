@@ -99,3 +99,10 @@
 - Ancres LP : ID posés (accueil, constat, methode, manifeste, tracker, feuille-de-route, faq), liens Navbar réenregistrés, 4 attributs href="#" supprimés.
 - Schéma système : cycle SVG en calques masqué (38dd1419), rotation i-ba3c9290 supprimée, image d'origine 3ac01796 réaffichée avec fondu i-0f857bbd.
 - Menu et footer : ordre aligné sur les sections (Constat, Manifeste, Méthode, Feuille de route, FAQ).
+
+## CapUS (page 6ac6aef437435cbd51de1994, Figma 9387:44)
+- Textes V2 : menu, hero, À propos, problème/solution (8 cartes), Ce qui change (6), process (4 étapes, volet 1 seul rempli), offres, CTA, fondateur, FAQ (7 questions, réponse 1 seule), footer.
+- Carte Offre (8aac0891…) : props Avantage 1-5, Afficher l'avantage 4/5, Texte du bouton ; 5 offres remplies (Junior, Avancé, Consulting, Pack Transition, Pack Elite), lien CTA #audit ; 3e carte onglet 2 masquée.
+- Ajouts : lien « Entreprises » (→ The Rep), mentions hero/offres, intro + garantie offres, note CTA, section Ressources gratuites (6732c240…) avant la FAQ avec Form Email CapUS.
+- Masqués : section Customer Story, étiquettes topbar, 4e paragraphe À propos, volets process 2-4, onglets catégories FAQ.
+- ID : accueil, pourquoi-capus, ce-qui-change, methode, offres, audit, fondateur, ressources, faq. Tous les liens reliés.
