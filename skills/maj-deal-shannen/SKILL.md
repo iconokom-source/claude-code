@@ -1,5 +1,6 @@
 ---
 name: maj-deal-shannen
+model: sonnet
 description: Met à jour une affaire Pipedrive (pipeline, étape, champs, contact, activités, notes, messages) en faisant décider Shannen (expert Miria) via le connecteur Miria, après avoir rapatrié dans Pipedrive les derniers mails, RDV et transcripts. À utiliser dès que Louis demande de « mettre à jour le deal X », « passer X à Shannen », « synchro Shannen », « MAJ Pipedrive avec Shannen » ou donne des infos nouvelles sur un deal/prospect.
 ---
 
@@ -9,7 +10,7 @@ Rôle de Claude : **collecter → archiver dans Pipedrive → transmettre → ap
 
 Principe : **Pipedrive contient toujours toutes les infos.** Tout ce qui vient d'ailleurs (mails, RDV, transcripts, infos de Louis) est d'abord résumé dans une note Pipedrive, puis envoyé à Shannen.
 
-Outils : Pipedrive · Miria (`ask_expert`, expert `shannen`) · Gmail · Google Calendar · Fireflies (si connecté). Miria absent → dis-le en une ligne et arrête. Gmail/Calendar/Fireflies absents → ignore-les sans le signaler.
+Outils : Pipedrive · Miria (`ask_expert`, expert `shannen`) · Gmail · Google Calendar · Fireflies (si connecté). Miria absent → dis-le en une ligne et arrête. Gmail/Calendar/Fireflies absents → ignore-les sans le signaler (sans Gmail : mails via `getDealMailMessages` avec `include_body: 1`, 5 derniers).
 
 ## 1. Collecter
 
