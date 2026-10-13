@@ -17,7 +17,10 @@ Outils : Notion · Google Drive · Gmail · Google Calendar · Pipedrive · Abby
    - Pipedrive : `searchDeals` → `getDeal`, `getPerson`, `getOrganization` (contact, email, téléphone, montant, notes).
    - Gmail : derniers échanges avec le contact (`from:<email> OR to:<email>`), et en particulier la **confirmation écrite** (devis signé, « on y va », bon de commande).
    - Abby + Gmail : devis, factures (étape 1).
-2. Affiche une **fiche de démarrage** pré-remplie et pose en une seule fois les questions sur ce qui manque ou reste incertain :
+2. Affiche une **fiche de démarrage** pré-remplie et pose **en une seule fois, avant toute création**, toutes les questions sur ce qui manque ou reste incertain (outil de questions si disponible, sinon liste numérotée). Ne rien créer tant que la fiche n'est pas complète.
+   - **Tutoiement ou vouvoiement : toujours demander explicitement**, même si les mails semblent l'indiquer. Ne jamais le déduire. Tout l'espace, le doc Drive et le mail suivent cette réponse.
+   - Fichiers à demander s'ils ne sont pas trouvés : proposition commerciale (PDF), devis signé, facture d'acompte, contrat/BC, logo du client (pour la couverture).
+   - Liens à demander : Figma du projet (après duplication du template, étape 4), lien de réservation de la visio de cadrage (1 h).
 
 ```
 ## Fiche de démarrage — <Client>
@@ -29,11 +32,13 @@ Offre & montant HT : …                 Échéancier : acompte X % / en N fois
 Confirmation écrite : <lien mail ou ✗>
 Date de démarrage : …                  Fin prévue : …
 Équipe : Louis / Théo / Clément (qui fait quoi)
-Tutoiement ou vouvoiement : …
+Tutoiement ou vouvoiement : ❓ (à demander, jamais déduit)
 Webflow : compte client à créer ? (oui/non)
 Visio de cadrage : déjà fixée (date) ou 2 créneaux à proposer
 Documents : Proposition ✓/✗ · Devis ✓/✗ · Facture acompte ✓/✗ · Contrat/BC ✓/✗
 Lien Figma (après duplication, cf. étape 4) : …
+Lien de réservation visio de cadrage (1 h) : …
+Logo du client (couverture) : …
 ```
 
 3. **Ne démarre pas sans confirmation écrite** du client (règle du SOP). Si elle manque : demande-la (lien mail ou capture).
@@ -78,7 +83,8 @@ Arborescence exacte dans `references/ids.md`. Dans `01_EN_COURS` :
 2. Crée `<Client> - <Prénom Nom du contact>` puis toute l'arborescence (`create_file`, `mimeType` folder).
 3. Crée le doc `Bienvenue 👋 - À LIRE` dans `00 - ESPACE CLIENT` avec `create_file` (`contentMimeType: text/plain`, converti en Google Doc) et le texte standard de `ids.md` (adapter nom du client et tu/vous). Ne pas partir du doc Verdon (exception : sous-dossiers par personne).
 4. Dépose les documents de l'étape 1 dans `01-ADMIN/…` et **copie toujours le RIB Qonto** (`ids.md`) dans `01-ADMIN` sous le nom `IBAN ICONOKOM.pdf`.
-5. **Partage** (après confirmation de Louis, action visible par le client) : `00 - ESPACE CLIENT` en `reader` (documents admin en lecture seule) et `02-CONTENUS CLIENT` en `writer` au contact et aux personnes listées.
+5. **Partage** (après confirmation de Louis, action visible par le client) : `00 - ESPACE CLIENT` en `writer` au contact et aux personnes listées (le client doit toujours pouvoir modifier).
+6. **Notion** : le client a toujours un accès en **modification** (c'est lui qui coche sa checklist et ses validations). Le connecteur ne sait pas partager une page Notion : rappeler à Louis de l'inviter (Partager → e-mail du client → « Peut modifier »).
 
 ## 4. Figma (manuel guidé)
 
@@ -103,6 +109,7 @@ Template absent de `ids.md` → demande le lien et enregistre-le dans `ids.md`. 
   Devis : D-… · Facture acompte : F-… (<montant> HT) · Contrat : ✓/✗
   Visio de cadrage : <date ou créneaux proposés>
   ```
+- **Qonto** (acompte) : `list_transactions` sur les crédits depuis l'envoi de la facture ; une transaction dont le montant = TTC de l'acompte et dont la contrepartie correspond au client → cocher « J'ai réglé l'acompte » dans la checklist, et ajouter « réglée le <date> » au callout de la facture. Aucune transaction → ne rien cocher.
 - **Calendar** : si la visio est déjà fixée et pas encore dans l'agenda → proposer de créer `<Projet> — Visio de cadrage ICONOKOM` (Google Meet). Sinon, chercher 2 créneaux libres dans les 3 jours ouvrés (`suggest_time`).
 
 ## 6. Brouillon du mail de bienvenue
