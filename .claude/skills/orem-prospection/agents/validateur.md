@@ -48,7 +48,7 @@ Tout `ERREUR` du script = échec. Les `ALERTE` sont à juger avec la grille ci-d
 | 5 | Une seule idée par message | rédacteur |
 | 6 | Parle du prospect, pas d'Orem (aucun pitch, aucune offre) | rédacteur |
 | 7 | Prospect traité en inconnu (aucune fausse familiarité) | rédacteur |
-| 8 | CTA conforme à `sequence.md` : réponse avant l'Email 3, Loom **ou** RDV 30 min à l'Email 3 selon la branche, jamais les deux | rédacteur |
+| 8 | CTA conforme à `sequence.md` : réponse avant l'Email 3, Loom **ou** RDV 15 min à l'Email 3 selon la branche, jamais les deux | rédacteur |
 | 8b | Fil rouge : tous les messages tiennent le même sujet, chacun avance d'un cran, aucun ne sort de nulle part, chacun se comprend seul | rédacteur |
 | 8c | Branches cohérentes : l'Email 2 email-only ne parle pas de LinkedIn ; les deux Emails 3 s'enchaînent avec l'un comme l'autre Email 2 | rédacteur |
 | 8d | Tâches 16, 17 et script : utiles à Louis, concrets pour CE prospect, script naturel à l'oral avec objections et version messagerie | rédacteur |

@@ -99,3 +99,7 @@
     inscrits pour une coach, réservations pour un hôtel) avec un résultat concret. Un cas d'un
     autre secteur avec un indicateur qui ne lui parle pas (« position 5,5 », « affichages ») ne
     convainc pas : mieux vaut aucun cas.
+- 2026-10-13 · **Le RDV de l'Email 3 passe à 15 min** (décision de Louis : les 5 prospects du
+  test refusaient 30 min avec un inconnu). Le warm call vise aussi 15 min, par cohérence.
+- 2026-10-13 · **Signature** : la signature mail de Louis est ajoutée par lemlist (voir
+  `references/signature.md`). Elle dit qui écrit ; les messages n'ont donc pas à se présenter.

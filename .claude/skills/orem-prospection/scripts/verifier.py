@@ -201,8 +201,8 @@ def verifier_message(msg, variables_ok):
         alerte(f"{texte.count('?')} questions : risque de demandes multiples")
 
     if typ == "script_call":
-        if not re.search(r"30 min", bas):
-            err("le script de call doit proposer un RDV de 30 min")
+        if not re.search(r"15 min", bas):
+            err("le script de call doit proposer un RDV de 15 min")
         if not re.search(r"messagerie|répondeur", bas):
             err("le script de call doit contenir une version messagerie")
         return constats
@@ -210,7 +210,7 @@ def verifier_message(msg, variables_ok):
     # Le CTA est la dernière ligne : c'est là qu'on cherche l'objectif.
     cta = (lignes_utiles(texte) or [""])[-1].lower()
     parle_loom = any(k in bas for k in CTA_LOOM)
-    parle_rdv = bool(re.search(r"30 min|rendez-vous|\brdv\b|visio|\bcall\b|appel|échange de", bas))
+    parle_rdv = bool(re.search(r"15 min|30 min|rendez-vous|\brdv\b|visio|\bcall\b|appel|échange de", bas))
     if cta_attendu == "aucun":
         if parle_loom or parle_rdv:
             err("ce message ne doit proposer ni Loom ni RDV")
@@ -227,8 +227,8 @@ def verifier_message(msg, variables_ok):
     elif cta_attendu == "rdv":
         if parle_loom:
             err("branche RDV : aucune mention de Loom / vidéo")
-        if "30 min" not in cta:
-            err("branche RDV : la dernière ligne doit proposer 30 min")
+        if "15 min" not in cta:
+            err("branche RDV : la dernière ligne doit proposer 15 min")
 
     return constats
 

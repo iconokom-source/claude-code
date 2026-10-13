@@ -9,7 +9,7 @@ En cas de conflit : `retours.md` > règles Orem (section 0) > règles Miria.
   échange », « je reviens vers vous », « ravi de vous recontacter », tutoiement d'emblée, sous-entendu
   qu'il nous connaît. Vouvoiement par défaut.
 - **CTA : l'objectif se fixe à l'Email 3** (détail dans `sequence.md`). Avant, on demande juste
-  une réponse. À l'Email 3 : Loom (courte vidéo) **ou** RDV de 30 min, selon la branche. Jamais
+  une réponse. À l'Email 3 : Loom (courte vidéo) **ou** RDV de 15 min, selon la branche. Jamais
   les deux dans un même message.
 - **Fil rouge** : un seul sujet qui avance d'un cran à chaque message (voir `sequence.md`).
 - **Pas de cas client inventé.** Seuls les cas de `cas-clients.md` peuvent être cités, tels quels.
@@ -91,7 +91,7 @@ Oui (selon l'étape, voir `sequence.md`) :
 - réponse : « Je me trompe ? » · « C'est un sujet chez vous en ce moment ? »
 - `loom` : « Je vous montre en vidéo ce que je mettrais à la place ? » ·
   « Je vous fais une courte vidéo dessus ? »
-- `rdv` : « Pertinent qu'on en parle 30 min ? » · « Ouvert à un échange de 30 min là-dessus ? »
+- `rdv` : « Pertinent qu'on en parle 15 min ? » · « Ouvert à un échange de 15 min là-dessus ? »
 
 ## 8. Signature
 

@@ -32,7 +32,7 @@ Email 1 ──► Invitation LinkedIn
                      ▼
         Tâche « Évaluer : Email 3 / call / relance simple »  (Louis décide)
               ├─ Loom pertinent = oui ──► Email 3 Loom   (la suite vise le Loom)
-              ├─ Loom pertinent = non ──► Email 3 RDV    (la suite vise le RDV 30 min)
+              ├─ Loom pertinent = non ──► Email 3 RDV    (la suite vise le RDV 15 min)
               ├─ call ──► script de warm call
               └─ relance simple ──► Email breakup
                      │
@@ -49,8 +49,8 @@ L'objectif est **fixé à l'Email 3**, pas avant :
   une **réponse** (pas de RDV, pas de Loom). Le but d'un cold mail, c'est une réponse.
 - **Invitation LinkedIn** : aucun CTA.
 - **Email 3 Loom** : CTA Loom (proposer une courte vidéo). Aucune mention de RDV.
-- **Email 3 RDV** : CTA RDV de 30 min. Aucune mention de Loom ni de vidéo.
-- **Warm call** : objectif RDV de 30 min.
+- **Email 3 RDV** : CTA RDV de 15 min. Aucune mention de Loom ni de vidéo.
+- **Warm call** : objectif RDV de 15 min.
 - On ne mélange jamais Loom et RDV dans un même message.
 
 ## Le fil rouge (obligatoire)
@@ -75,9 +75,9 @@ Progression type :
 | Email 2 | Un cran de plus : une idée concrète ou un deuxième signe du même problème. Peut faire allusion à LinkedIn |
 | Email 2 email-only | Même cran, sans aucune allusion à LinkedIn |
 | Email 3 Loom | Propose de montrer en vidéo ce qui a été évoqué |
-| Email 3 RDV | Propose 30 min pour en parler, en s'appuyant sur ce qui a été évoqué |
+| Email 3 RDV | Propose 15 min pour en parler, en s'appuyant sur ce qui a été évoqué |
 | Breakup | Referme le sujet sans culpabiliser, porte ouverte |
-| Warm call | Reprend le sujet à l'oral, vise 30 min |
+| Warm call | Reprend le sujet à l'oral, vise 15 min |
 
 ## Écrits « internes » (16, 17 et le script 15)
 
@@ -107,7 +107,7 @@ Ils sont pour Louis, pas pour le prospect : ils ne suivent pas les règles de lo
   plus tard.
 - **Script de warm call** : à dire, pas à lire. Ouverture qui dit **qui appelle : prénom, nom et
   Orem** (le prospect ne nous connaît pas), pourquoi j'appelle, lien avec les mails ; demande de
-  permission ; le constat ; une question ouverte ; proposition de RDV 30 min ; 2 à 4 objections
+  permission ; le constat ; une question ouverte ; proposition de RDV 15 min ; 2 à 4 objections
   probables pour CE prospect (dont celle que le constat provoque, ex. « c'est déjà prévu / on le
   fait en interne », et les peurs n°5, 17, 22, 30 de `orem-contexte.md`) avec une réponse courte ;
   une version messagerie de 20 secondes. 150 à 300 mots.
