@@ -22,10 +22,16 @@ Travailler **en autonomie et vite** : peu d'appels, beaucoup d'actions par appel
 - **Nouvelles sections** : créer d'abord les classes et variables manquantes en un appel, puis `data_whtml_builder` **sans CSS** avec tout le HTML de la section (il réutilise les classes existantes et ignore les classes inconnues).
 - **Élément répété** (cartes…) : en construire un, `transform_element_to_component`, `create_prop` (noms et infobulles en français), lier avec `set_settings` clé `text` + `binding prop`, puis insérer les autres instances et remplir leurs props.
 - **CMS** : seulement si le contenu se répète ET évolue (blog, offres, équipe…). Champs avec texte d'aide en français. Voir `references/cms.md`.
-- Une capture (`element_snapshot_tool`) par section terminée, pas après chaque action.
+- Une capture (`element_snapshot_tool`) par section terminée, pas après chaque action. Elle échoue souvent : dans ce cas, demander à l'utilisateur des captures desktop / tablette / mobile avec une liste précise de points à regarder, et corriger d'après elles.
+
+- **Images** : comparer chaque image Figma avec celle du site (`get_screenshot` en petit + télécharger l'image Webflow depuis `s3.amazonaws.com/webflow-prod-assets/...`, autorisé). Import : `download_assets` (URL Figma temporaire) → `asset_tool > upload_image_by_url` (Designer connecté requis), texte alternatif en français. Le téléchargement direct depuis figma.com est bloqué par le proxy ; pour un fichier modifié localement : `data_assets_tool > create_asset` (MD5) puis POST multipart vers S3. Une image insérée par `data_whtml_builder` n'est pas liée à la bibliothèque : la relier avec `set_image_asset`.
+- **Schéma à animer en partie** (flèches, cycle) : exporter le groupe Figma en SVG, le découper localement en calques (même `viewBox`), importer chaque calque, les superposer en `position: absolute` et n'animer que le calque voulu.
+- **Liens** : chaque bouton, lien de menu et lien de footer doit avoir une vraie destination (ancre de section, page, mailto, URL). Lister dans le rapport ceux dont la destination manque.
+- **Contenu absent de la maquette** (réponses FAQ, prix, mentions) : ne jamais l'inventer ; masquer et le lister dans le rapport.
 
 ## 3. Responsive et rapport
 - Tablette/mobile : modifier les classes partagées aux breakpoints `medium` / `small` (grilles → 2 puis 1 colonne, empilement, tailles via variables). Règles : `references/responsive.md`.
+- Puis animations (standard premium de `references/animations.md`, sur **toute** la page, pas seulement le hero) et rappel : republier pour les voir.
 - Rapport court : ce qui a été fait, puis **ce qu'il manque** (polices, images, textes absents de la maquette, éléments à supprimer), une ligne par point.
 
 ## Règles Client First (résumé)
