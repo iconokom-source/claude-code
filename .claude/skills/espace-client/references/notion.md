@@ -1,6 +1,8 @@
 # Remplissage de l'espace Notion
 
-Référence validée : l'espace test Le Crayon (octobre 2026). Tant que le template n'est pas mis à jour, le skill applique toutes les adaptations ci-dessous sur chaque nouvel espace.
+Référence validée : l'espace test Le Crayon (octobre 2026). **Le template a été mis à jour le 13/10/2026 avec ce format** (tutoiement, repères `[...]`) : le skill remplit les repères et adapte le registre. Les consignes ci-dessous servent de contrôle ; si un élément du template manque ou a été modifié, le recréer selon ces consignes.
+
+Repères du template à remplacer : `[date]`, `[lundi]`, `[X]`, `[objet]`, `[HT]`, `[TTC]`, `[lien PDF]`, `[lien 02-CONTENUS CLIENT]`, `[lien IBAN ICONOKOM.pdf]`, `[date ou « date à caler ensemble »]`. Un repère sans valeur → texte neutre (« disponible bientôt »), jamais de crochet visible par le client. Les repères de lien sont en texte gris : les remplacer par `<span color="blue">[ici](<url>)</span>` (checklist) ou `[Accéder au … ](<url>)` (documents).
 
 Toujours `fetch` la page créée avant d'écrire (les IDs des sous-pages et des bases changent à chaque création). **Un seul registre partout** (tu ou vous selon la fiche) : accueil, Introduction, FAQ, Liens utiles, Contact, Faire une demande, doc Drive, mail.
 
@@ -27,7 +29,7 @@ Règles générales :
   3. `J'ai réglé l'acompte de X %.` → `Facture [ici](<PDF>) · RIB [ici](<IBAN ICONOKOM.pdf>)`
   Supprimer : la ligne « formulaire de démarrage » et la ligne Webflow (déplacée dans la roadmap), le callout rouge « To do setup ».
 - **Callout de bienvenue** : adapter au registre ; corriger « étapes du projets » → « étapes du projet ».
-- **Accès rapides** : supprimer la sous-page sans titre (flèche ↗, « Faire une demande ») et le séparateur en trop. Pour la retirer : `notion-move-pages` vers le workspace **avant** d'éditer la page (sinon l'édition est refusée), puis signaler à Louis de la supprimer. Les demandes passent par WhatsApp.
+- **Accès rapides** : Introduction, Liens utiles, Documents administratifs, Formation Webflow, Contact & rendez-vous. « Faire une demande » n'existe plus (les demandes passent par WhatsApp).
 - **Roadmap** (toggles) : titres avec statut et numéro — `🔵 **1 · Démarrage** · en cours`, `⚪ **2 · Cadrage & design** · à venir`, `⚪ **3 · Construction & mise en ligne** · à venir`, `⚪ **4 · Formation & suivi** · à venir`, `⚪ **5 · Livraison finale** · à venir`, `**+ Suivi après livraison** · option` (✅ = terminé). Pas de jargon : « Démarrage » (pas Onboarding), « Construction » (pas Intégration), « Designer » (pas UX/UI).
   - Onboarding et lancement : remplacer « Remplir le formulaire de démarrage » par `Visio de cadrage : <date>` (ou « date à caler ensemble »).
   - Cadrage & design : `Accéder aux maquettes → [Ici](<Figma>)` si le lien existe, sinon « Les maquettes Figma seront accessibles ici dès le début de la phase de design. »
@@ -81,7 +83,7 @@ Facture d'acompte de 50 % : <HT> € HT (<TTC> € TTC), à régler pour lancer 
   		→ [Télécharger le RIB](<IBAN ICONOKOM.pdf dans 01-ADMIN>)
   	</callout>
   ```
-- **Supprimer** les sections `Brief` (base inline) et `Formulaire de fin de projet` (`allow_deleting_content: true`). Le formulaire de fin de projet revient à la livraison.
+- Le Brief n'existe plus dans le template. La section « À la fin du projet : ton avis » (formulaire de témoignage) reste en bas, repliée : ne pas la supprimer.
 
 ## Liens utiles (sous-page)
 

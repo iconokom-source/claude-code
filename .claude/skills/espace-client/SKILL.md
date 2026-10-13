@@ -26,7 +26,7 @@ Outils : Notion · Google Drive · Gmail · Google Calendar · Pipedrive · Abby
 ## Fiche de démarrage — <Client>
 Client (raison sociale) : …            Nom affiché espace : …
 Contact principal : Prénom Nom — email — tél
-Autres personnes à inviter (Drive / Notion) : …
+E-mails à inviter (accès éditeur Drive + Notion) : contact principal + …
 Projet : <nom du projet>               Type : site vitrine / refonte / e-commerce / autre
 Offre & montant HT : …                 Échéancier : acompte X % / en N fois
 Confirmation écrite : <lien mail ou ✗>
@@ -71,6 +71,7 @@ Détail : `references/notion.md`.
 1. **Jamais `notion-duplicate-page`** sur le template : la copie devient un deuxième *modèle* de la galerie (bandeau « Vous modifiez un modèle »). Créer la page avec `notion-create-pages`, parent `data_source_id` de la galerie, `template_id` = template (`ids.md`), et directement les propriétés : `Nom` = `Espace client <Client>`, `Étapes` = `["Onboarding et préparation"]`, `Date` = début → fin prévue.
 2. `fetch` la page créée et relève les IDs des sous-pages et la data source de Programme & Livrables (tous nouveaux).
 3. Remplir (liens réels uniquement, jamais de lien inventé) :
+   - Le template est déjà au bon format (octobre 2026) : remplacer chaque repère `[...]` par la vraie valeur (liens, montants, dates), et passer tous les textes au vouvoiement si la fiche dit « vous ». Détails : `references/notion.md`.
    - Appliquer **tout** `references/notion.md` : bloc « 👉 Ta prochaine étape » en haut, checklist à 3 actions non cochées, roadmap, bloc « Ton équipe », Programme & Livrables (phases, noms clairs, dates indicatives), Documents administratifs (HT/TTC, coordonnées bancaires, sans Brief ni formulaire de fin), Liens utiles, Introduction réécrite, sous-pages corrigées. Un seul registre partout.
    - **Programme & Livrables** : voir `references/notion.md`.
    - Supprimer le callout rouge **« To do setup »** une fois tout fait.
@@ -83,8 +84,11 @@ Arborescence exacte dans `references/ids.md`. Dans `01_EN_COURS` :
 2. Crée `<Client> - <Prénom Nom du contact>` puis toute l'arborescence (`create_file`, `mimeType` folder).
 3. Crée le doc `Bienvenue 👋 - À LIRE` dans `00 - ESPACE CLIENT` avec `create_file` (`contentMimeType: text/plain`, converti en Google Doc) et le texte standard de `ids.md` (adapter nom du client et tu/vous). Ne pas partir du doc Verdon (exception : sous-dossiers par personne).
 4. Dépose les documents de l'étape 1 dans `01-ADMIN/…` et **copie toujours le RIB Qonto** (`ids.md`) dans `01-ADMIN` sous le nom `IBAN ICONOKOM.pdf`.
-5. **Partage** (après confirmation de Louis, action visible par le client) : `00 - ESPACE CLIENT` en `writer` au contact et aux personnes listées (le client doit toujours pouvoir modifier).
-6. **Notion** : le client a toujours un accès en **modification** (c'est lui qui coche sa checklist et ses validations). Le connecteur ne sait pas partager une page Notion : rappeler à Louis de l'inviter (Partager → e-mail du client → « Peut modifier »).
+5. **Accès (obligatoire, sans attendre)** : tout doit être accessible directement depuis les e-mails de la fiche.
+   - Drive : `share_file` en `writer` sur `00 - ESPACE CLIENT` pour **chaque** e-mail de la fiche (contact principal + personnes listées). Vérifier avec `get_file_permissions`.
+   - Notion : le client a toujours un accès en **modification** (il coche sa checklist et ses validations). Le connecteur Notion ne sait pas inviter quelqu'un : afficher à Louis, dans le récap, la marche exacte (Partager → coller chaque e-mail → « Peut modifier » → Inviter) avec la liste des e-mails.
+   - Figma : lien « Can view » (le client peut commenter) partagé par lien dans l'espace ; jamais « Can edit ».
+   - Le récap final contient un bloc `Accès` : Drive ✓ (e-mails) · Notion à inviter (e-mails) · Figma lien ✓/✗.
 
 ## 4. Figma (manuel guidé)
 

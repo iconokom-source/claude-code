@@ -8,7 +8,7 @@ Relevés le 2026-10-13 sur l'espace Groupe Verdon (dernier espace créé) et le 
 |---|---|
 | Page « Clients » | `285897c5a62a80f99ebffeecc06e9e70` |
 | Base « Galerie des espaces clients » | data source `collection://2a1897c5-a62a-804e-a602-000b9f13ec7f` |
-| **Template espace client** (template par défaut de la galerie) | `306897c5a62a80819f67ee22367f638d` — « Espace client - Nom du client » |
+| **Template espace client** (template par défaut de la galerie, mis à jour le 13/10/2026) | `306897c5a62a80819f67ee22367f638d` — « Espace client - Nom du client » |
 | Exemple de référence rempli | Espace client Groupe Verdon `3ec897c5a62a81d1a2f4e4324fd6efc6` |
 | SOP Signature projet | `31a897c5a62a8160b81ee23674aee918` |
 | SOP Maquettes Figma | `31a897c5a62a81d6a89bcd745e08d81d` |
@@ -18,7 +18,7 @@ Propriétés de la galerie :
 - `Date` (plage) : début → fin prévue
 - `Étapes` (multi-select) : `Prospection`, `Onboarding et préparation`, `Cadrage & architecture`, `Design des maquettes`, `Intégration sur Webflow`, `Mise en ligne & formation`, `Suivi post‑lancement`, `Off boarding`, `Suivi Partenaire Webflow`, `Archive`
 
-Sous-pages du template (recréées à chaque duplication, IDs différents) : Introduction · Liens utiles · Documents administratifs · Formation Webflow · Contact & rendez-vous · (page « Nouvelle demande », titre vide). Base inline « Programme & Livrables » (une par espace, data source propre à re-`fetch`).
+Sous-pages du template (recréées à chaque création, IDs différents) : Introduction · Liens utiles · Documents administratifs · Formation Webflow · Contact & rendez-vous. Base inline « Programme & Livrables » (une par espace, data source propre à re-`fetch`).
 
 ## Google Drive (compte iconokom@gmail.com)
 
