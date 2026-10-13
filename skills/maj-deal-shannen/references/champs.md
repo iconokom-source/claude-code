@@ -18,7 +18,7 @@ Standard : value (Valeur) · expected_close_date (Date de gain attendue) · lost
 | Décision | ec3265d0fd280088d95bbcc1f2bda2c989cfa16b | séquence maintenant · Loom plus tard · nurture · rejet |
 | Dernière action | 677df1bbf3dccf694516aa8f1e331aba5e59f757 | texte |
 | Date dernière action | ec836efc12dc4a202eafb481ed7a3c8a6264a22d | date |
-| Prochaine action | 2e1655c7ae28352c705380c99bd13ef98a59787b | envoyer message 1 · relancer email · envoyer Loom · relancer LinkedIn · brief associé call · caler RDV · nurture 30 jours · nurture 90 jours |
+| Prochaine action | 2e1655c7ae28352c705380c99bd13ef98a59787b | 186 envoyer message 1 · 187 relancer email · 188 envoyer Loom · 189 relancer LinkedIn · 190 brief associé call · 191 caler RDV · 192 nurture 30 jours · 193 nurture 90 jours (texte libre de Shannen → note) |
 | Date prochaine action | 8a3814dc6bfefa566882d7c42d07ff71aedf8b75 | date |
 | Date de relance | ea01ad8936a404b3c858f459c0f3122da351c9ff | date |
 | Owner (exécution) | cc1759a59f418358ce08b7de2e8f540ad0246313 | Louis · Associé |
@@ -38,6 +38,7 @@ Standard : value (Valeur) · expected_close_date (Date de gain attendue) · lost
 
 Enum : envoyer l'ID d'option ; si l'outil n'accepte que le libellé, le libellé exact ci-dessus.
 
-Types d'activité (libellés) : Appel · Rendez-vous · Tâche · Échéance · Adresse mail · Déjeuner · Relance · RDV visio · Envoi propale · Suivi post-propale. Priorité : Basse · Moyen · Haute.
+Types d'activité (clé API) : call Appel · meeting Rendez-vous · task Tâche · deadline Échéance · email Adresse mail · lunch Déjeuner · relance Relance · rdv_visio RDV visio · envoi_propale Envoi propale · suivi_post_propale Suivi post-propale.
+Priorité d'activité (ID) : 24 Basse · 25 Moyen · 26 Haute. Personne liée : `participants:[{person_id, primary:true}]`.
 
 Absents de Pipedrive (→ note « Fiche deal ») : date diagnostic, problème principal (si hors liste Douleur), urgence, objections, offre potentielle, motif nurture / date de réactivation (utiliser aussi Date de relance).

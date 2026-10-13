@@ -71,7 +71,7 @@ Uniquement des contrôles mécaniques : jour de semaine ≠ date, date passée, 
 Valider ? (ok = avec corrections · ok brut = tel quel · modifier …)
 ```
 
-Attends la réponse. Correction de Louis → applique-la au plan, sans rappeler Shannen sauf demande.
+Attends la réponse. Les corrections de Louis (faits erronés, registre, dates) sont appliquées au plan **et** consignées dans la note `🔄 Sync Shannen` (ligne « Corrections Louis : … ») pour être transmises à Shannen au prochain suivi. Un fait erroné qui vient d'une note Pipedrive → corriger aussi cette note (`updateNote`). Correction de Louis → applique-la au plan, sans rappeler Shannen sauf demande.
 
 ## 5. Appliquer (Pipedrive)
 
