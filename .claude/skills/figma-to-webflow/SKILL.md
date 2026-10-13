@@ -40,6 +40,7 @@ Travailler **en autonomie et vite** : peu d'appels, beaucoup d'actions par appel
 - `set_style` avec deux classes globales échoue (traité comme combo) → créer une combo `is-*`.
 - `create_variable_mode` avec `breakpoint_id` ne marche que pour une collection : pour les autres, créer le mode sans breakpoint puis `set_style_variable_mode` sur `page-wrapper` en `medium` / `small`.
 - Vérifier d'abord si les variables ont des modes Tablette/Mobile : sinon les créer (titres et espacements s'adaptent d'un coup), puis seulement corriger les grilles, hauteurs fixes et positions absolues.
+- Responsive : additionner les marges latérales (`padding-global` + `container-large` + padding interne des blocs) : en mobile, un seul retrait de 20 px pour tout le contenu, et les textes doivent tous partir du même bord. Un conteneur flex en ligne qui reçoit un bloc de plus (ex. mention légale) casse : passer en colonne.
 - Pas de `set_visibility` sur une instance de composant, pas d'insertion `after` une instance (utiliser `append` sur le parent).
 
 ## Ne demander à l'utilisateur que si
