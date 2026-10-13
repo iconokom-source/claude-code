@@ -72,6 +72,7 @@ Préférer `grid-template-columns: repeat(auto-fit, minmax(Xrem, 1fr))` quand le
 - Éléments en position absolue décoratifs : réduire, repositionner ou masquer sur `small`. Contenu en position absolue : repasser en flux normal sur `medium`.
 
 ### Navigation
+- Le menu natif Webflow ne passe en burger qu'à partir de la tablette (≤ 991 px). Si la barre est serrée entre 992 et 1279 px : version compacte en base (liens −1 px, gaps réduits, liens secondaires masqués) et valeurs complètes rétablies au breakpoint `large` (≥ 1280 px).
 - Standard agence dès la tablette : menu plein écran qui arrive de la droite. Panneau `navbar_menu` largeur 100vw (pas 100 % : en Over Right le panneau déborde à gauche), min-height 100vh, fond plein, liens en grand (taille 2xl) séparés par un filet, boutons d'action (CTA) répétés en bas du panneau (bloc caché en desktop), CTA de l'en-tête masqués. Le logo reste visible et immobile quand le menu est ouvert (lien logo en position relative, z-index au-dessus du panneau). Liens et CTA alignés à droite (côté d'arrivée du panneau). Burger : classe + combo (`navbar_menu-button is-burger`) avec fond transparent et z-index au-dessus du panneau (le combo bat le gris `.w--open` de Webflow). L'animation « Over Right » ne se règle pas via MCP : la demander à l'utilisateur en une ligne dans le rapport.
 
 - Utiliser l'élément **Navbar natif Webflow** avec menu burger à partir de `medium` (menu accessible, géré nativement).

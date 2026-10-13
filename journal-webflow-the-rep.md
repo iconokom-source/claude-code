@@ -91,3 +91,4 @@
 - Animations IX3 natives : i-1d903600 apparition au scroll, i-5e1f3e0d cartes en cascade, i-2e4c7cd6 entrée du hero, i-4e667f16 accordéon FAQ (details/summary → div, togglePlayReverse), i-6edf2e6b survol boutons (site), i-df445b5f survol cartes. Reduced motion respecté.
 - Animations scroll recréées en wf:inst (30 interactions « Home – Apparition 01-20 », « Cascade Staff/Application/L'écart/Méthode/Tracker/FAQ », « Image 1-3 », « Schéma système ») ; les versions wf:class ne jouaient pas en publié (supprimées). Animations CapUS ajoutées puis retirées (à faire après The Rep).
 - FAQ : réponses 2 à 6 absentes de la maquette V2 → à fournir par le client.
+- Navbar compacte 992-1279 px : liens 15 px, gap 20 px, padding pilule 18 px, « Débuter avec CapUS » masqué ; rétabli au breakpoint large (≥ 1280 px). Burger natif impossible au-dessus de 991 px.
