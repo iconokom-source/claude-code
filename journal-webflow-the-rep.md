@@ -76,3 +76,4 @@
 - The Rep a des lignes verticales (box-shadow de container-large) : rien ne doit les toucher → variable `container-padding` 32 / 24 / 16 px sur container-large (en plus de page-padding 64/32/16).
 - Menu mobile ouvert : navbar_menu padding latéral = page-padding + container-padding (56 px tablette, 32 px mobile) ; calc() avec deux variables non supporté par l'outil (garde une seule variable) → valeurs fixes.
 - Arrondis responsive : collection Radius modes Tablette/Mobile (page-wrapper) ; radius/card 45→32→20 px ; nouvelle radius/large 32→24→16 px (tracker, roadmap) ; method_card et pain-points_card liés à radius/card (étaient 45px en dur).
+- Bouton S'abonner : flèche en background sans position (s'affichait en haut à gauche) → background-position-x/y. Roadmap : roadmap_item 100 %, roadmap_list/track 100 % en tablette/mobile (la liste débordait et cachait la frise).

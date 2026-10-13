@@ -44,6 +44,8 @@ Travailler **en autonomie et vite** : peu d'appels, beaucoup d'actions par appel
 - Vérifier d'abord si les variables ont des modes Tablette/Mobile : sinon les créer (titres et espacements s'adaptent d'un coup), puis seulement corriger les grilles, hauteurs fixes et positions absolues.
 - Responsive : additionner les marges latérales (`padding-global` + `container-large` + padding interne des blocs) : en mobile, un seul retrait (16 px) pour tout le contenu, et les textes doivent tous partir du même bord. Un conteneur flex en ligne qui reçoit un bloc de plus (ex. mention légale) casse : passer en colonne.
 - Menu burger ouvert : il prend toute la largeur → lui donner le même retrait que le contenu (page-padding + container-padding). `calc()` combinant deux variables est réduit à une seule variable par l'outil : mettre des valeurs fixes.
+- `background-position` (raccourci) n'est pas enregistré par l'outil : utiliser `background-position-x` / `-y`, puis relire le style. Toujours relire après une modification de fond.
+- Éléments à largeur fixe (cartes, items de liste en rem) : les passer à 100 % en tablette/mobile, sinon ils débordent et coupent les décors.
 - Pas de `set_visibility` sur une instance de composant, pas d'insertion `after` une instance (utiliser `append` sur le parent).
 
 ## Ne demander à l'utilisateur que si
