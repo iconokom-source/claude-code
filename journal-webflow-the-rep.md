@@ -83,3 +83,4 @@
 - À faire par l'utilisateur : Navbar > Settings > Menu animation = « Over Right » (non réglable via MCP).
 - Sections plus aérées : padding-section-medium 72 px tablette / 64 px mobile ; padding-section-large 88 / 72 px.
 - Footer : footer_component padding latéral = page-padding (l'image de fond reste visible autour de la carte), 96 px haut/bas en tablette, 64 px en mobile. FAQ : ombre-bordure latérale supprimée < 992 px.
+- Menu : logo au-dessus du panneau (navbar_logo-link relative z-index 1001), liens et CTA alignés à droite.
