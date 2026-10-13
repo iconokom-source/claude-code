@@ -82,3 +82,4 @@
 - Menu tablette/mobile refait : panneau plein écran (min-height 100vh, fond blanc, padding-top 7.5rem), liens en grand (2xl) séparés par un filet, bloc CTA `navbar_menu-cta` (Rejoindre + Débuter avec CapUS) visible seulement < 992 px, navbar_right masqué < 992 px, burger `navbar_menu-button is-burger` (fond transparent, au-dessus du panneau). Lien « Feuille de route » → section roadmap.
 - À faire par l'utilisateur : Navbar > Settings > Menu animation = « Over Right » (non réglable via MCP).
 - Sections plus aérées : padding-section-medium 72 px tablette / 64 px mobile ; padding-section-large 88 / 72 px.
+- Footer : footer_component padding latéral = page-padding (l'image de fond reste visible autour de la carte), 96 px haut/bas en tablette, 64 px en mobile. FAQ : ombre-bordure latérale supprimée < 992 px.

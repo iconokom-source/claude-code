@@ -58,6 +58,10 @@ Préférer `grid-template-columns: repeat(auto-fit, minmax(Xrem, 1fr))` quand le
 ### Éléments décoratifs géants
 - Lettres, chiffres ou mots « display » qui remplissent une carte : ne pas les réduire comme les titres. Garder le même rapport taille/carte qu'en desktop (≈ 70 % puis 55 % de la taille desktop) et réduire plutôt la hauteur de la carte.
 
+### Cartes posées sur une image de fond (footer, CTA)
+- La carte ne touche jamais les bords : le conteneur garde la marge de page (`page-padding`) sur les côtés et ≥ 64 px en haut/bas, pour que l'image reste visible tout autour.
+- Bordures décoratives latérales (ombres, filets) pensées pour le desktop : les retirer en tablette/mobile si elles encadrent chaque élément.
+
 ### Arrondis
 - Plus l'écran est petit, plus les angles sont réduits : modes Tablette/Mobile sur la collection Radius (voir variables.md), jamais de rayon en dur.
 
