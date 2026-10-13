@@ -24,4 +24,4 @@ Modes :
 Règles :
 - Clés de champs → noms via `champs.md`. Exclure ID internes, compteurs, dates système, champs vides.
 - Retirer HTML et signatures. Notes `🔄 Sync Shannen` : seulement la plus récente, sans le `conv:`.
-- **Budget : 4 000 caractères au total par question** (prompt-suivi ≈ 170 → bloc ≤ 3 800).
+- **Budget : 4 000 caractères au total par question** (prompt-suivi ≈ 270 → bloc ≤ 3 700).
