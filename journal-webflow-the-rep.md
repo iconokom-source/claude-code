@@ -96,3 +96,5 @@
 - Système : schéma SVG découpé (libellés fixes 6ace2b85…, flèches 6ace2b85…09620832) dans system_cycle ; ancienne image masquée ; rotation ±12° des flèches seules au scroll ; fondu sur system_cycle.
 - Liens posés (17) : logo → accueil ; menu (Le constat, La méthode, Le Manifeste, Feuille de route) → ancres ; Rejoindre ×2, Recevoir le Manifeste/Tracker (sections), Formulaire → ancre Membres fondateurs ; hero → Manifeste / Daily Tracker ; Débuter avec CapUS ×2 + footer CapUS → page CapUS ; footer Haut de page/Méthode/Manifeste/Feuille de route/FAQ → ancres.
 - Liens manquants (infos client) : LinkedIn fondateur, LinkedIn footer, Mail (adresse), Conditions générales, Cookies, Mentions légales (pages inexistantes).
+- Ancres LP : ID posés (accueil, constat, methode, manifeste, tracker, feuille-de-route, faq), liens Navbar réenregistrés, 4 attributs href="#" supprimés.
+- Schéma système : cycle SVG en calques masqué (38dd1419), rotation i-ba3c9290 supprimée, image d'origine 3ac01796 réaffichée avec fondu i-0f857bbd.
