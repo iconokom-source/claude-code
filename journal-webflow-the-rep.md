@@ -108,3 +108,4 @@
 - ID : accueil, pourquoi-capus, ce-qui-change, methode, offres, audit, fondateur, ressources, faq. Tous les liens reliés.
 - CapUS responsive : menu plein écran depuis la droite (capus_navbar-brand / capus_navbar-button, logo fixe), hero/à propos/problèmes/valeurs/process/offres/CTA/fondateur/FAQ adaptés medium/small ; interactions épinglées i-3990713f, i-2ac1e72e, i-84597ec6 désactivées sur tablette/mobile.
 - CapUS : navbar sticky (top 0, z-index 100, fond plein).
+- CapUS : navbar translucide floutée (rgba + backdrop-filter), logo remplacé par version transparente (asset 6ace3360c9358c862152d40c).
