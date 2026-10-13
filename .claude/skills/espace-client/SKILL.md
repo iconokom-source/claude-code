@@ -46,12 +46,13 @@ Pour chaque document : trouver → télécharger → déposer dans Drive (étape
 
 | Document | Où chercher (dans l'ordre) | Nom de fichier Drive |
 |---|---|---|
-| Proposition commerciale | Gmail (envoyés au contact, PJ PDF ou lien Drive/Canva/Notion) → Drive (`title contains '<client>'`) → **demander** | `Proposition commerciale - <Client>.pdf` |
-| Devis | Abby API → Gmail `from:nepasrepondre@abby.fr` (objet `D-AAAA-NNNN`) → **demander** | `Devis D-AAAA-NNNN - <Client>.pdf` |
-| Factures (acompte…) | Abby API → Gmail `from:nepasrepondre@abby.fr` (objet `F-AAAA-NNNN`) → **demander** | `Facture F-AAAA-NNNN - <Client>.pdf` |
+| Proposition commerciale | Drive (`title contains '<client>'`, PDF) → Gmail (envoyés au contact : date, objet, lien du mail) → **demander** | `Proposition commerciale - <Client>.pdf` |
+| Devis | Abby API → Drive (`title contains '<client>'`) → Gmail `from:nepasrepondre@abby.fr` (objet `D-AAAA-NNNN`) → **demander** | `Devis D-AAAA-NNNN - <Client>.pdf` |
+| Factures (acompte…) | Abby API → Drive (`title contains '<client>'`) → Gmail `from:nepasrepondre@abby.fr` (objet `F-AAAA-NNNN`) → **demander** | `Facture F-AAAA-NNNN - <Client>.pdf` |
 | Contrat signé / bon de commande | Gmail (réponse du client avec PJ) → **demander** | nom d'origine |
 
-- **PDF** : seule l'API Abby permet de télécharger le PDF d'un devis/facture → `create_file` (`base64Content`, `contentMimeType: application/pdf`, `disableConversionToGoogleType: true`). Le connecteur Gmail ne télécharge pas les pièces jointes : il sert à **identifier** les documents (numéro, date, montant, lien du mail).
+- **PDF déjà dans Drive** (ancien dossier client, etc.) → `copy_file` vers le bon sous-dossier, renommé. C'est la voie la plus fiable.
+- **PDF** : sinon seule l'API Abby permet de télécharger le PDF d'un devis/facture → `create_file` (`base64Content`, `contentMimeType: application/pdf`, `disableConversionToGoogleType: true`). Le connecteur Gmail ne télécharge pas les pièces jointes : il sert à **identifier** les documents (numéro, date, montant, lien du mail).
 - Document identifié mais PDF non récupérable (API Abby indisponible, PJ client) → donne à Louis le lien du sous-dossier Drive cible (`01-ADMIN/02 - DEVIS`, etc.) et demande-lui d'y glisser le PDF ; ensuite retrouve-le par `search_files` (`parentId = '<dossier>'`) pour le lier dans Notion.
 - **Facture d'acompte inexistante** : ne la crée pas toi-même. Dis-le, rappelle le montant exact de la proposition signée, et demande à Louis de l'émettre sur Abby (ou de confirmer qu'elle viendra plus tard). Le montant doit être **strictement** celui de la proposition signée.
 - Plusieurs candidats (plusieurs devis/versions) → liste-les et demande lequel est la version finale.
@@ -60,7 +61,7 @@ Pour chaque document : trouver → télécharger → déposer dans Drive (étape
 
 Détail : `references/notion.md`.
 
-1. `notion-duplicate-page` sur le template (`ids.md`). Duplication asynchrone : re-`fetch` jusqu'à ce que le contenu soit présent.
+1. `notion-duplicate-page` sur le template (`ids.md`). La copie s'appelle « Espace client - Nom du client (1) » et atterrit dans la galerie. Re-`fetch` jusqu'à ce que le contenu soit présent, puis relève les IDs des sous-pages et la data source de Programme & Livrables (tous nouveaux).
 2. Renommer : `Espace client <Client>` (`notion-update-page`) ; propriétés `Étapes` = `Onboarding et préparation`, `Date` = début → fin prévue.
 3. Remplir (liens réels uniquement, jamais de lien inventé) :
    - **Ma checklist** : liens Drive, facture, tutoriel Webflow ; supprimer les lignes hors périmètre (ex. Webflow si pas de Webflow) ; cocher ce qui est déjà fait.
@@ -76,7 +77,7 @@ Arborescence exacte dans `references/ids.md`. Dans `01_EN_COURS` :
 
 1. Vérifie qu'aucun dossier `<Client>` n'existe déjà (sinon : le réutiliser, ne rien dupliquer).
 2. Crée `<Client> - <Prénom Nom du contact>` puis toute l'arborescence (`create_file`, `mimeType` folder).
-3. Copie le doc `Bienvenue 👋 - À LIRE` (modèle dans `ids.md`) dans `00 - ESPACE CLIENT`, puis adapte le texte au client (nom, sous-dossiers par personne). Pas de mention « OREM » : c'est ICONOKOM.
+3. Copie le doc `Bienvenue 👋 - À LIRE` (modèle dans `ids.md`) dans `00 - ESPACE CLIENT` (`copy_file`), lis-le, puis adapte-le avec `update_doc` + `replaceAllText` (en-tête « OREM · PROJET VERDON », nom du client, sous-dossiers par personne de Verdon à retirer ou remplacer, tu/vous). Pas de mention « OREM » ni « Verdon » au final.
 4. Dépose les documents de l'étape 1 dans `01-ADMIN/…`.
 5. **Partage** `00 - ESPACE CLIENT` (et lui seul) au contact en `writer` ; aux autres personnes listées, leur sous-dossier de `02-CONTENUS CLIENT`. Demande confirmation avant de partager (action visible par le client).
 
@@ -91,7 +92,7 @@ Affiche :
 4. Partage → lien « Can view » (jamais « Can edit »)
 5. Colle-moi le lien ici
 ```
-Template absent de `ids.md` → demande le lien et enregistre-le dans `ids.md`. Tant que le lien n'est pas collé, continue le reste et laisse « Figma » en ✗ dans le récap.
+Template absent de `ids.md` → demande le lien et enregistre-le dans `ids.md`. Tant que le lien n'est pas collé, continue le reste et laisse « Figma » en ✗ dans le récap. Ne cherche pas le lien dans les mails de notification Figma : ils ne contiennent que des liens de redirection `click.figma.com` inexploitables.
 
 ## 5. Mettre les étapes à jour
 
@@ -107,7 +108,7 @@ Template absent de `ids.md` → demande le lien et enregistre-le dans `ids.md`. 
 
 ## 6. Brouillon du mail de bienvenue
 
-`create_draft` Gmail, depuis le compte ICONOKOM, au contact principal, PJ : devis + facture d'acompte (contenu via `download_file_content` sur les PDF rangés dans Drive, en base64 dans `attachments`). PJ impossible → le dire et mettre les liens Drive dans le corps. Modèle : `references/mail-bienvenue.md` (respecter tu/vous). Ne jamais envoyer : Louis relit et envoie.
+`create_draft` Gmail, depuis le compte ICONOKOM, au contact principal. **Pas de pièces jointes** : le connecteur exige le PDF en base64, ce qui fait transiter des Mo dans la conversation. Mets les liens Drive du devis et de la facture dans le corps, et dis à Louis de joindre les PDF à la main s'il le souhaite avant d'envoyer. Modèle : `references/mail-bienvenue.md` (respecter tu/vous). Ne jamais envoyer : Louis relit et envoie.
 
 ## 7. Validation et récap
 

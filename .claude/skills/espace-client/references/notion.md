@@ -7,7 +7,7 @@ Toujours `fetch` la page dupliquée avant d'écrire (les IDs des sous-pages et d
 - Titre : `Espace client <Client>`.
 - Propriétés : `Étapes` = `["Onboarding et préparation"]` (ou `Cadrage & architecture` si la visio de cadrage a déjà eu lieu), `Date` = début → fin prévue.
 - **Ma checklist** (colonne gauche) :
-  - `J'ai rempli le formulaire de démarrage` → garder si le formulaire n'est pas rempli.
+  - `J'ai rempli le formulaire de démarrage` → garder si le formulaire n'est pas rempli. ⚠️ Dans la copie, ce lien (checklist et roadmap) pointe encore vers le formulaire **du template** (`306897c5a62a814aad59e3448e13363c`) : à signaler à Louis tant que le template n'est pas corrigé.
   - `J'ai créé mon compte Webflow…` → lien tutoriel (`ids.md`) ; supprimer si pas de Webflow.
   - `J'ai déposé mes contenus dans le Drive` → lien `00 - ESPACE CLIENT`.
   - `J'ai réglé l'acompte de X %` → lien PDF facture d'acompte ; adapter le pourcentage / « 1er versement (1/4) ». Cocher si payée (Qonto `list_transactions` ou dire de Louis).
@@ -44,7 +44,7 @@ Lignes standard (référence Verdon) et état au démarrage :
 |---|---|---|---|
 | Proposition commerciale | 01 | Livré | date d'envoi |
 | Devis | 01 | Livré | date du devis final |
-| Contrat | 01 | Livré si signé, sinon supprimer la ligne | date de signature |
+| Contrat | 01 | Livré si signé ; si seul le devis est signé, renommer « Devis signé (vaut contrat) » | date de signature |
 | Brief | 01 | Pas commencé (Livré si formulaire rempli) | — |
 | Arborescence du site | 02 | Pas commencé | — |
 | Fiche de style graphique | 02 | Pas commencé | — |
