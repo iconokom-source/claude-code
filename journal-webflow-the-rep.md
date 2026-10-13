@@ -78,3 +78,4 @@
 - Arrondis responsive : collection Radius modes Tablette/Mobile (page-wrapper) ; radius/card 45→32→20 px ; nouvelle radius/large 32→24→16 px (tracker, roadmap) ; method_card et pain-points_card liés à radius/card (étaient 45px en dur).
 - Bouton S'abonner : flèche en background sans position (s'affichait en haut à gauche) → background-position-x/y. Roadmap : roadmap_item 100 %, roadmap_list/track 100 % en tablette/mobile (la liste débordait et cachait la frise).
 - Méthode TABLE : lettre géante (font-size/display) 250 → 208 → 176 px (au lieu de 160/96) ; cartes 480 px de haut en tablette, 288 px de large et 384 px mini en mobile.
+- Boutons mobile : texte 16→15 px, hauteur ~46→42 px (padding 12/20 px) ; is-submit et capus_button ajustés.

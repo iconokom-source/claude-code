@@ -72,6 +72,7 @@ Préférer `grid-template-columns: repeat(auto-fit, minmax(Xrem, 1fr))` quand le
 - Dropdowns : ouverture au clic sur tablette et mobile.
 
 ### Boutons et interactions tactiles
+- En mobile, réduire légèrement les boutons : texte −1 px (ex. 16 → 15 px), padding vertical −2 px, horizontal ≈ 20 px. Hauteur jamais sous 40 px (cible tactile).
 - Zone cliquable de 44 × 44 px minimum (padding, pas seulement la taille du texte).
 - Groupe de boutons qui ne tient pas sur une ligne à `tiny` : empiler, boutons en `width: 100%`.
 - Rien ne doit dépendre du survol : une information visible au hover sur desktop doit être visible par défaut sur tactile.
