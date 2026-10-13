@@ -66,10 +66,7 @@ Détail : `references/notion.md`.
 1. **Jamais `notion-duplicate-page`** sur le template : la copie devient un deuxième *modèle* de la galerie (bandeau « Vous modifiez un modèle »). Créer la page avec `notion-create-pages`, parent `data_source_id` de la galerie, `template_id` = template (`ids.md`), et directement les propriétés : `Nom` = `Espace client <Client>`, `Étapes` = `["Onboarding et préparation"]`, `Date` = début → fin prévue.
 2. `fetch` la page créée et relève les IDs des sous-pages et la data source de Programme & Livrables (tous nouveaux).
 3. Remplir (liens réels uniquement, jamais de lien inventé) :
-   - **Ma checklist** : **supprimer la ligne « formulaire de démarrage »** (on fait toujours une visio de cadrage) ; Webflow → lien tutoriel ; Drive → lien `02-CONTENUS CLIENT` ; acompte → lien facture + lien vers « Documents administratifs » (coordonnées bancaires). Cocher ce qui est déjà fait, supprimer les lignes hors périmètre.
-   - **Documents administratifs** : un callout par document avec lien vers le **fichier** (jamais vers un dossier) ; ajouter la section « Contrat signé & bon de commande » si besoin ; **toujours** ajouter la section « Coordonnées bancaires » (IBAN en clair + lien RIB, `notion.md`).
-   - **Liens utiles** : supprimer la section « Formulaire de cadrage - Brief » ; « Ajouter mes documents » → lien `02-CONTENUS CLIENT` sur la même ligne que le texte ; Figma dans « Maquette du site » dès qu'il existe.
-   - **Roadmap** : « Onboarding et lancement » → remplacer la ligne du formulaire par la visio de cadrage (date ou « à caler ensemble ») ; lien Figma dans « Cadrage & design ».
+   - Appliquer **tout** `references/notion.md` : bloc « 👉 Ta prochaine étape » en haut, checklist à 3 actions non cochées, roadmap, bloc « Ton équipe », Programme & Livrables (phases, noms clairs, dates indicatives), Documents administratifs (HT/TTC, coordonnées bancaires, sans Brief ni formulaire de fin), Liens utiles, Introduction réécrite, sous-pages corrigées. Un seul registre partout.
    - **Programme & Livrables** : voir `references/notion.md`.
    - Supprimer le callout rouge **« To do setup »** une fois tout fait.
 
@@ -81,7 +78,7 @@ Arborescence exacte dans `references/ids.md`. Dans `01_EN_COURS` :
 2. Crée `<Client> - <Prénom Nom du contact>` puis toute l'arborescence (`create_file`, `mimeType` folder).
 3. Crée le doc `Bienvenue 👋 - À LIRE` dans `00 - ESPACE CLIENT` avec `create_file` (`contentMimeType: text/plain`, converti en Google Doc) et le texte standard de `ids.md` (adapter nom du client et tu/vous). Ne pas partir du doc Verdon (exception : sous-dossiers par personne).
 4. Dépose les documents de l'étape 1 dans `01-ADMIN/…` et **copie toujours le RIB Qonto** (`ids.md`) dans `01-ADMIN` sous le nom `IBAN ICONOKOM.pdf`.
-5. **Partage** `00 - ESPACE CLIENT` (et lui seul) au contact en `writer` ; aux autres personnes listées, leur sous-dossier de `02-CONTENUS CLIENT`. Demande confirmation avant de partager (action visible par le client).
+5. **Partage** (après confirmation de Louis, action visible par le client) : `00 - ESPACE CLIENT` en `reader` (documents admin en lecture seule) et `02-CONTENUS CLIENT` en `writer` au contact et aux personnes listées.
 
 ## 4. Figma (manuel guidé)
 

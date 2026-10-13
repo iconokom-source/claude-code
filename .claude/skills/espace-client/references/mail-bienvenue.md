@@ -1,52 +1,24 @@
 # Mail de bienvenue
 
-À envoyer en `htmlBody` : chaque 👉 est un lien cliquable avec un libellé (« Accéder à ton espace client », « Accéder au Drive », « Devis signé », « Facture d'acompte », « RIB »), jamais une URL brute.
-
-Basé sur le mail réellement envoyé (Sleepee By Tim, juillet 2026) et le SOP Signature projet. Expéditeur : contact@iconokom.fr. Version tutoiement ci-dessous ; si vouvoiement, adapter tout le texte (« votre », « vous »).
+Court, une seule page d'entrée (l'espace Notion) et 3 actions numérotées. `create_draft` en `htmlBody` : liens cliquables avec libellé, jamais d'URL brute. Pas de pièce jointe. Registre tu/vous selon la fiche. Le lien Figma n'est **pas** dans ce mail : il arrive à la phase de design.
 
 **Objet** : `Bienvenue chez ICONOKOM, <Prénom> : ton espace projet est prêt 🚀`
 
-```
-Hello <Prénom>,
-
-On est vraiment content de démarrer <nom du projet> avec toi. <1 phrase personnalisée tirée des échanges>
-
-Voici tout ce dont tu auras besoin pour avancer sereinement, j'ai tout préparé de mon côté.
-
-📋 Ton espace Notion
-C'est ton tableau de bord projet centralisé. Tu y retrouveras l'avancement de chaque étape, les documents importants, les prochaines actions et tout ce qu'on partage ensemble au fil des semaines.
-👉 <lien Notion>
-
-📁 Ton espace Google Drive
-C'est ici que tu déposeras tous tes contenus : textes, images, logo, charte graphique, vidéos, exemples de références, etc. Un document "Bienvenue" t'attend à l'intérieur pour t'expliquer comment l'organiser.
-👉 <lien Drive 00 - ESPACE CLIENT> (le doc Bienvenue est à la racine)
-
-🎨 Tes maquettes Figma
-C'est sur cet espace qu'on va travailler et partager tes maquettes tout au long de la phase de design. Tu pourras y consulter les propositions graphiques et nous faire tes retours directement.
-👉 <lien Figma>
-
-💳 Devis et acompte
-<Comme convenu, le projet est réglé en N fois / avec un acompte de X %>.
-👉 Devis signé · Facture d'acompte · RIB   (trois liens Drive)
-Coordonnées bancaires : ICONOKOM — IBAN FR76 1695 8000 0188 1420 4296 259 — BIC QNTOFRP1XXX
-
-📅 <Cas A — visio fixée> Rendez-vous <jour date> à <heure>
-On se voit <jour date> à <heure> pour la visio de cadrage. On calera ensemble tes objectifs, ta cible, le plan du site et les premières pistes graphiques. C'est une étape clé pour la suite.
-📅 <Cas B — à fixer> Prochaine étape : la visio de cadrage
-Je te propose deux créneaux :
-👉 Option 1 : <jour date> à <heure>
-👉 Option 2 : <jour date> à <heure>
-Dis-moi lequel te convient, je t'envoie l'invitation dans la foulée.
-
-En attendant, n'hésite pas à déposer dès maintenant tes premiers éléments dans le Drive. Plus on a de matière tôt, plus on avance vite.
-
-Des questions d'ici là, n'hésite pas !
-
-À très vite,
-
-Louis
+```html
+<p>Hello <Prénom>,</p>
+<p>Ravis de démarrer <projet> avec toi<, et tes associés>, merci pour la confiance !</p>
+<p>Tout le projet se suit ici : 👉 <a href="<Notion>"><b>Ton espace client</b></a><br>
+Étapes, planning, documents, contacts : tout y est centralisé.</p>
+<p><b>3 actions pour bien démarrer :</b></p>
+<ol>
+<li><b>Réserve ta visio de cadrage (1 h)</b> → <a href="<cal.com>">Choisir un créneau</a><br>On y cale tes objectifs, ta cible, le plan du site et les premières pistes graphiques.</li>
+<li><b>Dépose tes contenus</b> (photos, vidéos, textes, logos, charte…) → <a href="<02-CONTENUS CLIENT>">Ouvrir le Drive</a><br>Plus on a de matière tôt, plus on avance vite.</li>
+<li><b>Règle l'acompte de X %</b> (<HT> € HT, soit <TTC> € TTC) → <a href="<facture>">Facture</a> · <a href="<RIB>">RIB</a><br>IBAN : FR76 1695 8000 0188 1420 4296 259 — BIC : QNTOFRP1XXX (titulaire ICONOKOM)</li>
+</ol>
+<p>Ton devis signé est aussi disponible ici : <a href="<devis>">Devis signé</a>.</p>
+<p>Une question d'ici là ? Réponds simplement à ce mail ou écris-nous sur WhatsApp.</p>
+<p>À très vite,<br>Louis</p>
 ```
 
-- Pas de signature à ajouter : Gmail ajoute celle d'ICONOKOM.
-- Omettre la section Figma si le lien n'est pas encore là (et le signaler dans le récap).
-- Jours de la semaine : vérifier qu'ils correspondent aux dates.
+- Visio déjà fixée : remplacer l'action 1 par « **Visio de cadrage le <jour date> à <heure>** (invitation dans ton agenda) ».
+- Pas de signature à ajouter : Gmail ajoute celle d'ICONOKOM. Vérifier que les jours de la semaine correspondent aux dates.

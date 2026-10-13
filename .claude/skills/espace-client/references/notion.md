@@ -1,69 +1,97 @@
 # Remplissage de l'espace Notion
 
-Toujours `fetch` la page dupliquée avant d'écrire (les IDs des sous-pages et de la base Programme & Livrables changent à chaque duplication). Modèle de rendu : l'espace Groupe Verdon (`ids.md`).
+Référence validée : l'espace test Le Crayon (octobre 2026). Tant que le template n'est pas mis à jour, le skill applique toutes les adaptations ci-dessous sur chaque nouvel espace.
+
+Toujours `fetch` la page créée avant d'écrire (les IDs des sous-pages et des bases changent à chaque création). **Un seul registre partout** (tu ou vous selon la fiche) : accueil, Introduction, FAQ, Liens utiles, Contact, Faire une demande, doc Drive, mail.
+
+Règles générales :
+- Un lien pointe toujours vers le **fichier** (PDF, Figma…), jamais vers un dossier vide.
+- Pas de « Ici » sans lien : si l'élément n'existe pas encore, écrire quand il arrivera (« disponible dès la phase de design »).
+- Ne montrer que ce qui sert maintenant (pas de formulaire de fin de projet au démarrage).
 
 ## Page principale
 
-- Titre : `Espace client <Client>`.
-- Propriétés : `Étapes` = `["Onboarding et préparation"]` (ou `Cadrage & architecture` si la visio de cadrage a déjà eu lieu), `Date` = début → fin prévue.
-- **Ma checklist** (colonne gauche) :
-  - `J'ai rempli le formulaire de démarrage` → **supprimer la ligne** (on fait toujours une visio de cadrage).
-  - `J'ai créé mon compte Webflow…` → lien tutoriel (`ids.md`) ; supprimer si pas de Webflow ; corriger « créer » → « créé ».
-  - `J'ai déposé mes contenus dans le Drive` → lien `02-CONTENUS CLIENT`.
-  - `J'ai réglé l'acompte de X %` → `Accéder à la facture [ici](<PDF>) · Coordonnées bancaires [ici](<page Documents administratifs>)` ; adapter le pourcentage / « 1er versement (1/4) ». Cocher si payée (Qonto `list_transactions` ou dire de Louis).
-  - Supprimer le callout rouge « To do setup » à la fin.
+- Propriétés : `Nom` = `Espace client <Client>`, `Étapes` = `["Onboarding et préparation"]`, `Date` = date de démarrage (fin seulement si connue).
+- **Tout en haut** (insert_content position start) :
+  ```
+  <callout icon="👉" color="yellow_bg">
+  	**Ta prochaine étape : réserver ta visio de cadrage (1 h)**
+  	On y cale ensemble tes objectifs, ta cible, le plan du site et les premières pistes graphiques. → [Choisir un créneau](<lien cal.com>)
+  </callout>
+  ```
+  Si la visio est déjà fixée : « Ta prochaine étape : visio de cadrage le <jour date à heure> » + ce qu'il faut préparer. Le bloc change à chaque étape.
+- **Ma checklist** : sous-titre « 3 actions pour lancer le projet. », rien de coché, dans cet ordre :
+  1. `J'ai réservé ma visio de cadrage (1 h).` → `Choisir un créneau [ici](<cal.com>)`
+  2. `J'ai déposé mes contenus dans le Drive.` → `[ici](<02-CONTENUS CLIENT>)`
+  3. `J'ai réglé l'acompte de X %.` → `Facture [ici](<PDF>) · RIB [ici](<IBAN ICONOKOM.pdf>)`
+  Supprimer : la ligne « formulaire de démarrage » et la ligne Webflow (déplacée dans la roadmap), le callout rouge « To do setup ».
+- **Callout de bienvenue** : adapter au registre ; corriger « étapes du projets » → « étapes du projet ».
+- **Accès rapides** : renommer la sous-page sans titre (flèche ↗) en `Faire une demande`.
 - **Roadmap** (toggles) :
-  - Onboarding et lancement : remplacer la ligne « Remplir le formulaire de démarrage » par `Visio de cadrage : <jour date à heure>` (ou « date à caler ensemble »).
-  - Cadrage & design : « Accéder aux maquettes → [Ici](<lien Figma>) ».
-  - Intégration & mise en ligne : laisser tel quel.
+  - Onboarding et lancement : remplacer « Remplir le formulaire de démarrage » par `Visio de cadrage : <date>` (ou « date à caler ensemble »).
+  - Cadrage & design : `Accéder aux maquettes → [Ici](<Figma>)` si le lien existe, sinon « Les maquettes Figma seront accessibles ici dès le début de la phase de design. »
+  - Intégration & mise en ligne : ajouter « Avant l'intégration, tu créeras ton compte Webflow (l'hébergeur du site, abonnement à ta charge) : on t'envoie le tutoriel vidéo au bon moment et on t'aide à choisir la bonne formule. » + « Le lien de prévisualisation du site sera ajouté ici pendant l'intégration. »
+  - Offboarding → titre `Livraison finale` ; Suivi partenaire Webflow → `Suivi après livraison (option)`.
+- **Ton équipe** (avant Programme & Livrables) : 3 colonnes, callouts gris 👤 — Louis (chef de projet, interlocuteur principal) · Théophile (stratégie, textes et suivi) · Clément (designer UX/UI, maquettes). Rôles à confirmer par Louis.
+- Sous le titre Programme & Livrables : « Dates indicatives, ajustées ensemble après la visio de cadrage. » (gris).
+
+## Programme & Livrables (base inline)
+
+- Titre de la base : `Programme & Livrables`. Colonne `Date de livraison` renommée `Date prévue`. Vue renommée `Planning`, triée par date.
+- Options `Étapes` (remplacer Étape 01…06) : `1 · Onboarding`, `2 · Cadrage & design`, `3 · Intégration & mise en ligne`, `4 · Formation & suivi`, `5 · Livraison finale`, `6 · Suivi (option)`. Ajouter les nouvelles options, réaffecter chaque ligne, puis retirer les anciennes.
+- Lignes (dates calculées à partir du démarrage et des durées de la FAQ) :
+
+| Nom | Phase | État au démarrage | Date prévue (J = démarrage) |
+|---|---|---|---|
+| Proposition commerciale | 1 | Livré | date d'envoi |
+| Devis | 1 | Livré | date d'envoi |
+| Devis signé (ou Contrat signé) | 1 | Livré | date de signature |
+| Visio de cadrage (1 h) | 1 | Pas commencé | J+2 ou date fixée |
+| Arborescence du site (plan des pages) | 2 | Pas commencé | J+6 |
+| Direction artistique (couleurs, typographies, style) | 2 | Pas commencé | J+8 |
+| Textes du site (direction éditoriale) | 2 | Pas commencé | J+8 |
+| Maquettes du site (Figma) | 2 | Pas commencé | J+15 |
+| Intégration du site sur Webflow | 3 | Pas commencé | J+28 |
+| Mise en ligne et remise des accès | 3 | Pas commencé | J+31 |
+| Formation Webflow (visio) | 4 | Pas commencé | J+35 |
+| Livraison finale du site | 5 | Pas commencé | J+38 |
+| Suivi technique ou évolutif (option) | 6 | Pas commencé | — |
+
+- Retirer les lignes internes (ex. « Bento Reveal ») : `notion-move-pages` vers le workspace (l'API ne supprime pas), puis le signaler pour suppression manuelle.
+- Ajouter les livrables spécifiques au devis s'il y en a (entretiens, étude de marché, vidéo…).
 
 ## Documents administratifs (sous-page)
 
-Un callout bleu par document, format Verdon :
+Format des callouts (montants HT **et** TTC, lu sur la facture) :
 ```
-Devis D-2026-0117, version finale envoyée le 21 septembre 2026 → [Accéder au devis](<lien Drive>)
-Proposition présentée le 15 septembre 2026 → [Accéder à la proposition](<lien Drive>)
-Facture F-2026-0111 : acompte de 30 % à la commande (4 464,00 € HT), envoyée le 30 septembre 2026 → [Accéder à la facture](<lien Drive>)
+Devis signé — <objet> : <HT> € HT (<TTC> € TTC) → [Accéder au devis signé](<PDF>)
+Proposition commerciale présentée le <date> → [Accéder à la proposition](<PDF>)
+Facture d'acompte de 50 % : <HT> € HT (<TTC> € TTC), à régler pour lancer le projet → [Accéder à la facture](<PDF>)
+<gris> Facture de solde (50 %) : envoyée à la livraison du site.
 ```
-- Ajouter un toggle `## Contrat signé & bon de commande` (après Proposition commerciale) s'il y a un contrat/BC.
-- Factures : remplir le 1er callout, laisser les suivants vides pour les prochaines factures.
-- **Toujours** ajouter, après Factures :
+- Ajouter `## Contrat signé & bon de commande` si besoin.
+- **Toujours** ajouter après Factures :
   ```
   ## Coordonnées bancaires {toggle="true"}
   	<callout color="blue_bg">
   		**Titulaire** : ICONOKOM, 34 place du Général de Gaulle, Bureau 3, 59000 Lille<br>**IBAN** : FR76 1695 8000 0188 1420 4296 259<br>**BIC** : QNTOFRP1XXX (banque Qonto)
-  		→ [Télécharger le RIB](<lien du IBAN ICONOKOM.pdf copié dans 01-ADMIN>)
+  		→ [Télécharger le RIB](<IBAN ICONOKOM.pdf dans 01-ADMIN>)
   	</callout>
   ```
-- Liens : toujours vers le **fichier** PDF, jamais vers un dossier. Document sans fichier → texte sans lien, et le signaler dans le récap.
-- Ne pas toucher au Brief ni au Formulaire de fin de projet.
+- **Supprimer** les sections `Brief` (base inline) et `Formulaire de fin de projet` (`allow_deleting_content: true`). Le formulaire de fin de projet revient à la livraison.
 
 ## Liens utiles (sous-page)
 
-- Supprimer toute la section « Formulaire de cadrage - Brief » (toggle + callout + bloc lié).
-- « Ajouter mes documents » : remplacer le texte du callout par `Dépose ici tous les contenus nécessaires au projet : photos, images, vidéos, textes, logos, charte graphique… → [Accéder au Drive](<lien 02-CONTENUS CLIENT>)` (une seule ligne, format Verdon).
-- « Design & Site internet » : « Maquette du site » → lien Figma. Le reste (Prévisualisation Webflow, DA, Arborescence) plus tard.
+- Supprimer la section « Formulaire de cadrage - Brief ».
+- « Ajouter mes documents » : `Dépose ici tous les contenus nécessaires au projet : photos, images, vidéos, textes, logos, charte graphique… → [Accéder au Drive](<02-CONTENUS CLIENT>)`.
+- « Design & Site internet » : chaque élément avec son lien s'il existe, sinon en gras + statut gris (`**Maquette du site** · disponible dès la phase de design`, `**Prévisualisation Webflow** · disponible pendant l'intégration`, `**Direction artistique** / **Arborescence** · après la visio de cadrage`).
 
-## Programme & Livrables (base inline)
+## Introduction (sous-page)
 
-Re-`fetch` l'espace pour obtenir la data source de la base dupliquée, puis `query` ses lignes. Propriétés : `Nom`, `Étapes` (Étape 01…06), `État` (Pas commencé / En cours / Livré), `Personne` (Louis / Théo / Clément), `Date de livraison`.
+`replace_content` avec le texte validé (voir l'espace test Le Crayon) : 5 étapes alignées sur la roadmap (Onboarding · Cadrage & design · Intégration & mise en ligne · Formation & suivi · Livraison finale), bloc Contact avec **un seul** lien WhatsApp par personne (`wa.me`), lien visio cal.com, FAQ sans mention de « Feedbacks » (remplacée par « WhatsApp ou la page Faire une demande »). Adapter au registre.
 
-Lignes standard (référence Verdon) et état au démarrage :
+## Autres sous-pages
 
-| Nom | Étape | État au démarrage | Date |
-|---|---|---|---|
-| Proposition commerciale | 01 | Livré | date d'envoi |
-| Devis | 01 | Livré | date du devis final |
-| Contrat | 01 | Livré si signé ; si seul le devis est signé, renommer « Devis signé (vaut contrat) » | date de signature |
-| Brief | 01 | Pas commencé (Livré si formulaire rempli) | — |
-| Arborescence du site | 02 | Pas commencé | — |
-| Fiche de style graphique | 02 | Pas commencé | — |
-| Maquettes du site | 02 | Pas commencé | — |
-| Intégration Webflow | 03 | Pas commencé | — |
-| Remise des accès · Formation Webflow | 04 | Pas commencé | — |
-| Livraison finale du site | 05 | Pas commencé | — |
-| Suivis technique ou évolutif si applicable | 06 | Pas commencé | — |
-
-- Créer les lignes manquantes, mettre à jour celles qui existent (ne pas dupliquer).
-- `Personne` : selon la répartition donnée dans la fiche de démarrage (défaut : admin = Louis + Théo, design = Clément, intégration = Louis).
-- Ajouter les livrables spécifiques au devis (ex. entretiens, étude de marché, vidéo) s'ils figurent dans la proposition.
+- Contact & rendez-vous : « Besoin d'une visio en plus ? Réserve un créneau quand tu veux → » ; liens WhatsApp en `wa.me`.
+- Faire une demande : « Une modification, une question, une nouvelle idée ? Clique sur le bouton ci-contre → ».
+- Formation Webflow : titre de la base `💻 Formation pour être autonome` (faute « automne » dans le template).
