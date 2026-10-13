@@ -111,3 +111,4 @@
 - CapUS : navbar translucide floutée (rgba + backdrop-filter), logo remplacé par version transparente (asset 6ace3360c9358c862152d40c).
 - CapUS : navbar transparente en haut, fond noir au défilement (calque capus_navbar-bg ba0049f3…, interaction i-186ab8bd).
 - CapUS mobile : burger combo is-burger, barre pleine medium, panneau menu padding-top 2rem.
+- CapUS mobile : bouton audit du menu centré pleine largeur.
