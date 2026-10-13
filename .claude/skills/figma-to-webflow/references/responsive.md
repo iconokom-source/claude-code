@@ -51,6 +51,7 @@ Préférer `grid-template-columns: repeat(auto-fit, minmax(Xrem, 1fr))` quand le
 - Texte centré de plus de 3 lignes sur mobile : le passer à gauche, sauf hero et CTA.
 
 ### Espacements
+- Ne pas trop réduire les espaces entre sections en mobile : minimum ≈ 64 px (72 px pour les grandes sections). Les sections doivent respirer.
 - Gérés par les variables (`Section / Padding *`, `Global / Padding X`, `Gap / *`).
 - Les marges fixes de grande taille dans les classes personnalisées (> 4rem) sont divisées environ par 2 sur mobile.
 
@@ -67,6 +68,8 @@ Préférer `grid-template-columns: repeat(auto-fit, minmax(Xrem, 1fr))` quand le
 - Éléments en position absolue décoratifs : réduire, repositionner ou masquer sur `small`. Contenu en position absolue : repasser en flux normal sur `medium`.
 
 ### Navigation
+- Standard agence dès la tablette : menu plein écran qui arrive de la droite. Panneau `navbar_menu` 100 % largeur, min-height 100vh, fond plein, liens en grand (taille 2xl) séparés par un filet, boutons d'action (CTA) répétés en bas du panneau (bloc caché en desktop), CTA de l'en-tête masqués. Burger : classe + combo (`navbar_menu-button is-burger`) avec fond transparent et z-index au-dessus du panneau (le combo bat le gris `.w--open` de Webflow). L'animation « Over Right » ne se règle pas via MCP : la demander à l'utilisateur en une ligne dans le rapport.
+
 - Utiliser l'élément **Navbar natif Webflow** avec menu burger à partir de `medium` (menu accessible, géré nativement).
 - Menu mobile : liens empilés, zone cliquable de 44 px minimum, bouton CTA de la navbar dans le menu.
 - Dropdowns : ouverture au clic sur tablette et mobile.

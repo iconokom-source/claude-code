@@ -46,6 +46,7 @@ Travailler **en autonomie et vite** : peu d'appels, beaucoup d'actions par appel
 - Menu burger ouvert : il prend toute la largeur → lui donner le même retrait que le contenu (page-padding + container-padding). `calc()` combinant deux variables est réduit à une seule variable par l'outil : mettre des valeurs fixes.
 - `background-position` (raccourci) n'est pas enregistré par l'outil : utiliser `background-position-x` / `-y`, puis relire le style. Toujours relire après une modification de fond.
 - Éléments à largeur fixe (cartes, items de liste en rem) : les passer à 100 % en tablette/mobile, sinon ils débordent et coupent les décors.
+- Une combo nommée `w--open` est renommée `_w--open` (inutile) : pour battre un état Webflow, utiliser une combo maison (`is-burger`).
 - Pas de `set_visibility` sur une instance de composant, pas d'insertion `after` une instance (utiliser `append` sur le parent).
 
 ## Ne demander à l'utilisateur que si

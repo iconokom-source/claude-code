@@ -79,3 +79,6 @@
 - Bouton S'abonner : flèche en background sans position (s'affichait en haut à gauche) → background-position-x/y. Roadmap : roadmap_item 100 %, roadmap_list/track 100 % en tablette/mobile (la liste débordait et cachait la frise).
 - Méthode TABLE : lettre géante (font-size/display) 250 → 208 → 176 px (au lieu de 160/96) ; cartes 480 px de haut en tablette, 288 px de large et 384 px mini en mobile.
 - Boutons mobile : texte 16→15 px, hauteur ~46→42 px (padding 12/20 px) ; is-submit et capus_button ajustés.
+- Menu tablette/mobile refait : panneau plein écran (min-height 100vh, fond blanc, padding-top 7.5rem), liens en grand (2xl) séparés par un filet, bloc CTA `navbar_menu-cta` (Rejoindre + Débuter avec CapUS) visible seulement < 992 px, navbar_right masqué < 992 px, burger `navbar_menu-button is-burger` (fond transparent, au-dessus du panneau). Lien « Feuille de route » → section roadmap.
+- À faire par l'utilisateur : Navbar > Settings > Menu animation = « Over Right » (non réglable via MCP).
+- Sections plus aérées : padding-section-medium 72 px tablette / 64 px mobile ; padding-section-large 88 / 72 px.
