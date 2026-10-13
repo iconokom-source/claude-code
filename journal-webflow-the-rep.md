@@ -98,3 +98,4 @@
 - Liens manquants (infos client) : LinkedIn fondateur, LinkedIn footer, Mail (adresse), Conditions générales, Cookies, Mentions légales (pages inexistantes).
 - Ancres LP : ID posés (accueil, constat, methode, manifeste, tracker, feuille-de-route, faq), liens Navbar réenregistrés, 4 attributs href="#" supprimés.
 - Schéma système : cycle SVG en calques masqué (38dd1419), rotation i-ba3c9290 supprimée, image d'origine 3ac01796 réaffichée avec fondu i-0f857bbd.
+- Menu et footer : ordre aligné sur les sections (Constat, Manifeste, Méthode, Feuille de route, FAQ).
