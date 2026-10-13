@@ -1,26 +1,25 @@
 # Format du bloc deal (à envoyer à Shannen)
 
-Texte brut, une ligne par élément, champs vides omis. Pas de JSON (plus court).
+Texte brut, une ligne par élément, champs vides omis.
 
 ```
 DATE DU JOUR : AAAA-MM-JJ
-DEAL #<id> « <titre> » | Pipeline <id> <nom> | Étape <id> <nom> | Statut <open/won/lost> | Valeur <x €> | Créé <date> | Changement d'étape <date>
-CHAMPS : <Nom champ>=<valeur> ; <Nom champ>=<valeur> ; …
-CONTACT : <nom> — <poste> — <email> — <tél> — LinkedIn <url>
-ORGANISATION : <nom> — <secteur/ville/taille si renseignés>
+DEAL #<id> « <titre> » | P<id> <nom> | Étape <id> <nom> | <open/won/lost> | <valeur €> | Créé <date> | Étape depuis <date>
+CHAMPS : <Nom>=<valeur> ; …
+CONTACT : <nom> — <poste> — <email> — <tél> — <LinkedIn>
+ORGA : <nom> — <secteur/ville/taille>
 ACTIVITÉS :
-- #<id> | <type> | <sujet> | <date> | faite: oui/non | <note ≤ 300 car.>
+- #<id> | <type> | <sujet> | <date> | faite:oui/non | <note ≤ 200 car.>
 NOTES (récentes d'abord) :
-- <date> | <texte ≤ 600 car.>
-MAILS (5 derniers) :
-- <date> | <de → à> | <objet> | <extrait ≤ 200 car.>
-INFOS DE LOUIS :
-<texte fourni par Louis, intégral>
+- <date> | <texte ≤ 400 car.>
+INFOS DE LOUIS : <texte intégral>
 ```
 
+Modes :
+- **Complet** (nouvelle conversation) : tout ci-dessus. Les notes `📥 Nouveautés` contiennent déjà mails, RDV et calls.
+- **Suivi** (conversation existante) : ligne DEAL + CHAMPS modifiés + activités à faire (toutes) + activités/notes créées ou modifiées depuis la dernière synchro (dont la note `📥 Nouveautés` du jour) + INFOS DE LOUIS. Ne renvoie pas ce que Shannen a déjà reçu.
+
 Règles :
-- Champs personnalisés : convertis la clé en nom via `champs.md`. Exclure : ID internes, compteurs, dates système, champs vides.
-- Retirer HTML et signatures des notes/mails.
-- Notes `🔄 Sync Shannen` : n'envoyer que la plus récente.
-- Suivi (conversation existante) : bloc `NOUVEAU` = notes/activités/mails dont la date de création ou de mise à jour est postérieure à la dernière synchro + infos de Louis ; bloc `ETAT` = ligne DEAL + activités à faire (ID, sujet, date).
-- Budget : 8 000 caractères par message au total.
+- Clés de champs → noms via `champs.md`. Exclure ID internes, compteurs, dates système, champs vides.
+- Retirer HTML et signatures. Notes `🔄 Sync Shannen` : seulement la plus récente, sans le `conv:`.
+- **Budget : 4 000 caractères au total par question** (prompt-suivi ≈ 170 → bloc ≤ 3 800).

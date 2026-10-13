@@ -1,42 +1,56 @@
 ---
 name: maj-deal-shannen
-description: Met à jour une affaire Pipedrive (pipeline, étape, champs, contact, activités, notes, messages) en faisant décider Shannen (expert Miria) via le connecteur Miria. À utiliser dès que Louis demande de « mettre à jour le deal X », « passer X à Shannen », « synchro Shannen », « MAJ Pipedrive avec Shannen » ou donne des infos nouvelles sur un deal/prospect.
+description: Met à jour une affaire Pipedrive (pipeline, étape, champs, contact, activités, notes, messages) en faisant décider Shannen (expert Miria) via le connecteur Miria, après avoir rapatrié dans Pipedrive les derniers mails, RDV et transcripts. À utiliser dès que Louis demande de « mettre à jour le deal X », « passer X à Shannen », « synchro Shannen », « MAJ Pipedrive avec Shannen » ou donne des infos nouvelles sur un deal/prospect.
 ---
 
 # MAJ deal via Shannen
 
-Rôle de Claude : **collecter → transmettre → appliquer**. Aucune analyse commerciale de ta part : Shannen décide, toi tu exécutes. Sois bref, pas de reformulation, pas de commentaires.
+Rôle de Claude : **collecter → archiver dans Pipedrive → transmettre → appliquer**. Aucune analyse commerciale de ta part : Shannen décide, toi tu exécutes. Pas de reformulation, pas de commentaires.
 
-Outils : connecteur **Pipedrive** + connecteur **Miria** (`https://miria.ai/api/mcp`, expert Shannen). Si le connecteur Miria est absent, dis-le en une ligne et arrête.
+Principe : **Pipedrive contient toujours toutes les infos.** Tout ce qui vient d'ailleurs (mails, RDV, transcripts, infos de Louis) est d'abord résumé dans une note Pipedrive, puis envoyé à Shannen.
 
-## 1. Collecter (Pipedrive, lecture seule)
+Outils : Pipedrive · Miria (`ask_expert`, expert `shannen`) · Gmail · Google Calendar · Fireflies (si connecté). Miria absent → dis-le en une ligne et arrête. Gmail/Calendar/Fireflies absents → ignore-les sans le signaler.
 
-1. `searchDeals` (titre) → `getDeal`. Plusieurs résultats → demande lequel.
-2. `getPerson`, `getOrganization` liés ; `getActivities` du deal (faites ET à faire, avec ID) ; `getNotes` du deal ; `getDealMailMessages` (5 derniers, extrait seulement).
-3. Repère la dernière note commençant par `🔄 Sync Shannen` → sa date = **date de dernière synchro** (aucune = première fois).
-4. Construis le **bloc deal** selon `references/bloc-deal.md` (champs vides exclus, plafonds de longueur).
+## 1. Collecter
 
-## 2. Conversation Shannen
+1. Pipedrive : `searchDeals` (titre) → `getDeal`. Plusieurs résultats → demande lequel. Puis `getPerson`, `getOrganization`, `getActivities` du deal (faites ET à faire, avec ID), `getNotes` du deal.
+2. **Dernière synchro** : la note la plus récente commençant par `🔄 Sync Shannen` → sa date et son `conv:<id>`. Aucune = première fois (fenêtre de collecte : 90 jours).
+3. **Sources externes** (uniquement depuis la dernière synchro, emails du contact + domaine de l'organisation) :
+   - Gmail : `search_threads` `from:<email> OR to:<email> after:<date>` → 10 fils max, lis seulement objet, date, expéditeur, extrait.
+   - Google Calendar : `search_events` avec le nom/email du contact (passés depuis la synchro + à venir).
+   - Fireflies : `fireflies_get_transcripts` (`participants:[<email>]`, `fromDate:<date synchro>`, `limit:5`) ; aucun résultat → `keyword:<nom de l'organisation>`, `scope:"title"`. Pour chaque réunion : `fireflies_get_summary` → **résumé et actions** + lien `https://app.fireflies.ai/view/<id>`. Jamais `fireflies_get_transcript` (transcript intégral, trop coûteux) sauf demande de Louis.
+   - `getDealMailMessages` (Pipedrive) pour éviter les doublons avec Gmail.
+4. **Archivage** : s'il y a du nouveau, `addNote` (deal + personne + organisation) :
+   ```
+   📥 Nouveautés <AAAA-MM-JJ>
+   MAILS : <date> | <de → à> | <objet> | <résumé 1 ligne>
+   RDV : <date> | <titre> | fait/à venir
+   CALL <date> (Fireflies <lien>) : <résumé ≤ 5 lignes> | Actions : …
+   INFOS LOUIS : <texte intégral>
+   ```
+5. Construis le **bloc deal** (`references/bloc-deal.md`).
 
-Nom de conversation = `DEAL - <TITRE DU DEAL EN MAJUSCULES>` (pipeline Prospection ou Growth : `PROSPECT - <TITRE>`).
+## 2. Envoyer à Shannen (`ask_expert`, expert `shannen`)
 
-- Liste les conversations Shannen et cherche ce nom (ou une conversation dont le titre contient le titre du deal, préfixe DEAL/PROSPECT).
-- **Trouvée** → continue-la. Envoie : `references/prompt-suivi.md` + infos nouvelles de Louis + uniquement les éléments Pipedrive créés/modifiés **après** la dernière synchro (+ état actuel pipeline/étape/activités à faire).
-- **Absente** → crée-la avec ce nom exact. Envoie : `references/prompt-initial.md` + `references/architecture.md` + bloc deal complet + infos de Louis.
-- **Limite : 8 000 caractères par message** (un seul message, jamais de découpage en plusieurs conversations). Si dépassement : tronque d'abord les notes/mails les plus anciens, puis les descriptions d'activités terminées. Jamais l'architecture ni les infos de Louis.
+Limite stricte : **4 000 caractères par question**. Une conversation par deal, identifiée par son `conversation_id` (stocké dans la note `🔄 Sync Shannen`).
+
+- **`conv:<id>` connu** → 1 appel : `conversation_id=<id>`, question = `references/prompt-suivi.md` + bloc deal **en mode suivi**.
+- **Inconnu** → si Louis a donné l'URL d'une conversation Miria existante (`miria.ai/shannen/chat/<uuid>`), essaie `conversation_id=<uuid>` ; si refusé, nouvelle conversation. Nouvelle conversation = 2 appels :
+  1. question = `references/prompt-initial.md` (sans conversation_id) → récupère le `conversation_id` retourné ;
+  2. même `conversation_id`, question = `references/prompt-suivi.md` + bloc deal **complet**.
+- Bloc trop long → tronque d'abord les notes anciennes, puis les mails, puis les descriptions d'activités terminées. Jamais les infos de Louis ni les activités à faire.
+- Timeout → réessaie une fois avec le même `conversation_id`. Limite d'usage atteinte → relaie le message et le lien Miria, stop.
 
 ## 3. Réponse de Shannen
 
-- Si elle pose des questions (`questions` non vide) → affiche-les telles quelles, récupère les réponses de Louis, renvoie-les dans la **même** conversation. Aucune écriture Pipedrive avant.
-- Sinon, extrais le bloc ```json``` (schéma : `references/schema-json.md`). JSON absent/invalide → redemande une fois dans la même conversation : « Renvoie uniquement le bloc JSON conforme au schéma. »
+- `questions` non vide → affiche-les telles quelles, récupère les réponses de Louis, renvoie-les dans la même conversation. Aucune écriture avant.
+- Sinon extrais le bloc ```json``` (`references/schema-json.md`). JSON absent/invalide → redemande une fois : « Renvoie uniquement le bloc JSON conforme au format convenu. »
 
 ## 4. Validation rapide (obligatoire)
 
-Affiche un récap compact, rien d'autre :
-
 ```
 DEAL <titre> (#id)
-Diagnostic : <diagnostic.statut_reel> — <diagnostic.prochaine_etape>
+Diagnostic : <statut_reel> — <prochaine_etape>
 Pipeline/étape : <actuel> → <nouveau> | inchangé
 Champs : <n> (<noms>)
 Activités : +<n> créer | ~<n> modifier | ✕<n> annuler
@@ -45,31 +59,31 @@ Notes : +<n> | Messages : <n> (<canaux>)
 Valider ? (ok / modifier …)
 ```
 
-Attends « ok ». Une correction de Louis → applique-la au plan (pas de nouvel appel à Shannen sauf demande).
+Attends « ok ». Correction de Louis → applique-la au plan, sans rappeler Shannen sauf demande.
 
 ## 5. Appliquer (Pipedrive)
 
-Dans cet ordre, en t'appuyant sur `references/architecture.md` (ID pipelines/étapes) et `references/champs.md` (clés de champs) :
+Avec `references/architecture.md` (ID) et `references/champs.md` (clés de champs) :
 
-1. **Deal** : `updateDeal` (pipeline_id, stage_id, champs, value, expected_close_date, status/lost_reason si `lost`). Option enum → utilise le libellé exact listé dans `champs.md`.
+1. **Deal** : `updateDeal` (pipeline_id, stage_id, champs, value, expected_close_date, status/lost_reason).
 2. **Contact / organisation** : `updatePerson` / `updateOrganization` si `contact` non vide.
-3. **Activités à annuler** : `updateActivity` → `done: true`, sujet préfixé `[ANNULÉE] `, raison ajoutée en fin de note. (Pas de suppression : traçabilité.)
-4. **Activités à modifier** : `updateActivity` (due_date, subject, note).
-5. **Activités à créer** : `addActivity` (type, subject, due_date, priority, note, deal_id, person_id, org_id).
-6. **Notes** : `addNote` avec `deal_id` + `person_id` + `org_id` (visible partout).
-7. **Messages** : pour chacun, `addNote` (deal + personne + organisation, épinglée sur le deal) au format :
+3. **Annuler** : `updateActivity` → `done: true`, sujet préfixé `[ANNULÉE] `, raison en fin de note (pas de suppression).
+4. **Modifier** : `updateActivity` (clés non vides seulement).
+5. **Créer** : `addActivity` (type, subject, due_date, priority, note, deal_id, person_id, org_id).
+6. **Notes** : `addNote` avec `deal_id` + `person_id` + `org_id`.
+7. **Messages** : `addNote` (deal + personne + organisation, épinglée sur le deal) :
    ```
    ✉️ MESSAGE À ENVOYER — <canal> — <destinataire>
    Objet : <objet si email>
    ---
    <texte exact>
    ```
-   Et si le message a une date d'envoi, l'activité correspondante (type Adresse mail / Relance) reçoit le même texte dans sa note. Ne rien envoyer toi-même.
+   Si `date_envoi`, l'activité correspondante reçoit le même texte dans sa note. Ne rien envoyer toi-même.
 8. **Note de synchro** (toujours, en dernier, épinglée) :
    ```
-   🔄 Sync Shannen — <AAAA-MM-JJ>
+   🔄 Sync Shannen — <AAAA-MM-JJ> — conv:<conversation_id>
    Statut : … | Avancement : … | Risque : … | Prochaine étape : …
    Fait : … | Planifié seulement : … | Incohérences : …
    ```
 
-Fin : une ligne `✅ <n> modifications appliquées — <lien deal>` + erreurs éventuelles (appel, cause). Ne reformule pas le diagnostic.
+Fin : `✅ <n> modifications appliquées — <lien deal>` + erreurs éventuelles. Ne reformule pas le diagnostic.

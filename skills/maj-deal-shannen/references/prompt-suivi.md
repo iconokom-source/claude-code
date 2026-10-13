@@ -1,1 +1,1 @@
-Shannen, mise à jour de ce deal. Nouveautés depuis notre dernier échange ci-dessous (bloc NOUVEAU) + état actuel Pipedrive (bloc ETAT). Mêmes règles, même architecture, même format : uniquement le bloc ```json``` du schéma convenu, max 5 questions seulement si indispensable.
+Shannen, voici le deal (ou ses nouveautés depuis notre dernier échange). Mêmes règles, même architecture, même format : uniquement le bloc ```json``` convenu.
