@@ -108,3 +108,10 @@ Préférer `grid-template-columns: repeat(auto-fit, minmax(Xrem, 1fr))` quand le
 - hiérarchie visuelle conservée (H1 plus grand que H2, etc.).
 
 Capture avec `element_snapshot_tool` après chaque section modifiée. Si l'outil ne permet pas de choisir la largeur, vérifier les valeurs avec `query_styles` (breakpoints `medium`, `small`, `tiny`) et noter dans le rapport que la vérification visuelle sur appareil reste à faire.
+
+## Sections épinglées au défilement (sticky + interaction scroll)
+- Tablette/mobile : désactiver l'interaction avec `conditionalPlayback` `{type:"breakpoint", breakpoints:["medium","small","tiny"], behavior:"dont-animate"}` (garder la règle `prefers-reduced-motion`).
+- Puis repasser la section en flux normal à `medium` : hauteur `auto` (au lieu de 300vh), bloc sticky en `position: relative`, `height: auto`, `overflow: visible`.
+- Pistes horizontales de cartes : défilement au doigt (`overflow-x: auto`, `scrollbar-width: none`, `justify-content: flex-start`), cartes réduites (≈ 20rem tablette, 17,5rem mobile).
+- Colonnes qui défilaient verticalement : empiler les cartes, masquer fondus et éléments décoratifs ; une carte dupliquée pour la boucle se masque avec la pseudo-classe `last-child` au breakpoint `medium`.
+- Grilles positionnées (`grid-row/column` explicites) : réattribuer chaque enfant à sa ligne à `medium`, sinon ils se superposent.

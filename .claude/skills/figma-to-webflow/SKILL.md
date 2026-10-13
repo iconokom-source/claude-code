@@ -32,6 +32,7 @@ Travailler **en autonomie et vite** : peu d'appels, beaucoup d'actions par appel
 
 ## 3. Responsive et rapport
 - Tablette/mobile : modifier les classes partagées aux breakpoints `medium` / `small` (grilles → 2 puis 1 colonne, empilement, tailles via variables). Règles : `references/responsive.md`.
+- **Toujours** finir tablette et mobile (et les faire valider sur captures) **avant** de parler des animations ou d'en créer.
 - Puis animations (standard premium de `references/animations.md`, sur **toute** la page, pas seulement le hero) et rappel : republier pour les voir.
 - Rapport court : ce qui a été fait, puis **ce qu'il manque** (polices, images, textes absents de la maquette, éléments à supprimer), une ligne par point.
 

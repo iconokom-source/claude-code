@@ -106,3 +106,4 @@
 - Ajouts : lien « Entreprises » (→ The Rep), mentions hero/offres, intro + garantie offres, note CTA, section Ressources gratuites (6732c240…) avant la FAQ avec Form Email CapUS.
 - Masqués : section Customer Story, étiquettes topbar, 4e paragraphe À propos, volets process 2-4, onglets catégories FAQ.
 - ID : accueil, pourquoi-capus, ce-qui-change, methode, offres, audit, fondateur, ressources, faq. Tous les liens reliés.
+- CapUS responsive : menu plein écran depuis la droite (capus_navbar-brand / capus_navbar-button, logo fixe), hero/à propos/problèmes/valeurs/process/offres/CTA/fondateur/FAQ adaptés medium/small ; interactions épinglées i-3990713f, i-2ac1e72e, i-84597ec6 désactivées sur tablette/mobile.
