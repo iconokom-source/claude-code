@@ -8,6 +8,8 @@ DEAL #<id> « <titre> » | P<id> <nom> | Étape <id> <nom> | <open/won/lost> | <
 CHAMPS : <Nom>=<valeur> ; …
 CONTACT : <nom> — <poste> — <email> — <tél> — <LinkedIn>
 ORGA : <nom> — <secteur/ville/taille>
+REGISTRE : tutoiement | vouvoiement (déduit du dernier mail échangé avec le contact ; inconnu → vouvoiement) — signature : <prénom> + <adresse d'envoi utilisée>
+EXPÉDITEUR : Louis (Orem)
 ACTIVITÉS :
 - #<id> | <type> | <sujet> | <date> | faite:oui/non | <note ≤ 200 car.>
 NOTES (récentes d'abord) :

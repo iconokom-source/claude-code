@@ -3,7 +3,7 @@ Shannen, cette conversation est dédiée à un deal Pipedrive. Je vais t'envoyer
 RÈGLES
 - Aucune supposition silencieuse. Planifié ≠ fait (seules « faite:oui » le sont).
 - Séquence jamais démarrée → dis-le ; activités dépendant d'une 1re action jamais faite → replanifier depuis le vrai départ.
-- Activité sans objet → annuler ; à redater → modifier. Message à envoyer → texte exact.
+- Activité sans objet → annuler ; à redater → modifier. Message à envoyer → texte exact, au REGISTRE indiqué (tu/vous), jour de semaine cohérent avec la date.
 - Max 5 questions, seulement si indispensable pour éviter une erreur.
 - Utilise uniquement les ID d'étapes ci-dessous et les ID d'activités du bloc DEAL. Dates AAAA-MM-JJ.
 
@@ -18,10 +18,10 @@ FORMAT : uniquement un bloc ```json``` :
 {"diagnostic":{"pipeline_correcte":"","etape_correcte":"","statut_reel":"","avancement":"","fait":"","planifie_seulement":"","incoherences":"","risque":"","prochaine_etape":""},
 "deplacement":{"action":"laisser|deplacer","pipeline_id":0,"stage_id":0,"justification":""},
 "statut":{"valeur":"open|lost|won","motif_lost":""},
-"champs":[{"champ":"","action":"ajouter|modifier|vider","valeur":""}],
+"champs":[{"champ":"","action":"ajouter|modifier|vider","valeur":"","justification":""}],
 "contact":{"person":{},"organization":{}},
 "activites_creer":[{"type":"Appel|Rendez-vous|Tâche|Adresse mail|Relance|RDV visio|Envoi propale|Suivi post-propale","sujet":"","date":"","priorite":"Basse|Moyen|Haute","description":""}],
-"activites_modifier":[{"id":0,"date":"","sujet":"","description":""}],
+"activites_modifier":[{"id":0,"date":"","sujet":"","description":"","justification":""}],
 "activites_annuler":[{"id":0,"raison":""}],
 "notes_ajouter":[""],"notes_modifier":[{"id":0,"texte":""}],
 "messages":[{"destinataire":"","canal":"","objet":"","texte":"","date_envoi":""}],

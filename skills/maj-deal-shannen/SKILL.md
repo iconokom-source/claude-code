@@ -48,18 +48,30 @@ Limite stricte : **4 000 caractères par question**. Une conversation par deal, 
 
 ## 4. Validation rapide (obligatoire)
 
+Affiche le retour **complet** de Shannen, mis en forme (pas de résumé, pas de reformulation, contenu intégral) :
+
 ```
-DEAL <titre> (#id)
-Diagnostic : <statut_reel> — <prochaine_etape>
-Pipeline/étape : <actuel> → <nouveau> | inchangé
-Champs : <n> (<noms>)
-Activités : +<n> créer | ~<n> modifier | ✕<n> annuler
-Notes : +<n> | Messages : <n> (<canaux>)
-⚠ <incohérences, 1 ligne chacune>
-Valider ? (ok / modifier …)
+## 1. Diagnostic
+Pipeline correcte · Étape correcte · Statut réel · Avancement · Fait · Planifié seulement · Incohérences · Risque · Prochaine étape (une ligne chacun, texte de Shannen)
+
+## 2. Mise à jour Pipedrive
+Pipeline / étape : action, actuel → nouveau, justification
+Champs : tableau Champ | Action | Valeur | Justification
+Activités à créer : pour chacune Type, Sujet, Date (jour de la semaine), Priorité, Description intégrale
+Activités à modifier : #ID, avant → après (date, sujet, description intégrale), justification
+Activités à annuler : #ID sujet, raison
+Notes à ajouter / modifier : texte intégral
+Messages : destinataire, canal, objet, texte intégral en bloc citation
+
+## 3. Questions de Shannen (si présentes)
+
+## ⚠ Points à corriger avant application
+Uniquement des contrôles mécaniques : jour de semaine ≠ date, date passée, registre tu/vous ≠ celui des échanges, valeur hors liste d'un champ enum, ID inconnu, éléments vides (id 0) ignorés. Pour chacun : correction proposée.
+
+Valider ? (ok = avec corrections · ok brut = tel quel · modifier …)
 ```
 
-Attends « ok ». Correction de Louis → applique-la au plan, sans rappeler Shannen sauf demande.
+Attends la réponse. Correction de Louis → applique-la au plan, sans rappeler Shannen sauf demande.
 
 ## 5. Appliquer (Pipedrive)
 
