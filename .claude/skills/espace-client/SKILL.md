@@ -31,7 +31,6 @@ Date de démarrage : …                  Fin prévue : …
 Équipe : Louis / Théo / Clément (qui fait quoi)
 Tutoiement ou vouvoiement : …
 Webflow : compte client à créer ? (oui/non)
-Sous-dossiers Contenus client par personne ? (oui/non + noms)
 Visio de cadrage : déjà fixée (date) ou 2 créneaux à proposer
 Documents : Proposition ✓/✗ · Devis ✓/✗ · Facture acompte ✓/✗ · Contrat/BC ✓/✗
 Lien Figma (après duplication, cf. étape 4) : …
@@ -51,6 +50,9 @@ Pour chaque document : trouver → télécharger → déposer dans Drive (étape
 | Factures (acompte…) | Abby API → Drive (`title contains '<client>'`) → Gmail `from:nepasrepondre@abby.fr` (objet `F-AAAA-NNNN`) → **demander** | `Facture F-AAAA-NNNN - <Client>.pdf` |
 | Contrat signé / bon de commande | Gmail (réponse du client avec PJ) → **demander** | nom d'origine |
 
+- **Fichier donné dans la conversation** (PDF glissé par Louis) : c'est la source prioritaire.
+  - Notion : `notion-create-file-upload` puis `curl -X POST <upload_url>` avec les en-têtes renvoyés et `-F "file=@<chemin>"` → place le `markdown_source` dans le callout du document. Si le réseau refuse `api.notion.com` (403), dis-le et passe à la suite.
+  - Drive : le connecteur ne prend que du base64 dans l'appel, impossible pour un PDF de plusieurs Mo. Donne à Louis le lien du sous-dossier cible et demande-lui d'y glisser le fichier (10 s), puis retrouve-le (`search_files`, `parentId`) et lie-le dans Notion. Ne mets jamais de lien vers un dossier vide.
 - **PDF déjà dans Drive** (ancien dossier client, etc.) → `copy_file` vers le bon sous-dossier, renommé. C'est la voie la plus fiable.
 - **PDF** : sinon seule l'API Abby permet de télécharger le PDF d'un devis/facture → `create_file` (`base64Content`, `contentMimeType: application/pdf`, `disableConversionToGoogleType: true`). Le connecteur Gmail ne télécharge pas les pièces jointes : il sert à **identifier** les documents (numéro, date, montant, lien du mail).
 - Document identifié mais PDF non récupérable (API Abby indisponible, PJ client) → donne à Louis le lien du sous-dossier Drive cible (`01-ADMIN/02 - DEVIS`, etc.) et demande-lui d'y glisser le PDF ; ensuite retrouve-le par `search_files` (`parentId = '<dossier>'`) pour le lier dans Notion.
@@ -61,13 +63,13 @@ Pour chaque document : trouver → télécharger → déposer dans Drive (étape
 
 Détail : `references/notion.md`.
 
-1. `notion-duplicate-page` sur le template (`ids.md`). La copie s'appelle « Espace client - Nom du client (1) » et atterrit dans la galerie. Re-`fetch` jusqu'à ce que le contenu soit présent, puis relève les IDs des sous-pages et la data source de Programme & Livrables (tous nouveaux).
-2. Renommer : `Espace client <Client>` (`notion-update-page`) ; propriétés `Étapes` = `Onboarding et préparation`, `Date` = début → fin prévue.
+1. **Jamais `notion-duplicate-page`** sur le template : la copie devient un deuxième *modèle* de la galerie (bandeau « Vous modifiez un modèle »). Créer la page avec `notion-create-pages`, parent `data_source_id` de la galerie, `template_id` = template (`ids.md`), et directement les propriétés : `Nom` = `Espace client <Client>`, `Étapes` = `["Onboarding et préparation"]`, `Date` = début → fin prévue.
+2. `fetch` la page créée et relève les IDs des sous-pages et la data source de Programme & Livrables (tous nouveaux).
 3. Remplir (liens réels uniquement, jamais de lien inventé) :
-   - **Ma checklist** : liens Drive, facture, tutoriel Webflow ; supprimer les lignes hors périmètre (ex. Webflow si pas de Webflow) ; cocher ce qui est déjà fait.
-   - **Documents administratifs** : un callout par document (`Devis D-… , version finale envoyée le <date> → [Accéder au devis](<lien Drive>)`), ajouter la section « Contrat signé & bon de commande » si besoin.
-   - **Liens utiles** : Drive (« Ajouter mes documents »), Figma (« Maquette du site »).
-   - **Roadmap** : lien Figma dans « Cadrage & design », date de la visio de cadrage dans « Onboarding et lancement ».
+   - **Ma checklist** : **supprimer la ligne « formulaire de démarrage »** (on fait toujours une visio de cadrage) ; Webflow → lien tutoriel ; Drive → lien `02-CONTENUS CLIENT` ; acompte → lien facture + lien vers « Documents administratifs » (coordonnées bancaires). Cocher ce qui est déjà fait, supprimer les lignes hors périmètre.
+   - **Documents administratifs** : un callout par document avec lien vers le **fichier** (jamais vers un dossier) ; ajouter la section « Contrat signé & bon de commande » si besoin ; **toujours** ajouter la section « Coordonnées bancaires » (IBAN en clair + lien RIB, `notion.md`).
+   - **Liens utiles** : supprimer la section « Formulaire de cadrage - Brief » ; « Ajouter mes documents » → lien `02-CONTENUS CLIENT` sur la même ligne que le texte ; Figma dans « Maquette du site » dès qu'il existe.
+   - **Roadmap** : « Onboarding et lancement » → remplacer la ligne du formulaire par la visio de cadrage (date ou « à caler ensemble ») ; lien Figma dans « Cadrage & design ».
    - **Programme & Livrables** : voir `references/notion.md`.
    - Supprimer le callout rouge **« To do setup »** une fois tout fait.
 
@@ -77,8 +79,8 @@ Arborescence exacte dans `references/ids.md`. Dans `01_EN_COURS` :
 
 1. Vérifie qu'aucun dossier `<Client>` n'existe déjà (sinon : le réutiliser, ne rien dupliquer).
 2. Crée `<Client> - <Prénom Nom du contact>` puis toute l'arborescence (`create_file`, `mimeType` folder).
-3. Copie le doc `Bienvenue 👋 - À LIRE` (modèle dans `ids.md`) dans `00 - ESPACE CLIENT` (`copy_file`), lis-le, puis adapte-le avec `update_doc` + `replaceAllText` (en-tête « OREM · PROJET VERDON », nom du client, sous-dossiers par personne de Verdon à retirer ou remplacer, tu/vous). Pas de mention « OREM » ni « Verdon » au final.
-4. Dépose les documents de l'étape 1 dans `01-ADMIN/…`.
+3. Crée le doc `Bienvenue 👋 - À LIRE` dans `00 - ESPACE CLIENT` avec `create_file` (`contentMimeType: text/plain`, converti en Google Doc) et le texte standard de `ids.md` (adapter nom du client et tu/vous). Ne pas partir du doc Verdon (exception : sous-dossiers par personne).
+4. Dépose les documents de l'étape 1 dans `01-ADMIN/…` et **copie toujours le RIB Qonto** (`ids.md`) dans `01-ADMIN` sous le nom `IBAN ICONOKOM.pdf`.
 5. **Partage** `00 - ESPACE CLIENT` (et lui seul) au contact en `writer` ; aux autres personnes listées, leur sous-dossier de `02-CONTENUS CLIENT`. Demande confirmation avant de partager (action visible par le client).
 
 ## 4. Figma (manuel guidé)
@@ -108,7 +110,7 @@ Template absent de `ids.md` → demande le lien et enregistre-le dans `ids.md`. 
 
 ## 6. Brouillon du mail de bienvenue
 
-`create_draft` Gmail, depuis le compte ICONOKOM, au contact principal. **Pas de pièces jointes** : le connecteur exige le PDF en base64, ce qui fait transiter des Mo dans la conversation. Mets les liens Drive du devis et de la facture dans le corps, et dis à Louis de joindre les PDF à la main s'il le souhaite avant d'envoyer. Modèle : `references/mail-bienvenue.md` (respecter tu/vous). Ne jamais envoyer : Louis relit et envoie.
+`create_draft` Gmail en **`htmlBody`** (liens cliquables, pas d'URL brute), au contact principal. **Pas de pièces jointes** : le connecteur exige le PDF en base64, ce qui fait transiter des Mo dans la conversation. Liens Drive vers le devis, la facture et le RIB, **plus l'IBAN en clair** dans le corps. Louis peut joindre les PDF à la main avant d'envoyer. Modèle : `references/mail-bienvenue.md` (respecter tu/vous). Ne jamais envoyer : Louis relit et envoie.
 
 ## 7. Validation et récap
 

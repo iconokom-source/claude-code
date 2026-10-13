@@ -28,25 +28,53 @@ Sous-pages du template (recréées à chaque duplication, IDs différents) : Int
 | **01_EN_COURS** (où créer) | `1CkI9R8DVQ4e_DC_VExTpKNBJHtYBcnA6` |
 | 00_TERMINÉ | `1kCrscP5Fyg46ZhWgYQNQb0O8knsW8eK_` |
 | 02_À_VENIR | `12BVK7RkTaUu3liUA8GtCNDGoEIS2wU7K` |
-| Modèle doc « Bienvenue 👋 - À LIRE » (Verdon, à adapter) | `1CTUsYO5Z5yM1JftIXM0vYQdqisReP32e3q9FLPxYSNo` |
+| **RIB Qonto ICONOKOM** (seul IBAN valide, à copier dans chaque `01-ADMIN`) | `1C1Lc4OWqayxdG095uQhmlxPxS8PaxeGq` (`iban_fr (2).pdf`) |
 
-Arborescence standard (nom du dossier racine : `<Client> - <Prénom Nom du contact>`, ex. `Groupe Verdon - Luc Gerodez`) :
+⚠️ Les fichiers `RIB_S_A_R_L__ICONOKOM_2876.pdf` / `RIB ICONOKOM.pdf` sont l'**ancien compte Crédit Agricole, clôturé** : ne jamais les utiliser.
+
+Coordonnées bancaires (à afficher en clair) : titulaire ICONOKOM, 34 place du Général de Gaulle, Bureau 3, 59000 Lille · IBAN `FR76 1695 8000 0188 1420 4296 259` · BIC `QNTOFRP1XXX` (Qonto).
+
+Arborescence standard (référence : The Rep, Sleepee By Tim ; Verdon est une exception avec un sous-dossier par personne). Nom du dossier racine : `<Client> - <Prénom Nom du contact>` :
 
 ```
 <Client> - <Contact>/
 ├── 00 - ESPACE CLIENT/            ← partagé au client (writer), lien mis dans Notion
 │   ├── Bienvenue 👋 - À LIRE      (Google Doc)
 │   ├── 01-ADMIN/
+│   │   ├── IBAN ICONOKOM.pdf      (copie du RIB Qonto)
 │   │   ├── 01 - PROPOSITION COMMERCIALE/
 │   │   ├── 02 - DEVIS/
 │   │   ├── 03 - FACTURES/
-│   │   └── 04 - CONTRAT SIGNÉ & BON DE COMMANDE/
-│   ├── 02-CONTENUS CLIENT/
-│   │   ├── 00 - COMMUN / SHARED (logos, charte, documents partagés)/
-│   │   └── 0N - <PRÉNOM NOM>/     (optionnel : un par personne côté client)
+│   │   └── 04 - CONTRAT/
+│   ├── 02-CONTENUS CLIENT/        ← lien « déposer mes contenus » (checklist, Liens utiles, mail)
+│   │   ├── 01-IMAGES/PHOTOS/
+│   │   ├── 02-VIDÉOS/
+│   │   └── 03-DOCUMENTS/TEXTES/
 │   └── 03-LIVRABLES/
 ├── 01 - POST-PRESTATION/          ← interne
 └── 02 - ITW-VIDEOS/               ← interne
+```
+
+Texte du doc `Bienvenue 👋 - À LIRE` (version tutoiement ; passer au vous si besoin) :
+
+```
+Bienvenue 👋
+
+Cet espace centralise tous les éléments utiles à <projet, ex. la refonte du site du Crayon>.
+
+01-ADMIN
+→ les documents administratifs (proposition commerciale, devis, factures).
+
+02-CONTENUS CLIENT
+→ dépose ici tous les contenus nécessaires au projet :
+   • 01-IMAGES/PHOTOS : photos, images, logos
+   • 02-VIDÉOS : vidéos
+   • 03-DOCUMENTS/TEXTES : textes, charte graphique, présentations, documents
+
+03-LIVRABLES
+→ nous y déposerons les livrables du projet (maquettes, site final, documents associés).
+
+Un doute sur l'endroit où déposer un élément ? Écris-nous à contact@iconokom.fr, on s'en occupe.
 ```
 
 ## Figma

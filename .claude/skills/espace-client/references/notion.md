@@ -7,13 +7,13 @@ Toujours `fetch` la page dupliquée avant d'écrire (les IDs des sous-pages et d
 - Titre : `Espace client <Client>`.
 - Propriétés : `Étapes` = `["Onboarding et préparation"]` (ou `Cadrage & architecture` si la visio de cadrage a déjà eu lieu), `Date` = début → fin prévue.
 - **Ma checklist** (colonne gauche) :
-  - `J'ai rempli le formulaire de démarrage` → garder si le formulaire n'est pas rempli. ⚠️ Dans la copie, ce lien (checklist et roadmap) pointe encore vers le formulaire **du template** (`306897c5a62a814aad59e3448e13363c`) : à signaler à Louis tant que le template n'est pas corrigé.
-  - `J'ai créé mon compte Webflow…` → lien tutoriel (`ids.md`) ; supprimer si pas de Webflow.
-  - `J'ai déposé mes contenus dans le Drive` → lien `00 - ESPACE CLIENT`.
-  - `J'ai réglé l'acompte de X %` → lien PDF facture d'acompte ; adapter le pourcentage / « 1er versement (1/4) ». Cocher si payée (Qonto `list_transactions` ou dire de Louis).
+  - `J'ai rempli le formulaire de démarrage` → **supprimer la ligne** (on fait toujours une visio de cadrage).
+  - `J'ai créé mon compte Webflow…` → lien tutoriel (`ids.md`) ; supprimer si pas de Webflow ; corriger « créer » → « créé ».
+  - `J'ai déposé mes contenus dans le Drive` → lien `02-CONTENUS CLIENT`.
+  - `J'ai réglé l'acompte de X %` → `Accéder à la facture [ici](<PDF>) · Coordonnées bancaires [ici](<page Documents administratifs>)` ; adapter le pourcentage / « 1er versement (1/4) ». Cocher si payée (Qonto `list_transactions` ou dire de Louis).
   - Supprimer le callout rouge « To do setup » à la fin.
 - **Roadmap** (toggles) :
-  - Onboarding et lancement : date/heure de la visio de cadrage si connue.
+  - Onboarding et lancement : remplacer la ligne « Remplir le formulaire de démarrage » par `Visio de cadrage : <jour date à heure>` (ou « date à caler ensemble »).
   - Cadrage & design : « Accéder aux maquettes → [Ici](<lien Figma>) ».
   - Intégration & mise en ligne : laisser tel quel.
 
@@ -27,11 +27,21 @@ Facture F-2026-0111 : acompte de 30 % à la commande (4 464,00 € HT), envoyée
 ```
 - Ajouter un toggle `## Contrat signé & bon de commande` (après Proposition commerciale) s'il y a un contrat/BC.
 - Factures : remplir le 1er callout, laisser les suivants vides pour les prochaines factures.
+- **Toujours** ajouter, après Factures :
+  ```
+  ## Coordonnées bancaires {toggle="true"}
+  	<callout color="blue_bg">
+  		**Titulaire** : ICONOKOM, 34 place du Général de Gaulle, Bureau 3, 59000 Lille<br>**IBAN** : FR76 1695 8000 0188 1420 4296 259<br>**BIC** : QNTOFRP1XXX (banque Qonto)
+  		→ [Télécharger le RIB](<lien du IBAN ICONOKOM.pdf copié dans 01-ADMIN>)
+  	</callout>
+  ```
+- Liens : toujours vers le **fichier** PDF, jamais vers un dossier. Document sans fichier → texte sans lien, et le signaler dans le récap.
 - Ne pas toucher au Brief ni au Formulaire de fin de projet.
 
 ## Liens utiles (sous-page)
 
-- « Ajouter mes documents » : ajouter le lien Drive `00 - ESPACE CLIENT`.
+- Supprimer toute la section « Formulaire de cadrage - Brief » (toggle + callout + bloc lié).
+- « Ajouter mes documents » : remplacer le texte du callout par `Dépose ici tous les contenus nécessaires au projet : photos, images, vidéos, textes, logos, charte graphique… → [Accéder au Drive](<lien 02-CONTENUS CLIENT>)` (une seule ligne, format Verdon).
 - « Design & Site internet » : « Maquette du site » → lien Figma. Le reste (Prévisualisation Webflow, DA, Arborescence) plus tard.
 
 ## Programme & Livrables (base inline)
