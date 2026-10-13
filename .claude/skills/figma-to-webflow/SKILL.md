@@ -32,6 +32,8 @@ Travailler **en autonomie et vite** : peu d'appels, beaucoup d'actions par appel
 - Marge de page (standard agence) : variable `page-padding` = **64 px desktop / 32 px tablette / 16 px mobile**, appliquée sur `padding-global` uniquement (`container-large` sans padding latéral, sauf si le design a des lignes/cadres sur les côtés : alors variable `container-padding` 32 / 24 / 16 px sur `container-large`, pour que textes et boutons ne touchent jamais les lignes).
 - Arrondis : toujours via variables `Radius` avec modes Tablette/Mobile, réduits vers le mobile (ex. 32 → 24 → 16 px). Aucun rayon en dur.
 - Jamais de barre de défilement visible sur un élément qu'on a rendu défilant (carrousel, liste, timeline) : `scrollbar-width: none` sur toute classe en `overflow: auto/scroll`. Seule la barre de la page reste.
+- Logo : taille fixe sur tous les écrans (`flex-shrink: 0`, `min-width` = largeur, `object-fit: contain`). Il ne doit jamais rétrécir ni se déformer.
+- Toujours le maximum en natif Webflow (interactions IX3/GSAP, composants, variables) ; pas de code personnalisé si le natif sait faire.
 - Structure : `section_[nom] > padding-global > container-large > padding-section-* > [nom]_component`.
 - Classes : `[composant]_[élément]`, combos `is-*`, utilitaires (`heading-style-h2`, `text-size-regular`…). Deux classes identiques = une seule. Valeurs via variables.
 - Détails : `references/client-first.md`, `references/variables.md`, `references/composants.md`.
@@ -53,4 +55,4 @@ Travailler **en autonomie et vite** : peu d'appels, beaucoup d'actions par appel
 ## Ne demander à l'utilisateur que si
 1. le site est introuvable ou ambigu ;
 2. il faut **supprimer** un élément existant (masquer avec `set_visibility` en attendant) ;
-3. les animations (à la fin, en une seule question groupée).
+3. les animations (à la fin, en une seule question groupée ; défaut = standard premium de `references/animations.md`).
