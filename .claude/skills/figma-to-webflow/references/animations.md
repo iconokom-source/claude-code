@@ -45,4 +45,6 @@ Un enregistrement réussi ne prouve pas que l'animation fonctionne. Demander à 
 - **Scroll : toujours cibler des éléments précis (`wf:inst`), trigger ET action.** Un scroll déclenché sur une classe (`wf:class` + `wf:trigger-only` ou `filterContext within`) est accepté par l'API mais ne joue pas sur le site publié (vérifié sur The Rep). Générer une interaction par élément (ou par liste pour une cascade, avec les instances en cibles) via un script à partir de `get_all_elements`.
 - Cibles `wf:class` : passer les **id de style** (le nom de classe seul est parfois refusé).
 - Les interactions ne se voient qu'en aperçu ou après **republication** : le rappeler à l'utilisateur.
+- Élément à animer en rotation/échelle centré en `translate(-50%,-50%)` : le recentrer d'abord avec `inset: 0` + `margin: auto` (GSAP écrase le translate).
+- Schéma, cycle, flèches : rotation légère liée au défilement (`scrub`, ±12°). Pour animer les flèches seules, exporter le schéma en SVG depuis Figma.
 - Rien qui tourne en boucle, rebondit, clignote ; pas de parallaxe lourde.
