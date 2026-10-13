@@ -1,12 +1,12 @@
 ---
 name: fiche-deal
 model: sonnet
-description: Affiche absolument toutes les informations d'une affaire (deal) Pipedrive en lecture seule — deal, champs personnalisés, pipeline/étape, contacts, organisation, activités (faites et à faire), notes, mails, produits, lead d'origine, autres deals liés. À utiliser dès que Louis demande « toutes les infos du deal X », « fiche deal X », « montre-moi l'affaire X », « où en est X dans Pipedrive », « résume-moi le deal X » ou veut consulter une affaire sans la modifier.
+description: Fiche synthétique d'une affaire (deal) Pipedrive en lecture seule : collecte tout (deal, champs, contacts, organisation, activités, notes, mails, produits, lead, autres deals) puis n'affiche que l'essentiel — où en est le deal, contact, besoin/offre, historique clé, prochaines étapes, points d'attention. Détail complet sur demande. À utiliser dès que Louis demande « toutes les infos du deal X », « fiche deal X », « montre-moi l'affaire X », « où en est X dans Pipedrive », « résume-moi le deal X », « fais le point sur X », « on en est où avec X » ou veut consulter une affaire sans la modifier.
 ---
 
-# Fiche deal complète (lecture seule)
+# Fiche deal (lecture seule)
 
-Rôle de Claude : **tout récupérer dans Pipedrive et tout afficher**. Aucune écriture (pas de `add*`, `update*`, `convert*`), aucune analyse commerciale, aucun conseil — sauf si Louis le demande ensuite.
+Rôle de Claude : **tout récupérer dans Pipedrive, n'afficher que l'essentiel**. Aucune écriture (pas de `add*`, `update*`, `convert*`), aucune analyse commerciale, aucun conseil — sauf si Louis le demande ensuite.
 
 Outil : Pipedrive uniquement. Connecteur absent → dis-le en une ligne et arrête.
 
@@ -37,72 +37,53 @@ Puis, selon le résultat de `getDeal` :
 9. Organisation → `getOrganization` (`include_option_labels`, `include_labels`, tous les `include_fields`) + `getPersons` `org_id` (autres contacts de l'organisation).
 10. Autres deals liés → `getDeals` `org_id` (sinon `person_id`), `status: ["open","won","lost"]` ; exclure le deal courant.
 11. `source_lead_id` présent → `getLead`.
-12. Notes de la personne et de l'organisation non rattachées au deal → `getNotes` `person_id` et `getNotes` `org_id`, garde celles dont `deal_id` est vide ou différent.
+12. Mails du contact non rattachés au deal → `getPersonMailMessages` (`include_body: 1`).
+13. Notes de la personne et de l'organisation non rattachées au deal → `getNotes` `person_id` et `getNotes` `org_id`, garde celles dont `deal_id` est vide ou différent.
 
-Erreur sur un appel → réessaie une fois, puis continue et signale-le dans la section « Données manquantes ». Ne t'arrête jamais à cause d'un appel secondaire.
+Erreur sur un appel → réessaie une fois, puis continue et signale-le en une ligne en fin de fiche. Ne t'arrête jamais à cause d'un appel secondaire.
 
-**Exhaustivité** : chaque champ non vide renvoyé par l'API doit apparaître dans la fiche. Remplace chaque clé de champ personnalisé (hash de 40 caractères) par son nom via `getAccountContext` ; si une clé reste inconnue, affiche-la telle quelle. Les ID d'options sont remplacés par leur libellé. Les IDs d'utilisateurs → noms.
+Tout lire avant de résumer : une info importante peut se cacher dans une vieille note, un mail ou un champ. Remplace chaque clé de champ personnalisé (hash de 40 caractères) par son nom via `getAccountContext` ; si une clé reste inconnue, affiche-la telle quelle. Les ID d'options sont remplacés par leur libellé. Les IDs d'utilisateurs → noms.
 
-## 3. Afficher la fiche
+## 3. Afficher la fiche (synthèse)
 
-Format ci-dessous, en français, champs vides omis, dates `JJ/MM/AAAA` (+ jour de la semaine pour les activités à venir), montants avec devise. Corps HTML des mails et notes converti en texte brut, signatures et citations d'anciens messages (`> …`, « Le … a écrit : ») retirées. Pas de troncature : tout le contenu des notes, descriptions d'activités et mails est affiché intégralement.
+Usage principal : **faire le point** sur un deal avant un appel, une relance ou une réunion. La collecte est exhaustive, l'affichage est **synthétique** : seulement ce qui compte pour savoir en 1 minute où on en est et ce qu'il faut faire ensuite. Cible : **≤ 40 lignes, ≤ 3 500 caractères**. Ne recopie jamais une note ou un mail : résume-les.
+
+Règles :
+- **L'info la plus récente fait foi** (ex. un montant ou une date revus dans une note récente remplacent les anciens). Les anciennes versions ne s'affichent pas.
+- Activités `[ANNULÉE]`, champs vides, compteurs, IDs internes, adresses Smart BCC, notes de méthode/CRM : omis.
+- Aucun conseil ni avis de ta part. Les « Points d'attention » reprennent uniquement des risques, blocages ou incohérences **écrits dans Pipedrive**.
+- Dates `JJ/MM` (+ jour de la semaine pour ce qui est à venir), montants avec devise et HT/TTC si connu.
 
 ```
 # 💼 <titre> — #<id>
+<Pipeline> › <Étape> (depuis le JJ/MM) · <statut> · <valeur> · suivi par <Assigné à / propriétaire>
 <lien https://<domaine>.pipedrive.com/deal/<id>>
 
-## Synthèse
-Statut · Pipeline › Étape (depuis le <date>) · Valeur · Probabilité · Date de gain attendue · Propriétaire · Étiquettes
-Créé le · Dernière mise à jour · Gagné/perdu le (+ raison de perte) · Visibilité
-Compteurs : activités (faites / à faire) · notes · mails · fichiers · produits · abonnés · participants
-Dernier mail reçu / envoyé · Prochaine activité · Dernière activité · Adresse Smart BCC
+**Où on en est** : <2 phrases max : situation réelle aujourd'hui et ce qui est attendu, de qui>
 
-## Champs personnalisés
-| Champ | Valeur |   ← tous, dans l'ordre de getAccountContext
+## ➡️ Prochaines étapes
+- <jour JJ/MM HH:MM> — <sujet> — <qui> (⚠ en retard si date passée)
+- Aucune activité à venir → écrire « ⚠ Aucune prochaine étape planifiée ».
 
-## Contact principal
-Nom · Poste · Emails (tous, avec libellé) · Téléphones (tous) · Organisation · Propriétaire · Étiquettes · champs personnalisés · compteurs (deals ouverts/gagnés/perdus, activités, mails)
+## 👤 Contact
+<Nom> — <poste> · <email> · <tél>
+<Organisation> (<site>) · Source : <source / apporteur> · Décideur : <…>
 
-## Autres participants du deal
-Une ligne par personne : nom — poste — email — téléphone
+## 🎯 Besoin & offre
+- Problème : …
+- Offre / périmètre : …
+- Prix & paiement : …
+- Contraintes / objections : …
+(4 à 6 puces max)
 
-## Organisation
-Nom · Adresse complète · Propriétaire · Étiquettes · champs personnalisés · compteurs
-Autres contacts : une ligne par personne (nom — poste — email — téléphone)
+## 🕑 Historique clé
+- JJ/MM — <événement : appel, RDV, propale, mail important> (5 à 8 lignes, du plus ancien au plus récent)
 
-## Lead d'origine (si source_lead_id)
-Titre · Source · Valeur · Date de création · Étiquettes
+## ⚠️ Points d'attention
+- … (3 max, uniquement ce qui est noté dans Pipedrive ; section omise si rien)
 
-## Produits
-| Produit | Qté | Prix unitaire | Remise | TVA | Total |   + total général
-
-## Activités à faire (par date croissante)
-- #<id> | <type> | <sujet> | <jour JJ/MM/AAAA HH:MM> | durée | priorité | assigné à | participants | lieu / lien visio
-  Note : <texte intégral>
-  ⚠ en retard si la date est passée
-
-## Activités faites (plus récentes d'abord)
-même format, + « faite le <date> »
-
-## Notes (plus récentes d'abord)
-### <date> — <auteur> <📌 si épinglée>
-<texte intégral>
-
-## Notes de la personne / de l'organisation hors deal
-même format
-
-## Mails (fil par fil, plus récents d'abord)
-### <objet> — <n> messages
-- <date> | <de> → <à> (cc …) | <ouvert/cliqué si dispo>
-  <corps intégral, nettoyé>
-
-## Autres deals de l'organisation / du contact
-| # | Titre | Pipeline › Étape | Statut | Valeur | Mis à jour |
-
-## Données manquantes
-Appels en échec, fichiers (nombre seulement : le connecteur ne permet pas de les lire), champs dont la clé n'a pas pu être traduite.
+## 🔗 Liens
+Enregistrements (Fireflies, Loom), pièces jointes de mails (noms), liens visio à venir — section omise si rien.
 ```
 
-Si la fiche dépasse ~30 000 caractères : affiche tout jusqu'à « Notes » inclus, puis demande à Louis s'il veut la suite (mails, autres deals) plutôt que de tronquer en silence.
-
-Fin : rien d'autre que la fiche. Pas de recommandations, pas de résumé ajouté.
+Fin : une ligne « Détail complet ou d'une section sur demande (activités, notes, mails…). » Si Louis le demande → `references/fiche-complete.md`.
