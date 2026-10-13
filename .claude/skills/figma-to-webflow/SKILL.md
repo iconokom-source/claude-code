@@ -35,6 +35,8 @@ Travailler **en autonomie et vite** : peu d'appels, beaucoup d'actions par appel
 - Tablette/mobile : modifier les classes partagées aux breakpoints `medium` / `small` (grilles → 2 puis 1 colonne, empilement, tailles via variables). Règles : `references/responsive.md`.
 - **Toujours** finir tablette et mobile (et les faire valider sur captures) **avant** de parler des animations ou d'en créer.
 - Puis animations (standard premium de `references/animations.md`, sur **toute** la page, pas seulement le hero) et rappel : republier pour les voir.
+- **Publier soi-même** (`data_sites_tool > publish_site`, `publishToWebflowSubdomain: true`, 1 publication/min) puis contrôler sur captures réelles ; boucler corrections → publication → captures jusqu'à ce que tout soit propre.
+- **Revue finale par 5 utilisateurs fictifs** (profils différents : cible principale sur mobile, débutant sur ordinateur, profil secondaire sur tablette, décideur sceptique, personne malvoyante) : chacun liste ce qui le gêne sur les captures ; corriger ce qui est faisable, lister le reste.
 - Rapport court : ce qui a été fait, puis **ce qu'il manque** (polices, images, textes absents de la maquette, éléments à supprimer), une ligne par point.
 
 ## Règles Client First (résumé)
@@ -61,6 +63,10 @@ Travailler **en autonomie et vite** : peu d'appels, beaucoup d'actions par appel
 - Grilles empilées en tablette/mobile : toujours `minmax(0, 1fr)` et jamais `1fr` seul, sinon une piste défilante (cartes en `max-content`) élargit la colonne et fait déborder toute la section.
 - Éléments à largeur fixe (cartes, items de liste en rem) : les passer à 100 % en tablette/mobile, sinon ils débordent et coupent les décors.
 - Une combo nommée `w--open` est renommée `_w--open` (inutile) : pour battre un état Webflow, utiliser une combo maison (`is-burger`).
+- Lien actif du menu en bleu (`w--current` par défaut de Webflow) : ajouter une combo (`is-nav`) avec la couleur voulue sur les liens, elle l'emporte.
+- Composant partagé entre une page claire et une page sombre (icône sombre invisible) : créer une **variante** (`create_variant` + `set_variant_styles`, ex. `filter: invert(100%)`) et la choisir sur les instances via la prop `Variant` (valeur = id de variante).
+- Texte indicatif (`placeholder`) d'un champ : attribut réservé, non modifiable par l'API → à saisir dans le Designer (le signaler).
+- Images : vérifier chaque photo contre Figma (`get_asset_preview` pour voir un asset) ; une image provisoire restée en place (photo de film, stock) est un défaut bloquant. Import sans Designer : télécharger l'asset Figma depuis l'atelier distant puis `create_asset` + POST S3.
 - Pas de `set_visibility` sur une instance de composant, pas d'insertion `after` une instance (utiliser `append` sur le parent).
 - Un `Span` ne se lie pas à une propriété (`text` refusé) : le remplacer par un bloc texte (`<div class="…">`) puis lier.
 - Propriété de lien d'un composant : modes `url` / `email` / `phone` seulement → pour une ancre, `url` = `#id-de-section`.

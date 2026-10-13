@@ -113,3 +113,4 @@
 - CapUS mobile : burger combo is-burger, barre pleine medium, panneau menu padding-top 2rem.
 - CapUS mobile : bouton audit du menu centré pleine largeur.
 - CapUS QA réelle (captures 390/820) : grilles minmax(0,1fr), cartes arrière À propos masquées dès tablette, titre Ce qui change pleine largeur, onglets offres alignés, citation fondateur sans retrait.
+- CapUS QA finale : liens menu is-nav (CapUS + The Rep), variante FAQ « Fond sombre » (de513789…), cartes offres pleine taille sur tablette/mobile, process garde le texte étape 1, message formulaire générique, vraie photo fondateur (asset 6ace6e2be13765da6fc30d41) ; publié via API.
