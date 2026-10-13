@@ -36,6 +36,7 @@ Travailler **en autonomie et vite** : peu d'appels, beaucoup d'actions par appel
 - **Toujours** finir tablette et mobile (et les faire valider sur captures) **avant** de parler des animations ou d'en créer.
 - Puis animations (standard premium de `references/animations.md`, sur **toute** la page, pas seulement le hero) et rappel : republier pour les voir.
 - **Publier soi-même** (`data_sites_tool > publish_site`, `publishToWebflowSubdomain: true`, 1 publication/min) puis contrôler sur captures réelles ; boucler corrections → publication → captures jusqu'à ce que tout soit propre.
+- **Navigation testée en vrai clic** (Playwright sur le site publié, ordinateur + mobile) : chaque lien du menu atterrit sur la bonne section, le logo ramène en haut, aucun bouton ne fait rien (« Comparer les offres » → vers le comparatif), le menu mobile se ferme après un clic. Pas de carrousel coupé par des fondus sans moyen de défiler (ordinateur : tout afficher ; mobile : défilement horizontal avec une carte qui dépasse). Sections épinglées ≤ 250vh, sinon l'utilisateur croit que la page est bloquée.
 - **Revue finale par 5 utilisateurs fictifs** (profils différents : cible principale sur mobile, débutant sur ordinateur, profil secondaire sur tablette, décideur sceptique, personne malvoyante) : chacun liste ce qui le gêne sur les captures ; corriger ce qui est faisable, lister le reste.
 - Rapport court : ce qui a été fait, puis **ce qu'il manque** (polices, images, textes absents de la maquette, éléments à supprimer), une ligne par point.
 

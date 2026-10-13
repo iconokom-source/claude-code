@@ -114,3 +114,4 @@
 - CapUS mobile : bouton audit du menu centré pleine largeur.
 - CapUS QA réelle (captures 390/820) : grilles minmax(0,1fr), cartes arrière À propos masquées dès tablette, titre Ce qui change pleine largeur, onglets offres alignés, citation fondateur sans retrait.
 - CapUS QA finale : liens menu is-nav (CapUS + The Rep), variante FAQ « Fond sombre » (de513789…), cartes offres pleine taille sur tablette/mobile, process garde le texte étape 1, message formulaire générique, vraie photo fondateur (asset 6ace6e2be13765da6fc30d41) ; publié via API.
+- CapUS navigation : fondus offres masqués et rail visible sur ordinateur (3 cartes), défilement horizontal sur mobile ; sections épinglées raccourcies (200/250/250vh) ; logo → #accueil ; « Comparer les offres » → #comparer ; testé en vrai clic sur le site publié (menu, logo, comparer : OK).
