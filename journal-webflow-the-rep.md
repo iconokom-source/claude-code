@@ -85,3 +85,4 @@
 - Footer : footer_component padding latéral = page-padding (l'image de fond reste visible autour de la carte), 96 px haut/bas en tablette, 64 px en mobile. FAQ : ombre-bordure latérale supprimée < 992 px.
 - Menu : logo au-dessus du panneau (navbar_logo-link relative z-index 1001), liens et CTA alignés à droite.
 - Menu Over Right : navbar_menu width/max-width 100vw (avec 100 % le panneau débordait à gauche et les filets touchaient le bord).
+- Barre de défilement masquée sur method_track (scrollbar-width: none), roadmap_timeline l'avait déjà.
