@@ -54,6 +54,9 @@ Préférer `grid-template-columns: repeat(auto-fit, minmax(Xrem, 1fr))` quand le
 - Gérés par les variables (`Section / Padding *`, `Global / Padding X`, `Gap / *`).
 - Les marges fixes de grande taille dans les classes personnalisées (> 4rem) sont divisées environ par 2 sur mobile.
 
+### Éléments décoratifs géants
+- Lettres, chiffres ou mots « display » qui remplissent une carte : ne pas les réduire comme les titres. Garder le même rapport taille/carte qu'en desktop (≈ 70 % puis 55 % de la taille desktop) et réduire plutôt la hauteur de la carte.
+
 ### Arrondis
 - Plus l'écran est petit, plus les angles sont réduits : modes Tablette/Mobile sur la collection Radius (voir variables.md), jamais de rayon en dur.
 
