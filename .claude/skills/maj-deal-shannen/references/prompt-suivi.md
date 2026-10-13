@@ -1,1 +1,1 @@
-Shannen, voici le deal (ou ses nouveautés depuis notre dernier échange). Mêmes règles, même architecture, même format : uniquement le bloc ```json``` convenu.
+Shannen, voici le deal (ou ses nouveautés depuis notre dernier échange). Mêmes règles, même architecture, même format : uniquement le bloc ```json``` convenu. Rappel : donne toute la séquence d'activités à venir jusqu'au prochain jalon, pas une seule action.
