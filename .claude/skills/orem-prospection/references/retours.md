@@ -35,8 +35,8 @@
 - 2026-10-12 · **Le style dépend du prospect** : A « constat brut » (sec, direct) ou B « idée
   d'abord » (le mail donne une idée concrète avant de demander). Le rédacteur choisit et justifie.
 - 2026-10-12 · **Longueur des emails : on garde 50 à 120 mots** (règle de Shannen).
-- 2026-10-12 · (validateur, test Halbrook) Pas de date relative figée ; chaque email rappelle le
-  constat ; une réponse sort le lead de la séquence ; un seul seuil de warm call ; l'appel s'ouvre
+- 2026-10-12 · (validateur, test Halbrook) Pas de date relative figée ; ~~chaque email rappelle le
+  constat~~ (remplacé le 2026-10-13 : on ne le répète plus) ; une réponse sort le lead de la séquence ; un seul seuil de warm call ; l'appel s'ouvre
   sur prénom, nom et Orem ; ne jamais promettre une suite que la séquence ne tient pas. Détail
   dans `sequence.md`.
 - 2026-10-12 · **Test du prospect (Louis : « tu es le prospect, tu réponds ? »).** Une séquence

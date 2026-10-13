@@ -63,8 +63,7 @@ qui avance d'un cran à chaque message. Chaque message :
 - reste **compréhensible seul** grâce à son fait nouveau, **sans répéter le constat de l'Email 1**
   (test ICP : le constat répété dans chaque message est le premier motif de non-réponse) ;
 - ne contient **aucune date relative figée** (« il y a dix jours ») : la variable part plus tard ;
-- ne répète pas mot pour mot ce qui a déjà été dit, **y compris la phrase de rappel du
-  constat** : chaque email la formule autrement.
+- ne répète pas ce qui a déjà été dit, même reformulé.
 
 Progression type :
 | Étape | Rôle dans le fil rouge |
