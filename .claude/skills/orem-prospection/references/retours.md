@@ -64,8 +64,8 @@
     plus, le prix ou la durée ? ») : lui en donner une, et le laisser réagir.
   - **Le CTA offre ce qu'il ne peut pas obtenir seul** (les requêtes testées et les réponses
     obtenues, un comparatif), pas ce qu'il trouverait en deux minutes.
-  - **Après l'Email 1, le rappel du constat tient en 8 mots maximum** : le prospect décroche s'il
-    relit le même constat à chaque message.
+  - ~~Après l'Email 1, le rappel du constat tient en 8 mots maximum~~ → remplacé le 2026-10-13
+    (voir ci-dessous) : on ne rappelle plus le constat du tout.
   - **L'Email 1 désamorce l'objection immédiate** que le constat va provoquer (ex. « mon offre est
     neuve, c'est normal »).
   - **Respecter les contraintes du métier du prospect** (ex. la confidentialité des missions dans
@@ -78,3 +78,24 @@
     la séquence avait dérivé vers « absent de ChatGPT et Google ».)
   - **Pas d'objet condescendant** envers ce que le prospect a construit (« six logos que personne
     ne lit »).
+- 2026-10-13 · **Test sur 5 prospects ICP** (Halbrook 6/10, Delmas 6/10, Négo Club 5/10,
+  Datavia 5/10, Stocka 4/10 ; ce qui fait répondre : l'Email 2 qui nomme un concurrent et
+  apprend un fait). Règles :
+  - **Le constat de l'Email 1 n'est plus jamais répété.** Chaque message suivant ouvre
+    directement sur son fait nouveau. (5 prospects sur 5 décrochaient sur la répétition.)
+  - **Donner, pas promettre.** Le fait clé est DANS le message : le nom du concurrent, le
+    résultat de la recherche, le chiffre. Le CTA propose l'étape d'après (le détail, la
+    comparaison complète), jamais l'information retenue en appât (« vous voulez savoir lequel ? »,
+    « les deux autres preuves »).
+  - **Pas de petit correctif isolé** (lien cassé, redirection, balise GA4, champ SIRET) : le
+    prospect le corrige seul en 10 minutes et n'a plus besoin de nous. Le présenter seulement
+    comme le symptôme du problème principal, avec son enjeu business.
+  - **Pas de supposition sur les intentions ou les pertes du prospect** (« votre accueil a été
+    écrit pour la levée », « une partie de votre audience abandonne ») sans indice observable.
+    Dire ce qui se voit ; transformer le reste en question.
+  - **Chaque chiffre a sa source** (« sur votre fiche Welcome to the Jungle », « recherche Google du
+    [jour] ») ; un chiffre sans source fait douter de tout le message.
+  - **Le cas client doit parler le KPI du prospect** (candidatures pour une ESN qui recrute,
+    inscrits pour une coach, réservations pour un hôtel) avec un résultat concret. Un cas d'un
+    autre secteur avec un indicateur qui ne lui parle pas (« position 5,5 », « affichages ») ne
+    convainc pas : mieux vaut aucun cas.

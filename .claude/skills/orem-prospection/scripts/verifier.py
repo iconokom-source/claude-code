@@ -66,6 +66,8 @@ CLICHES_COLD = [
     "dernière chose",
     "une fois écrit",
     "une fois écrites",
+    "vous voulez savoir",
+    "les deux autres",
 ]
 
 CTA_LOOM = ["loom", "vidéo", "video"]

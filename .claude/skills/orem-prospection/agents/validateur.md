@@ -55,6 +55,7 @@ Tout `ERREUR` du script = échec. Les `ALERTE` sont à juger avec la grille ci-d
 | 8g | Le fil rouge est l'« Angle à pousser » de la fiche, pas un autre problème | rédacteur |
 | 8e | Accroche = information que le prospect ne connaît pas (test « le savait-il déjà ? ») | rédacteur |
 | 8f | Aucun CTA ne peut recevoir une réponse qui clôt l'échange (« oui c'est prévu », « non merci ») | rédacteur |
+| 8h | Le constat de l'Email 1 n'est répété dans aucun autre message ; aucune information retenue en appât ; chaque chiffre a sa source | rédacteur |
 | 9 | Cas client : absent, ou réel, pertinent, dans `cas-clients.md`, citable | rédacteur |
 | 10 | Aucune promesse excessive, aucun chiffre non sourcé | rédacteur |
 | 11 | Chaque message apporte un élément nouveau, sans répéter le précédent | rédacteur |
