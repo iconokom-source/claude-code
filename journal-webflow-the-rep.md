@@ -75,3 +75,4 @@
 - Standard agence appliqué : variable `page-padding` (Spacing) 64 / 32 / 16 px sur `padding-global` ; `container-large` sans padding latéral. Variable `margin` inchangée (utilisée sur CapUS).
 - The Rep a des lignes verticales (box-shadow de container-large) : rien ne doit les toucher → variable `container-padding` 32 / 24 / 16 px sur container-large (en plus de page-padding 64/32/16).
 - Menu mobile ouvert : navbar_menu padding latéral = page-padding + container-padding (56 px tablette, 32 px mobile) ; calc() avec deux variables non supporté par l'outil (garde une seule variable) → valeurs fixes.
+- Arrondis responsive : collection Radius modes Tablette/Mobile (page-wrapper) ; radius/card 45→32→20 px ; nouvelle radius/large 32→24→16 px (tracker, roadmap) ; method_card et pain-points_card liés à radius/card (étaient 45px en dur).

@@ -54,6 +54,9 @@ Préférer `grid-template-columns: repeat(auto-fit, minmax(Xrem, 1fr))` quand le
 - Gérés par les variables (`Section / Padding *`, `Global / Padding X`, `Gap / *`).
 - Les marges fixes de grande taille dans les classes personnalisées (> 4rem) sont divisées environ par 2 sur mobile.
 
+### Arrondis
+- Plus l'écran est petit, plus les angles sont réduits : modes Tablette/Mobile sur la collection Radius (voir variables.md), jamais de rayon en dur.
+
 ### Dimensions
 - Largeurs fixes → `width: 100%` + `max-width`.
 - Hauteurs fixes → `min-height` ou `aspect-ratio` ; les images utilisent `object-fit: cover` dans un wrapper avec `aspect-ratio`.

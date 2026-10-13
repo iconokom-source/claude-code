@@ -68,8 +68,20 @@ Vérifier avec `get_style_variable_modes`. Si l'application de mode par breakpoi
 
 Garder ces noms mais adapter les valeurs si la maquette suit une autre échelle.
 
+### `Radius` (modes Desktop / Tablette / Mobile) — arrondis responsive
+Les arrondis diminuent en allant vers le mobile (jamais d'arrondi en px en dur sur une classe) :
+
+| Variable | Desktop | Tablette | Mobile |
+|---|---|---|---|
+| `Radius / Small` | 8 px | 6 px | 4 px |
+| `Radius / Medium` | 16 px | 12 px | 8 px |
+| `Radius / Large` | 32 px | 24 px | 16 px |
+| `Radius / Card` (si la maquette a ~40-48 px) | valeur Figma | ≈ 70 % | ≈ 45 % |
+| `Radius / Round` | 999 px | 999 px | 999 px |
+
+Adapter les valeurs desktop à la maquette, garder la proportion de réduction.
+
 ### `UI` (un seul mode) — tout le reste
-- `Radius / Small`, `Radius / Medium`, `Radius / Large`, `Radius / Round` (999px)
 - `Border / Width` (1px)
 - `Container / Large` (80rem), `Container / Medium` (64rem), `Container / Small` (48rem)
 - `Max Width / XSmall` … `Max Width / XXLarge`
