@@ -112,3 +112,4 @@
 - CapUS : navbar transparente en haut, fond noir au défilement (calque capus_navbar-bg ba0049f3…, interaction i-186ab8bd).
 - CapUS mobile : burger combo is-burger, barre pleine medium, panneau menu padding-top 2rem.
 - CapUS mobile : bouton audit du menu centré pleine largeur.
+- CapUS QA réelle (captures 390/820) : grilles minmax(0,1fr), cartes arrière À propos masquées dès tablette, titre Ce qui change pleine largeur, onglets offres alignés, citation fondateur sans retrait.
