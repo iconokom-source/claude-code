@@ -355,6 +355,7 @@ async function handle(req, res) {
   if (p === '/api/me') return send(res, 200, { user: publicUser(user, user), team: team(user), config: Core.publicConfig(db) });
   if (p === '/api/logout-all' && req.method === 'POST') { for (const [k, s] of Object.entries(db.sessions)) if (s.uid === user.id) delete db.sessions[k]; save(); clearCookie(res); return send(res, 200, { ok: true }); }
   if (p === '/api/inbox' && req.method === 'GET') return send(res, 200, { items: Core.inbox(db, user) });
+  if (p === '/api/inbox/done' && req.method === 'POST') { if (user.role !== 'admin') return send(res, 403, { error: 'Réservé à l’équipe.' }); const b = await readJson(req); const r = Core.doneNotif(db, user, String(b.id || ''), !!b.undo); if (r.ok) save(); return send(res, r.error ? 400 : 200, r); }
   if (p === '/api/inbox/read' && req.method === 'POST') { const b = await readJson(req); Core.readNotif(db, user, typeof b.id === 'string' ? b.id : null, b.ids); save(); return send(res, 200, { ok: true }); }
   if (p === '/api/me/prefs' && req.method === 'POST') { const r = Core.setPrefs(db, user, await readJson(req)); if (r.ok) save(); return send(res, r.error ? 400 : 200, r); }
   if (p === '/api/outbox' && req.method === 'GET') { if (user.role !== 'admin') return send(res, 403, { error: 'Réservé à l’équipe.' }); return send(res, 200, { enabled: MAIL_ENABLED, items: db.outbox.filter((x) => x.to === user.email || db.users.some((u) => u.email === x.to && u.role !== 'admin')).slice(0, 50) }); }

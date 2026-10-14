@@ -48,7 +48,8 @@ const ok = (label, v) => R.push(`${v ? '✔' : '✘'} ${label}`);
   // 6. Louis voit ce que fait Clément ; ajoute Clément à Varenne
   const louis = await login('louis@agence-orem.fr');
   ok('E-mail instantané à Louis pour le dépôt de Claire', (await outbox(louis)).some((m) => m.startsWith('louis@') && /Photos/.test(m)));
-  ok('Louis voit « Clément a envoyé une vidéo » dans sa boîte', /Clément a envoyé une vidéo/.test(await louis.locator('#main').innerText()));
+  await louis.click('[data-inbox=activity]'); await louis.waitForTimeout(150);
+  ok('Louis voit « Clément a envoyé une vidéo » dans l’activité de sa boîte', /Clément a envoyé une vidéo/.test(await louis.locator('#main').innerText()));
   await louis.click('.side [data-go=clients]'); await louis.click('.cat[data-mine="0"]'); await louis.click('[data-open=p_varenne]'); await louis.click('[data-tab=acces]');
   await louis.check('[name=tm][value=u_clement]'); await louis.click('form[data-form=team] button'); await louis.waitForTimeout(300);
   await louis.screenshot({ path: OUT + '/3-equipe.png', fullPage: true });

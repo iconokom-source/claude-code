@@ -223,12 +223,12 @@
     a.team = { lead: 'u_louis', members: ['u_louis', 'u_clement'] };
     b.team = { lead: 'u_louis', members: ['u_louis', 'u_theo', 'u_clement'] };
     c.team = { lead: 'u_theo', members: ['u_theo', 'u_louis'] };
-    const N = (userId, p, type, text, by, d, go) => ({ id: uid('n'), userId, projectId: p.id, client: p.client, type, text, by, at: d, read: false, go: { view: 'admin', tab: go } });
+    const N = (userId, p, type, text, by, d, go) => ({ id: uid('n'), userId, projectId: p.id, client: p.client, type, act: { files: 'file.add', requests: 'request.add', activity: 'val.request' }[type], text, by, at: d, read: false, go: { view: 'admin', tab: go } });
     const notifications = [
       N('u_louis', a, 'files', 'Claire a déposé « Texte À propos.docx »', 'u_claire', at(-3, 18), 'fichiers'),
       N('u_clement', a, 'files', 'Claire a déposé « Texte À propos.docx »', 'u_claire', at(-3, 18), 'fichiers'),
-      N('u_louis', b, 'requests', 'Hugo demande une évolution (Formulaires) : « Indiquer l’annonce concernée dans chaque e-mail de contact »', 'u_hugo', at(-5, 9), 'messages'),
-      N('u_theo', b, 'requests', 'Hugo demande une évolution (Formulaires) : « Indiquer l’annonce concernée dans chaque e-mail de contact »', 'u_hugo', at(-5, 9), 'messages'),
+      N('u_louis', b, 'requests', 'Hugo demande une évolution (Formulaires) : « Indiquer l’annonce concernée dans chaque e-mail de contact »', 'u_hugo', at(-5, 9), 'demandes'),
+      N('u_theo', b, 'requests', 'Hugo demande une évolution (Formulaires) : « Indiquer l’annonce concernée dans chaque e-mail de contact »', 'u_hugo', at(-5, 9), 'demandes'),
       N('u_clement', a, 'activity', 'Louis a demandé la validation du plan du site', 'u_louis', at(-2, 11), 'validations')
     ];
     return { users, projects: [a, b, c], notifications, outbox: [] };
@@ -262,7 +262,8 @@
     const waiting = project.validations.filter((v) => v.status === 'ready').length;
     const newMessages = (project.messages || []).filter((m) => m.readByAgency === false).length;
     const requests = (project.requests || []).filter((r) => r.status === 'Nouveau').length;
-    return { newFiles, changes, unseen, waiting, newMessages, requests };
+    const due = (project.invoices || []).filter((i) => i.status === 'due').length, missing = (project.missing || []).length;
+    return { newFiles, changes, unseen, waiting, newMessages, requests, due, missing };
   }
 
   function nextStep(project) {
@@ -530,6 +531,14 @@
         const inv = project.invoices.find((i) => i.id === action.iid); if (!inv) return { error: 'Facture introuvable.' };
         inv.payUrl = action.payUrl ? safeUrl(action.payUrl, 'url') : ''; break;
       }
+      case 'client.remind': {
+        // Relance manuelle : le client reçoit un rappel (e-mail selon ses préférences), l'activité garde la trace.
+        const vv = project.validations.find((x) => x.status === 'ready');
+        const what = vv ? vv.t.toLowerCase() : project.missing[0] ? project.missing[0].t.toLowerCase() : '';
+        if (!what) return { error: 'Rien n’attend le client pour l’instant.' };
+        if (project.activity.some((x) => x.by === user.id && /^a relancé le client/.test(x.text) && Date.now() - new Date(x.at) < DAY)) return { error: 'Client déjà relancé aujourd’hui.' };
+        log(project, user, 'a relancé le client : ' + what); return { ok: true, remind: what };
+      }
       case 'project.archive':
         project.archivedAt = action.undo ? null : now; break;
       default: return { error: 'Action inconnue.' };
@@ -542,9 +551,9 @@
      et les autres membres de l'équipe. Chacun règle ce qu'il reçoit et à quel rythme. */
   const EVENT = {
     'file.add': 'files', 'msg.post': 'messages', 'val.approve': 'validations', 'val.changes': 'validations',
-    'request.add': 'requests', 'review.add': 'messages', 'project.deliver': 'activity', 'val.request': 'validations', 'user.onboarded': 'activity', 'asset.add': 'files', 'next.set': 'activity', 'note.set': 'activity'
+    'request.add': 'requests', 'review.add': 'messages', 'client.remind': 'validations', 'project.deliver': 'activity', 'val.request': 'validations', 'user.onboarded': 'activity', 'asset.add': 'files', 'next.set': 'activity', 'note.set': 'activity'
   };
-  const TAB = { files: 'fichiers', messages: 'messages', validations: 'validations', requests: 'messages', activity: 'activite' };
+  const TAB = { files: 'fichiers', messages: 'messages', validations: 'validations', requests: 'demandes', activity: 'activite' };
   const CLIENT_VIEW = { files: 'fichiers', messages: 'messages', validations: 'valider', activity: 'accueil', requests: 'outils' };
   const DEFAULT_PREFS = { email: 'instant', events: { files: true, messages: true, validations: true, requests: true, activity: false } };
   const prefsOf = (u) => ({ ...DEFAULT_PREFS, ...(u.notify || {}), events: { ...DEFAULT_PREFS.events, ...((u.notify || {}).events || {}) } });
@@ -560,6 +569,7 @@
       case 'user.onboarded': return `${who} a découvert son espace`;
       case 'asset.add': return `${who} a ajouté « ${action.title} » à la bibliothèque`;
       case 'next.set': return `${who} a mis à jour la prochaine étape`;
+      case 'client.remind': return audience === 'client' ? `Petit rappel de ${who} : ${res.remind} attend ${project.registre === 'tu' ? 'ton' : 'votre'} retour.` : `${who} a relancé ${project.contactName || project.client} : ${res.remind}`;
       case 'review.add': return `${who} a laissé un avis : ${action.score}/5${action.text ? ' « ' + String(action.text).slice(0, 100) + ' »' : ''}`;
       case 'project.deliver': return action.undo ? `${who} a annulé la mise en ligne` : audience === 'client' ? `${who} a annoncé la mise en ligne : ${project.offer === 'site' ? (project.registre === 'tu' ? 'ton' : 'votre') + ' site est en ligne' : 'le projet est livré'}` : `${who} a mis en ligne le projet ${project.client}`;
       case 'note.set': return audience === 'client' ? `${who} a publié le point de la semaine : « ${String(action.text || '').slice(0, 160)} »` : `${who} a publié le point de la semaine`;
@@ -734,8 +744,16 @@
       html: `<div style="background:#f3f2ef;padding:32px 16px;font-family:Arial,Helvetica,sans-serif"><table width="100%" style="max-width:520px;margin:0 auto;background:#ffffff;border-radius:16px;padding:28px" cellpadding="0" cellspacing="0"><tr><td style="font-family:Georgia,serif;font-size:22px;color:#000012;padding-bottom:16px">Orem</td></tr><tr><td style="font-size:15px;color:#0b0b12">Bonjour ${first},</td></tr><tr><td style="font-size:15px;color:#2f2f3a;padding:8px 0 16px">${T('Votre', 'Ton')} code de connexion à l\u2019espace Orem :</td></tr><tr><td style="font-size:30px;letter-spacing:.2em;font-weight:bold;color:#000012">${esc(code)}</td></tr><tr><td style="padding-top:20px"><a href="${esc(link)}" style="display:inline-block;background:#092482;color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:10px;font-size:15px">Se connecter</a></td></tr><tr><td style="font-size:12px;color:#585865;padding-top:16px">Valable 15 minutes. ${T('Si vous n\u2019avez rien demandé, ignorez', 'Si tu n\u2019as rien demandé, ignore')} cet e-mail.</td></tr></table></div>` };
   }
 
-  /* Boîte de réception et préférences (par personne). */
-  function inbox(store, user) { return (store.notifications || []).filter((n) => n.userId === user.id).slice(0, 200); }
+  /* Boîte de réception et préférences (par personne).
+     « À traiter » : ce qu'un client attend de l'équipe (message, fichier, modifications, demande d'évolution, deal à ouvrir). */
+  const TODO_ACTS = new Set(['msg.post', 'file.add', 'val.changes', 'request.add', 'pipedrive', 'review.add']);
+  const isTodo = (store, n) => { if (!TODO_ACTS.has(n.act)) return false; if (n.act === 'pipedrive') return true; const by = store.users.find((u) => u.id === n.by); return !by || by.role !== 'admin'; };
+  function inbox(store, user) { return (store.notifications || []).filter((n) => n.userId === user.id).slice(0, 200).map((n) => ({ ...n, todo: isTodo(store, n) && !n.done })); }
+  function doneNotif(store, user, id, undo) { const n = (store.notifications || []).find((x) => x.userId === user.id && x.id === id); if (!n) return { error: 'Notification introuvable.' };
+    n.done = !undo; n.read = true;
+    // Traité par un membre de l'équipe : traité pour toute l'équipe (même événement, même projet, même texte).
+    (store.notifications || []).forEach((x) => { if (x.projectId === n.projectId && x.text === n.text && x.at === n.at) { x.done = !undo; if (!undo) x.read = true; } });
+    return { ok: true }; }
   function readNotif(store, user, id, ids) { const set = Array.isArray(ids) ? new Set(ids.map(String)) : null; (store.notifications || []).forEach((n) => { if (n.userId === user.id && (set ? set.has(n.id) : (!id || n.id === id))) n.read = true; }); return { ok: true }; }
   function setPrefs(store, user, prefs) {
     const u = store.users.find((x) => x.id === user.id); if (!u || u.role !== 'admin') return { error: 'Réglage réservé à l\u2019équipe.' };
@@ -758,5 +776,5 @@
     return { ok: true, id: p.id };
   }
 
-  return { seed, newProject, OFFERS, OREM, itemState, phaseState, offerOf: (p) => (OFFERS[p.offer] || OFFERS.site).label, apply, addFile, createProject, summary, forUser, nextStep, alerts, canSee, inbox, readNotif, setPrefs, prefsOf, emailsFor, digestFor, loginMail, publicConfig, setSettings, settingsOf, runReminders, FILE_CATS, AGENCY_CATS, HANDOVER, workDaysBetween, reg, replan };
+  return { seed, newProject, OFFERS, OREM, itemState, phaseState, offerOf: (p) => (OFFERS[p.offer] || OFFERS.site).label, apply, addFile, createProject, summary, forUser, nextStep, alerts, canSee, inbox, readNotif, doneNotif, setPrefs, prefsOf, emailsFor, digestFor, loginMail, publicConfig, setSettings, settingsOf, runReminders, FILE_CATS, AGENCY_CATS, HANDOVER, workDaysBetween, reg, replan };
 });

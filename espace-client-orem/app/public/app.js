@@ -30,6 +30,7 @@
       login: (email) => j('/api/login', { method: 'POST', body: JSON.stringify({ email }) }),
       verify: (email, code) => j('/api/verify', { method: 'POST', body: JSON.stringify({ email, code }) }),
       logout: () => j('/api/logout', { method: 'POST' }),
+      logoutAll: () => j('/api/logout-all', { method: 'POST' }),
       projects: () => j('/api/projects'),
       project: (id) => j('/api/projects/' + id),
       create: (data) => j('/api/projects', { method: 'POST', body: JSON.stringify(data) }),
@@ -48,6 +49,7 @@
       linkAuth: (token) => j('/api/auth/link', { method: 'POST', body: JSON.stringify({ token }) }),
       inbox: () => j('/api/inbox'),
       readNotif: (id) => j('/api/inbox/read', { method: 'POST', body: JSON.stringify({ id }) }),
+      doneNotif: (id, undo) => j('/api/inbox/done', { method: 'POST', body: JSON.stringify({ id, undo }) }),
       setPrefs: (p) => j('/api/me/prefs', { method: 'POST', body: JSON.stringify(p) }),
       outbox: () => j('/api/outbox'),
       digest: () => j('/api/digest', { method: 'POST' }),
@@ -72,6 +74,7 @@
       login: (email) => { const u = store.users.find((x) => x.email === email); return wait(u ? { ok: true, devCode: '482917' } : { ok: true }); },
       verify: (email, code) => { const u = store.users.find((x) => x.email === email); if (!u || code !== '482917') return fail('Code incorrect ou expiré. Demandez-en un nouveau.'); me = u; return wait({ ok: true, user: u }); },
       logout: () => { me = null; return wait({ ok: true }); },
+      logoutAll: () => { me = null; return wait({ ok: true }); },
       projects: () => wait({ projects: store.projects.filter((p) => Core.canSee(me, p)).map(Core.summary) }),
       project: (id) => { const p = store.projects.find((x) => x.id === id); if (!p || !Core.canSee(me, p)) return fail('Projet introuvable.');
         return wait({ project: Core.forUser(p, me), access: me.role === 'admin' ? store.users.filter((u) => u.projectId === id) : undefined,
@@ -84,6 +87,7 @@
       exportUrl: () => null,
       inbox: () => wait({ items: Core.inbox(store, me) }),
       readNotif: (id) => wait(Core.readNotif(store, me, id)),
+      doneNotif: (id, undo) => wait(Core.doneNotif(store, me, id, undo)),
       setPrefs: (p) => { const r = Core.setPrefs(store, me, p); if (r.ok) me.notify = r.notify; return r.error ? fail(r.error) : wait(r); },
       outbox: () => wait({ enabled: false, items: store.outbox }),
       settings: (b) => { const r = Core.setSettings(store, me, b); return r.error ? fail(r.error) : wait(r); },
@@ -95,7 +99,7 @@
   const API = window.DEMO ? demoApi() : httpApi();
 
   /* ---------- État ---------- */
-  const S = { me: null, team: [], projects: [], project: null, access: [], people: {}, view: 'accueil', tab: 'pilotage', preview: false,
+  const S = { drafts: {}, me: null, team: [], projects: [], project: null, access: [], people: {}, view: 'accueil', tab: 'pilotage', preview: false,
     cat: 'Tous', valForm: null, qa: null, ob: null, tool: null, bk: null, zoom: null, teaser: null, sig: null, login: { step: 'email', email: '', dev: null }, uploading: null, loading: true };
   const isAdmin = () => S.me && S.me.role === 'admin';
   // Une seule source de vérité pour les états (livrables liés à une validation, projet livré…).
@@ -116,6 +120,18 @@
     sp.textContent = msg; el.setAttribute('aria-invalid', 'true');
     el.setAttribute('aria-describedby', ((el.getAttribute('aria-describedby') || '').replace(eid, '').trim() + ' ' + eid).trim()); el.focus();
   }
+  /* Enregistrement automatique (pilotage) : à chaque champ quitté, sans bouton ni rechargement de la page. */
+  async function autosave(f) {
+    const v = (id) => ($('#' + id) ? $('#' + id).value.trim() : ''), st = f.querySelector('.save-st');
+    const a = { phase: { type: 'phase.set', n: v('a-phase') }, next: { type: 'next.set', title: v('a-nt'), text: v('a-nx'), go: v('a-ng') }, meeting: { type: 'meeting.set', title: v('a-mt'), when: v('a-mw') || null } }[f.dataset.form];
+    if (!a || S.preview) return;
+    if (st) st.textContent = 'Enregistrement…';
+    try { await API.action(S.project.id, a); const r = await API.project(S.project.id); S.project = r.project; if (st) st.textContent = 'Enregistré à ' + new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }).replace(':', ' h ');
+      if (f.dataset.form === 'phase') render(); }
+    catch (e) { if (st) st.textContent = ''; fieldError(f.querySelector('input,select,textarea'), e.message); }
+  }
+  /* Badges de la barre latérale et de la barre du bas, mis à jour sans tout reconstruire. */
+  function renderBadges() { const side = document.querySelector('.side .nav'); if (!side) return render(); const tmp = document.createElement('div'); tmp.innerHTML = shell(''); const ns = tmp.querySelector('.side .nav'), nt = tmp.querySelector('.tabbar'); side.innerHTML = ns.innerHTML; const tb = document.querySelector('.tabbar'); if (tb && nt) tb.innerHTML = nt.innerHTML; }
   async function act(a, okMsg) {
     if (S.preview) { toast('Aperçu : les actions sont désactivées.'); return false; }
     try { await API.action(S.project.id, a); if (isAdmin()) await loadInbox(); await loadProject(S.project.id); if (okMsg) toast(okMsg); return true; }
@@ -131,7 +147,7 @@
   function shell(content) {
     const p = S.project;
     const admin = !clientMode();
-    const link = ([id, l, i]) => `<a href="#${id}" data-go="${id}" ${S.view === id || (id === 'clients' && S.view === 'admin') ? 'aria-current="page"' : ''}>${ic(i)}<span>${l}</span>${id === 'valider' && pending() ? `<span class="badge" aria-label="${pending()} à valider">${pending()}</span>` : ''}${id === 'messages' && unread() ? `<span class="badge" aria-label="${unread()} non lus">${unread()}</span>` : ''}${id === 'inbox' && unreadInbox() ? `<span class="badge" aria-label="${unreadInbox()} non lus">${unreadInbox()}</span>` : ''}</a>`;
+    const link = ([id, l, i]) => `<a href="#${id}" data-go="${id}" ${S.view === id || (id === 'clients' && S.view === 'admin') ? 'aria-current="page"' : ''}>${ic(i)}<span>${l}</span>${id === 'valider' && pending() ? `<span class="badge" aria-label="${pending()} à valider">${pending()}</span>` : ''}${id === 'messages' && unread() ? `<span class="badge" aria-label="${unread()} non lus">${unread()}</span>` : ''}${id === 'inbox' && todoInbox() ? `<span class="badge" aria-label="${todoInbox()} à traiter">${todoInbox()}</span>` : ''}</a>`;
     const groups = admin
       ? [['Au quotidien', [['inbox', 'Boîte de réception', 'mail'], ['clients', 'Clients', 'team']]], ['Gérer', [['nouveau', 'Nouvel espace client', 'plus'], ['reglages', 'Réglages', 'gear']]]]
       : [['Mon projet', [['accueil', 'Accueil', 'home'], ['projet', 'Étapes', 'map'], ['valider', 'À valider', 'ok'], ['maquettes', 'Maquettes', 'figma']]],
@@ -139,9 +155,9 @@
          ['Outils', [['outils', 'Boîte à outils', 'plus'], ['biblio', 'Bibliothèque', 'eye']]],
          ['Aide', [['equipe', 'Équipe et aide', 'team']]]];
     const navHtml = groups.map(([t, items]) => `<div class="sec">${t}</div>${items.map(link).join('')}`).join('');
-    const tabs = admin ? [['inbox', 'Réception', 'mail'], ['clients', 'Clients', 'team'], ['compose', 'Ajouter', 'plus'], ['reglages', 'Réglages', 'gear'], ['deconnexion', 'Sortir', 'out']] : [['accueil', 'Accueil', 'home'], ['projet', 'Étapes', 'map'], ['messages', 'Messages', 'chat'], ['fichiers', 'Fichiers', 'folder'], ['plus', 'Plus', 'team']];
+    const tabs = admin ? [['inbox', 'Réception', 'mail'], ['clients', 'Clients', 'team'], ['compose', 'Ajouter', 'plus'], ['reglages', 'Réglages', 'gear']] : [['accueil', 'Accueil', 'home'], ['projet', 'Étapes', 'map'], ['messages', 'Messages', 'chat'], ['fichiers', 'Fichiers', 'folder'], ['plus', 'Plus', 'team']];
     const tabHtml = tabs.map(([id, l, i]) => { const cur = id === 'plus' ? ['plus', 'valider', 'maquettes', 'documents', 'outils', 'biblio', 'equipe'].includes(S.view) : S.view === id || (id === 'clients' && S.view === 'admin');
-      return `<a href="#${id}" data-go="${id}" ${cur ? 'aria-current="page"' : ''}>${ic(i)}<span>${l}</span>${id === 'inbox' && unreadInbox() ? `<span class="badge">${unreadInbox()}</span>` : ''}${id === 'messages' && unread() ? `<span class="badge">${unread()}</span>` : ''}${id === 'plus' && pending() ? `<span class="badge">${pending()}</span>` : ''}</a>`; }).join('');
+      return `<a href="#${id}" data-go="${id}" ${cur ? 'aria-current="page"' : ''}>${ic(i)}<span>${l}</span>${id === 'inbox' && todoInbox() ? `<span class="badge">${todoInbox()}<span class="sr"> à traiter</span></span>` : ''}${id === 'messages' && unread() ? `<span class="badge">${unread()}</span>` : ''}${id === 'plus' && pending() ? `<span class="badge">${pending()}</span>` : ''}</a>`; }).join('');
     let card;
     if (admin) {
       const waiting = S.projects.filter((x) => x.alerts.newFiles || x.alerts.changes || x.alerts.newMessages || x.alerts.requests).length;
@@ -171,7 +187,7 @@
         <header class="topbar"><div class="brand"><img class="logo" src="${IMG.logo}" alt=""><b>Orem</b></div>${API.demo && !S.preview ? `<label class="demo-sel top"><span>${ic('eye')}Démo : voir l\u2019espace de</span><select data-demo aria-label="Changer d\u2019espace de démo">${[['claire@maisonlumen.fr', 'Claire · Maison Lumen (en cours)'], ['julie@cabinet-varenne.fr', 'Julie · Cabinet Varenne (démarrage)'], ['hugo@huchet-demorge.fr', 'Hugo · Huchet-Demorge (livré)'], ['louis@agence-orem.fr', 'Louis · agence'], ['theophile@agence-orem.fr', 'Théophile · agence'], ['clement@agence-orem.fr', 'Clément · agence']].map(([e, l]) => `<option value="${e}" ${S.me.email === e ? 'selected' : ''}>${l}</option>`).join('')}</select></label>` : ''}${API.demo && !S.preview ? '' : `<span class="small">${admin ? 'Espace agence' : esc(p.client)}</span>`}</header>
         <div class="sheet"><main class="main" id="main" tabindex="-1"><div class="wrap">${wrapHtml(content)}</div></main></div>
       </div>
-      <nav class="tabbar" aria-label="Navigation principale">${tabHtml}</nav>
+      <nav class="tabbar" aria-label="Navigation principale" style="grid-template-columns:repeat(${tabs.length},minmax(0,1fr))">${tabHtml}</nav>
     </div>`;
   }
   function wrapHtml(content) { const p = S.project; return `${p && p.archivedAt && clientMode() ? `<div class="alert">${ic('lock')}<div>Cet espace est archivé depuis le ${fmt(p.archivedAt, { day: 'numeric', month: 'long' })}. Tout reste consultable et téléchargeable, en lecture seule.</div></div>` : ''}${content}`; }
@@ -695,10 +711,13 @@
       <div class="thread" tabindex="0" role="log" aria-label="Conversation">${list.map((m) => msgBubbleAdmin(m)).join('') || '<p class="muted">Aucun message.</p>'}</div>
       <form class="form" data-form="amsg" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--line)">
         <div class="field"><label for="am-t">Message</label><textarea id="am-t" rows="2" placeholder="Bonjour ${esc(p.contactName || '')}, …"></textarea></div>
-        <div class="line"><div class="field"><label for="am-u">Vidéo Loom (facultatif)</label><input id="am-u" type="url" placeholder="https://www.loom.com/share/…"></div><div class="field"><label for="am-l">Titre de la vidéo</label><input id="am-l" type="text" placeholder="Présentation des maquettes"></div></div>
-        <div><button class="btn btn-primary" type="submit">Envoyer au client</button></div></form></section>
-      <section class="panel"><div class="panel-head"><h2>${ic('plus')}Demandes d’évolution</h2></div><div class="list">${(p.requests || []).map((r) => `<div class="row"><div class="grow"><div class="title">${esc(r.type)} · ${esc(r.priority)}</div><div class="sub">${esc(r.text)}</div></div>
-        <select data-req="${r.id}" style="width:auto" aria-label="Statut de la demande">${['Nouveau', 'Proposé', 'En cours', 'Fait'].map((x) => `<option ${r.status === x ? 'selected' : ''}>${x}</option>`).join('')}</select></div>`).join('') || '<p class="muted">Aucune demande.</p>'}</div></section>`;
+        <div class="line"><div class="field"><label for="am-u">Vidéo Loom (facultatif)</label><input id="am-u" type="url" placeholder="https://www.loom.com/share/…"></div><div class="field"><label for="am-l">Titre de la vidéo</label><input id="am-l" type="text" placeholder="ex. Présentation des maquettes"></div></div>
+        <div><button class="btn btn-primary" type="submit">Envoyer au client</button></div></form></section>`;
+  }
+  function tDemandes() {
+    const p = S.project, R0 = p.requests || [];
+    return `<section class="panel"><div class="panel-head"><h2>${ic('plus')}Demandes d’évolution</h2><span class="aside">${R0.filter((r) => r.status === 'Nouveau').length} nouvelle${R0.filter((r) => r.status === 'Nouveau').length > 1 ? 's' : ''}</span></div><div class="list">${R0.map((r) => `<div class="row"><div class="grow"><div class="title">${esc(r.type)} · ${esc(r.priority)}</div><div class="sub">${esc(r.text)}</div><div class="sub">${esc(who(r.by))} · ${fmt(r.at, { day: 'numeric', month: 'long' })}</div></div>
+        <label class="sr" for="rq-${r.id}">Statut de la demande</label><select id="rq-${r.id}" data-req="${r.id}" style="width:auto">${['Nouveau', 'Proposé', 'En cours', 'Fait'].map((x) => `<option ${r.status === x ? 'selected' : ''}>${x}</option>`).join('')}</select></div>`).join('') || '<p class="muted">Aucune demande.</p>'}</div></section>`;
   }
   function msgBubbleAdmin(m) {
     const u = person(m.by), agency = !!m.fromAgency;
@@ -720,20 +739,31 @@
   const TYPE_ICO = { files: 'up', messages: 'chat', validations: 'ok', requests: 'plus', activity: 'eye' };
   const TYPE_LBL = { files: 'Fichier', messages: 'Message', validations: 'Validation', requests: 'Demande', activity: 'Activité' };
   const unreadInbox = () => (S.inbox || []).filter((n) => !n.read).length;
+  const todoInbox = () => (S.inbox || []).filter((n) => n.todo).length;
   const ago = (d) => { const m = Math.round((Date.now() - new Date(d)) / 6e4); if (m < 1) return 'à l’instant'; if (m < 60) return `il y a ${m} min`; const h = Math.round(m / 60); if (h < 24) return `il y a ${h} h`; const j = Math.round(h / 24); return j === 1 ? 'hier' : `il y a ${j} jours`; };
   async function loadInbox() { try { S.inbox = (await API.inbox()).items; } catch { S.inbox = []; } }
   function vInbox() {
-    const all = S.inbox || [], f = S.inboxFilter || 'unread';
-    const list = f === 'unread' ? all.filter((n) => !n.read) : all;
-    return `<div class="head"><div><h1>Boîte de réception</h1><p class="lead">Tout ce qui se passe dans vos espaces clients, au même endroit</p></div>
-      <div class="head-actions">${unreadInbox() ? `<button class="btn btn-line" data-act="inbox-all">${ic('check')}Tout marquer comme lu</button>` : ''}<button class="btn btn-primary hide-m" data-act="compose">${ic('plus')}Ajouter</button></div></div>
+    const all = S.inbox || [], f = S.inboxFilter || 'todo';
+    const todo = all.filter((n) => n.todo), act = all.filter((n) => !n.todo);
+    let list = f === 'todo' ? todo : f === 'activity' ? act : all;
+    if (S.inboxType) list = list.filter((n) => n.type === S.inboxType);
+    if (S.inboxClient) list = list.filter((n) => n.projectId === S.inboxClient);
+    const clients = [...new Map(all.map((n) => [n.projectId, n.client])).entries()];
+    const row = (n) => `<li class="inbox-item ${n.read ? '' : 'unread'}">
+        <button class="row inbox-row ${n.read ? '' : 'unread'}" data-notif="${n.id}">
+          <span class="ico ${n.read ? '' : 'hl'}">${ic(TYPE_ICO[n.type] || 'eye')}</span>
+          <span class="grow"><span class="title">${esc(n.text)}</span><span class="sub">${esc(n.client)} · ${TYPE_LBL[n.type] || ''} · ${ago(n.at)}${n.done ? ' · traité' : ''}</span></span>
+          ${n.read ? '' : '<span class="dot-new" aria-hidden="true"></span><span class="sr">Non lu</span>'}${ic('arrow', 'width:18px;height:18px;color:var(--muted);flex:none')}</button>
+        ${n.todo || n.done ? `<div class="inbox-acts">${n.todo && n.act === 'msg.post' ? `<button class="btn btn-line btn-sm" data-act="reply" data-id="${n.id}">${ic('chat')}Répondre</button>` : ''}<button class="btn btn-line btn-sm" data-act="${n.done ? 'undone' : 'done'}" data-id="${n.id}">${n.done ? 'Remettre à traiter' : ic('check') + 'Traité'}</button></div>` : ''}
+        ${S.replyTo === n.id ? `<form class="inline reply" data-form="reply" data-id="${n.id}"><label class="sr" for="rp-${n.id}">Réponse à ${esc(n.client)}</label><textarea id="rp-${n.id}" rows="2" placeholder="Votre réponse, envoyée dans l’espace du client"></textarea><button class="btn btn-primary btn-sm" type="submit">Envoyer</button></form>` : ''}</li>`;
+    return `<div class="head"><div><h1>Boîte de réception</h1><p class="lead">Ce que les clients attendent de l’agence, puis l’activité de vos espaces</p></div>
+      <div class="head-actions">${unreadInbox() ? `<button class="btn btn-line" data-act="inbox-all">${ic('check')}Tout marquer comme lu</button>` : ''}</div></div>
       <div class="hide-m">${kpisAdmin()}</div>
-      <div class="cats" role="group" aria-label="Filtrer">${[['unread', 'Non lus', all.filter((n) => !n.read).length], ['all', 'Tout', all.length]].map(([k, l, n]) => `<button class="cat" data-inbox="${k}" aria-pressed="${f === k}"><strong>${l}</strong><span class="num">${n}</span></button>`).join('')}</div>
-      <section class="panel">${list.length ? `<div class="list">${list.map((n) => `<button class="row inbox-row ${n.read ? '' : 'unread'}" data-notif="${n.id}">
-        <span class="ico ${n.read ? '' : 'hl'}">${ic(TYPE_ICO[n.type] || 'eye')}</span>
-        <span class="grow"><span class="title">${esc(n.text)}</span><span class="sub">${esc(n.client)} · ${TYPE_LBL[n.type] || ''} · ${ago(n.at)}</span></span>
-        ${n.read ? '' : '<span class="dot-new" aria-label="Non lu"></span>'}${ic('arrow', 'width:18px;height:18px;color:var(--muted);flex:none')}</button>`).join('')}</div>`
-        : `<div class="empty big" style="border:0">${ic('ok')}<strong>Tout est à jour</strong><span>Les dépôts de fichiers, messages, validations et demandes des clients arriveront ici${S.me.notify && S.me.notify.email !== 'off' ? ', et par e-mail selon vos réglages' : ''}.</span></div>`}</section>`;
+      <div class="inbox-bar"><div class="cats" role="group" aria-label="Afficher">${[['todo', 'À traiter', todo.length], ['activity', 'Activité', act.length], ['all', 'Tout', all.length]].map(([k, l, n]) => `<button class="cat" data-inbox="${k}" aria-pressed="${f === k}"><strong>${l}</strong><span class="num">${n}</span></button>`).join('')}</div>
+        <div class="inline filters"><label class="sr" for="ib-t">Type</label><select id="ib-t" data-ibfilter="type"><option value="">Tous les types</option>${Object.entries(TYPE_LBL).map(([k, l]) => `<option value="${k}" ${S.inboxType === k ? 'selected' : ''}>${l}</option>`).join('')}</select>
+        <label class="sr" for="ib-c">Client</label><select id="ib-c" data-ibfilter="client"><option value="">Tous les clients</option>${clients.map(([id, c]) => `<option value="${id}" ${S.inboxClient === id ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select></div></div>
+      <section class="panel">${list.length ? `<ul class="list plain">${list.map(row).join('')}</ul>`
+        : `<div class="empty big" style="border:0">${ic('ok')}<strong>${f === 'todo' ? 'Rien à traiter' : 'Rien ici'}</strong><span>${f === 'todo' ? 'Les messages, fichiers, demandes de modifications et d’évolution des clients arriveront ici' + (S.me.notify && S.me.notify.email !== 'off' ? ', et par e-mail selon vos réglages' : '') + '.' : 'Aucune notification avec ces filtres.'}</span></div>`}</section>`;
   }
 
   /* ---------- Équipe : réglages ---------- */
@@ -741,7 +771,7 @@
     const n = S.me.notify || { email: 'instant', events: {} };
     const ev = [['files', 'Un client dépose un fichier'], ['messages', 'Un client écrit ou envoie un message'], ['validations', 'Un client valide ou demande des modifications'], ['requests', 'Un client demande une évolution'], ['activity', 'Un collègue publie quelque chose dans un de mes projets']];
     const ob = S.outbox || { items: [] };
-    return `<div class="head"><div><h1>Réglages</h1><p class="lead">${esc(S.me.name)} · ${esc(S.me.email)}</p></div></div>
+    return `<div class="head"><div><h1>Réglages</h1><p class="lead">${esc(S.me.name)} · ${esc(S.me.email)}</p></div><div class="head-actions"><button class="btn btn-line" data-act="logout">${ic('out')}Se déconnecter</button><button class="btn btn-line" data-act="logout-all">Déconnecter tous mes appareils</button></div></div>
       <form class="panel form" data-form="prefs"><div class="panel-head" style="margin:0"><h2>${ic('mail')}Mes notifications par e-mail</h2><span class="aside">Dans la boîte de réception, vous voyez toujours tout</span></div>
         <fieldset class="field" style="border:0;padding:0;margin:0"><legend class="small" style="font-weight:500;margin-bottom:10px">Quand m’écrire ?</legend>
           <div class="ob-pref">${[['instant', 'À chaque nouveauté, tout de suite'], ['digest', 'Un récap par jour, à 18 h'], ['off', 'Jamais, je regarde la boîte de réception']].map(([v, l]) => `<label><input type="radio" name="pf-email" value="${v}" ${n.email === v ? 'checked' : ''}> ${l}</label>`).join('')}</div></fieldset>
@@ -777,25 +807,25 @@
     let body = '';
     if (!P) body = `<p class="muted">Choisissez d’abord le client.</p>`;
     else if (C.kind === 'msg') body = `<div class="field"><label for="c-t">Message à ${esc(P.contactName || P.client)}</label><textarea id="c-t" rows="4" placeholder="${P.registre === 'tu' ? 'Salut' : 'Bonjour'} ${esc(P.contactName || '')}, …"></textarea></div>
-      <div class="line"><div class="field"><label for="c-u">Lien Loom (facultatif)</label><input id="c-u" type="url" placeholder="https://www.loom.com/share/…"></div><div class="field"><label for="c-l">Titre de la vidéo</label><input id="c-l" type="text" placeholder="Présentation des maquettes"></div></div>
+      <div class="line"><div class="field"><label for="c-u">Lien Loom (facultatif)</label><input id="c-u" type="url" placeholder="https://www.loom.com/share/…"></div><div class="field"><label for="c-l">Titre de la vidéo</label><input id="c-l" type="text" placeholder="ex. Présentation des maquettes"></div></div>
       <p class="hint">Le client reçoit un e-mail et voit un bandeau sur son accueil.</p>`;
     else if (C.kind === 'file') body = `<div class="field"><label for="c-cat">Type</label><select id="c-cat">${[['Livrable', 'Livrable (visible dans Fichiers)'], ['Devis', 'Devis'], ['Facture', 'Facture'], ['Contrat', 'Contrat'], ['RIB', 'RIB']].map(([v, l]) => `<option value="${v}">${l}</option>`).join('')}</select></div>
       <label class="drop small-drop" for="c-file"><span class="ico hl">${ic('up')}</span><strong>Glissez un ou plusieurs fichiers, ou cliquez</strong><span class="small muted">Jusqu’à 2 Go par fichier</span><input id="c-file" type="file" multiple class="sr"></label>
       ${S.uploading ? `<div class="small">${esc(S.uploading.name)}<span class="progress"><i style="width:${Math.round(S.uploading.p * 100)}%"></i></span></div>` : ''}`;
     else if (C.kind === 'val') body = `<div class="field"><label for="c-v">Quelle validation ?</label><select id="c-v">${P.validations.map((v) => `<option value="${v.id}" ${v.status === 'wait' ? '' : ''}>${esc(v.t)} · ${{ wait: 'pas encore demandée', ready: 'chez le client', approved: 'validée', changes: 'modifications demandées' }[v.status]}</option>`).join('')}</select></div>
       <div class="field"><label for="c-vl">Lien à regarder</label><input id="c-vl" type="url" placeholder="https://www.figma.com/proto/…" value="${esc((P.links && (P.links.proto || P.links.figma)) || '')}"></div>
-      <div class="field"><label for="c-vt">Un mot pour le client (facultatif)</label><textarea id="c-vt" rows="2" placeholder="Le plan est prêt, dites-nous ce que vous en pensez."></textarea></div>
+      <div class="field"><label for="c-vt">Un mot pour le client (facultatif)</label><textarea id="c-vt" rows="2" placeholder="ex. Le plan est prêt, dites-nous ce que vous en pensez."></textarea></div>
       <p class="hint">Elle devient la prochaine étape sur son accueil et il reçoit un e-mail.</p>`;
-    else if (C.kind === 'asset') body = `<div class="line"><div class="field"><label for="c-at">Titre</label><input id="c-at" type="text" placeholder="Maquette de la page d’accueil"></div><div class="field"><label for="c-ak">Catégorie</label><select id="c-ak">${['Maquettes', 'Réalisation', 'Visuels', 'Logos', 'Cas d’étude'].map((k) => `<option>${k}</option>`).join('')}</select></div></div>
+    else if (C.kind === 'asset') body = `<div class="line"><div class="field"><label for="c-at">Titre</label><input id="c-at" type="text" placeholder="ex. Maquette de la page d’accueil"></div><div class="field"><label for="c-ak">Catégorie</label><select id="c-ak">${['Maquettes', 'Réalisation', 'Visuels', 'Logos', 'Cas d’étude'].map((k) => `<option>${k}</option>`).join('')}</select></div></div>
       <div class="field"><label for="c-ai">Image (facultatif)</label><input id="c-ai" type="file" accept="image/*"></div>
       <div class="field"><label for="c-au">Ou un lien (Figma, site, PDF…)</label><input id="c-au" type="url" placeholder="https://"></div>`;
     else if (C.kind === 'link') { const L = P.links || {}; body = [['figma', 'Fichier Figma (lecture seule)'], ['proto', 'Prototype Figma'], ['preview', 'Prévisualisation Webflow'], ['site', 'Site en ligne']].map(([k, l]) => `<div class="field"><label for="c-${k}">${l}</label><input id="c-${k}" type="url" value="${esc(L[k] || '')}" placeholder="https://"></div>`).join(''); }
-    else if (C.kind === 'note') body = `<div class="field"><label for="c-n">Point de la semaine</label><textarea id="c-n" rows="4" placeholder="Ce qui a été fait, ce qui vient.">${esc(P.note.text || '')}</textarea></div>
-      <div class="line"><div class="field"><label for="c-mt">Prochain rendez-vous</label><input id="c-mt" type="text" value="${esc(P.meeting.title || '')}" placeholder="Point d’étape (visio, 30 min)"></div><div class="field"><label for="c-mw">Date et heure</label><input id="c-mw" type="datetime-local" value="${dtKey(P.meeting.when)}"></div></div>`;
+    else if (C.kind === 'note') body = `<div class="field"><label for="c-n">Point de la semaine</label><textarea id="c-n" rows="4" placeholder="ex. Ce qui a été fait, ce qui vient.">${esc(P.note.text || '')}</textarea></div>
+      <div class="line"><div class="field"><label for="c-mt">Prochain rendez-vous</label><input id="c-mt" type="text" value="${esc(P.meeting.title || '')}" placeholder="ex. Point d’étape (visio, 30 min)"></div><div class="field"><label for="c-mw">Date et heure</label><input id="c-mw" type="datetime-local" value="${dtKey(P.meeting.when)}"></div></div>`;
     return `<div class="ob" role="dialog" aria-modal="true" aria-labelledby="c-title"><form class="compose-card" data-form="compose">
       <div class="compose-h"><h2 id="c-title">Ajouter</h2><button type="button" class="x" data-act="compose-close" aria-label="Fermer">×</button></div>
       <div class="field"><label for="c-p">Client</label><select id="c-p" data-cproject>${S.projects.length ? '' : ''}<option value="">Choisir un client…</option>${S.projects.map((x) => `<option value="${x.id}" ${x.id === pid ? 'selected' : ''}>${esc(x.client)}</option>`).join('')}</select></div>
-      <div class="tabs ckinds" role="tablist" aria-label="Que voulez-vous ajouter ?">${kindTabs}</div>
+      <div class="ckinds" role="tablist" aria-orientation="vertical" aria-label="Que voulez-vous ajouter ?">${kindTabs}</div>
       <div class="form" role="tabpanel" id="ck-panel" aria-labelledby="ck-${C.kind}">${body}</div>
       <div class="compose-f"><span class="small muted">Ajouté par ${esc(S.me.name.split(' ')[0])}${P && P.team && P.team.members.length ? ' · l’équipe du projet est prévenue' : ''}</span>${C.kind !== 'file' ? `<button class="btn btn-primary" type="submit">${C.kind === 'msg' ? 'Envoyer' : C.kind === 'val' ? 'Demander la validation' : 'Ajouter'}</button>` : ''}</div>
     </form></div>`;
@@ -848,36 +878,50 @@
   const faces = (ids) => `<span class="faces-sm">${(ids || []).map((id) => { const u = S.team.find((x) => x.id === id); return u ? (IMG[u.photo] ? `<img src="${IMG[u.photo]}" alt="${esc(u.name)}" title="${esc(u.name)}">` : `<i title="${esc(u.name)}">${esc(u.name[0])}</i>`) : ''; }).join('')}</span>`;
 
   /* ---------- Vues agence ---------- */
-  function vClients() {
-    const mine = S.mine !== false;
-    const P = mine ? S.projects.filter((p) => !p.team || !p.team.members.length || p.team.members.includes(S.me.id)) : S.projects;
-    const rows = P.map((p) => { const a = p.alerts;
-      const flags = [a.newFiles ? `<span class="chip warn">${a.newFiles} nouveau${a.newFiles > 1 ? 'x' : ''} fichier${a.newFiles > 1 ? 's' : ''}</span>` : '',
-        a.changes ? `<span class="chip warn">Modifications demandées</span>` : '',
-        a.waiting ? `<span class="chip hl">Validation chez le client</span>` : '',
-        a.newMessages ? `<span class="chip warn">${a.newMessages} message${a.newMessages > 1 ? 's' : ''}</span>` : '',
-        a.requests ? `<span class="chip warn">Demande d\u2019évolution</span>` : '',
-        p.draft ? '<span class="chip warn">À ouvrir</span>' : '',
-        !a.newFiles && !a.changes && !a.waiting && !a.newMessages && !a.requests && !p.draft ? '<span class="chip idle">Rien de neuf</span>' : ''].join('');
-      return `<button class="crow" data-open="${p.id}"><div><div class="c-name">${esc(p.client)}</div><div class="small muted">${esc(p.projet)}</div>${p.team ? faces(p.team.members) : ''}</div><div><div class="small"><span class="muted">${esc(p.offerLabel || '')}${p.offerLabel ? ' · ' : ''}${esc(p.phaseName)}${p.archived ? ' · archivé' : p.delivered ? ' · livré' : ''}</span></div><div class="small" style="margin-top:2px">${esc(p.next.title)}</div></div><div class="c-flags">${flags}</div></button>`; }).join('');
-    const needs = S.projects.filter((p) => p.alerts.newFiles || p.alerts.changes || p.alerts.newMessages || p.alerts.requests).length;
-    return `
-    <div class="head"><div><h1>Clients</h1><p class="lead">${esc(cap(fmtLong(Date.now())))}</p></div><button class="btn btn-primary" data-go="nouveau">${ic('plus')}Nouvel espace client</button></div>
-    <div class="cats" role="group" aria-label="Filtrer"><button class="cat" data-mine="1" aria-pressed="${mine}"><strong>Mes clients</strong><span class="num">${S.projects.filter((p) => !p.team || !p.team.members.length || p.team.members.includes(S.me.id)).length}</span></button><button class="cat" data-mine="0" aria-pressed="${!mine}"><strong>Toute l\u2019agence</strong><span class="num">${S.projects.length}</span></button></div>
-    ${needs ? `<div class="alert">${ic('alert')}<div><strong>${needs} client${needs > 1 ? 's' : ''} attend${needs > 1 ? 'ent' : ''} une action de l’agence.</strong> Fichiers à récupérer, messages, modifications ou demandes d’évolution.</div></div>` : ''}
-    <section class="panel"><div class="clients">${rows || '<div class="empty">Aucun espace client pour l’instant.</div>'}</div></section>`;
+  /* Ce qu'attend chaque espace : l'agence (à traiter), le client (validation, fichiers, paiement) ou personne. */
+  function waitingOf(p) {
+    const a = p.alerts || Core.alerts(p);
+    if (p.draft) return { who: 'agence', txt: 'Espace à ouvrir' };
+    const ag = [a.newFiles && `${a.newFiles} fichier${a.newFiles > 1 ? 's' : ''}`, a.newMessages && `${a.newMessages} message${a.newMessages > 1 ? 's' : ''}`, a.changes && 'modifications demandées', a.requests && `demande${a.requests > 1 ? 's' : ''} d’évolution`].filter(Boolean);
+    if (ag.length) return { who: 'agence', txt: ag.join(', ') };
+    const cl = [a.waiting && (a.waiting > 1 ? `${a.waiting} validations` : 'une validation'), a.missing && `${a.missing} fichier${a.missing > 1 ? 's' : ''} attendu${a.missing > 1 ? 's' : ''}`, a.due && (a.due > 1 ? `${a.due} factures à régler` : 'une facture à régler')].filter(Boolean);
+    if (cl.length && !p.delivered) return { who: 'client', txt: cl.join(', ') };
+    return { who: '', txt: 'Rien en attente' };
   }
+  function vClients() {
+    const mine = S.mine !== false, q = norm(S.cq || ''), sort = S.csort || 'urgence';
+    let P = mine ? S.projects.filter((p) => !p.team || !p.team.members.length || p.team.members.includes(S.me.id)) : S.projects.slice();
+    if (q) P = P.filter((p) => norm(p.client + ' ' + p.projet + ' ' + (p.offerLabel || '')).includes(q));
+    const rank = (p) => { const w = waitingOf(p); return w.who === 'agence' ? 0 : w.who === 'client' ? 1 : 2; };
+    P.sort(sort === 'nom' ? (a, b) => a.client.localeCompare(b.client, 'fr') : sort === 'echeance' ? (a, b) => new Date(a.golive) - new Date(b.golive) : (a, b) => rank(a) - rank(b) || new Date(a.golive) - new Date(b.golive));
+    const rows = P.map((p) => { const w = waitingOf(p), j = daysTo(p.golive);
+      return `<tr><th scope="row"><button class="linklike" data-open="${p.id}"><span class="c-name">${esc(p.client)}</span><span class="small muted">${esc(p.projet)}</span></button></th>
+        <td><span class="small">${esc(p.offerLabel || '')}</span><br><span class="small muted">${esc(p.phaseName)}</span></td>
+        <td class="num">${p.archived ? '<span class="chip idle">Archivé</span>' : p.delivered ? '<span class="chip ok">En ligne</span>' : `<span class="${j < 0 ? 'chip warn' : j <= 14 ? 'chip hl' : 'small'}">${j < 0 ? `J+${-j}` : `J-${j}`}</span><br><span class="small muted">${fmt(p.golive)}</span>`}</td>
+        <td>${w.who === 'agence' ? `<span class="chip warn">Agence</span> <span class="small">${esc(w.txt)}</span>` : w.who === 'client' ? `<span class="chip hl">Client</span> <span class="small">${esc(w.txt)}</span>` : `<span class="small muted">${esc(w.txt)}</span>`}</td>
+        <td>${p.team ? faces(p.team.members) : ''}</td></tr>`; }).join('');
+    const needs = S.projects.filter((p) => waitingOf(p).who === 'agence').length;
+    return `
+    <div class="head"><div><h1>Clients</h1><p class="lead">${esc(cap(fmtLong(Date.now())))}</p></div><button class="btn btn-line" data-go="nouveau">${ic('plus')}Nouveau client</button></div>
+    <div class="inbox-bar"><div class="cats" role="group" aria-label="Afficher"><button class="cat" data-mine="1" aria-pressed="${mine}"><strong>Mes clients</strong><span class="num">${S.projects.filter((p) => !p.team || !p.team.members.length || p.team.members.includes(S.me.id)).length}</span></button><button class="cat" data-mine="0" aria-pressed="${!mine}"><strong>Toute l’agence</strong><span class="num">${S.projects.length}</span></button></div>
+      <div class="inline filters"><label class="sr" for="cl-q">Rechercher un client</label><input id="cl-q" type="search" placeholder="Rechercher un client" value="${esc(S.cq || '')}" data-clsearch="1">
+      <label class="sr" for="cl-s">Trier</label><select id="cl-s" data-clsort="1">${[['urgence', 'Trier par urgence'], ['echeance', 'Trier par échéance'], ['nom', 'Trier par nom']].map(([v, l]) => `<option value="${v}" ${sort === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div></div>
+    ${needs ? `<div class="alert">${ic('alert')}<div><strong>${needs} client${needs > 1 ? 's' : ''} attend${needs > 1 ? 'ent' : ''} une action de l’agence.</strong> Fichiers à récupérer, messages, modifications, demandes d’évolution ou espace à ouvrir.</div></div>` : ''}
+    <section class="panel flush"><div class="table-wrap"><table class="grid-clients"><caption class="sr">Espaces clients</caption><thead><tr><th scope="col">Client</th><th scope="col">Offre et temps</th><th scope="col">Échéance</th><th scope="col">En attente de</th><th scope="col">Équipe</th></tr></thead>
+      <tbody>${rows || `<tr><td colspan="5"><div class="empty">${q ? 'Aucun client ne correspond à « ' + esc(S.cq) + ' ».' : 'Aucun espace client pour l’instant.'}</div></td></tr>`}</tbody></table></div></section>`;
+  }
+  const norm = (x) => String(x || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
   function vNouveau() {
     return `
     <div class="head"><div><h1>Nouvel espace client</h1><p class="lead">Le client reçoit un lien de connexion, sans mot de passe</p></div></div>
     <form class="panel form" data-form="create">
-      <div class="line"><div class="field"><label for="n-client">Client</label><input id="n-client" type="text" required placeholder="Maison Lumen"></div>
-      <div class="field"><label for="n-projet">Projet</label><input id="n-projet" type="text" placeholder="Refonte du site maisonlumen.fr"></div></div>
-      <div class="line"><div class="field"><label for="n-contact">Prénom du contact</label><input id="n-contact" type="text" placeholder="Claire"></div>
-      <div class="field"><label for="n-email">E-mail du contact</label><input id="n-email" type="email" placeholder="claire@maisonlumen.fr"></div></div>
+      <div class="line"><div class="field"><label for="n-client">Client</label><input id="n-client" type="text" required placeholder="ex. Maison Lumen"></div>
+      <div class="field"><label for="n-projet">Projet</label><input id="n-projet" type="text" placeholder="ex. Refonte du site"></div></div>
+      <div class="line"><div class="field"><label for="n-contact">Prénom du contact</label><input id="n-contact" type="text" placeholder="ex. Claire"></div>
+      <div class="field"><label for="n-email">E-mail du contact</label><input id="n-email" type="email" placeholder="ex. claire@client.fr"></div></div>
       <div class="line"><div class="field"><label for="n-start">Démarrage</label><input id="n-start" type="date" value="${dayKey(Date.now())}"></div>
-      <div class="field"><label for="n-ht">Montant HT (€)</label><input id="n-ht" type="number" min="0" step="10" placeholder="6900"></div></div>
+      <div class="field"><label for="n-ht">Montant HT (€)</label><input id="n-ht" type="number" min="0" step="10" placeholder="ex. 6900"></div></div>
       <fieldset class="field" style="border:0;padding:0;margin:0"><legend style="font-size:14px;font-weight:500;margin-bottom:8px">Offre</legend>
         <div class="offers">${Object.entries(Core.OFFERS).map(([k, o], i) => `<label class="offer"><input type="radio" name="n-offer" value="${k}" ${i === 0 ? 'checked' : ''}><span><strong>${esc(o.label)}</strong><span class="small muted">${o.phases.reduce((n, ph) => n + ph.items.length, 0)} livrables · ${o.validations.length} validation${o.validations.length > 1 ? 's' : ''} · ${o.phases[o.phases.length - 1].d[1]} jours</span></span></label>`).join('')}</div></fieldset>
       <fieldset class="field" style="border:0;padding:0;margin:0"><legend style="font-size:14px;font-weight:500;margin-bottom:8px">Tutoiement ou vouvoiement</legend>
@@ -888,14 +932,15 @@
     </form>`;
   }
 
-  const TABS = () => [['pilotage', 'Pilotage'], ['messages', 'Messages'], ['validations', 'Validations'], ['fichiers', 'Fichiers'], ['liens', 'Liens'], ['factures', 'Factures'], ['livraison', S.project && S.project.offer === 'site' ? 'Mise en ligne' : 'Livraison'], ['acces', 'Accès et infos'], ['activite', 'Activité']];
+  const TABS = () => [['pilotage', 'Pilotage'], ['messages', 'Messages'], ['demandes', 'Demandes'], ['validations', 'Validations'], ['fichiers', 'Fichiers'], ['liens', 'Liens'], ['factures', 'Factures'], ['livraison', S.project && S.project.offer === 'site' ? 'Mise en ligne' : 'Livraison'], ['acces', 'Accès et infos'], ['activite', 'Activité']];
   function vAdmin() {
     const p = S.project, a = Core.alerts(p);
-    const tabCount = { fichiers: a.newFiles, validations: a.changes, messages: a.newMessages + a.requests, livraison: p.deliveredAt && p.review && !p.review.seen ? 1 : 0 };
-    const body = ({ pilotage: tPilotage, messages: tMessages, liens: tLiens, validations: tValidations, fichiers: tFichiers, factures: tFactures, livraison: tLivraison, acces: tAcces, activite: tActivite }[S.tab] || tPilotage)();
+    const tabCount = { fichiers: a.newFiles, validations: a.changes, messages: a.newMessages, demandes: a.requests, livraison: p.deliveredAt && p.review && !p.review.seen ? 1 : 0 };
+    const body = ({ pilotage: tPilotage, messages: tMessages, demandes: tDemandes, liens: tLiens, validations: tValidations, fichiers: tFichiers, factures: tFactures, livraison: tLivraison, acces: tAcces, activite: tActivite }[S.tab] || tPilotage)();
     return `
     <div><button class="ghost" data-go="clients" style="padding-left:0">${ic('back')}Tous les clients</button></div>
     <div class="head"><div><h1>${esc(p.client)}</h1><p class="lead">${esc(p.projet)} · ${esc(Core.offerOf(p))} · ${esc(phName(p.phases[p.phase - 1]))}${p.deliveredAt ? ' · livré le ' + fmt(p.deliveredAt, { day: 'numeric', month: 'long' }) : ''}</p></div><div class="head-actions"><button class="btn btn-primary" data-act="compose">${ic('plus')}Ajouter</button><button class="btn btn-line" data-act="obpreview">${ic('play')}Accueil du client</button><button class="btn btn-line" data-act="preview">${ic('eye')}Voir comme le client</button></div></div>
+    ${statusBand(p)}
     ${p.draft ? `<form class="panel form draft" data-form="confirm"><div class="panel-head" style="margin:0"><h2>${ic('alert')}Espace préparé depuis ${esc(p.draft.from)}, à ouvrir</h2><span class="aside">Le client n’a pas encore accès</span></div>
       <fieldset class="field" style="border:0;padding:0;margin:0"><legend style="font-size:14px;font-weight:500;margin-bottom:8px">Offre</legend><div class="offers">${Object.entries(Core.OFFERS).map(([k, o]) => `<label class="offer"><input type="radio" name="cf-offer" value="${k}" ${p.offer === k ? 'checked' : ''}><span><strong>${esc(o.label)}</strong></span></label>`).join('')}</div></fieldset>
       <fieldset class="field" style="border:0;padding:0;margin:0"><legend style="font-size:14px;font-weight:500;margin-bottom:8px">Tutoiement ou vouvoiement</legend><div class="radio"><label><input type="radio" name="cf-reg" value="vous"> Vouvoiement</label><label><input type="radio" name="cf-reg" value="tu"> Tutoiement</label></div></fieldset>
@@ -905,32 +950,46 @@
     <div class="tabs" role="tablist" aria-label="Fiche ${esc(p.client)}">${TABS().map(([id, l]) => `<button role="tab" id="tab-${id}" aria-controls="tabpanel" aria-selected="${S.tab === id}" tabindex="${S.tab === id ? 0 : -1}" data-tab="${id}">${l}${tabCount[id] ? `<span class="badge">${tabCount[id]}<span class="sr"> à traiter</span></span>` : ''}</button>`).join('')}</div>
     <div role="tabpanel" id="tabpanel" aria-labelledby="tab-${S.tab}" class="tabpanel">${body}</div>`;
   }
+  function statusBand(p) {
+    if (p.draft || p.archivedAt) return '';
+    const a = Core.alerts(p), days = (d) => Math.max(0, Math.floor((Date.now() - new Date(d)) / 864e5));
+    const ag = [a.newFiles && [`${a.newFiles} fichier${a.newFiles > 1 ? 's' : ''} à récupérer`, 'fichiers'], a.newMessages && [`${a.newMessages} message${a.newMessages > 1 ? 's' : ''} sans réponse`, 'messages'], a.changes && ['Modifications demandées', 'validations'], a.requests && [`${a.requests} demande${a.requests > 1 ? 's' : ''} d’évolution`, 'demandes']].filter(Boolean);
+    const ready = p.validations.filter((v) => v.status === 'ready'), due = p.invoices.filter((i) => i.status === 'due');
+    const cl = [...ready.map((v) => `${v.t} : à valider depuis ${days(v.readyAt)} jour${days(v.readyAt) > 1 ? 's' : ''}`), ...p.missing.slice(0, 2).map((m) => `${m.t} : fichier attendu`), ...due.map((i) => `${i.label} : à régler${i.date ? ' depuis ' + days(i.date) + ' jour' + (days(i.date) > 1 ? 's' : '') : ''}`)];
+    return `<section class="band" aria-label="État du projet">
+      <div><div class="k">L’agence</div>${ag.length ? ag.map(([t, tab]) => `<button class="linklike" data-tab="${tab}">${esc(t)}</button>`).join('') : '<span class="muted">Rien à traiter</span>'}</div>
+      <div><div class="k">${esc(p.contactName || 'Le client')}</div>${cl.length ? cl.map((t) => `<span>${esc(t)}</span>`).join('') : '<span class="muted">Rien en attente</span>'}${ready.length || p.missing.length ? `<button class="btn btn-line btn-sm" data-act="remind">${ic('mail')}Relancer</button>` : ''}</div>
+      <div><div class="k">Échéance</div><span>${p.deliveredAt ? 'En ligne depuis le ' + fmt(p.deliveredAt, { day: 'numeric', month: 'long' }) : `${p.offer === 'site' ? 'Mise en ligne' : 'Livraison'} ${daysTo(p.golive) >= 0 ? 'J-' + daysTo(p.golive) : 'dépassée de ' + -daysTo(p.golive) + ' j'}, le ${fmt(p.golive, { day: 'numeric', month: 'long' })}`}</span></div>
+    </section>`;
+  }
   const GO_OPTS = [['accueil', 'Aucun bouton'], ['cal', 'Prise de rendez-vous'], ['valider', 'À valider'], ['fichiers', 'Fichiers'], ['projet', 'Projet'], ['documents', 'Documents'], ['equipe', 'Équipe']];
   function tPilotage() {
     const p = S.project;
     return `
-    <form class="panel form" data-form="phase"><div class="panel-head" style="margin:0"><h2>${ic('map')}Étape en cours</h2></div>
-      <div class="inline"><select id="a-phase" aria-label="Étape en cours">${p.phases.map((x) => `<option value="${x.n}" ${x.n === p.phase ? 'selected' : ''}>${esc(phName(x))}</option>`).join('')}</select><button class="btn btn-line btn-sm" type="submit">Enregistrer</button></div></form>
-    <form class="panel form" data-form="next"><div class="panel-head" style="margin:0"><h2>${ic('arrow')}Prochaine étape affichée au client</h2><span class="small muted">Le grand bloc en haut de son accueil</span></div>
+    <form class="panel form" data-form="phase" data-autosave="1"><div class="panel-head" style="margin:0"><h2>${ic('map')}Temps en cours</h2><span class="aside save-st" aria-live="polite"></span></div>
+      <div class="inline"><select id="a-phase" aria-label="Temps en cours">${p.phases.map((x) => `<option value="${x.n}" ${x.n === p.phase ? 'selected' : ''}>${esc(phName(x))}</option>`).join('')}</select></div></form>
+    <form class="panel form" data-form="next" data-autosave="1"><div class="panel-head" style="margin:0"><h2>${ic('arrow')}Prochaine étape affichée au client</h2><span class="aside save-st" aria-live="polite">Enregistrement automatique</span></div>
       <div class="field"><label for="a-nt">Titre</label><input id="a-nt" type="text" value="${esc(p.next.title)}" placeholder="${esc(Core.nextStep({ ...p, next: {} }).title)}"></div>
       <div class="field"><label for="a-nx">Texte</label><textarea id="a-nx" placeholder="Une ou deux phrases : ce qu’on attend et pourquoi.">${esc(p.next.text)}</textarea></div>
-      <div class="inline"><label for="a-ng" style="flex:none">Bouton vers</label><select id="a-ng">${GO_OPTS.map(([v, l]) => `<option value="${v}" ${p.next.go === v ? 'selected' : ''}>${l}</option>`).join('')}</select><button class="btn btn-primary btn-sm" type="submit">Publier</button></div>
+      <div class="inline"><label for="a-ng" style="flex:none">Bouton vers</label><select id="a-ng">${GO_OPTS.map(([v, l]) => `<option value="${v}" ${p.next.go === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
       <p class="small muted">Laissez le titre vide pour une prochaine étape automatique (validation en attente, puis fichiers manquants).</p></form>
-    <form class="panel form" data-form="note"><div class="panel-head" style="margin:0"><h2>${ic('cal')}Cette semaine</h2>${p.note.at ? `<span class="small muted">Dernière mise à jour le ${fmt(p.note.at)}</span>` : ''}</div>
-      <textarea id="a-note" aria-label="Note de la semaine" placeholder="Ce qui a été fait, ce qui vient.">${esc(p.note.text)}</textarea>
-      <div class="line"><div class="field"><label for="a-mt">Prochain rendez-vous</label><input id="a-mt" type="text" value="${esc(p.meeting.title)}" placeholder="Point d’étape (visio, 30 min)"></div><div class="field"><label for="a-mw">Date et heure</label><input id="a-mw" type="datetime-local" value="${dtKey(p.meeting.when)}"></div></div>
-      <div><button class="btn btn-primary btn-sm" type="submit">Publier</button></div></form>
+    <form class="panel form" data-form="meeting" data-autosave="1"><div class="panel-head" style="margin:0"><h2>${ic('cal')}Prochain rendez-vous</h2><span class="aside save-st" aria-live="polite">Enregistrement automatique</span></div>
+      <div class="line"><div class="field"><label for="a-mt">Intitulé</label><input id="a-mt" type="text" value="${esc(p.meeting.title)}" placeholder="ex. Point d’étape (visio, 30 min)"></div><div class="field"><label for="a-mw">Date et heure</label><input id="a-mw" type="datetime-local" value="${dtKey(p.meeting.when)}"></div></div></form>
+    <form class="panel form" data-form="note"><div class="panel-head" style="margin:0"><h2>${ic('cal')}Point de la semaine</h2>${p.note.at ? `<span class="small muted">Publié le ${fmt(p.note.at)}</span>` : ''}</div>
+      <label class="sr" for="a-note">Point de la semaine</label><textarea id="a-note" placeholder="ex. Ce qui a été fait, ce qui vient." data-draft="note">${esc((S.drafts[p.id] && S.drafts[p.id].note) ?? p.note.text)}</textarea>
+      ${S.drafts[p.id] && S.drafts[p.id].note !== undefined && S.drafts[p.id].note !== p.note.text ? '<p class="hint">Brouillon non publié, conservé sur cet appareil.</p>' : ''}
+      <div class="inline"><button class="btn btn-primary btn-sm" type="submit">Publier au client</button><span class="small muted">Il le reçoit par e-mail s’il l’a demandé.</span></div></form>
     <section class="panel"><div class="panel-head"><h2>${ic('doc')}Livrables par étape</h2><span class="small muted">Visibles dans « Projet » côté client</span></div>
-      ${p.phases.map((ph) => `<div class="phase-title">${esc(phName(ph))}</div>${ph.items.map((it) => `<div class="it"><div>${esc(it.t)}${it.val ? `<div class="small muted">Lié à la validation « ${esc((p.validations.find((v) => v.key === it.val) || {}).t || '')} »${itS(it) === 'review' ? ' : en attente du client' : itS(it) === 'done' && it.status !== 'done' ? ' : validé' : ''}</div>` : ''}</div>
+      ${p.phases.map((ph) => `<details class="ph-fold" ${phS(ph) === 'on' ? 'open' : ''}><summary class="phase-title">${esc(phName(ph))} <span class="small muted">· ${ph.items.filter((it) => itS(it) === 'done').length} sur ${ph.items.length} faits</span></summary>${ph.items.map((it) => `<div class="it"><div>${esc(it.t)}${it.val ? `<div class="small muted">Lié à la validation « ${esc((p.validations.find((v) => v.key === it.val) || {}).t || '')} »${itS(it) === 'review' ? ' : en attente du client' : itS(it) === 'done' && it.status !== 'done' ? ' : validé' : ''}</div>` : ''}</div>
         <select data-item="${it.id}" aria-label="Statut : ${esc(it.t)}">${[['wait', 'Prévu'], ['on', 'En cours'], ['done', 'Fait']].map(([v, l]) => `<option value="${v}" ${it.status === v ? 'selected' : ''}>${l}</option>`).join('')}</select>
-        <input type="date" data-itemdate="${it.id}" value="${dayKey(it.due)}" aria-label="Date prévue : ${esc(it.t)}"></div>`).join('')}`).join('')}</section>
+        <input type="date" data-itemdate="${it.id}" value="${dayKey(it.due)}" aria-label="Date prévue : ${esc(it.t)}"></div>`).join('')}</details>`).join('')}</section>
     <div class="grid2">
       <section class="panel"><div class="panel-head"><h2>${ic('ok')}Actions du client</h2></div>
         <div class="list">${p.tasks.map((t) => `<div class="row"><span class="check ${t.done ? 'done' : ''}">${t.done ? ic('check') : ''}</span><div class="grow">${esc(t.t)}</div><button class="x" data-act="task-remove" data-id="${t.id}" aria-label="Retirer">×</button></div>`).join('') || '<p class="small muted">Aucune action manuelle. Les validations et fichiers manquants s’ajoutent tout seuls.</p>'}</div>
-        <form class="inline" data-form="task" style="margin-top:12px"><input id="a-task" type="text" placeholder="Régler l’acompte de 50 %" aria-label="Nouvelle action"><button class="btn btn-line btn-sm" type="submit">Ajouter</button></form></section>
+        <form class="inline" data-form="task" style="margin-top:12px"><input id="a-task" type="text" placeholder="ex. Régler l’acompte de 50 %" aria-label="Nouvelle action"><button class="btn btn-line btn-sm" type="submit">Ajouter</button></form></section>
       <section class="panel"><div class="panel-head"><h2>${ic('folder')}Fichiers attendus</h2></div>
         <div class="list">${p.missing.map((m) => `<div class="row"><div class="grow"><div class="title" style="font-weight:400">${esc(m.t)}</div>${m.sub ? `<div class="sub">${esc(m.sub)}</div>` : ''}</div><button class="x" data-act="missing-remove" data-id="${m.id}" aria-label="Retirer">×</button></div>`).join('') || '<p class="small muted">Rien n’est attendu.</p>'}</div>
-        <form class="form" data-form="missing" style="margin-top:12px;gap:8px"><input id="a-mi" type="text" placeholder="Photos de l’équipe" aria-label="Fichier attendu"><input id="a-ms" type="text" placeholder="Précision (facultatif)" aria-label="Précision"><div><button class="btn btn-line btn-sm" type="submit">Ajouter</button></div></form></section>
+        <form class="form" data-form="missing" style="margin-top:12px;gap:8px"><input id="a-mi" type="text" placeholder="ex. Photos de l’équipe" aria-label="Fichier attendu"><input id="a-ms" type="text" placeholder="Précision (facultatif)" aria-label="Précision"><div><button class="btn btn-line btn-sm" type="submit">Ajouter</button></div></form></section>
     </div>`;
   }
   function tValidations() {
@@ -963,7 +1022,7 @@
     const p = S.project, b = p.billing;
     return `
     <form class="panel form" data-form="billing"><div class="panel-head" style="margin:0"><h2>${ic('doc')}Montant du projet</h2></div>
-      <div class="line"><div class="field"><label for="b-ht">Montant HT (€)</label><input id="b-ht" type="number" min="0" step="0.01" value="${b.totalHT}"></div><div class="field"><label for="b-q">N° de devis</label><input id="b-q" type="text" value="${esc(b.quote)}" placeholder="D-2026-0142"></div></div>
+      <div class="line"><div class="field"><label for="b-ht">Montant HT (€)</label><input id="b-ht" type="number" min="0" step="0.01" value="${b.totalHT}"></div><div class="field"><label for="b-q">N° de devis</label><input id="b-q" type="text" value="${esc(b.quote)}" placeholder="ex. D-2026-0142"></div></div>
       <div><button class="btn btn-line btn-sm" type="submit">Enregistrer</button></div></form>
     <section class="panel"><div class="panel-head"><h2>${ic('doc')}Factures</h2></div>
       <div class="list">${p.invoices.map((i) => `<div class="row"><div class="grow"><div class="title">${esc(i.label)} ${esc(i.num)}</div><div class="sub num">${money(i.ht)} HT · ${money(i.ttc)} TTC</div></div>
@@ -971,7 +1030,7 @@
         ${i.status === 'due' ? `<form class="inline" data-form="payurl" data-id="${i.id}" style="margin:-4px 0 10px"><input type="url" id="pu-${i.id}" value="${esc(i.payUrl || '')}" placeholder="Lien de paiement (facultatif)" aria-label="Lien de paiement : ${esc(i.label)}"><button class="btn btn-line btn-sm" type="submit">Enregistrer</button></form>` : ''}`).join('') || '<p class="muted">Aucune facture.</p>'}</div>
       ${(S.connectors || []).some((c) => ['abby', 'qonto'].includes(c.id) && c.configured) ? `<div class="inline" style="margin-top:12px">${(S.connectors || []).filter((c) => ['abby', 'qonto'].includes(c.id) && c.configured).map((c) => `<button class="btn btn-line btn-sm" data-act="sync" data-id="${c.id}" data-project="1">Synchroniser avec ${esc(c.label)}</button>`).join('')}</div>` : ''}
       <form class="form" data-form="invoice" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--line)">
-        <div class="line"><div class="field"><label for="i-l">Libellé</label><input id="i-l" type="text" placeholder="Facture d’acompte (50 %)"></div><div class="field"><label for="i-n">Numéro</label><input id="i-n" type="text" placeholder="F-2026-0187"></div></div>
+        <div class="line"><div class="field"><label for="i-l">Libellé</label><input id="i-l" type="text" placeholder="ex. Facture d’acompte (50 %)"></div><div class="field"><label for="i-n">Numéro</label><input id="i-n" type="text" placeholder="ex. F-2026-0187"></div></div>
         <div class="line"><div class="field"><label for="i-ht">Montant HT (€)</label><input id="i-ht" type="number" min="0" step="0.01"></div><div class="field"><label for="i-s">Statut</label><select id="i-s"><option value="due">À régler</option><option value="paid">Payée</option><option value="future">À venir</option></select></div></div>
         <div><button class="btn btn-line btn-sm" type="submit">Ajouter la facture</button></div>
         <p class="small muted">Le PDF se dépose dans l’onglet Fichiers, catégorie « Facture ». Avec Abby et Qonto connectés (Réglages), factures et paiements arrivent tout seuls.</p></form></section>`;
@@ -1093,6 +1152,8 @@
     if (v === 'inbox' && isAdmin()) { await loadInbox(); await loadProjects(); }
     if (v === 'reglages' && isAdmin()) { try { S.outbox = await API.outbox(); } catch { S.outbox = null; } try { S.connectors = (await API.connectors()).connectors; } catch { S.connectors = []; } }
     if (v === 'clients' && isAdmin() && !S.preview) { S.project = null; await loadProjects(); }
+    // Côté client, chaque changement de vue reprend les dernières données (une étape publiée par l'équipe apparaît tout de suite).
+    if (!isAdmin() && S.project && !S.preview) { try { const r = await API.project(S.project.id); S.project = r.project; S.people = r.people || S.people; } catch {} }
     S.view = v; S.valForm = null; S.tool = v === 'outils' ? S.tool : null; render(true);
     if (v === 'messages' && S.project && (isAdmin() ? false : unread()) && !S.preview) { try { await API.action(S.project.id, { type: 'msg.read' }); await loadProject(S.project.id); } catch {} }
   }
@@ -1159,6 +1220,10 @@
     if (t.dataset.item) act({ type: 'item.status', iid: t.dataset.item, status: t.value }, 'Livrable mis à jour.');
     if (t.dataset.itemdate && t.value) { const it = S.project.phases.flatMap((x) => x.items).find((x) => x.id === t.dataset.itemdate); act({ type: 'item.status', iid: it.id, status: it.status, due: t.value }, 'Date mise à jour.'); }
     if (t.dataset.inv) act({ type: 'invoice.status', iid: t.dataset.inv, status: t.value }, 'Facture mise à jour.');
+    if (t.dataset.ibfilter) { S[t.dataset.ibfilter === 'type' ? 'inboxType' : 'inboxClient'] = t.value || null; render(false, true); return; }
+    if (t.dataset.clsort) { S.csort = t.value; render(false, true); return; }
+    const af = t.closest && t.closest('[data-autosave]');
+    if (af) { autosave(af); return; }
     if (t.dataset.handover !== undefined) act({ type: 'handover.toggle', n: Number(t.dataset.handover) }, 'Checklist mise à jour.');
     if (t.name === 'rv-s') { S.rvScore = Number(t.value); const txt = ($('#rv-t') || {}).value, pub = ($('#rv-p') || {}).checked; render(); if ($('#rv-t')) { $('#rv-t').value = txt || ''; $('#rv-p').checked = !!pub; } const r = document.querySelector(`[name=rv-s][value="${S.rvScore}"]`); r && r.focus(); }
   });
@@ -1193,6 +1258,10 @@
       case 'undeliver': if (API.demo || confirm('Annuler la mise en ligne ? L’accueil du client repasse en projet en cours.')) act({ type: 'project.deliver', undo: true }, 'Mise en ligne annulée.'); break;
       case 'archive': if (API.demo || confirm('Archiver cet espace ? Le client le garde en lecture seule.')) act({ type: 'project.archive' }, 'Espace archivé.'); break;
       case 'sync': { a.disabled = true; try { const r = await API.sync(id, a.dataset.project ? S.project.id : undefined); toast('Synchronisation faite : ' + r.summary + '.'); try { S.connectors = (await API.connectors()).connectors; } catch {} if (S.project && S.view === 'admin') await loadProject(S.project.id); else render(); } catch (err) { toast(err.message); a.disabled = false; } break; }
+      case 'done': case 'undone': { try { await API.doneNotif(id, a.dataset.act === 'undone'); } catch (err) { return toast(err.message); } await loadInbox(); render(false, true); renderBadges(); toast(a.dataset.act === 'done' ? 'Marqué comme traité.' : 'Remis à traiter.'); break; }
+      case 'reply': S.replyTo = S.replyTo === id ? null : id; render(false, true); { const t = $('#rp-' + id); t && t.focus(); } break;
+      case 'remind': act({ type: 'client.remind' }, 'Relance envoyée au client.'); break;
+      case 'logout-all': try { await API.logoutAll(); } catch {} S.me = null; S.project = null; render(true); toast('Tous vos appareils sont déconnectés.'); break;
       case 'unarchive': act({ type: 'project.archive', undo: true }, 'Espace désarchivé.'); break;
       case 'preview': S.preview = true; S.view = 'accueil'; render(true); break;
       case 'endpreview': S.preview = false; S.ob = null; S.view = 'admin'; render(true); break;
@@ -1265,7 +1334,7 @@
       case 'team': { const members = [...f.querySelectorAll('[name=tm]:checked')].map((c) => c.value); act({ type: 'team.set', members, lead: v('tm-lead') }, 'Équipe enregistrée.'); break; }
       case 'phase': act({ type: 'phase.set', n: v('a-phase') }, 'Étape mise à jour.'); break;
       case 'next': act({ type: 'next.set', title: v('a-nt'), text: v('a-nx'), go: v('a-ng') }, 'Prochaine étape publiée.'); break;
-      case 'note': if (await act({ type: 'note.set', text: v('a-note') })) act({ type: 'meeting.set', title: v('a-mt'), when: v('a-mw') || null }, 'Publié dans l’espace du client.'); break;
+      case 'note': if (await act({ type: 'note.set', text: v('a-note') }, 'Point de la semaine publié dans l’espace du client.')) { delete S.drafts[S.project.id]; render(); } break;
       case 'task': if (v('a-task')) act({ type: 'task.add', t: v('a-task') }, 'Action ajoutée.'); break;
       case 'missing': if (v('a-mi')) act({ type: 'missing.add', t: v('a-mi'), sub: v('a-ms') }, 'Ajouté aux fichiers attendus.'); break;
       case 'valreq': act({ type: 'val.request', vid: f.dataset.id, link: v('vl-' + f.dataset.id) }, 'Le client voit la demande de validation.'); break;
@@ -1283,12 +1352,17 @@
         if (await act({ type: 'project.confirm', offer: (f.querySelector('[name=cf-offer]:checked') || {}).value, registre: reg, email: v('cf-e'), name: v('cf-n') }, 'Espace ouvert. Le client peut se connecter avec son e-mail.')) await loadProjects(); break; }
       case 'ext': act({ type: 'project.ext', abby: v('x-a'), drive: v('x-d') }, 'Enregistré.'); break;
       case 'payurl': act({ type: 'invoice.pay', iid: f.dataset.id, payUrl: v('pu-' + f.dataset.id) }, 'Lien de paiement enregistré. Le client voit « Payer en ligne ».'); break;
+      case 'reply': { const n = S.inbox.find((x) => x.id === f.dataset.id), t = v('rp-' + f.dataset.id); if (!t) return fieldError('rp-' + f.dataset.id, 'Écrivez la réponse.');
+        try { await API.action(n.projectId, { type: 'msg.post', text: t }); await API.doneNotif(n.id); S.replyTo = null; await loadInbox(); render(false, true); renderBadges(); toast('Réponse envoyée dans l’espace de ' + n.client + '.'); } catch (err) { toast(err.message); } break; }
+      case 'meeting': break;
       case 'settings': try { const r = await API.settings({ booking: v('st-b'), training: v('st-t'), reviewUrl: v('st-r'), holder: v('st-h'), bank: v('st-k'), address: v('st-a'), iban: v('st-i'), bic: v('st-c') }); S.config = r.settings; render(); toast('Réglages de l’agence enregistrés.'); } catch (err) { toast(err.message); } break;
       case 'infos': act({ type: 'project.update', client: v('p-c'), projet: v('p-p'), contactName: v('p-ct'), golive: v('p-g') || undefined, registre: (f.querySelector('[name=p-r]:checked') || {}).value }, 'Infos enregistrées.'); break;
     }
   });
   document.addEventListener('input', (e) => {
     const t = e.target;
+    if (t.dataset && t.dataset.clsearch) { S.cq = t.value; render(false, true); return; }
+    if (t.dataset && t.dataset.draft && S.project) { (S.drafts[S.project.id] = S.drafts[S.project.id] || {})[t.dataset.draft] = t.value; }
     if (t.getAttribute && t.getAttribute('aria-invalid') === 'true') { t.removeAttribute('aria-invalid'); const sp = document.getElementById((t.id || t.name) + '-err'); if (sp) sp.remove(); }
     if (t.closest('#teaser-f')) { const v = (id) => $('#' + id).value; S.teaser = { type: v('tz-type'), name: v('tz-name'), city: v('tz-city'), size: v('tz-size'), ca: v('tz-ca'), price: v('tz-price'), points: v('tz-points') }; $('#teaser-p').innerHTML = teaserHtml(S.teaser); return; }
     if (t.closest('[data-form=sig]')) { S.sig = { name: $('#sg-n').value, role: $('#sg-r').value, phone: $('#sg-p').value }; $('#sig-p').innerHTML = sigHtml(S.sig, ((S.project.brand && S.project.brand.colors[0]) || [])[1] || '#092482'); return; }
@@ -1300,9 +1374,9 @@
   });
   document.addEventListener('keydown', (e) => {
     const tl = e.target.closest && e.target.closest('[role=tablist]');
-    if (tl && ['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) {
+    if (tl && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(e.key)) {
       const tabs = [...tl.querySelectorAll('[role=tab]')], i = tabs.indexOf(e.target); if (i < 0) return;
-      const n = e.key === 'Home' ? 0 : e.key === 'End' ? tabs.length - 1 : (i + (e.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+      const n = e.key === 'Home' ? 0 : e.key === 'End' ? tabs.length - 1 : (i + (['ArrowRight', 'ArrowDown'].includes(e.key) ? 1 : -1) + tabs.length) % tabs.length;
       e.preventDefault(); tabs[n].focus(); tabs[n].click(); return;
     }
     if (e.key === 'Escape' && S.ob) { const sk = document.querySelector('[data-act=ob-skip]'); if (sk) { sk.click(); return; } S.ob = null; if (!S.preview && !S.me.onboardedAt) { S.me.onboardedAt = new Date().toISOString(); API.action(S.project.id, { type: 'user.onboarded' }).catch(() => {}); } render(); return; }

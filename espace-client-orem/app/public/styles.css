@@ -277,7 +277,7 @@ label{font-size:var(--t-sm);font-weight:500}
 .field{display:flex;flex-direction:column;gap:8px;min-width:0}
 .form{display:flex;flex-direction:column;gap:16px}
 .form .line{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
-input[type=email],input[type=text],input[type=password],input[type=url],input[type=number],input[type=date],input[type=datetime-local],select{min-height:46px;border:1px solid var(--field);border-radius:12px;background:var(--surface);padding:0 14px;font-size:var(--t-md);min-width:0;width:100%}
+input[type=search],input[type=email],input[type=text],input[type=password],input[type=url],input[type=number],input[type=date],input[type=datetime-local],select{min-height:46px;border:1px solid var(--field);border-radius:12px;background:var(--surface);padding:0 14px;font-size:var(--t-md);min-width:0;width:100%}
 .radio{display:flex;gap:18px;flex-wrap:wrap}
 .radio label{font-weight:400;font-size:var(--t-md);display:flex;gap:8px;align-items:center}
 .inline{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
@@ -591,8 +591,44 @@ h1:focus{outline:none}
   .toast{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
   .thread{max-height:none;overflow:visible}
   .sheet{min-height:calc(100dvh - 64px)}
-  input[type=email],input[type=text],input[type=url],input[type=number],input[type=date],input[type=datetime-local],select,textarea{font-size:16px}
+  input[type=search],input[type=email],input[type=text],input[type=url],input[type=number],input[type=date],input[type=datetime-local],select,textarea{font-size:16px}
 }
 @media (pointer:coarse){
   .btn-sm,.x,.icon-btn,.cat,.tabs [role=tab],.qa-chips button{min-height:44px;min-width:44px}
 }
+
+/* ---------- Lot 6 : poste de travail agence ---------- */
+.inbox-bar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+.inbox-bar .cats{flex:1 1 320px}
+.filters{flex:0 1 auto;flex-wrap:wrap}
+.filters select,.filters input{width:auto;flex:1 1 170px}
+.inbox-item+.inbox-item{border-top:1px solid var(--line)}
+.inbox-item .inbox-row{border:0;width:100%}
+.inbox-acts{display:flex;gap:8px;flex-wrap:wrap;padding:0 12px 12px 64px}
+.reply{padding:0 12px 14px 64px;align-items:flex-end}
+.reply textarea{min-height:64px}
+.table-wrap{overflow-x:auto}
+.grid-clients{width:100%;border-collapse:collapse;font-size:var(--t-md)}
+.grid-clients th,.grid-clients td{text-align:left;vertical-align:middle;padding:14px 16px;border-top:1px solid var(--line)}
+.grid-clients thead th{border-top:0;font-size:var(--t-xs);text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:500}
+.grid-clients tbody tr:hover{background:var(--surface-2)}
+.grid-clients td.num{white-space:nowrap}
+.linklike{display:flex;flex-direction:column;align-items:flex-start;gap:2px;background:none;border:0;padding:0;cursor:pointer;text-align:left;color:inherit;font:inherit}
+.linklike .c-name{font-weight:500;text-decoration:underline;text-decoration-color:var(--line-2);text-underline-offset:3px}
+.band .linklike{display:inline;text-decoration:underline;text-underline-offset:3px}
+.band{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;padding:18px 20px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
+.band>div{display:flex;flex-direction:column;gap:6px;align-items:flex-start;min-width:0}
+.band .k{font-size:var(--t-xs);text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.ph-fold{border-top:1px solid var(--line);padding-block:6px}
+.ph-fold summary{cursor:pointer;list-style-position:inside}
+.ckinds[role=tablist]{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;padding:0;background:none}
+.ckinds [role=tab]{display:flex;align-items:center;gap:10px;justify-content:flex-start;min-height:44px;padding:0 14px;border:1px solid var(--line-2);border-radius:12px;background:var(--surface);cursor:pointer;font-weight:500;text-align:left}
+.ckinds [role=tab][aria-selected=true]{border-color:var(--hl);background:var(--hl-soft);color:var(--fg)}
+@media (max-width:860px){
+  .band{grid-template-columns:minmax(0,1fr)}
+  .ckinds[role=tablist]{grid-template-columns:minmax(0,1fr)}
+  .compose-f{position:sticky;bottom:0;background:var(--surface);padding-bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:2}
+  .inbox-acts,.reply{padding-left:12px}
+  .grid-clients th:nth-child(5),.grid-clients td:nth-child(5){display:none}
+}
+.linklike .small{font-weight:400}
