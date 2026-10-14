@@ -29,7 +29,7 @@
     ['site', 'Site avant mise en ligne', 'Dernier contrôle avant publication', 30]
   ];
   const FILE_CATS = ['Images', 'Vidéos', 'Textes', 'Autres'];
-  const AGENCY_CATS = ['Livrable', 'Devis', 'Facture', 'Contrat', 'RIB'];
+  const AGENCY_CATS = ['Livrable', 'Devis', 'Facture', 'Contrat', 'RIB', 'Bibliothèque'];
 
   function newProject({ client, projet, contactName, start, registre, amountHT }) {
     const s = start ? iso(start) : iso(Date.now());
@@ -56,7 +56,8 @@
       requests: [],
       tools: ['brand', 'signature', 'request', 'webflow'],
       brand: { colors: [], fonts: [] },
-      results: null, deliveredAt: null
+      results: null, deliveredAt: null,
+      team: { lead: null, members: [] }
     };
   }
 
@@ -178,7 +179,21 @@
       { id: 'u_hugo', email: 'hugo@huchet-demorge.fr', name: 'Hugo', role: 'client', projectId: b.id, onboardedAt: '2025-11-24T10:00:00.000Z' },
       { id: 'u_julie', email: 'julie@cabinet-varenne.fr', name: 'Julie', role: 'client', projectId: c.id }
     );
-    return { users, projects: [a, b, c] };
+    users.find((u) => u.id === 'u_louis').notify = { email: 'instant', events: { files: true, messages: true, validations: true, requests: true, activity: false } };
+    users.find((u) => u.id === 'u_theo').notify = { email: 'digest', events: { files: true, messages: true, validations: true, requests: true, activity: false } };
+    users.find((u) => u.id === 'u_clement').notify = { email: 'instant', events: { files: true, messages: true, validations: true, requests: false, activity: false } };
+    a.team = { lead: 'u_louis', members: ['u_louis', 'u_clement'] };
+    b.team = { lead: 'u_louis', members: ['u_louis', 'u_theo', 'u_clement'] };
+    c.team = { lead: 'u_theo', members: ['u_theo', 'u_louis'] };
+    const N = (userId, p, type, text, by, d, go) => ({ id: uid('n'), userId, projectId: p.id, client: p.client, type, text, by, at: at(d), read: false, go: { view: 'admin', tab: go } });
+    const notifications = [
+      N('u_louis', a, 'files', 'Claire a déposé « Texte À propos.docx »', 'u_claire', -3, 'fichiers'),
+      N('u_clement', a, 'files', 'Claire a déposé « Texte À propos.docx »', 'u_claire', -3, 'fichiers'),
+      N('u_louis', b, 'requests', 'Hugo demande une évolution (Formulaires) : « Indiquer l\u2019annonce concernée dans chaque e-mail de contact »', 'u_hugo', -5, 'messages'),
+      N('u_theo', b, 'requests', 'Hugo demande une évolution (Formulaires) : « Indiquer l\u2019annonce concernée dans chaque e-mail de contact »', 'u_hugo', -5, 'messages'),
+      N('u_clement', a, 'activity', 'Louis a demandé la validation du plan du site', 'u_louis', -2, 'validations')
+    ];
+    return { users, projects: [a, b, c], notifications, outbox: [] };
   }
 
   /* ---------- Lecture ---------- */
@@ -206,7 +221,7 @@
   function summary(project) {
     return { id: project.id, client: project.client, projet: project.projet, phase: project.phase,
       phaseName: (project.phases[project.phase - 1] || {}).t, golive: project.golive, next: nextStep(project), alerts: alerts(project),
-      lastActivity: project.activity[0] || null };
+      lastActivity: project.activity[0] || null, team: project.team || { lead: null, members: [] } };
   }
 
   /* Ce qu'un client reçoit : pas de notes internes, pas de drapeaux « vu ». */
@@ -226,7 +241,7 @@
     if (project.activity.length > 200) project.activity.length = 200;
   }
 
-  function apply(store, projectId, user, action) {
+  function applyInner(store, projectId, user, action) {
     const project = store.projects.find((p) => p.id === projectId);
     if (!project || !canSee(user, project)) return { error: 'Projet introuvable.' };
     if (user.role !== 'admin' && !CLIENT_ACTIONS.has(action.type)) return { error: 'Action réservée à l’agence.' };
@@ -346,15 +361,131 @@
         if (!u) return { error: 'Accès introuvable.' };
         store.users = store.users.filter((x) => x !== u); break;
       }
+      case 'team.set': {
+        const admins = new Set(store.users.filter((u) => u.role === 'admin').map((u) => u.id));
+        const members = (action.members || []).filter((id) => admins.has(id));
+        const lead = admins.has(action.lead) ? action.lead : members[0] || null;
+        if (lead && !members.includes(lead)) members.unshift(lead);
+        project.team = { lead, members }; break;
+      }
+      case 'asset.add': {
+        const title = String(action.title || '').trim(); if (!title) return { error: 'Donnez un titre.' };
+        if (!action.url && !action.img) return { error: 'Ajoutez une image ou un lien.' };
+        project.assets.unshift({ id: uid('a'), kind: String(action.kind || 'Visuels'), title: title.slice(0, 200), url: String(action.url || ''), img: String(action.img || ''), by: user.id, at: now });
+        log(project, user, 'a ajouté à la bibliothèque : ' + title); break;
+      }
+      case 'asset.remove': project.assets = project.assets.filter((a) => a.id !== action.aid); break;
       default: return { error: 'Action inconnue.' };
     }
     return { ok: true };
+  }
+
+  /* ---------- Notifications ----------
+     Une action du client prévient l'équipe du projet ; une action de l'équipe prévient le client
+     et les autres membres de l'équipe. Chacun règle ce qu'il reçoit et à quel rythme. */
+  const EVENT = {
+    'file.add': 'files', 'msg.post': 'messages', 'val.approve': 'validations', 'val.changes': 'validations',
+    'request.add': 'requests', 'val.request': 'validations', 'user.onboarded': 'activity', 'asset.add': 'files', 'next.set': 'activity', 'note.set': 'activity'
+  };
+  const TAB = { files: 'fichiers', messages: 'messages', validations: 'validations', requests: 'messages', activity: 'activite' };
+  const CLIENT_VIEW = { files: 'fichiers', messages: 'messages', validations: 'valider', activity: 'accueil', requests: 'outils' };
+  const DEFAULT_PREFS = { email: 'instant', events: { files: true, messages: true, validations: true, requests: true, activity: false } };
+  const prefsOf = (u) => ({ ...DEFAULT_PREFS, ...(u.notify || {}), events: { ...DEFAULT_PREFS.events, ...((u.notify || {}).events || {}) } });
+  function describe(action, user, project, res) {
+    const who = user.name.split(' ')[0];
+    switch (action.type) {
+      case 'file.add': return `${who} a déposé « ${res.file ? res.file.name : 'un fichier'} »`;
+      case 'msg.post': return action.loom && action.loom.url ? `${who} a envoyé une vidéo : ${action.loom.title || 'vidéo'}` : `${who} : « ${String(action.text).slice(0, 120)} »`;
+      case 'val.approve': { const v = project.validations.find((x) => x.id === action.vid); return `${who} a validé : ${v ? v.t.toLowerCase() : 'une étape'}`; }
+      case 'val.changes': { const v = project.validations.find((x) => x.id === action.vid); return `${who} demande des modifications : ${v ? v.t.toLowerCase() : ''} « ${String(action.comment).slice(0, 100)} »`; }
+      case 'val.request': { const v = project.validations.find((x) => x.id === action.vid); return `${who} attend ta validation : ${v ? v.t.toLowerCase() : 'une étape'}`; }
+      case 'request.add': return `${who} demande une évolution (${action.kind || 'autre'}) : « ${String(action.text).slice(0, 100)} »`;
+      case 'user.onboarded': return `${who} a découvert son espace`;
+      case 'asset.add': return `${who} a ajouté « ${action.title} » à la bibliothèque`;
+      case 'next.set': return `${who} a mis à jour la prochaine étape`;
+      case 'note.set': return `${who} a publié le point de la semaine`;
+    }
+    return '';
+  }
+  function notifyFor(store, project, user, action, res) {
+    const type = EVENT[action.type]; if (!type) return [];
+    if (action.type === 'file.add' && user.role === 'admin' && res.file && res.file.cat !== 'Livrable') return [];
+    store.notifications = store.notifications || [];
+    const team = (project.team && project.team.members && project.team.members.length) ? project.team.members : store.users.filter((u) => u.role === 'admin').map((u) => u.id);
+    let to;
+    if (user.role === 'admin') {
+      // l'équipe voit ce que font les collègues ; le client est prévenu de ce qui le concerne
+      const clientTypes = ['files', 'messages', 'validations', 'activity'];
+      to = team.filter((id) => id !== user.id).map((id) => ({ id, audience: 'team' }));
+      if (clientTypes.includes(type) && action.type !== 'next.set') to = to.concat(store.users.filter((u) => u.projectId === project.id).map((u) => ({ id: u.id, audience: 'client' })));
+    } else {
+      to = team.map((id) => ({ id, audience: 'team' })).concat(store.users.filter((u) => u.projectId === project.id && u.id !== user.id).map((u) => ({ id: u.id, audience: 'client' })));
+    }
+    const text = describe(action, user, project, res), at = iso(Date.now());
+    const out = [];
+    for (const r of to) {
+      const u = store.users.find((x) => x.id === r.id); if (!u) continue;
+      const n = { id: uid('n'), userId: u.id, projectId: project.id, client: project.client, type, text, by: user.id, at, read: false,
+        go: r.audience === 'team' ? { view: 'admin', tab: TAB[type] } : { view: CLIENT_VIEW[type] } };
+      store.notifications.unshift(n); out.push(n);
+    }
+    if (store.notifications.length > 2000) store.notifications.length = 2000;
+    return out;
+  }
+  /* E-mails à envoyer tout de suite (préférence « instantané » et type coché). */
+  function emailsFor(store, notices, baseUrl) {
+    const mails = [];
+    for (const n of notices) {
+      const u = store.users.find((x) => x.id === n.userId); if (!u) continue;
+      if (u.role === 'admin') { const pr = prefsOf(u); if (pr.email !== 'instant' || !pr.events[n.type]) continue; }
+      else if (!(u.prefs ? u.prefs.mail : true) || n.type === 'activity') continue;
+      mails.push(mailFor(u, [n], baseUrl));
+    }
+    return mails;
+  }
+  function digestFor(store, user, since, baseUrl) {
+    const items = (store.notifications || []).filter((n) => n.userId === user.id && !n.read && n.at > since);
+    return items.length ? mailFor(user, items, baseUrl, true) : null;
+  }
+  function mailFor(u, items, baseUrl, digest) {
+    const first = u.name.split(' ')[0];
+    const subject = digest ? `Le récap du jour : ${items.length} nouveauté${items.length > 1 ? 's' : ''} dans vos espaces clients` : (u.role === 'admin' ? `${items[0].client} · ${items[0].text}` : `Du nouveau dans votre espace ${items[0].client}`);
+    const rows = items.map((n) => `<tr><td style="padding:12px 0;border-top:1px solid #e2e1dc"><div style="font-size:12px;color:#585865">${esc(n.client)}</div><div style="font-size:15px;color:#0b0b12;margin-top:2px">${esc(n.text)}</div></td></tr>`).join('');
+    const html = `<div style="background:#f3f2ef;padding:32px 16px;font-family:Arial,Helvetica,sans-serif"><table width="100%" style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:16px;padding:28px" cellpadding="0" cellspacing="0">
+      <tr><td style="font-family:Georgia,serif;font-size:22px;color:#000012;padding-bottom:16px">Orem</td></tr>
+      <tr><td style="font-size:15px;color:#0b0b12;padding-bottom:8px">Bonjour ${esc(first)},</td></tr>
+      <tr><td style="font-size:15px;color:#2f2f3a;padding-bottom:8px">${digest ? 'Voici ce qui s\u2019est passé aujourd\u2019hui :' : 'Il y a du nouveau :'}</td></tr>
+      ${rows}
+      <tr><td style="padding-top:20px"><a href="${baseUrl}/" style="display:inline-block;background:#000012;color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:10px;font-size:15px">Ouvrir l\u2019espace</a></td></tr>
+      <tr><td style="font-size:12px;color:#585865;padding-top:20px">Vous recevez cet e-mail car vous êtes ${u.role === 'admin' ? 'dans l\u2019équipe du projet' : 'dans cet espace client'}. Réglez vos notifications depuis l\u2019espace.</td></tr>
+    </table></div>`;
+    return { to: u.email, name: u.name, subject, html, text: items.map((n) => `${n.client} : ${n.text}`).join('\n') + `\n\n${baseUrl}/` };
+  }
+  const esc = (x) => String(x ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+  function apply(store, projectId, user, action) {
+    const res = applyInner(store, projectId, user, action);
+    if (res.error) return res;
+    const project = store.projects.find((p) => p.id === projectId);
+    res.notices = notifyFor(store, project, user, action, res);
+    return res;
+  }
+
+  /* Boîte de réception et préférences (par personne). */
+  function inbox(store, user) { return (store.notifications || []).filter((n) => n.userId === user.id).slice(0, 200); }
+  function readNotif(store, user, id) { (store.notifications || []).forEach((n) => { if (n.userId === user.id && (!id || n.id === id)) n.read = true; }); return { ok: true }; }
+  function setPrefs(store, user, prefs) {
+    const u = store.users.find((x) => x.id === user.id); if (!u || u.role !== 'admin') return { error: 'Réglage réservé à l\u2019équipe.' };
+    const email = ['instant', 'digest', 'off'].includes(prefs.email) ? prefs.email : 'instant';
+    const ev = {}; for (const k of Object.keys(DEFAULT_PREFS.events)) ev[k] = !!(prefs.events || {})[k];
+    u.notify = { email, events: ev }; return { ok: true, notify: u.notify };
   }
 
   function createProject(store, user, data) {
     if (user.role !== 'admin') return { error: 'Action réservée à l’agence.' };
     if (!String(data.client || '').trim()) return { error: 'Indiquez le nom du client.' };
     const p = newProject(data);
+    p.team = { lead: user.id, members: [user.id] };
     store.projects.unshift(p);
     if (data.email) {
       const r = apply(store, p.id, user, { type: 'user.add', email: data.email, name: data.contactName });
@@ -364,5 +495,5 @@
     return { ok: true, id: p.id };
   }
 
-  return { seed, newProject, apply, createProject, summary, forUser, nextStep, alerts, canSee, FILE_CATS, AGENCY_CATS };
+  return { seed, newProject, apply, createProject, summary, forUser, nextStep, alerts, canSee, inbox, readNotif, setPrefs, prefsOf, emailsFor, digestFor, FILE_CATS, AGENCY_CATS };
 });

@@ -105,7 +105,7 @@ const text = async (p, t) => (await p.locator('#main').innerText()).includes(t);
     const P = persona('Nina', 'Huchet-Demorge · invitée par l’agence · 1re connexion · desktop');
     const a = await login(br, 'louis@agence-orem.fr', { width: 1440, height: 900 });
     let clicksAdmin = 0;
-    await a.click('[data-open=p_huchet]'); clicksAdmin++; await a.waitForTimeout(200);
+    await a.click('.side [data-go=clients]'); clicksAdmin++; await a.waitForTimeout(150); await a.click('[data-open=p_huchet]'); clicksAdmin++; await a.waitForTimeout(200);
     await a.click('[data-tab=acces]'); clicksAdmin++;
     await a.fill('#u-n', 'Nina'); await a.fill('#u-e', 'nina@huchet-demorge.fr'); await a.click('form[data-form=user] button'); clicksAdmin++; await a.waitForTimeout(300);
     P.notes.push(`Louis donne l’accès en ${clicksAdmin} clics (onglet Accès et infos)`);

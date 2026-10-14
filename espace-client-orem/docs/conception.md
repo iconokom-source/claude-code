@@ -78,3 +78,34 @@ Rien de tout cela n'est fait, volontairement : on valide d'abord l'usage en loca
 4. **Connexions aux outils** : factures depuis Abby, paiements détectés dans Qonto, étape du deal Pipedrive, création automatique de l'espace à la signature.
 5. **Reprise des clients en cours** depuis la galerie Notion.
 6. Tests utilisateurs avec 2 ou 3 clients avant de généraliser.
+
+## 7. Côté équipe (Louis, Théophile, Clément)
+
+**Tout ajouter, depuis n'importe où.** Le bouton « Ajouter pour un client » (barre latérale, fiche client, barre du bas sur mobile) ouvre une seule fenêtre. On choisit le client, puis ce qu'on ajoute :
+
+| Type | Ce que voit le client |
+|---|---|
+| Message ou vidéo Loom | Un bandeau sur son accueil, la vidéo dans « Messages », un e-mail |
+| Fichier (livrable, devis, facture, contrat, RIB) | Le fichier dans « Fichiers » ou « Documents », un e-mail pour les livrables |
+| Validation | La prochaine étape de son accueil, un e-mail |
+| Bibliothèque (image ou lien) | Le visuel dans « Bibliothèque » |
+| Liens Figma et site | Les maquettes en direct et le bouton « Voir le site » |
+| Point de la semaine | La note « Cette semaine » et le prochain rendez-vous |
+
+Chaque ajout est signé (« Ajouté par Clément ») et prévient les autres membres de l'équipe du projet.
+
+**Tout recevoir.**
+- **Boîte de réception** commune à l'agence, propre à chacun : dépôts de fichiers, messages, validations, remarques et demandes d'évolution des clients de ses projets. Un clic ouvre la fiche du client sur le bon onglet.
+- **Équipe par projet** (onglet « Accès et infos ») : qui est sur le projet et qui est chef de projet. Seuls les membres sont prévenus. Le chef de projet est présenté au client comme son interlocuteur principal.
+- **E-mails**, réglables par chacun dans « Réglages » : à chaque nouveauté, un récap par jour à 18 h, ou jamais ; et pour quels événements.
+- Le client reçoit aussi un e-mail quand l'équipe lui envoie une vidéo, un livrable ou une validation (s'il l'a accepté pendant son accueil guidé).
+
+**Envoi des e-mails.** En local, rien ne part : chaque e-mail est rangé dans « Réglages › E-mails envoyés », avec un aperçu. Pour envoyer pour de vrai (après validation seulement) :
+
+```bash
+MAIL_ENABLED=1 BREVO_API_KEY=… MAIL_FROM=espace@agence-orem.fr BASE_URL=https://espace.agence-orem.fr node server.js
+```
+
+La clé Brevo est dans le coffre Notion. Le domaine d'envoi doit être authentifié dans Brevo (SPF et DKIM sur agence-orem.fr) pour éviter les spams.
+
+**Tests.** `node tests/equipe.js` rejoue le circuit complet (dépôt client, boîte de réception, vidéo Loom, bibliothèque, équipe, récap) : 14 vérifications.

@@ -41,12 +41,19 @@
         x.onerror = () => ko(new Error('Connexion perdue pendant l’envoi. Réessayez.'));
         x.send(file);
       }),
-      fileUrl: (f) => (f.demo ? null : '/api/files/' + f.id)
+      fileUrl: (f) => (f.demo ? null : '/api/files/' + f.id),
+      inbox: () => j('/api/inbox'),
+      readNotif: (id) => j('/api/inbox/read', { method: 'POST', body: JSON.stringify({ id }) }),
+      setPrefs: (p) => j('/api/me/prefs', { method: 'POST', body: JSON.stringify(p) }),
+      outbox: () => j('/api/outbox'),
+      digest: () => j('/api/digest', { method: 'POST' })
     };
   }
   function demoApi() {
     const store = Core.seed();
     let me = null;
+    const BASE = 'https://espace.agence-orem.fr';
+    const mail = (r) => { if (r && r.notices) Core.emailsFor(store, r.notices, BASE).forEach((m) => store.outbox.unshift({ ...m, at: new Date().toISOString() })); };
     const clone = (o) => JSON.parse(JSON.stringify(o));
     const team = () => store.users.filter((u) => u.role === 'admin');
     const wait = (v) => new Promise((r) => setTimeout(() => r(clone(v)), 60));
@@ -54,7 +61,7 @@
     return {
       demo: true,
       as: (email) => { me = store.users.find((u) => u.email === email); },
-      me: () => (me ? wait({ user: me, team: team() }) : fail('Connectez-vous.')),
+      me: () => (me ? wait({ user: { ...me, notify: me.role === 'admin' ? Core.prefsOf(me) : undefined }, team: team() }) : fail('Connectez-vous.')),
       login: (email) => { const u = store.users.find((x) => x.email === email); return wait(u ? { ok: true, devCode: '482917' } : { ok: true }); },
       verify: (email, code) => { const u = store.users.find((x) => x.email === email); if (!u || code !== '482917') return fail('Code incorrect ou expiré. Demandez-en un nouveau.'); me = u; return wait({ ok: true, user: u }); },
       logout: () => { me = null; return wait({ ok: true }); },
@@ -63,10 +70,15 @@
         return wait({ project: Core.forUser(p, me), access: me.role === 'admin' ? store.users.filter((u) => u.projectId === id) : undefined,
           people: Object.fromEntries(store.users.map((u) => [u.id, u.name])) }); },
       create: (data) => { const r = Core.createProject(store, me, data); return r.error ? fail(r.error) : wait(r); },
-      action: (id, a) => { const r = Core.apply(store, id, me, a); return r.error ? fail(r.error) : wait(r); },
+      action: (id, a) => { const r = Core.apply(store, id, me, a); mail(r); return r.error ? fail(r.error) : wait(r); },
       upload: (id, file, cat, onp) => { onp && onp(1); const r = Core.apply(store, id, me, { type: 'file.add', file: { name: file.name, size: file.size, cat } });
-        if (r.file) r.file.demo = true; return r.error ? fail(r.error) : wait(r); },
-      fileUrl: () => null
+        mail(r); if (r.file) r.file.demo = true; return r.error ? fail(r.error) : wait(r); },
+      fileUrl: () => null,
+      inbox: () => wait({ items: Core.inbox(store, me) }),
+      readNotif: (id) => wait(Core.readNotif(store, me, id)),
+      setPrefs: (p) => { const r = Core.setPrefs(store, me, p); if (r.ok) me.notify = r.notify; return r.error ? fail(r.error) : wait(r); },
+      outbox: () => wait({ enabled: false, items: store.outbox }),
+      digest: () => { const m = Core.digestFor(store, me, '2000', BASE); if (m) store.outbox.unshift({ ...m, at: new Date().toISOString() }); return wait({ ok: true, sent: m ? 1 : 0 }); }
     };
   }
   const API = window.DEMO ? demoApi() : httpApi();
@@ -82,7 +94,7 @@
   function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('show'), 2800); }
   async function act(a, okMsg) {
     if (S.preview) { toast('Aperçu : les actions sont désactivées.'); return false; }
-    try { await API.action(S.project.id, a); await loadProject(S.project.id); if (okMsg) toast(okMsg); return true; }
+    try { await API.action(S.project.id, a); if (isAdmin()) await loadInbox(); await loadProject(S.project.id); if (okMsg) toast(okMsg); return true; }
     catch (e) { toast(e.message); return false; }
   }
   async function loadProject(id) { const r = await API.project(id); S.project = r.project; S.access = r.access || []; S.people = r.people || {}; render(); }
@@ -95,17 +107,17 @@
   function shell(content) {
     const p = S.project;
     const admin = !clientMode();
-    const link = ([id, l, i]) => `<a href="#${id}" data-go="${id}" ${S.view === id || (id === 'clients' && S.view === 'admin') ? 'aria-current="page"' : ''}>${ic(i)}<span>${l}</span>${id === 'valider' && pending() ? `<span class="badge" aria-label="${pending()} à valider">${pending()}</span>` : ''}${id === 'messages' && unread() ? `<span class="badge" aria-label="${unread()} non lus">${unread()}</span>` : ''}${id === 'clients' ? alertsTotal() : ''}</a>`;
+    const link = ([id, l, i]) => `<a href="#${id}" data-go="${id}" ${S.view === id || (id === 'clients' && S.view === 'admin') ? 'aria-current="page"' : ''}>${ic(i)}<span>${l}</span>${id === 'valider' && pending() ? `<span class="badge" aria-label="${pending()} à valider">${pending()}</span>` : ''}${id === 'messages' && unread() ? `<span class="badge" aria-label="${unread()} non lus">${unread()}</span>` : ''}${id === 'inbox' && unreadInbox() ? `<span class="badge" aria-label="${unreadInbox()} non lus">${unreadInbox()}</span>` : ''}</a>`;
     const groups = admin
-      ? [['Pilotage', [['clients', 'Clients', 'team'], ['nouveau', 'Nouvel espace', 'plus']]]]
+      ? [['Au quotidien', [['inbox', 'Boîte de réception', 'mail'], ['clients', 'Clients', 'team']]], ['Gérer', [['nouveau', 'Nouvel espace client', 'plus'], ['reglages', 'Réglages', 'gear']]]]
       : [['Mon projet', [['accueil', 'Accueil', 'home'], ['projet', 'Étapes', 'map'], ['valider', 'À valider', 'ok'], ['maquettes', 'Maquettes', 'figma']]],
          ['Échanges', [['messages', 'Messages', 'chat'], ['fichiers', 'Fichiers', 'folder'], ['documents', 'Documents', 'doc']]],
          ['Outils', [['outils', 'Boîte à outils', 'plus'], ['biblio', 'Bibliothèque', 'eye']]],
          ['Aide', [['equipe', 'Équipe et aide', 'team']]]];
     const navHtml = groups.map(([t, items]) => `<div class="sec">${t}</div>${items.map(link).join('')}`).join('');
-    const tabs = admin ? [['clients', 'Clients', 'team'], ['nouveau', 'Nouvel espace', 'plus'], ['deconnexion', 'Sortir', 'out']] : [['accueil', 'Accueil', 'home'], ['projet', 'Étapes', 'map'], ['messages', 'Messages', 'chat'], ['fichiers', 'Fichiers', 'folder'], ['plus', 'Plus', 'team']];
+    const tabs = admin ? [['inbox', 'Réception', 'mail'], ['clients', 'Clients', 'team'], ['compose', 'Ajouter', 'plus'], ['reglages', 'Réglages', 'gear'], ['deconnexion', 'Sortir', 'out']] : [['accueil', 'Accueil', 'home'], ['projet', 'Étapes', 'map'], ['messages', 'Messages', 'chat'], ['fichiers', 'Fichiers', 'folder'], ['plus', 'Plus', 'team']];
     const tabHtml = tabs.map(([id, l, i]) => { const cur = id === 'plus' ? ['plus', 'valider', 'maquettes', 'documents', 'outils', 'biblio', 'equipe'].includes(S.view) : S.view === id || (id === 'clients' && S.view === 'admin');
-      return `<a href="#${id}" data-go="${id}" ${cur ? 'aria-current="page"' : ''}>${ic(i)}<span>${l}</span>${id === 'messages' && unread() ? `<span class="badge">${unread()}</span>` : ''}${id === 'plus' && pending() ? `<span class="badge">${pending()}</span>` : ''}</a>`; }).join('');
+      return `<a href="#${id}" data-go="${id}" ${cur ? 'aria-current="page"' : ''}>${ic(i)}<span>${l}</span>${id === 'inbox' && unreadInbox() ? `<span class="badge">${unreadInbox()}</span>` : ''}${id === 'messages' && unread() ? `<span class="badge">${unread()}</span>` : ''}${id === 'plus' && pending() ? `<span class="badge">${pending()}</span>` : ''}</a>`; }).join('');
     let card;
     if (admin) {
       const waiting = S.projects.filter((x) => x.alerts.newFiles || x.alerts.changes || x.alerts.newMessages || x.alerts.requests).length;
@@ -121,8 +133,9 @@
       <aside class="side" aria-label="Navigation">
         <div class="brand"><img class="logo" src="${IMG.logo}" alt=""><b>Orem</b><span class="tag">${admin ? 'Agence' : 'Client'}</span></div>
         ${card}
+        ${admin ? `<button class="add-btn" data-act="compose">${ic('plus')}Ajouter pour un client</button>` : ''}
         <nav class="nav">${navHtml}</nav>
-        ${API.demo && !S.preview ? `<label class="demo-sel"><span>${ic('eye')}Démo : voir l\u2019espace de</span><select data-demo aria-label="Changer d\u2019espace de démo">${[['claire@maisonlumen.fr', 'Claire · Maison Lumen (en cours)'], ['julie@cabinet-varenne.fr', 'Julie · Cabinet Varenne (démarrage)'], ['hugo@huchet-demorge.fr', 'Hugo · Huchet-Demorge (livré)'], ['louis@agence-orem.fr', 'Louis · vue agence']].map(([e, l]) => `<option value="${e}" ${S.me.email === e ? 'selected' : ''}>${l}</option>`).join('')}</select></label>` : ''}
+        ${API.demo && !S.preview ? `<label class="demo-sel"><span>${ic('eye')}Démo : voir l\u2019espace de</span><select data-demo aria-label="Changer d\u2019espace de démo">${[['claire@maisonlumen.fr', 'Claire · Maison Lumen (en cours)'], ['julie@cabinet-varenne.fr', 'Julie · Cabinet Varenne (démarrage)'], ['hugo@huchet-demorge.fr', 'Hugo · Huchet-Demorge (livré)'], ['louis@agence-orem.fr', 'Louis · agence'], ['theophile@agence-orem.fr', 'Théophile · agence'], ['clement@agence-orem.fr', 'Clément · agence']].map(([e, l]) => `<option value="${e}" ${S.me.email === e ? 'selected' : ''}>${l}</option>`).join('')}</select></label>` : ''}
         <div class="side-foot">
           <div class="me-av">${meImg}</div>
           <div class="me-txt"><strong>${esc(S.preview ? p.contactName || p.client : S.me.name)}</strong><span class="role">${admin ? 'Agence' : 'Client'}</span></div>
@@ -131,7 +144,7 @@
         </div>
       </aside>
       <div class="stage">
-        <header class="topbar"><div class="brand"><img class="logo" src="${IMG.logo}" alt=""><b>Orem</b></div>${API.demo && !S.preview ? `<label class="demo-sel top"><span>${ic('eye')}Démo : voir l\u2019espace de</span><select data-demo aria-label="Changer d\u2019espace de démo">${[['claire@maisonlumen.fr', 'Claire · Maison Lumen (en cours)'], ['julie@cabinet-varenne.fr', 'Julie · Cabinet Varenne (démarrage)'], ['hugo@huchet-demorge.fr', 'Hugo · Huchet-Demorge (livré)'], ['louis@agence-orem.fr', 'Louis · vue agence']].map(([e, l]) => `<option value="${e}" ${S.me.email === e ? 'selected' : ''}>${l}</option>`).join('')}</select></label>` : ''}${API.demo && !S.preview ? '' : `<span class="small">${admin ? 'Espace agence' : esc(p.client)}</span>`}</header>
+        <header class="topbar"><div class="brand"><img class="logo" src="${IMG.logo}" alt=""><b>Orem</b></div>${API.demo && !S.preview ? `<label class="demo-sel top"><span>${ic('eye')}Démo : voir l\u2019espace de</span><select data-demo aria-label="Changer d\u2019espace de démo">${[['claire@maisonlumen.fr', 'Claire · Maison Lumen (en cours)'], ['julie@cabinet-varenne.fr', 'Julie · Cabinet Varenne (démarrage)'], ['hugo@huchet-demorge.fr', 'Hugo · Huchet-Demorge (livré)'], ['louis@agence-orem.fr', 'Louis · agence'], ['theophile@agence-orem.fr', 'Théophile · agence'], ['clement@agence-orem.fr', 'Clément · agence']].map(([e, l]) => `<option value="${e}" ${S.me.email === e ? 'selected' : ''}>${l}</option>`).join('')}</select></label>` : ''}${API.demo && !S.preview ? '' : `<span class="small">${admin ? 'Espace agence' : esc(p.client)}</span>`}</header>
         <div class="sheet"><main class="main" id="main" tabindex="-1"><div class="wrap">${content}</div></main></div>
       </div>
       <nav class="tabbar" aria-label="Navigation principale">${tabHtml}</nav>
@@ -267,7 +280,7 @@
   function vDocuments() {
     const p = S.project, b = p.billing;
     const paid = p.invoices.filter((i) => i.status === 'paid').reduce((s, i) => s + i.ttc, 0);
-    const docs = p.files.filter((f) => f.from === 'agence' && f.cat !== 'Livrable');
+    const docs = p.files.filter((f) => f.from === 'agence' && !['Livrable', 'Bibliothèque'].includes(f.cat));
     const st = { paid: '<span class="chip ok">Payée</span>', due: '<span class="chip warn">À régler</span>', future: '<span class="chip idle">À venir</span>' };
     return `
     <div class="head"><div><h1>Documents</h1><p class="lead">Devis, factures et paiement</p></div></div>
@@ -606,20 +619,144 @@
       <div><button class="btn btn-primary" type="submit">Enregistrer</button></div></form>`;
   }
 
+
+  /* ---------- Équipe : boîte de réception ---------- */
+  const TYPE_ICO = { files: 'up', messages: 'chat', validations: 'ok', requests: 'plus', activity: 'eye' };
+  const TYPE_LBL = { files: 'Fichier', messages: 'Message', validations: 'Validation', requests: 'Demande', activity: 'Activité' };
+  const unreadInbox = () => (S.inbox || []).filter((n) => !n.read).length;
+  const ago = (d) => { const m = Math.round((Date.now() - new Date(d)) / 6e4); if (m < 1) return 'à l’instant'; if (m < 60) return `il y a ${m} min`; const h = Math.round(m / 60); if (h < 24) return `il y a ${h} h`; const j = Math.round(h / 24); return j === 1 ? 'hier' : `il y a ${j} jours`; };
+  async function loadInbox() { try { S.inbox = (await API.inbox()).items; } catch { S.inbox = []; } }
+  function vInbox() {
+    const all = S.inbox || [], f = S.inboxFilter || 'unread';
+    const list = f === 'unread' ? all.filter((n) => !n.read) : all;
+    return `<div class="head"><div><h1>Boîte de réception</h1><p class="lead">Tout ce qui se passe dans vos espaces clients, au même endroit</p></div>
+      <div class="head-actions">${unreadInbox() ? `<button class="btn btn-line" data-act="inbox-all">${ic('check')}Tout marquer comme lu</button>` : ''}<button class="btn btn-primary hide-m" data-act="compose">${ic('plus')}Ajouter</button></div></div>
+      <div class="hide-m">${kpisAdmin()}</div>
+      <div class="cats" role="group" aria-label="Filtrer">${[['unread', 'Non lus', all.filter((n) => !n.read).length], ['all', 'Tout', all.length]].map(([k, l, n]) => `<button class="cat" data-inbox="${k}" aria-pressed="${f === k}"><strong>${l}</strong><span class="num">${n}</span></button>`).join('')}</div>
+      <section class="panel">${list.length ? `<div class="list">${list.map((n) => `<button class="row inbox-row ${n.read ? '' : 'unread'}" data-notif="${n.id}">
+        <span class="ico ${n.read ? '' : 'hl'}">${ic(TYPE_ICO[n.type] || 'eye')}</span>
+        <span class="grow"><span class="title">${esc(n.text)}</span><span class="sub">${esc(n.client)} · ${TYPE_LBL[n.type] || ''} · ${ago(n.at)}</span></span>
+        ${n.read ? '' : '<span class="dot-new" aria-label="Non lu"></span>'}${ic('arrow', 'width:18px;height:18px;color:var(--muted);flex:none')}</button>`).join('')}</div>`
+        : `<div class="empty big" style="border:0">${ic('ok')}<strong>Tout est à jour</strong><span>Les dépôts de fichiers, messages, validations et demandes des clients arriveront ici${S.me.notify && S.me.notify.email !== 'off' ? ', et par e-mail selon vos réglages' : ''}.</span></div>`}</section>`;
+  }
+
+  /* ---------- Équipe : réglages ---------- */
+  function vReglages() {
+    const n = S.me.notify || { email: 'instant', events: {} };
+    const ev = [['files', 'Un client dépose un fichier'], ['messages', 'Un client écrit ou envoie un message'], ['validations', 'Un client valide ou demande des modifications'], ['requests', 'Un client demande une évolution'], ['activity', 'Un collègue publie quelque chose dans un de mes projets']];
+    const ob = S.outbox || { items: [] };
+    return `<div class="head"><div><h1>Réglages</h1><p class="lead">${esc(S.me.name)} · ${esc(S.me.email)}</p></div></div>
+      <form class="panel form" data-form="prefs"><div class="panel-head" style="margin:0"><h2>${ic('mail')}Mes notifications par e-mail</h2><span class="aside">Dans la boîte de réception, vous voyez toujours tout</span></div>
+        <fieldset class="field" style="border:0;padding:0;margin:0"><legend class="small" style="font-weight:500;margin-bottom:10px">Quand m’écrire ?</legend>
+          <div class="ob-pref">${[['instant', 'À chaque nouveauté, tout de suite'], ['digest', 'Un récap par jour, à 18 h'], ['off', 'Jamais, je regarde la boîte de réception']].map(([v, l]) => `<label><input type="radio" name="pf-email" value="${v}" ${n.email === v ? 'checked' : ''}> ${l}</label>`).join('')}</div></fieldset>
+        <fieldset class="field" style="border:0;padding:0;margin:0"><legend class="small" style="font-weight:500;margin-bottom:10px">Pour quoi ?</legend>
+          <div class="ob-pref">${ev.map(([k, l]) => `<label><input type="checkbox" name="pf-ev" value="${k}" ${n.events && n.events[k] ? 'checked' : ''}> ${l}</label>`).join('')}</div></fieldset>
+        <p class="hint">Vous n’êtes prévenu que pour les projets dont vous faites partie (onglet « Accès et infos » de chaque client).</p>
+        <div class="inline"><button class="btn btn-primary" type="submit">Enregistrer</button><button class="btn btn-line" type="button" data-act="digest">${ic('mail')}M’envoyer le récap maintenant</button></div></form>
+      <section class="panel"><div class="panel-head"><h2>${ic('mail')}E-mails envoyés</h2><span class="aside">${ob.enabled ? 'Envoi réel activé' : 'Envoi réel désactivé : les e-mails restent ici tant que l’espace n’est pas en ligne'}</span></div>
+        <div class="list">${(ob.items || []).slice(0, 15).map((m, i) => `<button class="row inbox-row" data-mail="${i}"><span class="ico">${ic('mail')}</span><span class="grow"><span class="title">${esc(m.subject)}</span><span class="sub">À ${esc(m.to)} · ${ago(m.at)}</span></span>${ic('eye', 'width:18px;height:18px;color:var(--muted);flex:none')}</button>`).join('') || '<p class="muted">Aucun e-mail pour l’instant. Déposez un fichier côté client pour voir ce que reçoit l’équipe.</p>'}</div></section>`;
+  }
+  function mailPreview() {
+    if (!S.mailView) return '';
+    return `<div class="lb" role="dialog" aria-modal="true" aria-label="Aperçu de l’e-mail"><div class="mailbox"><div class="mail-h"><div><strong>${esc(S.mailView.subject)}</strong><span>À ${esc(S.mailView.to)}</span></div><button class="x" data-act="mail-close" aria-label="Fermer">×</button></div><div class="mail-b">${S.mailView.html}</div></div></div>`;
+  }
+
+  /* ---------- Équipe : ajouter n'importe quoi, depuis n'importe où ---------- */
+  const KINDS = [['msg', 'Message ou vidéo', 'chat'], ['file', 'Fichier', 'up'], ['val', 'Validation', 'ok'], ['asset', 'Bibliothèque', 'eye'], ['link', 'Liens Figma et site', 'figma'], ['note', 'Point de la semaine', 'cal']];
+  function composer() {
+    if (!S.compose) return '';
+    const C = S.compose, pid = C.projectId || (S.project && S.project.id) || '';
+    const P = S.compose.full;
+    const kindTabs = KINDS.map(([k, l, i]) => `<button type="button" role="tab" aria-selected="${C.kind === k}" data-ckind="${k}">${ic(i)}${l}</button>`).join('');
+    let body = '';
+    if (!P) body = `<p class="muted">Choisissez d’abord le client.</p>`;
+    else if (C.kind === 'msg') body = `<div class="field"><label for="c-t">Message à ${esc(P.contactName || P.client)}</label><textarea id="c-t" rows="4" placeholder="${P.registre === 'tu' ? 'Salut' : 'Bonjour'} ${esc(P.contactName || '')}, …"></textarea></div>
+      <div class="line"><div class="field"><label for="c-u">Lien Loom (facultatif)</label><input id="c-u" type="url" placeholder="https://www.loom.com/share/…"></div><div class="field"><label for="c-l">Titre de la vidéo</label><input id="c-l" type="text" placeholder="Présentation des maquettes"></div></div>
+      <p class="hint">Le client reçoit un e-mail et voit un bandeau sur son accueil.</p>`;
+    else if (C.kind === 'file') body = `<div class="field"><label for="c-cat">Type</label><select id="c-cat">${[['Livrable', 'Livrable (visible dans Fichiers)'], ['Devis', 'Devis'], ['Facture', 'Facture'], ['Contrat', 'Contrat'], ['RIB', 'RIB']].map(([v, l]) => `<option value="${v}">${l}</option>`).join('')}</select></div>
+      <label class="drop small-drop" for="c-file"><span class="ico hl">${ic('up')}</span><strong>Glissez un ou plusieurs fichiers, ou cliquez</strong><span class="small muted">Jusqu’à 2 Go par fichier</span><input id="c-file" type="file" multiple class="sr"></label>
+      ${S.uploading ? `<div class="small">${esc(S.uploading.name)}<span class="progress"><i style="width:${Math.round(S.uploading.p * 100)}%"></i></span></div>` : ''}`;
+    else if (C.kind === 'val') body = `<div class="field"><label for="c-v">Quelle validation ?</label><select id="c-v">${P.validations.map((v) => `<option value="${v.id}" ${v.status === 'wait' ? '' : ''}>${esc(v.t)} · ${{ wait: 'pas encore demandée', ready: 'chez le client', approved: 'validée', changes: 'modifications demandées' }[v.status]}</option>`).join('')}</select></div>
+      <div class="field"><label for="c-vl">Lien à regarder</label><input id="c-vl" type="url" placeholder="https://www.figma.com/proto/…" value="${esc((P.links && (P.links.proto || P.links.figma)) || '')}"></div>
+      <div class="field"><label for="c-vt">Un mot pour le client (facultatif)</label><textarea id="c-vt" rows="2" placeholder="Le plan est prêt, dites-nous ce que vous en pensez."></textarea></div>
+      <p class="hint">Elle devient la prochaine étape sur son accueil et il reçoit un e-mail.</p>`;
+    else if (C.kind === 'asset') body = `<div class="line"><div class="field"><label for="c-at">Titre</label><input id="c-at" type="text" placeholder="Maquette de la page d’accueil"></div><div class="field"><label for="c-ak">Catégorie</label><select id="c-ak">${['Maquettes', 'Réalisation', 'Visuels', 'Logos', 'Cas d’étude'].map((k) => `<option>${k}</option>`).join('')}</select></div></div>
+      <div class="field"><label for="c-ai">Image (facultatif)</label><input id="c-ai" type="file" accept="image/*"></div>
+      <div class="field"><label for="c-au">Ou un lien (Figma, site, PDF…)</label><input id="c-au" type="url" placeholder="https://"></div>`;
+    else if (C.kind === 'link') { const L = P.links || {}; body = [['figma', 'Fichier Figma (lecture seule)'], ['proto', 'Prototype Figma'], ['preview', 'Prévisualisation Webflow'], ['site', 'Site en ligne']].map(([k, l]) => `<div class="field"><label for="c-${k}">${l}</label><input id="c-${k}" type="url" value="${esc(L[k] || '')}" placeholder="https://"></div>`).join(''); }
+    else if (C.kind === 'note') body = `<div class="field"><label for="c-n">Point de la semaine</label><textarea id="c-n" rows="4" placeholder="Ce qui a été fait, ce qui vient.">${esc(P.note.text || '')}</textarea></div>
+      <div class="line"><div class="field"><label for="c-mt">Prochain rendez-vous</label><input id="c-mt" type="text" value="${esc(P.meeting.title || '')}" placeholder="Point d’étape (visio, 30 min)"></div><div class="field"><label for="c-mw">Date et heure</label><input id="c-mw" type="datetime-local" value="${dtKey(P.meeting.when)}"></div></div>`;
+    return `<div class="ob" role="dialog" aria-modal="true" aria-labelledby="c-title"><form class="compose-card" data-form="compose">
+      <div class="compose-h"><h2 id="c-title">Ajouter</h2><button type="button" class="x" data-act="compose-close" aria-label="Fermer">×</button></div>
+      <div class="field"><label for="c-p">Client</label><select id="c-p" data-cproject>${S.projects.length ? '' : ''}<option value="">Choisir un client…</option>${S.projects.map((x) => `<option value="${x.id}" ${x.id === pid ? 'selected' : ''}>${esc(x.client)}</option>`).join('')}</select></div>
+      <div class="tabs ckinds" role="tablist" aria-label="Que voulez-vous ajouter ?">${kindTabs}</div>
+      <div class="form">${body}</div>
+      <div class="compose-f"><span class="small muted">Ajouté par ${esc(S.me.name.split(' ')[0])}${P && P.team && P.team.members.length ? ' · l’équipe du projet est prévenue' : ''}</span>${C.kind !== 'file' ? `<button class="btn btn-primary" type="submit">${C.kind === 'msg' ? 'Envoyer' : C.kind === 'val' ? 'Demander la validation' : 'Ajouter'}</button>` : ''}</div>
+    </form></div>`;
+  }
+  async function openCompose(kind, projectId) {
+    const pid = projectId || (S.project && S.view === 'admin' ? S.project.id : '');
+    S.compose = { kind: kind || 'msg', projectId: pid, full: null };
+    if (pid) { try { S.compose.full = (await API.project(pid)).project; } catch {} }
+    render(); const f = document.querySelector('.compose-card textarea, .compose-card input:not([type=file])'); if (f) f.focus();
+  }
+  async function composeDone(msg) {
+    const pid = S.compose.projectId; S.compose = null;
+    await loadProjects(); await loadInbox();
+    if (S.view === 'admin' && S.project && S.project.id === pid) await loadProject(pid); else render();
+    toast(msg);
+  }
+  async function composeSubmit() {
+    const C = S.compose, pid = C.projectId; if (!pid) return toast('Choisissez le client.');
+    const v = (id) => ($('#' + id) ? $('#' + id).value.trim() : '');
+    const run = async (a) => { await API.action(pid, a); };
+    try {
+      if (C.kind === 'msg') { if (!v('c-t')) return toast('Écrivez le message.'); await run({ type: 'msg.post', text: v('c-t'), loom: v('c-u') ? { url: v('c-u'), title: v('c-l') || 'Vidéo' } : undefined }); return composeDone(v('c-u') ? 'Vidéo envoyée. Le client est prévenu.' : 'Message envoyé. Le client est prévenu.'); }
+      if (C.kind === 'val') { await run({ type: 'val.request', vid: v('c-v'), link: v('c-vl'), text: v('c-vt') }); return composeDone('Validation demandée. Le client est prévenu.'); }
+      if (C.kind === 'link') { await run({ type: 'links.set', figma: v('c-figma'), proto: v('c-proto'), preview: v('c-preview'), site: v('c-site') }); return composeDone('Liens enregistrés.'); }
+      if (C.kind === 'note') { await run({ type: 'note.set', text: v('c-n') }); await run({ type: 'meeting.set', title: v('c-mt'), when: v('c-mw') || null }); return composeDone('Point de la semaine publié.'); }
+      if (C.kind === 'asset') {
+        const f = $('#c-ai') && $('#c-ai').files[0]; let img = '';
+        if (!v('c-at')) return toast('Donnez un titre.');
+        if (f) { const r = await API.upload(pid, f, 'Bibliothèque'); img = r.file && r.file.id && !API.demo ? '/api/files/' + r.file.id + '?inline=1' : URL.createObjectURL(f); }
+        await run({ type: 'asset.add', title: v('c-at'), kind: v('c-ak'), url: v('c-au'), img });
+        return composeDone('Ajouté à la bibliothèque du client.');
+      }
+    } catch (e) { toast(e.message); }
+  }
+  async function composeFiles(files) {
+    const pid = S.compose.projectId; if (!pid) return toast('Choisissez le client.');
+    const cat = $('#c-cat').value; let n = 0;
+    for (const f of files) { S.uploading = { name: f.name, p: 0 }; render(); try { await API.upload(pid, f, cat, (x) => { S.uploading.p = x; const b = document.querySelector('.compose-card .progress i'); if (b) b.style.width = Math.round(x * 100) + '%'; }); n++; } catch (e) { toast(e.message); } }
+    S.uploading = null; if (n) composeDone(`${n} fichier${n > 1 ? 's' : ''} partagé${n > 1 ? 's' : ''}.${cat === 'Livrable' ? ' Le client est prévenu.' : ''}`); else render();
+  }
+
+  /* ---------- Équipe d'un projet ---------- */
+  function teamPanel() {
+    const p = S.project, T = p.team || { lead: null, members: [] };
+    return `<form class="panel form" data-form="team"><div class="panel-head" style="margin:0"><h2>${ic('team')}Équipe du projet</h2><span class="aside">Ces personnes reçoivent les notifications de ce client</span></div>
+      <div class="ob-pref">${S.team.map((u) => `<label><input type="checkbox" name="tm" value="${u.id}" ${T.members.includes(u.id) ? 'checked' : ''}>${IMG[u.photo] ? `<img class="avatar sm" src="${IMG[u.photo]}" alt="">` : ''}<span><strong style="font-weight:500">${esc(u.name)}</strong> · <span class="muted">${esc(u.title || '')}</span></span></label>`).join('')}</div>
+      <div class="field"><label for="tm-lead">Chef de projet (affiché au client comme interlocuteur principal)</label><select id="tm-lead">${S.team.map((u) => `<option value="${u.id}" ${T.lead === u.id ? 'selected' : ''}>${esc(u.name)}</option>`).join('')}</select></div>
+      <div><button class="btn btn-primary btn-sm" type="submit">Enregistrer l’équipe</button></div></form>`;
+  }
+  const faces = (ids) => `<span class="faces-sm">${(ids || []).map((id) => { const u = S.team.find((x) => x.id === id); return u ? (IMG[u.photo] ? `<img src="${IMG[u.photo]}" alt="${esc(u.name)}" title="${esc(u.name)}">` : `<i title="${esc(u.name)}">${esc(u.name[0])}</i>`) : ''; }).join('')}</span>`;
+
   /* ---------- Vues agence ---------- */
   function vClients() {
-    const rows = S.projects.map((p) => { const a = p.alerts;
+    const mine = S.mine !== false;
+    const P = mine ? S.projects.filter((p) => !p.team || !p.team.members.length || p.team.members.includes(S.me.id)) : S.projects;
+    const rows = P.map((p) => { const a = p.alerts;
       const flags = [a.newFiles ? `<span class="chip warn">${a.newFiles} nouveau${a.newFiles > 1 ? 'x' : ''} fichier${a.newFiles > 1 ? 's' : ''}</span>` : '',
         a.changes ? `<span class="chip warn">Modifications demandées</span>` : '',
         a.waiting ? `<span class="chip hl">Validation chez le client</span>` : '',
         a.newMessages ? `<span class="chip warn">${a.newMessages} message${a.newMessages > 1 ? 's' : ''}</span>` : '',
         a.requests ? `<span class="chip warn">Demande d\u2019évolution</span>` : '',
         !a.newFiles && !a.changes && !a.waiting && !a.newMessages && !a.requests ? '<span class="chip idle">Rien de neuf</span>' : ''].join('');
-      return `<button class="crow" data-open="${p.id}"><div><div class="c-name">${esc(p.client)}</div><div class="small muted">${esc(p.projet)}</div></div><div><div class="small"><span class="muted">Étape ${p.phase} · ${esc(p.phaseName)}</span></div><div class="small" style="margin-top:2px">${esc(p.next.title)}</div></div><div class="c-flags">${flags}</div></button>`; }).join('');
+      return `<button class="crow" data-open="${p.id}"><div><div class="c-name">${esc(p.client)}</div><div class="small muted">${esc(p.projet)}</div>${p.team ? faces(p.team.members) : ''}</div><div><div class="small"><span class="muted">Étape ${p.phase} · ${esc(p.phaseName)}</span></div><div class="small" style="margin-top:2px">${esc(p.next.title)}</div></div><div class="c-flags">${flags}</div></button>`; }).join('');
     const needs = S.projects.filter((p) => p.alerts.newFiles || p.alerts.changes || p.alerts.newMessages || p.alerts.requests).length;
     return `
     <div class="head"><div><h1>Clients</h1><p class="lead">${esc(cap(fmtLong(Date.now())))}</p></div><button class="btn btn-primary" data-go="nouveau">${ic('plus')}Nouvel espace client</button></div>
-    ${kpisAdmin()}
+    <div class="cats" role="group" aria-label="Filtrer"><button class="cat" data-mine="1" aria-pressed="${mine}"><strong>Mes clients</strong><span class="num">${S.projects.filter((p) => !p.team || !p.team.members.length || p.team.members.includes(S.me.id)).length}</span></button><button class="cat" data-mine="0" aria-pressed="${!mine}"><strong>Toute l\u2019agence</strong><span class="num">${S.projects.length}</span></button></div>
     ${needs ? `<div class="alert">${ic('alert')}<div><strong>${needs} client${needs > 1 ? 's' : ''} attend${needs > 1 ? 'ent' : ''} une action de l’agence.</strong> Nouveaux fichiers à récupérer ou modifications demandées.</div></div>` : ''}
     <section class="panel"><div class="clients">${rows || '<div class="empty">Aucun espace client pour l’instant.</div>'}</div></section>`;
   }
@@ -648,7 +785,7 @@
     const body = { pilotage: tPilotage, messages: tMessages, liens: tLiens, validations: tValidations, fichiers: tFichiers, factures: tFactures, acces: tAcces, activite: tActivite }[S.tab]();
     return `
     <div><button class="ghost" data-go="clients" style="padding-left:0">${ic('back')}Tous les clients</button></div>
-    <div class="head"><div><h1>${esc(p.client)}</h1><p class="lead">${esc(p.projet)} · Étape ${p.phase} sur 5</p></div><div class="head-actions"><button class="btn btn-line" data-act="obpreview">${ic('play')}Accueil du client</button><button class="btn btn-line" data-act="preview">${ic('eye')}Voir comme le client</button></div></div>
+    <div class="head"><div><h1>${esc(p.client)}</h1><p class="lead">${esc(p.projet)} · Étape ${p.phase} sur 5</p></div><div class="head-actions"><button class="btn btn-primary" data-act="compose">${ic('plus')}Ajouter</button><button class="btn btn-line" data-act="obpreview">${ic('play')}Accueil du client</button><button class="btn btn-line" data-act="preview">${ic('eye')}Voir comme le client</button></div></div>
     <div class="tabs" role="tablist">${TABS.map(([id, l]) => `<button role="tab" aria-selected="${S.tab === id}" data-tab="${id}">${l}${tabCount[id] ? `<span class="badge">${tabCount[id]}</span>` : ''}</button>`).join('')}</div>
     ${body}`;
   }
@@ -723,7 +860,7 @@
   }
   function tAcces() {
     const p = S.project;
-    return `
+    return `${teamPanel()}
     <section class="panel"><div class="panel-head"><h2>${ic('team')}Personnes qui ont accès</h2></div>
       <div class="list">${S.access.map((u) => `<div class="row"><span class="ico">${ic('mail')}</span><div class="grow"><div class="title">${esc(u.name)}</div><div class="sub">${esc(u.email)}</div></div><button class="x" data-act="user-remove" data-id="${u.id}" aria-label="Retirer l’accès de ${esc(u.email)}">×</button></div>`).join('') || '<p class="muted">Personne pour l’instant.</p>'}</div>
       <form class="inline" data-form="user" style="margin-top:14px"><input id="u-n" type="text" placeholder="Prénom" aria-label="Prénom" style="flex:0 1 140px"><input id="u-e" type="email" placeholder="adresse@client.fr" aria-label="E-mail"><button class="btn btn-line btn-sm" type="submit">Donner l’accès</button></form>
@@ -781,9 +918,9 @@
       if (!V[S.view]) S.view = 'accueil';
       root.innerHTML = shell(V[S.view]()) + (S.ob ? onboarding() : '') + lightbox();
     } else {
-      const V = { clients: vClients, nouveau: vNouveau, admin: vAdmin };
-      if (!V[S.view] || (S.view === 'admin' && !S.project)) S.view = 'clients';
-      root.innerHTML = shell(V[S.view]());
+      const V = { inbox: vInbox, reglages: vReglages, clients: vClients, nouveau: vNouveau, admin: vAdmin };
+      if (!V[S.view] || (S.view === 'admin' && !S.project)) S.view = 'inbox';
+      root.innerHTML = shell(V[S.view]()) + composer() + mailPreview();
     }
     if (S.ob) { const b = document.querySelector('.ob .btn-primary'); if (b) b.focus({ preventScroll: true }); }
     document.querySelectorAll('.thread').forEach((t) => (t.scrollTop = t.scrollHeight));
@@ -792,15 +929,22 @@
   }
   async function go(v) {
     if (v === 'deconnexion') return logout();
+    if (v === 'compose') return openCompose();
+    if (v === 'inbox' && isAdmin()) { await loadInbox(); await loadProjects(); }
+    if (v === 'reglages' && isAdmin()) { try { S.outbox = await API.outbox(); } catch { S.outbox = null; } }
     if (v === 'clients' && isAdmin() && !S.preview) { S.project = null; await loadProjects(); }
     S.view = v; S.valForm = null; S.tool = v === 'outils' ? S.tool : null; render(true);
     if (v === 'messages' && S.project && (isAdmin() ? false : unread()) && !S.preview) { try { await API.action(S.project.id, { type: 'msg.read' }); await loadProject(S.project.id); } catch {} }
   }
   async function enter() {
     const r = await API.me(); S.me = r.user; S.team = r.team || [];
-    if (S.me.role === 'admin') { await loadProjects(); S.view = 'clients'; S.project = null; }
-    else { await loadProjects(); if (S.projects[0]) { const d = await API.project(S.projects[0].id); S.project = d.project; S.people = d.people || {}; } S.view = 'accueil'; if (S.project && !S.me.onboardedAt) S.ob = { step: 0 }; }
+    if (S.me.role === 'admin') { await loadProjects(); await loadInbox(); S.view = 'inbox'; S.project = null; }
+    else { await loadProjects(); if (S.projects[0]) { const d = await API.project(S.projects[0].id); S.project = d.project; S.people = d.people || {}; } S.view = 'accueil'; if (S.project && !S.me.onboardedAt) S.ob = { step: 0 }; orderTeam(); }
     S.loading = false; render(true);
+  }
+  function orderTeam() {
+    const T = S.project && S.project.team; if (!T || !T.members || !T.members.length) return;
+    S.team = S.team.filter((u) => T.members.includes(u.id)).sort((a, b) => (a.id === T.lead ? -1 : b.id === T.lead ? 1 : 0));
   }
   async function openProject(id) { S.tab = 'pilotage'; S.view = 'admin'; await loadProject(id); window.scrollTo(0, 0);
     const a = Core.alerts(S.project); if (a.unseen) { try { await API.action(id, { type: 'seen' }); } catch {} } }
@@ -834,11 +978,13 @@
   /* ---------- Événements ---------- */
   function copyText(t, ok) { try { navigator.clipboard.writeText(t).then(() => toast(ok), () => toast('Copie impossible ici. Sélectionnez le texte à la main.')); } catch { toast('Copie impossible ici. Sélectionnez le texte à la main.'); } }
   function copyHtml(h, ok) { try { navigator.clipboard.write([new ClipboardItem({ 'text/html': new Blob([h], { type: 'text/html' }), 'text/plain': new Blob([h.replace(/<[^>]+>/g, ' ')], { type: 'text/plain' }) })]).then(() => toast(ok), () => copyText(h, ok)); } catch { copyText(h, ok); } }
-  document.addEventListener('change', (e) => {
+  document.addEventListener('change', async (e) => {
     const t = e.target;
+    if (t.matches('[data-cproject]')) { S.compose.projectId = t.value; S.compose.full = t.value ? (await API.project(t.value)).project : null; render(); return; }
+    if (t.id === 'c-file' && t.files.length) { composeFiles([...t.files]); t.value = ''; return; }
     if (t.matches('[data-demo]')) { API.as(t.value); S.preview = false; S.tool = null; S.ob = null; enter(); return; }
     if (t.dataset.req) { act({ type: 'request.status', rid: t.dataset.req, status: t.value }, 'Statut mis à jour.'); return; }
-    if (t.type === 'file' && t.files.length) {
+    if (t.type === 'file' && t.files.length && !t.closest('.compose-card')) {
       const files = [...t.files];
       if (t.dataset.agency) upload(files, { cat: $('#a-cat').value });
       else upload(files, { missing: t.dataset.missing });
@@ -851,6 +997,11 @@
   document.addEventListener('click', async (e) => {
     const g = e.target.closest('[data-go]'); if (g) { e.preventDefault(); return go(g.dataset.go); }
     const o = e.target.closest('[data-open]'); if (o) return openProject(o.dataset.open);
+    const nt = e.target.closest('[data-notif]'); if (nt) { const n = S.inbox.find((x) => x.id === nt.dataset.notif); try { await API.readNotif(n.id); } catch {} n.read = true; await openProject(n.projectId); S.tab = (n.go && n.go.tab) || 'pilotage'; render(true); if (S.tab === 'messages') markAgencyRead(); return; }
+    const ib = e.target.closest('[data-inbox]'); if (ib) { S.inboxFilter = ib.dataset.inbox; return render(); }
+    const mn = e.target.closest('[data-mine]'); if (mn) { S.mine = mn.dataset.mine === '1'; return render(); }
+    const ck = e.target.closest('[data-ckind]'); if (ck) { S.compose.kind = ck.dataset.ckind; render(); return; }
+    const ml = e.target.closest('[data-mail]'); if (ml) { S.mailView = S.outbox.items[+ml.dataset.mail]; return render(); }
     const tb = e.target.closest('[data-tab]'); if (tb) { S.tab = tb.dataset.tab; render(); if (S.tab === 'messages') markAgencyRead(); return; }
     const tl = e.target.closest('[data-tool]'); if (tl) { S.tool = tl.dataset.tool || null; if (S.view !== 'outils') S.view = 'outils'; render(true); return; }
     const bk = e.target.closest('[data-bk]'); if (bk) { S.bk = bk.dataset.bk; return render(); }
@@ -876,6 +1027,11 @@
       case 'login-back': S.login.step = 'email'; render(); break;
       case 'demo-as': API.as(a.dataset.email); enter(); break;
       case 'skip': e.preventDefault(); { const m = $('#main'); m.focus(); const f = m.querySelector('a,button,input,select,textarea'); if (f) f.focus(); } break;
+      case 'compose': openCompose(); break;
+      case 'compose-close': S.compose = null; render(); break;
+      case 'mail-close': S.mailView = null; render(); break;
+      case 'inbox-all': try { await API.readNotif(); } catch {} await loadInbox(); render(); toast('Tout est lu.'); break;
+      case 'digest': try { const r = await API.digest(); S.outbox = await API.outbox(); render(); toast(r.sent ? 'Récap envoyé. Il apparaît dans « E-mails envoyés ».' : 'Rien de nouveau à récapituler.'); } catch (err) { toast(err.message); } break;
       case 'qa': S.qa = S.qa === id ? null : id; render(); break;
       case 'zoom': S.zoom = { src: a.dataset.src, title: a.dataset.title }; render(); break;
       case 'unzoom': if (e.target.tagName === 'IMG') return; S.zoom = null; render(); break;
@@ -926,6 +1082,10 @@
       case 'links': act({ type: 'links.set', figma: v('lk-f'), proto: v('lk-p'), preview: v('lk-w'), site: v('lk-s') }, 'Liens enregistrés.'); break;
       case 'request': { const t = v('rq-t'); if (!t) return toast('Décrivez votre demande.'); if (S.preview) return toast('Aperçu : les actions sont désactivées.'); act({ type: 'request.add', kind: v('rq-k'), priority: v('rq-p'), text: t }, 'Demande envoyée. On revient vers vous sous 48 h.'); break; }
       case 'teaser': case 'sig': break;
+      case 'compose': composeSubmit(); break;
+      case 'prefs': { const em = (f.querySelector('[name=pf-email]:checked') || {}).value; const events = {}; f.querySelectorAll('[name=pf-ev]').forEach((c) => (events[c.value] = c.checked));
+        try { const r = await API.setPrefs({ email: em, events }); S.me.notify = r.notify; toast('Réglages enregistrés.'); render(); } catch (err) { toast(err.message); } break; }
+      case 'team': { const members = [...f.querySelectorAll('[name=tm]:checked')].map((c) => c.value); act({ type: 'team.set', members, lead: v('tm-lead') }, 'Équipe enregistrée.'); break; }
       case 'phase': act({ type: 'phase.set', n: v('a-phase') }, 'Étape mise à jour.'); break;
       case 'next': act({ type: 'next.set', title: v('a-nt'), text: v('a-nx'), go: v('a-ng') }, 'Prochaine étape publiée.'); break;
       case 'note': if (await act({ type: 'note.set', text: v('a-note') })) act({ type: 'meeting.set', title: v('a-mt'), when: v('a-mw') || null }, 'Publié dans l’espace du client.'); break;
@@ -949,7 +1109,8 @@
     }
   });
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && (S.ob || S.zoom)) { S.ob = null; S.zoom = null; render(); return; }
+    if (e.key === 'Escape' && S.ob) { const sk = document.querySelector('[data-act=ob-skip]'); if (sk) { sk.click(); return; } S.ob = null; if (!S.preview && !S.me.onboardedAt) { S.me.onboardedAt = new Date().toISOString(); API.action(S.project.id, { type: 'user.onboarded' }).catch(() => {}); } render(); return; }
+    if (e.key === 'Escape' && (S.zoom || S.compose || S.mailView)) { S.zoom = null; S.compose = null; S.mailView = null; render(); return; }
     if (e.target.closest && e.target.closest('.otp') && e.key === 'Backspace' && !e.target.value && e.target.previousElementSibling) e.target.previousElementSibling.focus();
   });
 

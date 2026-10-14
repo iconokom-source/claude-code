@@ -484,6 +484,33 @@ input[type=email],input[type=text],input[type=password],input[type=url],input[ty
 .demo-sel.top select{min-height:34px;font-size:var(--t-xs)}
 @media print{body.printing *{visibility:hidden}body.printing #teaser-p,body.printing #teaser-p *{visibility:visible}body.printing #teaser-p{position:fixed;inset:0;border-radius:0}}
 
+/* ---------- Équipe ---------- */
+.add-btn{display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;border:0;border-radius:12px;background:#f4f4f6;color:#0b0b12;font-weight:500;font-size:var(--t-md);cursor:pointer}
+.add-btn:hover{background:#ffffff}
+.add-btn svg{width:18px;height:18px}
+.inbox-row{width:100%;border:0;border-top:1px solid var(--line);background:none;text-align:left;cursor:pointer;color:inherit;font-size:var(--t-md);border-radius:0}
+.inbox-row:first-child{border-top:0}
+.inbox-row .grow{display:flex;flex-direction:column}
+.inbox-row:hover .title{color:var(--hl)}
+.inbox-row.unread .title{font-weight:600}
+.inbox-row:not(.unread) .title{font-weight:400;color:var(--fg-2)}
+.dot-new{width:9px;height:9px;border-radius:50%;background:var(--hl);flex:none}
+.compose-card{width:100%;max-width:640px;max-height:100%;overflow:auto;background:var(--surface);color:var(--fg);border-radius:24px;padding:24px;display:flex;flex-direction:column;gap:16px;box-shadow:0 24px 80px rgba(0,0,18,.45);animation:obIn .3s cubic-bezier(.2,.8,.2,1)}
+.compose-h{display:flex;justify-content:space-between;align-items:center}
+.compose-h h2{font-size:var(--t-xl)}
+.compose-f{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding-top:12px;border-top:1px solid var(--line)}
+.ckinds{flex-wrap:wrap;overflow:visible}
+.ckinds button svg{width:16px;height:16px}
+.small-drop{padding:24px 16px}
+.faces-sm{display:flex;margin-top:6px}
+.faces-sm img,.faces-sm i{width:24px;height:24px;border-radius:50%;object-fit:cover;border:2px solid var(--surface);margin-right:-6px;display:grid;place-items:center;font-style:normal;font-size:11px;font-weight:600;background:var(--surface-3)}
+.avatar.sm{width:28px;height:28px}
+.mailbox{width:100%;max-width:680px;max-height:90vh;overflow:auto;background:#f3f2ef;border-radius:18px;cursor:auto}
+.mail-h{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:16px 18px;background:#ffffff;color:#0b0b12;border-bottom:1px solid #e2e1dc;position:sticky;top:0}
+.mail-h div{display:flex;flex-direction:column;gap:2px;min-width:0}
+.mail-h span{font-size:var(--t-sm);color:#585865}
+.mail-b{color:#0b0b12}
+
 /* ---------- Mobile ---------- */
 @media (max-width:1100px){ .kpis{grid-template-columns:repeat(2,minmax(0,1fr))} .gallery,.toolgrid{grid-template-columns:repeat(2,minmax(0,1fr))} }
 @media (max-width:860px){
@@ -526,7 +553,9 @@ input[type=email],input[type=text],input[type=password],input[type=url],input[ty
   .login-art h1{font-size:30px}
   .login-art .art-foot{display:none}
   .login-form form{padding:24px}
+  .hide-m{display:none!important}
   .ob{align-items:end;padding:0}
+  .compose-card{border-radius:24px 24px 0 0;max-height:94vh;padding-bottom:calc(24px + env(safe-area-inset-bottom,0px))}
   .ob-card{grid-template-columns:minmax(0,1fr);border-radius:24px 24px 0 0;max-height:94vh}
   .ob-art{min-height:auto;padding:24px}
   .ob-art h2{font-size:26px}
