@@ -10,9 +10,9 @@ async function login(br, email, vp, opts = {}) {
   const p = await ctx.newPage();
   p.errs = []; p.on('pageerror', (e) => p.errs.push(e.message));
   await p.goto(B + '/'); await p.fill('#em', email); await p.click('form[data-form=login] button[type=submit]');
-  await p.waitForSelector('.devcode b'); const code = await p.textContent('.devcode b');
+  await p.waitForSelector('.devcode b', { timeout: 8000 }).catch(async () => { throw new Error('Pas de code de connexion pour ' + email + ' : ' + (await p.textContent('#toast').catch(() => '')) + ' (limite de connexions ? redémarrer le serveur)'); }); const code = await p.textContent('.devcode b');
   await p.fill('#o1', code); await p.click('form[data-form=verify] button[type=submit]');
-  await p.waitForSelector('#main');
+  await p.waitForSelector('#main'); await p.waitForLoadState('networkidle'); await p.waitForTimeout(250);
   return p;
 }
 function persona(name, desc) { const P = { name, desc, tasks: [], notes: [] }; out.personas.push(P); return P; }

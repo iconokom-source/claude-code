@@ -29,6 +29,8 @@ const PROJECT_QUOTA = 20 * 1024 ** 3;        // 20 Go par projet
 const CODE_TTL = 15 * 60 * 1000;
 const SESSION_TTL = 30 * 24 * 3600 * 1000;
 const COOKIE = HTTPS ? '__Host-sid' : 'sid';
+// En local (codes affichés à l'écran), les limites de connexion n'ont rien à protéger : on les relâche pour enchaîner les tests.
+const AUTH_SCALE = SHOW_CODES ? 10 : 1;
 
 if (!LOOPBACK && !HTTPS) { console.error('Refus de démarrer : un serveur exposé doit avoir BASE_URL en https://'); process.exit(1); }
 if (!LOOPBACK && !MAIL_ENABLED) { console.error('Refus de démarrer : un serveur exposé doit envoyer les codes par e-mail (MAIL_ENABLED=1 et BREVO_API_KEY).'); process.exit(1); }
@@ -158,8 +160,8 @@ const team = (viewer) => db.users.filter((u) => u.role === 'admin').map((u) => p
 
 /* ---------- Connexion par code ou lien ---------- */
 function requestCode(email, ip) {
-  if (limited('login-ip:' + ip, 20, 15 * 60e3)) return { status: 429, error: 'Trop de demandes depuis cet appareil. Réessayez dans quelques minutes.' };
-  if (limited('login-mail:' + email, 5, 15 * 60e3)) return { status: 429, error: 'Trop de demandes pour cette adresse. Réessayez dans quelques minutes.' };
+  if (limited('login-ip:' + ip, 20 * AUTH_SCALE, 15 * 60e3)) return { status: 429, error: 'Trop de demandes depuis cet appareil. Réessayez dans quelques minutes.' };
+  if (limited('login-mail:' + email, 5 * AUTH_SCALE, 15 * 60e3)) return { status: 429, error: 'Trop de demandes pour cette adresse. Réessayez dans quelques minutes.' };
   const user = db.users.find((u) => u.email === email);
   if (!user) { log('auth.unknown', { ip }); return { ok: true }; } // même réponse : on ne révèle pas qui a un compte
   const lock = db.meta['lock:' + email]; if (lock && lock > Date.now()) return { ok: true };
@@ -179,7 +181,7 @@ function failed(email) {
   save();
 }
 function verifyCode(email, code, ip) {
-  if (limited('verify-ip:' + ip, 30, 15 * 60e3)) return { status: 429, error: 'Trop d’essais depuis cet appareil. Réessayez dans quelques minutes.' };
+  if (limited('verify-ip:' + ip, 30 * AUTH_SCALE, 15 * 60e3)) return { status: 429, error: 'Trop d’essais depuis cet appareil. Réessayez dans quelques minutes.' };
   const lock = db.meta['lock:' + email]; if (lock && lock > Date.now()) return { error: 'Trop d’essais. Réessayez dans une heure.' };
   const c = db.codes[sha(email)];
   if (!c || c.exp < Date.now()) return { error: 'Code incorrect ou expiré. Demandez-en un nouveau.' };
@@ -191,7 +193,7 @@ function verifyCode(email, code, ip) {
   return u ? { user: u } : { error: 'Code incorrect ou expiré. Demandez-en un nouveau.' };
 }
 function verifyLink(token, ip) {
-  if (limited('link-ip:' + ip, 30, 15 * 60e3)) return null;
+  if (limited('link-ip:' + ip, 30 * AUTH_SCALE, 15 * 60e3)) return null;
   const h = sha(String(token));
   const entry = Object.entries(db.codes).find(([, c]) => c.token === h && c.exp > Date.now());
   if (!entry) return null;
