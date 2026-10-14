@@ -6,8 +6,17 @@ Document de passation pour reprendre **exactement là où on s'est arrêtés** (
 
 ## 1. Message à coller dans la nouvelle session Claude
 
-> Tu reprends le chantier « Espace client Orem » de l'agence Orem (ICONOKOM). Le dépôt est `iconokom-source/claude-code`, branche `claude/blissful-pasteur-u33w5x`, PR #12 (brouillon). Commence par lire `espace-client-orem/docs/REPRISE.md` en entier, puis `docs/conception.md` et `docs/simulation-parcours.md`. Tout est en local : rien ne doit être mis en ligne ni branché sur un nom de domaine sans validation de Louis. Reprends le plan « 8 lots pour passer à 10/10 » à partir du **lot 1 (sécurité)**, en partant du brouillon `docs/reprise/server.wip.js`. Travaille lot par lot : coder, rejouer `tests/simulation.js` et `tests/equipe.js`, regénérer la démo (`node build-demo.js`), commit, push sur la même branche. Réponds en français, avec les règles d'écriture Orem.
-
+> Tu reprends le chantier « Espace client Orem » de l'agence Orem (ICONOKOM). Dépôt `iconokom-source/claude-code`, branche `claude/blissful-pasteur-u33w5x`, PR #12 (brouillon). Lis d'abord en entier `espace-client-orem/docs/REPRISE.md` (surtout la section « Point d'arrêt » à la fin), puis `docs/conception.md` et `docs/simulation-parcours.md`.
+>
+> Où on en est : le lot 1 (sécurité) est terminé et poussé. Les lots 2 et 4 sont commencés : le modèle O.R.E.M. par offre, les données d'exemple et le registre tu/vous dans les e-mails sont faits dans `app/public/core.js` (commit `6a00baa`), mais pas encore dans les écrans (`app/public/app.js`).
+>
+> Première chose à faire : depuis `espace-client-orem/app`, `rm -rf data`, lance `PORT=3123 MAIL_BATCH_MS=300 node server.js &`, puis `NODE_PATH=$(npm root -g) node tests/simulation.js` et `node tests/equipe.js`. Au dernier passage, `tests/equipe.js` s'est arrêté sur un délai dépassé (un élément attendu introuvable, sans doute un écran touché par le nouveau modèle) et le décompte de la simulation n'a pas été récupéré. Trouve la cause et corrige jusqu'à 100 % sur les deux tests.
+>
+> Ensuite, termine les lots 2 et 4 dans `app.js` (liste dans « Point d'arrêt ») : lettre O/R/E/M et `Core.itemState`/`Core.phaseState` partout, choix de l'offre à la création, panneau « Mettre en ligne » (`project.deliver`), checklist de remise, avis client, retrait de la case WhatsApp de l'accueil guidé, tutoriels lus dans `p.tutorials`, `runReminders` réel. Puis enchaîne les lots 3, 5, 6, 7 et 8 (section 5), dans l'ordre.
+>
+> Après chaque lot : rejouer les deux tests, regénérer la démo (`node build-demo.js`), commit et push sur la même branche, puis republier la démo en artifact privé.
+>
+> Règles impératives : tout reste en local, rien en ligne ni sur un nom de domaine sans validation de Louis ; aucun e-mail réel (`MAIL_ENABLED` reste vide) ; aucun appel aux vrais comptes Pipedrive, Abby, Qonto ou Google sans accord ; ne jamais afficher ni écrire une clé (elles sont dans le coffre Notion, skill `cles-api`) ; pas de nom de modèle dans les commits ni la PR. Réponds en français avec les règles d'écriture Orem : jamais de tiret long, guillemets « », espace avant `: ; ! ?`, « agence » et jamais « studio », jamais le mot « suivi », registre tu/vous choisi par client et jamais deviné.
 ---
 
 ## 2. Ce qu'on construit (la demande de Louis)
