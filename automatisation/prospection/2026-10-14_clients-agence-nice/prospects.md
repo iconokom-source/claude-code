@@ -4,7 +4,7 @@ Recherche du 14/10/2026 : sites des clients, mentions légales et registre reche
 
 Contrairement à ce qu'on pensait, la clientèle n'est pas surtout sur la Côte d'Azur : seuls le Club Nautique et le Santa Lucia y sont. Les autres sont dans l'Ain, le Bas-Rhin, le Finistère, le Gard, l'Hérault, la Charente-Maritime et en Meurthe-et-Moselle.
 
-## Importés dans Lemlist (campagne `cam_cDpBjZcbFcztRXsk5`, en pause)
+## Importés dans Lemlist (campagne `cam_cDpBjZcbFcztRXsk5`, lancée le 14/10)
 
 | Entreprise | Ville | Décideur | Email | Tél | `siteObservation` (vérifié le 14/10) |
 |---|---|---|---|---|---|
@@ -34,7 +34,7 @@ Les adresses Gmail, Hotmail et Outlook sont celles que les entreprises publient 
 - Avocate Katia Ouddiz-Nakache (Toulouse) : site introuvable.
 - Auteurs d'avis sans entreprise identifiable : voir `avis-google.md`.
 
-## Ajoutés le 14/10 depuis les avis Google (même campagne, en pause)
+## Ajoutés le 14/10 depuis les avis Google (même campagne, lancée le 14/10)
 
 Source : `prospects-avis.md` (clients confirmés par le crédit « Group Easyweb » sur leur site). Aucun n'existait dans les contacts Lemlist. LinkedIn via la base Lemlist ou la recherche.
 

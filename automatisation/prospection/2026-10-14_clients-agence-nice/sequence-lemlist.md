@@ -1,6 +1,6 @@
 # Séquence Lemlist : « Site payé au mois, jamais vraiment à vous »
 
-Campagne Lemlist « 🔑 FR - Site en location / reprise en main - Multicanal » (`cam_cDpBjZcbFcztRXsk5`), **en pause** avec 21 leads, aucun message envoyé (lancée puis mise en pause le 14/10 après un malentendu ; validation automatique des nouveaux leads désactivée). Expéditeur : Louis, boîte iconokom@gmail.com (choix du 14/10, louis@iconokom.fr envisagée plus tard) + son compte LinkedIn. L'ancienne version linéaire (`cam_z37C7sANHetY9Bh4J`) est archivée.
+Campagne Lemlist « 🔑 FR - Site en location / reprise en main - Multicanal » (`cam_cDpBjZcbFcztRXsk5`), **lancée le 14/10/2026 avec 21 leads** (validation automatique des nouveaux leads désactivée : tout lead ajouté plus tard doit être validé à la main). Expéditeur : Louis, boîte iconokom@gmail.com (choix du 14/10, louis@iconokom.fr envisagée plus tard) + son compte LinkedIn. L'ancienne version linéaire (`cam_z37C7sANHetY9Bh4J`) est archivée.
 
 ## Cible
 
