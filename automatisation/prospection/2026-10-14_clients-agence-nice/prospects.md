@@ -11,7 +11,7 @@ Contrairement à ce qu'on pensait, la clientèle n'est pas surtout sur la Côte 
 | Bourion Express | Bainville-sur-Madon (54) | Alexandre Bourion, président | bourionexpress@outlook.fr | 06 29 98 66 21 | site en `noindex, nofollow` : invisible sur Google |
 | DF Clôtures Création | Wisches (67) | Francisco Martins, gérant | contact@dfcloturescreation.fr | 06 18 93 51 62 | 2 sites en ligne (df-clotures.fr / dfclotures.fr), 2 numéros |
 | Florent Traiteur | Claret (34) | Florian Monin | contact@florent-traiteur.com | 06 16 75 35 75 | 2 sites en ligne, onglet « FLORENT RAITEUR » |
-| Le Santa Lucia | Villeneuve-Loubet (06) | Joëlle Dadoune, gérante | santa-lucia@hotmail.fr | 04 93 73 10 10 | 2 versions du site sur 2 domaines |
+| Santa Lucia (SARL Giuliano) | Villeneuve-Loubet (06) | Joëlle Dadoune, gérante | santa-lucia@hotmail.fr | 04 93 73 10 10 | 2 versions du site sur 2 domaines |
 | VTC Luxury Car | La Rochelle (17) | Syril Soubilleau | vtcluxurycar@gmail.com | 07 71 02 07 35 | 2 sites en ligne (vtc-luxurycar.fr / vtcluxurycar.fr) |
 | N&CO Paysage | Val-Revermont (01) | Nicolas Charbin, gérant | contact@ncopaysage01.fr | 06 70 72 92 02 | aucun |
 | 3S Services Piscine | Canaules-et-Argentières (30) | Allan Scheer, gérant | contact@3spiscine.fr | 06 33 83 87 53 | aucun |

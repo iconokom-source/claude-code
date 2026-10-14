@@ -81,7 +81,7 @@ Bonjour {{firstName}},
 
 *[Segment 2023]* Beaucoup de sites vitrines ont été vendus en 2023 sous forme de location sur 48 mois. Si c'est votre cas, votre engagement se termine courant 2027, et c'est maintenant qu'il faut préparer la suite : selon les contrats, il peut être reconduit tacitement, ou le site peut disparaître le jour où les loyers s'arrêtent.
 
-*[Si `siteObservation`]* En regardant le site de {{companyName}}, j'ai remarqué que {{siteObservation}}.
+*[Si `siteObservation`]* En regardant votre site, j'ai remarqué que {{siteObservation}}. (La variable doit commencer par un mot qui suit naturellement « que » : pas de « il », pas de « votre site ».)
 
 Ce n'est peut-être pas votre situation, mais trois questions valent d'être posées :
 - Combien payez-vous chaque mois pour votre site, et jusqu'à quand ?
