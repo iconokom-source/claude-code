@@ -1,0 +1,393 @@
+/* Espace client Orem : serveur sans dépendance.
+   Local :      node server.js  →  http://localhost:3000
+   Production : voir docs/conception.md (BASE_URL en https, MAIL_ENABLED, HOST derrière un proxy HTTPS).
+   Données : data/db.json · Fichiers déposés : data/uploads/<projet>/<fichier> */
+const http = require('node:http');
+const fs = require('node:fs');
+const path = require('node:path');
+const crypto = require('node:crypto');
+const zlib = require('node:zlib');
+const Core = require('./public/core.js');
+const Connectors = require('./connectors.js');
+
+/* ---------- Configuration ---------- */
+const PORT = Number(process.env.PORT) || 3000;
+const HOST = process.env.HOST || '127.0.0.1';
+const LOOPBACK = ['127.0.0.1', 'localhost', '::1'].includes(HOST);
+const BASE_URL = (process.env.BASE_URL || `http://localhost:${PORT}`).replace(/\/$/, '');
+const HTTPS = BASE_URL.startsWith('https://');
+const MAIL_ENABLED = process.env.MAIL_ENABLED === '1' && !!process.env.BREVO_API_KEY;
+const MAIL_FROM = process.env.MAIL_FROM || 'espace@agence-orem.fr';
+// Le code de connexion n'est montré à l'écran qu'en local, sans envoi d'e-mail. Jamais quand le serveur est exposé.
+const SHOW_CODES = LOOPBACK && !MAIL_ENABLED && process.env.DEV_CODES !== '0';
+const DATA = path.resolve(process.env.DATA_DIR || path.join(__dirname, 'data'));
+const DB_FILE = path.join(DATA, 'db.json');
+const UPLOADS = path.join(DATA, 'uploads');
+const PUBLIC = path.join(__dirname, 'public');
+const MAX_UPLOAD = 2 * 1024 ** 3;            // 2 Go par fichier
+const PROJECT_QUOTA = 20 * 1024 ** 3;        // 20 Go par projet
+const CODE_TTL = 15 * 60 * 1000;
+const SESSION_TTL = 30 * 24 * 3600 * 1000;
+const COOKIE = HTTPS ? '__Host-sid' : 'sid';
+
+if (!LOOPBACK && !HTTPS) { console.error('Refus de démarrer : un serveur exposé doit avoir BASE_URL en https://'); process.exit(1); }
+if (!LOOPBACK && !MAIL_ENABLED) { console.error('Refus de démarrer : un serveur exposé doit envoyer les codes par e-mail (MAIL_ENABLED=1 et BREVO_API_KEY).'); process.exit(1); }
+
+fs.mkdirSync(UPLOADS, { recursive: true });
+const sha = (s) => crypto.createHash('sha256').update(String(s)).digest('hex');
+const log = (event, data = {}) => console.log(JSON.stringify({ at: new Date().toISOString(), event, ...data }));
+
+/* ---------- Stockage ----------
+   Écriture atomique (fichier temporaire puis renommage) au plus toutes les 250 ms, jamais repoussée indéfiniment. */
+let db;
+if (fs.existsSync(DB_FILE)) db = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+else { db = { ...Core.seed(), sessions: {}, codes: {} }; log('db.created', { file: DB_FILE }); }
+db.sessions ||= {}; db.codes ||= {}; db.notifications ||= []; db.outbox ||= []; db.meta ||= {}; db.webhooks ||= [];
+let saveTimer = null, dirty = false;
+function flush() {
+  saveTimer = null; if (!dirty) return; dirty = false;
+  const tmp = DB_FILE + '.tmp';
+  const fd = fs.openSync(tmp, 'w');
+  try { fs.writeSync(fd, JSON.stringify(db)); fs.fsyncSync(fd); } finally { fs.closeSync(fd); }
+  fs.renameSync(tmp, DB_FILE);
+}
+function save() { dirty = true; if (!saveTimer) saveTimer = setTimeout(flush, 250); }
+save();
+for (const sig of ['SIGINT', 'SIGTERM']) process.on(sig, () => { try { flush(); } finally { process.exit(0); } });
+
+/* ---------- E-mails ---------- */
+async function sendMail(m) {
+  const entry = { at: new Date().toISOString(), to: m.to, subject: m.subject, html: m.html, sent: false };
+  db.outbox.unshift(entry); db.outbox.length = Math.min(db.outbox.length, 200); save();
+  if (!MAIL_ENABLED) { log('mail.local', { to: m.to, subject: m.subject }); return; }
+  try {
+    const r = await fetch('https://api.brevo.com/v3/smtp/email', { method: 'POST', headers: { 'api-key': process.env.BREVO_API_KEY, 'Content-Type': 'application/json', accept: 'application/json' },
+      body: JSON.stringify({ sender: { name: 'Orem', email: MAIL_FROM }, to: [{ email: m.to, name: m.name }], subject: m.subject, htmlContent: m.html, textContent: m.text }) });
+    entry.sent = r.ok; if (!r.ok) log('mail.refused', { status: r.status }); save();
+  } catch (e) { log('mail.error', { message: e.message }); }
+}
+/* Les e-mails « instantanés » sont regroupés par destinataire pendant 2 minutes : pas de rafale. */
+const pending = new Map();
+function deliver(notices) {
+  if (!notices || !notices.length) return;
+  for (const n of notices) {
+    const list = pending.get(n.userId) || []; list.push(n); pending.set(n.userId, list);
+    if (list.length === 1) setTimeout(() => { const items = pending.get(n.userId) || []; pending.delete(n.userId); Core.emailsFor(db, items, BASE_URL, true).forEach(sendMail); }, Number(process.env.MAIL_BATCH_MS || 120000)).unref();
+  }
+}
+function sendDigests(force, onlyUser) {
+  const today = new Date().toISOString().slice(0, 10);
+  if (!force && (new Date().getHours() < 18 || db.meta.lastDigest === today)) return 0;
+  let n = 0;
+  for (const u of db.users.filter((x) => x.role === 'admin' && (onlyUser ? x.id === onlyUser.id : Core.prefsOf(x).email === 'digest'))) {
+    const m = Core.digestFor(db, u, new Date(Date.now() - 864e5).toISOString(), BASE_URL); if (m) { sendMail(m); n++; }
+  }
+  if (!force) { db.meta.lastDigest = today; save(); }
+  return n;
+}
+/* Tâches de fond : récap à 18 h, relances automatiques, purge des sessions et codes expirés. */
+setInterval(() => {
+  sendDigests(false);
+  const r = Core.runReminders(db, Date.now()); if (r.notices.length) { save(); deliver(r.notices); }
+  const now = Date.now(); let changed = false;
+  for (const [k, s] of Object.entries(db.sessions)) if (s.exp < now) { delete db.sessions[k]; changed = true; }
+  for (const [k, c] of Object.entries(db.codes)) if (c.exp < now) { delete db.codes[k]; changed = true; }
+  for (const [k, v] of hits) if (v.reset < now) hits.delete(k);
+  if (changed) save();
+}, 5 * 60 * 1000).unref();
+
+/* ---------- Limitation de débit ---------- */
+const hits = new Map();
+function limited(key, max, windowMs) {
+  const now = Date.now(); const h = hits.get(key) || { n: 0, reset: now + windowMs };
+  if (h.reset < now) { h.n = 0; h.reset = now + windowMs; }
+  h.n++; hits.set(key, h); return h.n > max;
+}
+const ipOf = (req) => (process.env.TRUST_PROXY === '1' && String(req.headers['x-forwarded-for'] || '').split(',')[0].trim()) || req.socket.remoteAddress || '?';
+
+/* ---------- HTTP ---------- */
+const SEC_HEADERS = {
+  'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'X-Frame-Options': 'DENY', 'Cross-Origin-Opener-Policy': 'same-origin',
+  'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+  'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; frame-src https://www.loom.com https://www.figma.com https://embed.figma.com; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'",
+  ...(HTTPS ? { 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains' } : {})
+};
+function send(res, status, body, headers = {}) {
+  const isObj = typeof body === 'object' && !Buffer.isBuffer(body);
+  res.writeHead(status, { 'Content-Type': isObj ? 'application/json; charset=utf-8' : 'text/plain; charset=utf-8', 'Cache-Control': 'no-store', ...SEC_HEADERS, ...headers });
+  res.end(isObj ? JSON.stringify(body) : body);
+}
+class HttpError extends Error { constructor(status, msg) { super(msg); this.status = status; } }
+function readJson(req, max = 256 * 1024) {
+  return new Promise((resolve, reject) => {
+    let raw = '';
+    req.on('data', (c) => { raw += c; if (raw.length > max) { reject(new HttpError(413, 'Requête trop lourde.')); req.destroy(); } });
+    req.on('end', () => {
+      try { const v = raw ? JSON.parse(raw) : {}; if (!v || typeof v !== 'object' || Array.isArray(v)) throw 0; resolve(v); }
+      catch { reject(new HttpError(400, 'Requête invalide.')); }
+    });
+    req.on('error', () => reject(new HttpError(400, 'Requête interrompue.')));
+  });
+}
+function cookie(req, name) {
+  for (const part of String(req.headers.cookie || '').split(';')) {
+    const i = part.indexOf('='); if (i < 0) continue;
+    if (part.slice(0, i).trim() !== name) continue;
+    const v = part.slice(i + 1).trim(); try { return decodeURIComponent(v); } catch { return v; }
+  }
+  return null;
+}
+function currentUser(req) {
+  const sid = cookie(req, COOKIE); if (!sid) return null;
+  const s = db.sessions[sha(sid)];
+  if (!s || s.exp < Date.now()) return null;
+  return db.users.find((u) => u.id === s.uid) || null;
+}
+function openSession(res, user) {
+  const sid = crypto.randomBytes(32).toString('hex');
+  db.sessions[sha(sid)] = { uid: user.id, exp: Date.now() + SESSION_TTL, at: Date.now() };
+  save(); log('auth.session', { user: user.id });
+  res.setHeader('Set-Cookie', `${COOKIE}=${sid}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${SESSION_TTL / 1000}${HTTPS ? '; Secure' : ''}`);
+}
+const clearCookie = (res) => res.setHeader('Set-Cookie', `${COOKIE}=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0${HTTPS ? '; Secure' : ''}`);
+/* Ce qu'on renvoie d'une personne : le client ne voit jamais les réglages internes de l'agence. */
+const publicUser = (u, viewer) => u && { id: u.id, email: u.email, name: u.name, role: u.role, projectId: u.projectId, title: u.title, wa: u.wa, phone: u.phone, photo: u.photo, onboardedAt: u.onboardedAt, prefs: viewer && viewer.id === u.id ? u.prefs : undefined,
+  notify: viewer && viewer.id === u.id && u.role === 'admin' ? Core.prefsOf(u) : undefined };
+const team = (viewer) => db.users.filter((u) => u.role === 'admin').map((u) => publicUser(u, viewer));
+
+/* ---------- Connexion par code ou lien ---------- */
+function requestCode(email, ip) {
+  if (limited('login-ip:' + ip, 20, 15 * 60e3)) return { status: 429, error: 'Trop de demandes depuis cet appareil. Réessayez dans quelques minutes.' };
+  if (limited('login-mail:' + email, 5, 15 * 60e3)) return { status: 429, error: 'Trop de demandes pour cette adresse. Réessayez dans quelques minutes.' };
+  const user = db.users.find((u) => u.email === email);
+  if (!user) { log('auth.unknown', { ip }); return { ok: true }; } // même réponse : on ne révèle pas qui a un compte
+  const lock = db.meta['lock:' + email]; if (lock && lock > Date.now()) return { ok: true };
+  const code = String(crypto.randomInt(0, 1e6)).padStart(6, '0');
+  const token = crypto.randomBytes(24).toString('hex');
+  const prev = db.codes[sha(email)];
+  db.codes[sha(email)] = { code: sha(email + ':' + code), token: sha(token), exp: Date.now() + CODE_TTL, tries: prev ? prev.tries : 0 };
+  save(); log('auth.code', { user: user.id, ip });
+  const link = `${BASE_URL}/auth/${token}`;
+  if (SHOW_CODES) console.log(`\n✉️  Connexion de ${email}\n   Code : ${code}\n   Lien : ${link}\n`);
+  if (MAIL_ENABLED) sendMail(Core.loginMail(user, code, link));
+  return { ok: true, devCode: SHOW_CODES ? code : undefined };
+}
+function failed(email) {
+  const k = 'fail:' + email, now = Date.now(); const f = (db.meta[k] || []).filter((t) => t > now - 864e5); f.push(now); db.meta[k] = f;
+  if (f.length >= 10) { db.meta['lock:' + email] = now + 3600e3; delete db.codes[sha(email)]; log('auth.locked', { email: sha(email).slice(0, 8) }); }
+  save();
+}
+function verifyCode(email, code, ip) {
+  if (limited('verify-ip:' + ip, 30, 15 * 60e3)) return { status: 429, error: 'Trop d’essais depuis cet appareil. Réessayez dans quelques minutes.' };
+  const lock = db.meta['lock:' + email]; if (lock && lock > Date.now()) return { error: 'Trop d’essais. Réessayez dans une heure.' };
+  const c = db.codes[sha(email)];
+  if (!c || c.exp < Date.now()) return { error: 'Code incorrect ou expiré. Demandez-en un nouveau.' };
+  if (++c.tries > 5) { delete db.codes[sha(email)]; failed(email); return { error: 'Trop d’essais avec ce code. Demandez-en un nouveau.' }; }
+  const given = Buffer.from(sha(email + ':' + String(code).replace(/\D/g, '').padStart(6, '0').slice(0, 6)));
+  if (!crypto.timingSafeEqual(given, Buffer.from(c.code))) { failed(email); save(); return { error: 'Code incorrect. Vérifiez les 6 chiffres reçus par e-mail.' }; }
+  delete db.codes[sha(email)]; save();
+  const u = db.users.find((x) => x.email === email);
+  return u ? { user: u } : { error: 'Code incorrect ou expiré. Demandez-en un nouveau.' };
+}
+function verifyLink(token, ip) {
+  if (limited('link-ip:' + ip, 30, 15 * 60e3)) return null;
+  const h = sha(String(token));
+  const entry = Object.entries(db.codes).find(([, c]) => c.token === h && c.exp > Date.now());
+  if (!entry) return null;
+  delete db.codes[entry[0]]; save();
+  return db.users.find((x) => sha(x.email) === entry[0]) || null;
+}
+
+/* ---------- Fichiers statiques (compressés, mis en cache) ---------- */
+const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.ico': 'image/x-icon', '.webp': 'image/webp' };
+function serveStatic(req, res, pathname) {
+  let rel; try { rel = decodeURIComponent(pathname === '/' ? 'index.html' : pathname.slice(1)); } catch { return send(res, 400, 'Requête invalide.'); }
+  let file = path.normalize(path.join(PUBLIC, rel));
+  if (!file.startsWith(PUBLIC + path.sep)) return send(res, 404, 'Introuvable.');
+  let st = null; try { st = fs.statSync(file); } catch {}
+  if (!st || !st.isFile()) {
+    if (path.extname(rel)) return send(res, 404, 'Introuvable.');
+    file = path.join(PUBLIC, 'index.html'); st = fs.statSync(file); // application d'une seule page
+  }
+  const etag = `"${st.size.toString(36)}-${Math.floor(st.mtimeMs).toString(36)}"`;
+  const longCache = file.includes(path.sep + 'assets' + path.sep);
+  const base = { ...SEC_HEADERS, ETag: etag, 'Cache-Control': longCache ? 'public, max-age=604800' : 'no-cache', Vary: 'Accept-Encoding' };
+  if (req.headers['if-none-match'] === etag) { res.writeHead(304, base); return res.end(); }
+  const gz = /\bgzip\b/.test(req.headers['accept-encoding'] || '') && /\.(js|css|html|svg)$/.test(file);
+  res.writeHead(200, { ...base, 'Content-Type': TYPES[path.extname(file)] || 'application/octet-stream', ...(gz ? { 'Content-Encoding': 'gzip' } : { 'Content-Length': st.size }) });
+  const stream = fs.createReadStream(file); stream.on('error', () => res.destroy());
+  (gz ? stream.pipe(zlib.createGzip()) : stream).pipe(res);
+}
+
+/* ---------- Routes ---------- */
+const IMGT = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.gif': 'image/gif' };
+const PDFT = { '.pdf': 'application/pdf' };
+function filePath(f) {
+  if (!f || !f.path) return null;
+  const abs = path.resolve(DATA, f.path);
+  return abs.startsWith(UPLOADS + path.sep) ? abs : null;
+}
+function projectBytes(pr) { return pr.files.reduce((s, f) => s + (f.path ? Number(f.size) || 0 : 0), 0); }
+
+async function handle(req, res) {
+  let url; try { url = new URL(req.url, BASE_URL); } catch { return send(res, 400, { error: 'Requête invalide.' }); }
+  const p = url.pathname, ip = ipOf(req);
+  const mutating = req.method !== 'GET' && req.method !== 'HEAD';
+  // Protection CSRF : toute écriture doit venir de notre propre interface (en-tête personnalisé, impossible depuis un autre site).
+  if (p.startsWith('/api/') && mutating && req.headers['x-orem'] !== '1' && !p.startsWith('/api/hooks/')) return send(res, 403, { error: 'Requête refusée.' });
+
+  /* Webhooks entrants (Pipedrive…) : signés par un secret partagé, sans session. */
+  let m = p.match(/^\/api\/hooks\/([a-z]+)$/);
+  if (m && req.method === 'POST') {
+    const body = await readJson(req, 512 * 1024);
+    const r = Connectors.webhook(m[1], body, req.headers, db, process.env);
+    if (r.error) { log('hook.refused', { source: m[1], reason: r.error }); return send(res, r.status || 400, { error: r.error }); }
+    save(); deliver(r.notices); log('hook.ok', { source: m[1], result: r.summary });
+    return send(res, 200, { ok: true });
+  }
+
+  if (p === '/api/login' && req.method === 'POST') {
+    const { email } = await readJson(req);
+    const r = requestCode(String(email || '').trim().toLowerCase().slice(0, 200), ip);
+    return send(res, r.status || 200, r.status ? { error: r.error } : r);
+  }
+  if (p === '/api/verify' && req.method === 'POST') {
+    const { email, code } = await readJson(req);
+    const r = verifyCode(String(email || '').trim().toLowerCase().slice(0, 200), String(code || ''), ip);
+    if (!r.user) return send(res, r.status || 401, { error: r.error });
+    openSession(res, r.user);
+    return send(res, 200, { ok: true });
+  }
+  // Le lien reçu par e-mail ouvre une page qui demande de confirmer : les antivirus de messagerie ne le « consomment » plus.
+  if (p === '/api/auth/link' && req.method === 'POST') {
+    const { token } = await readJson(req);
+    const u = verifyLink(String(token || '').slice(0, 200), ip);
+    if (!u) return send(res, 401, { error: 'Ce lien a expiré ou a déjà servi. Demandez-en un nouveau.' });
+    openSession(res, u); return send(res, 200, { ok: true });
+  }
+  if (p === '/api/logout' && req.method === 'POST') {
+    const sid = cookie(req, COOKIE); if (sid) { delete db.sessions[sha(sid)]; save(); }
+    if (req.headers['x-all'] === '1') { const u = currentUser(req); if (u) { for (const [k, s] of Object.entries(db.sessions)) if (s.uid === u.id) delete db.sessions[k]; save(); } }
+    clearCookie(res); return send(res, 200, { ok: true });
+  }
+
+  if (!p.startsWith('/api/')) return serveStatic(req, res, p);
+  const user = currentUser(req);
+  if (!user) return send(res, 401, { error: 'Connectez-vous pour continuer.' });
+  if (mutating && limited('act:' + user.id, 120, 60e3)) return send(res, 429, { error: 'Trop d’actions en peu de temps. Patientez une minute.' });
+
+  if (p === '/api/me') return send(res, 200, { user: publicUser(user, user), team: team(user), config: Core.publicConfig(db) });
+  if (p === '/api/logout-all' && req.method === 'POST') { for (const [k, s] of Object.entries(db.sessions)) if (s.uid === user.id) delete db.sessions[k]; save(); clearCookie(res); return send(res, 200, { ok: true }); }
+  if (p === '/api/inbox' && req.method === 'GET') return send(res, 200, { items: Core.inbox(db, user) });
+  if (p === '/api/inbox/read' && req.method === 'POST') { const b = await readJson(req); Core.readNotif(db, user, typeof b.id === 'string' ? b.id : null, b.ids); save(); return send(res, 200, { ok: true }); }
+  if (p === '/api/me/prefs' && req.method === 'POST') { const r = Core.setPrefs(db, user, await readJson(req)); if (r.ok) save(); return send(res, r.error ? 400 : 200, r); }
+  if (p === '/api/outbox' && req.method === 'GET') { if (user.role !== 'admin') return send(res, 403, { error: 'Réservé à l’équipe.' }); return send(res, 200, { enabled: MAIL_ENABLED, items: db.outbox.filter((x) => x.to === user.email || db.users.some((u) => u.email === x.to && u.role !== 'admin')).slice(0, 50) }); }
+  if (p === '/api/digest' && req.method === 'POST') { if (user.role !== 'admin') return send(res, 403, { error: 'Réservé à l’équipe.' }); return send(res, 200, { ok: true, sent: sendDigests(true, user) }); }
+  if (p === '/api/settings' && req.method === 'POST') { const r = Core.setSettings(db, user, await readJson(req)); if (r.ok) save(); return send(res, r.error ? 400 : 200, r); }
+  if (p === '/api/connectors' && req.method === 'GET') { if (user.role !== 'admin') return send(res, 403, { error: 'Réservé à l’équipe.' }); return send(res, 200, Connectors.status(process.env, db)); }
+  m = p.match(/^\/api\/connectors\/([a-z]+)\/sync$/);
+  if (m && req.method === 'POST') {
+    if (user.role !== 'admin') return send(res, 403, { error: 'Réservé à l’équipe.' });
+    const b = await readJson(req);
+    const r = await Connectors.sync(m[1], db, process.env, typeof b.projectId === 'string' ? b.projectId : null, user);
+    if (r.error) return send(res, 400, { error: r.error });
+    save(); deliver(r.notices); return send(res, 200, { ok: true, summary: r.summary });
+  }
+
+  if (p === '/api/projects' && req.method === 'GET') return send(res, 200, { projects: db.projects.filter((pr) => Core.canSee(user, pr)).map(Core.summary) });
+  if (p === '/api/projects' && req.method === 'POST') { const r = Core.createProject(db, user, await readJson(req)); if (r.ok) save(); return send(res, r.error ? 400 : 200, r); }
+
+  m = p.match(/^\/api\/projects\/([\w-]+)$/);
+  if (m && req.method === 'GET') {
+    const pr = db.projects.find((x) => x.id === m[1]);
+    if (!pr || !Core.canSee(user, pr)) return send(res, 404, { error: 'Projet introuvable.' });
+    const access = user.role === 'admin' ? db.users.filter((u) => u.projectId === pr.id).map((u) => publicUser(u, user)) : undefined;
+    const people = Object.fromEntries(db.users.filter((u) => u.role === 'admin' || u.projectId === pr.id).map((u) => [u.id, u.name]));
+    return send(res, 200, { project: Core.forUser(pr, user), access, people });
+  }
+
+  m = p.match(/^\/api\/projects\/([\w-]+)\/action$/);
+  if (m && req.method === 'POST') {
+    const action = await readJson(req);
+    const pr = db.projects.find((x) => x.id === m[1]);
+    const doomed = action.type === 'file.remove' && pr && Core.canSee(user, pr) ? pr.files.find((f) => f.id === action.fid) : null;
+    const r = Core.apply(db, m[1], user, action);
+    if (r.ok) {
+      save(); deliver(r.notices);
+      if (doomed) { const abs = filePath(doomed); if (abs) fs.rm(abs, { force: true }, () => {}); }
+    }
+    const { notices, ...pub } = r;
+    return send(res, r.error ? 400 : 200, pub);
+  }
+
+  m = p.match(/^\/api\/projects\/([\w-]+)\/ask$/);
+  if (m && req.method === 'POST') {
+    const pr = db.projects.find((x) => x.id === m[1]);
+    if (!pr || !Core.canSee(user, pr)) return send(res, 404, { error: 'Projet introuvable.' });
+    if (limited('ask:' + user.id, 20, 60 * 60e3)) return send(res, 429, { error: 'Vous avez posé beaucoup de questions. Réessayez dans un moment, ou écrivez à l’équipe.' });
+    const { question } = await readJson(req);
+    const r = await Connectors.ask(pr, user, String(question || '').slice(0, 600), process.env, db);
+    return send(res, 200, r);
+  }
+
+  // Dépôt de fichier : corps brut, nom et catégorie en paramètres. L'enregistrement est créé par le serveur, jamais par le navigateur.
+  m = p.match(/^\/api\/projects\/([\w-]+)\/files$/);
+  if (m && req.method === 'POST') {
+    const pr = db.projects.find((x) => x.id === m[1]);
+    if (!pr || !Core.canSee(user, pr)) return send(res, 404, { error: 'Projet introuvable.' });
+    if (limited('up:' + user.id, 60, 60e3)) return send(res, 429, { error: 'Trop d’envois en peu de temps. Patientez une minute.' });
+    const name = path.basename(String(url.searchParams.get('name') || 'fichier')).replace(/[\u0000-\u001f<>"\\]/g, '').slice(0, 200) || 'fichier';
+    const len = Number(req.headers['content-length'] || 0);
+    if (len > MAX_UPLOAD) return send(res, 413, { error: 'Fichier trop lourd (2 Go maximum).' });
+    if (projectBytes(pr) + len > PROJECT_QUOTA) return send(res, 413, { error: 'L’espace de ce projet est plein. Écrivez à l’équipe pour faire de la place.' });
+    const id = 'f_' + crypto.randomBytes(12).toString('hex');
+    const dir = path.join(UPLOADS, pr.id); fs.mkdirSync(dir, { recursive: true });
+    const dest = path.join(dir, id);
+    let size = 0, done = false;
+    const out = fs.createWriteStream(dest);
+    const fail = (status, msg) => { if (done) return; done = true; req.unpipe(out); out.destroy(); fs.rm(dest, { force: true }, () => {}); if (!res.headersSent) send(res, status, { error: msg }); };
+    req.on('data', (c) => { size += c.length; if (size > MAX_UPLOAD) fail(413, 'Fichier trop lourd (2 Go maximum).'); });
+    req.on('aborted', () => fail(400, 'Envoi interrompu.'));
+    req.on('error', () => fail(400, 'Envoi interrompu.'));
+    out.on('error', () => fail(500, 'Enregistrement impossible. Réessayez.'));
+    req.pipe(out);
+    out.on('finish', () => {
+      if (done) return; done = true;
+      const r = Core.addFile(db, pr.id, user, { id, name, size, cat: url.searchParams.get('cat'), path: path.relative(DATA, dest) });
+      if (r.error) { fs.rm(dest, { force: true }, () => {}); return send(res, 400, { error: r.error }); }
+      save(); deliver(r.notices);
+      send(res, 200, { ok: true, file: Core.forUser({ files: [r.file], activity: [] }, user).files[0] });
+    });
+    return;
+  }
+
+  m = p.match(/^\/api\/files\/([\w-]+)$/);
+  if (m && req.method === 'GET') {
+    const pr = db.projects.find((x) => Core.canSee(user, x) && x.files.some((f) => f.id === m[1]));
+    const f = pr && pr.files.find((x) => x.id === m[1]);
+    const abs = filePath(f);
+    let st = null; try { st = abs && fs.statSync(abs); } catch {}
+    if (!f || !st || !st.isFile()) return send(res, 404, { error: f ? 'Fichier introuvable.' : 'Ce fichier d’exemple n’existe pas sur le disque.' });
+    const ext = path.extname(f.name).toLowerCase();
+    const viewType = IMGT[ext] || PDFT[ext];
+    const inline = url.searchParams.get('inline') === '1' && viewType;
+    res.writeHead(200, { ...SEC_HEADERS, 'Content-Type': inline ? viewType : 'application/octet-stream', 'Content-Length': st.size, 'Cache-Control': 'private, max-age=3600',
+      'Content-Disposition': `${inline ? 'inline' : 'attachment'}; filename*=UTF-8''${encodeURIComponent(f.name)}`, ...(inline === PDFT['.pdf'] ? { 'Content-Security-Policy': "default-src 'none'; frame-ancestors 'self'" } : {}) });
+    const stream = fs.createReadStream(abs); stream.on('error', () => res.destroy()); log('file.download', { user: user.id, file: f.id });
+    return stream.pipe(res);
+  }
+
+  return send(res, 404, { error: 'Introuvable.' });
+}
+
+const server = http.createServer((req, res) => {
+  handle(req, res).catch((e) => {
+    if (!(e instanceof HttpError)) log('error', { message: e.message, stack: String(e.stack).split('\n').slice(0, 3).join(' | ') });
+    if (!res.headersSent) send(res, e.status || 500, { error: e instanceof HttpError ? e.message : 'Une erreur est survenue. Réessayez.' });
+  });
+});
+server.requestTimeout = 2 * 3600 * 1000; // dépôts de gros fichiers sur une connexion lente
+server.listen(PORT, HOST, () => {
+  console.log(`\nEspace client Orem : ${BASE_URL}`);
+  if (SHOW_CODES) console.log('Mode local : les codes de connexion s’affichent ici et à l’écran. Rien n’est envoyé par e-mail.\n');
+});
