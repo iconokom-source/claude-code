@@ -19,14 +19,16 @@ const errs = [];
   const claire = await login('claire@maisonlumen.fr');
   await claire.click('.side [data-go=messages]'); await claire.fill('#msg-t', 'Pouvez-vous ajouter une page Presse ?'); await claire.click('form[data-form=msg] button'); await claire.waitForTimeout(300);
 
+  const hugo0 = await login('hugo@huchet-demorge.fr');
+  await hugo0.click('.side [data-go=messages]'); await hugo0.fill('#msg-t', 'Peut-on ajouter le logo du cabinet en pied de page ?'); await hugo0.click('form[data-form=msg] button'); await hugo0.waitForTimeout(300);
   const louis = await login('louis@agence-orem.fr');
   const todo = await louis.locator('[data-inbox=todo] .num').innerText(), badge = await louis.locator('.side [data-go=inbox] .badge').innerText();
   ok('Boîte de réception : « À traiter » par défaut, badge = nombre à traiter', (await louis.getAttribute('[data-inbox=todo]', 'aria-pressed')) === 'true' && badge.replace(/\D/g, '') === todo, `${badge} / ${todo}`);
-  ok('« À traiter » : le message de Claire et la demande de Hugo, pas l’activité des collègues', /Claire : « Pouvez-vous ajouter une page Presse/.test(await main(louis)) && /Hugo demande une évolution/.test(await main(louis)) && !/Louis a demandé la validation/.test(await main(louis)));
+  ok('« À traiter » : les messages de Claire et de Hugo, pas l’activité des collègues', /Claire : « Pouvez-vous ajouter une page Presse/.test(await main(louis)) && /Hugo : « Peut-on ajouter le logo/.test(await main(louis)) && !/Louis a demandé la validation/.test(await main(louis)));
   await louis.selectOption('#ib-c', 'p_huchet'); await louis.waitForTimeout(150);
   ok('Filtre par client : seulement Huchet-Demorge', !/Claire/.test(await louis.locator('.panel').last().innerText()) && /Hugo/.test(await main(louis)));
-  await louis.selectOption('#ib-c', ''); await louis.selectOption('#ib-t', 'messages'); await louis.waitForTimeout(150);
-  ok('Filtre par type : seulement les messages', !/Hugo demande une évolution/.test(await main(louis)) && /Pouvez-vous/.test(await main(louis)));
+  await louis.selectOption('#ib-c', ''); await louis.waitForTimeout(150);
+  ok('Filtre par type : seulement les fichiers', (await louis.selectOption('#ib-t', 'files'), await louis.waitForTimeout(150), !/Pouvez-vous/.test(await main(louis)) && /a déposé/.test(await main(louis))));
   await louis.selectOption('#ib-t', '');
   // Répondre directement
   await louis.locator('.inbox-item', { hasText: 'Pouvez-vous ajouter' }).locator('[data-act=reply]').click(); await louis.waitForTimeout(100);
@@ -36,11 +38,11 @@ const errs = [];
   await claire.reload(); await claire.waitForSelector('#main'); await claire.click('.side [data-go=messages]'); await claire.waitForTimeout(200);
   ok('Claire reçoit la réponse dans son espace', /on vous la propose au prochain point/.test(await main(claire)));
   const before = Number((await louis.locator('.side [data-go=inbox] .badge').innerText()).replace(/\D/g, ''));
-  await louis.locator('.inbox-item', { hasText: 'Hugo demande une évolution' }).first().locator('[data-act=done]').click(); await louis.waitForTimeout(300);
+  await louis.locator('.inbox-item', { hasText: 'Peut-on ajouter le logo' }).first().locator('[data-act=done]').click(); await louis.waitForTimeout(300);
   const after = Number((await louis.locator('.side [data-go=inbox] .badge').innerText().catch(() => '0')).replace(/\D/g, '') || 0);
-  ok('« Traité » : la ligne passe dans l’historique et le badge baisse tout de suite', after < before && !/Hugo demande une évolution/.test(await main(louis)), `${before} → ${after}`);
+  ok('« Traité » : la ligne passe dans l’historique et le badge baisse tout de suite', after < before && !/Peut-on ajouter le logo/.test(await main(louis)), `${before} → ${after}`);
   const theo = await login('theophile@agence-orem.fr');
-  ok('Traité par Louis = traité pour Théophile aussi', !/Hugo demande une évolution/.test(await main(theo)));
+  ok('Traité par Louis = traité pour Théophile aussi', !/Peut-on ajouter le logo/.test(await main(theo)));
   await louis.screenshot({ path: OUT + '/agence-1-inbox.png', fullPage: true });
 
   // Liste des clients

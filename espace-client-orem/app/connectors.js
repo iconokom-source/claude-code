@@ -60,7 +60,7 @@ async function pipedriveHook(body, headers, db, env, ctx) {
   const ownerName = norm(deal.owner_name || (deal.user_id && deal.user_id.name) || '').split(' ')[0];
   const owner = db.users.find((u) => u.role === 'admin' && ownerName && norm(u.name).startsWith(ownerName)) || db.users.find((u) => u.id === 'u_louis') || db.users.find((u) => u.role === 'admin');
   // L'offre et le registre ne sont jamais devinés : l'espace reste en brouillon tant que l'équipe ne les a pas choisis.
-  const r = Core.createProject(db, owner, { client, projet: deal.title || '', contactName: person.first_name || '', amountHT: Number(deal.value) || 0 });
+  const r = Core.createProject(db, owner, { client, projet: deal.title || '', contactName: person.first_name || '', amountHT: Number(deal.value) || 0, draft: 'Pipedrive' });
   if (r.error) return { status: 400, error: r.error };
   const p = db.projects.find((x) => x.id === r.id);
   p.source = { pipedrive: id }; p.draft = { from: 'Pipedrive', at: new Date().toISOString(), email: String(email).toLowerCase(), name: person.first_name || person.name || '' };
@@ -278,4 +278,14 @@ ${JSON.stringify(projectFacts(project, db))}`;
 }
 
 const assistantReady = (env) => configured('claude', env) && !!sdk();
-module.exports = { CONNECTORS, status, webhook, sync, ask, copyToDrive, configured, assistantReady };
+/* Proposition acceptée dans l'espace : le deal Pipedrive passe en « gagné » (zéro double saisie). */
+async function onAccept(project, proposalId, env, ctx = {}) {
+  if (!project || !configured('pipedrive', env) || !project.source || !project.source.pipedrive) return { skipped: true };
+  const pr = (project.proposals || []).find((x) => x.id === proposalId); if (!pr || pr.from) return { skipped: true };
+  const r = await (ctx.fetch || fetch)(`${API.pipedrive(env)}/deals/${encodeURIComponent(project.source.pipedrive)}`, { method: 'PUT', headers: { 'x-api-token': env.PIPEDRIVE_API_KEY, 'content-type': 'application/json' }, body: JSON.stringify({ status: 'won' }) });
+  if (!r.ok) throw new Error('Pipedrive HTTP ' + r.status);
+  stamp(db0(ctx), 'pipedrive', 'deal gagné : ' + project.client);
+  return { ok: true };
+}
+const db0 = (ctx) => ctx.db || { meta: {} };
+module.exports = { CONNECTORS, status, webhook, sync, ask, copyToDrive, configured, assistantReady, onAccept };

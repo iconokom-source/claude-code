@@ -158,6 +158,7 @@ function currentUser(req) {
   return db.users.find((u) => u.id === s.uid) || null;
 }
 function openSession(res, user) {
+  user.lastLoginAt = new Date().toISOString();
   const sid = crypto.randomBytes(32).toString('hex');
   db.sessions[sha(sid)] = { uid: user.id, exp: Date.now() + SESSION_TTL, at: Date.now() };
   save(); log('auth.session', { user: user.id });
@@ -165,7 +166,8 @@ function openSession(res, user) {
 }
 const clearCookie = (res) => res.setHeader('Set-Cookie', `${COOKIE}=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0${HTTPS ? '; Secure' : ''}`);
 /* Ce qu'on renvoie d'une personne : le client ne voit jamais les réglages internes de l'agence. */
-const publicUser = (u, viewer) => u && { id: u.id, email: u.email, name: u.name, role: u.role, projectId: u.projectId, title: u.title, wa: u.wa, phone: u.phone, photo: u.photo, onboardedAt: u.onboardedAt, prefs: viewer && viewer.id === u.id ? u.prefs : undefined,
+const publicUser = (u, viewer) => u && { id: u.id, email: u.email, name: u.name, role: u.role, projectId: u.projectId, title: u.title, wa: u.wa, phone: u.phone, photo: u.photo, onboardedAt: u.onboardedAt,
+  invitedAt: viewer && viewer.role === 'admin' ? u.invitedAt : undefined, lastLoginAt: viewer && viewer.role === 'admin' ? u.lastLoginAt : undefined, prefs: viewer && viewer.id === u.id ? u.prefs : undefined,
   notify: viewer && viewer.id === u.id && u.role === 'admin' ? Core.prefsOf(u) : undefined };
 const team = (viewer) => db.users.filter((u) => u.role === 'admin').map((u) => publicUser(u, viewer));
 
@@ -292,7 +294,7 @@ function exportEntries(pr, user) {
 /* Contexte donné aux connecteurs : enregistrer un PDF importé (Abby) comme un fichier déposé par l'agence. */
 function connectorCtx() {
   return {
-    fetch: globalThis.fetch,
+    fetch: globalThis.fetch, db,
     saveFile: async (projectId, name, buf, cat) => {
       const pr = db.projects.find((x) => x.id === projectId); if (!pr) return;
       const id = 'f_' + crypto.randomBytes(12).toString('hex'), dir = path.join(UPLOADS, pr.id); fs.mkdirSync(dir, { recursive: true });
@@ -312,6 +314,14 @@ function driveCopy(pr, file) {
     .catch((e) => log('drive.error', { project: pr.id, message: e.message }));
 }
 const activeUploads = new Map();
+/* Invitation du client : e-mail de bienvenue dans son registre, signé par le chef de projet. */
+function invite(projectId, userId) {
+  if (!userId) return;
+  const pr = db.projects.find((x) => x.id === projectId), u = db.users.find((x) => x.id === userId);
+  if (!pr || !u) return;
+  const lead = db.users.find((x) => x.id === (pr.team && pr.team.lead));
+  sendMail(Core.inviteMail(u, pr, lead, BASE_URL)); log('invite', { project: pr.id, user: u.id });
+}
 function projectBytes(pr) { return pr.files.reduce((s, f) => s + (f.path ? Number(f.size) || 0 : 0), 0); }
 
 async function handle(req, res) {
@@ -383,7 +393,7 @@ async function handle(req, res) {
   }
 
   if (p === '/api/projects' && req.method === 'GET') return send(res, 200, { projects: db.projects.filter((pr) => Core.canSee(user, pr)).map((x) => Core.summary(x, user)) });
-  if (p === '/api/projects' && req.method === 'POST') { const r = Core.createProject(db, user, await readJson(req)); if (r.ok) save(); return send(res, r.error ? 400 : 200, r); }
+  if (p === '/api/projects' && req.method === 'POST') { const b = await readJson(req); delete b.draft; const r = Core.createProject(db, user, b); if (r.ok) { save(); invite(r.id, r.invite); } return send(res, r.error ? 400 : 200, r); }
 
   m = p.match(/^\/api\/projects\/([\w-]+)$/);
   if (m && req.method === 'GET') {
@@ -401,7 +411,8 @@ async function handle(req, res) {
     const doomed = action.type === 'file.remove' && pr && Core.canSee(user, pr) ? pr.files.find((f) => f.id === action.fid) : null;
     const r = Core.apply(db, m[1], user, action);
     if (r.ok) {
-      save(); deliver(r.notices);
+      save(); deliver(r.notices); invite(m[1], r.invite);
+      if (r.accepted) Connectors.onAccept(db.projects.find((x) => x.id === m[1]), r.accepted, process.env, connectorCtx()).then((x) => { if (x && x.ok) log('pipedrive.won', { project: m[1] }); }).catch((e) => log('pipedrive.error', { message: e.message }));
       if (doomed) { const abs = filePath(doomed); if (abs) fs.rm(abs, { force: true }, () => {}); }
     }
     const { notices, ...pub } = r;
@@ -460,6 +471,8 @@ async function handle(req, res) {
       if (done) return; done = true;
       const r = Core.addFile(db, pr.id, user, { id, name, size, cat: url.searchParams.get('cat'), path: path.relative(DATA, dest) });
       if (r.error) { fs.rm(dest, { force: true }, () => {}); return send(res, 400, { error: r.error }); }
+      // Un dépôt fait depuis « Ce qu'il nous manque » retire l'élément attendu.
+      const mid = url.searchParams.get('missing'); if (mid) Core.apply(db, pr.id, user, { type: 'missing.done', mid: String(mid).slice(0, 60) }, true);
       save(); deliver(r.notices);
       if (user.role !== 'admin') driveCopy(pr, pr.files.find((x) => x.id === r.file.id));
       send(res, 200, { ok: true, file: Core.forUser({ files: [r.file], activity: [], invoices: [] }, user).files[0] });

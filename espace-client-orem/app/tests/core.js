@@ -44,7 +44,9 @@ ok('Une seule relance par validation', Core.runReminders(db, later + DAY).notice
 ok('Relance de la facture d’acompte non réglée (Varenne) après 10 jours', Core.runReminders(db, now + 12 * DAY).notices.some((n) => n.userId === 'u_julie' && /reste à régler/.test(n.text)));
 
 // Mise en ligne, avis, archive
-const d = Core.apply(db, 'p_lumen', by('u_louis'), { type: 'project.deliver' });
+ok('Mise en ligne refusée sans procès-verbal validé', /procès-verbal/.test(Core.apply(db, 'p_lumen', by('u_louis'), { type: 'project.deliver' }).error || ''));
+const d = Core.apply(db, 'p_lumen', by('u_louis'), { type: 'project.deliver', force: 'Client absent, réception validée par téléphone' });
+ok('Livraison sans procès-verbal : motif tracé', !!(db.projects.find((p) => p.id === 'p_lumen').deliveredWithoutPv || {}).reason);
 ok('Mise en ligne : temps « Mesurer » en cours, e-mail au client', d.ok && P('p_lumen').phase === 4 && Core.emailsFor(db, d.notices, 'http://x').some((m) => m.to === 'claire@maisonlumen.fr'));
 ok('Après la mise en ligne, tous les livrables des 3 premiers temps sont faits', P('p_lumen').phases.slice(0, 3).every((ph) => ph.items.every((i) => Core.itemState(P('p_lumen'), i) === 'done')));
 ok('Le client ne peut pas mettre en ligne lui-même', !!Core.apply(db, 'p_lumen', by('u_claire'), { type: 'project.deliver' }).error);
@@ -57,5 +59,22 @@ ok('… mais l’agence peut le désarchiver', Core.apply(db, 'p_huchet', by('u_
 ok('Réglages : un lien de réservation non https est refusé', !!Core.setSettings(db, by('u_louis'), { booking: 'javascript:alert(1)' }).error);
 ok('Réglages réservés à l’équipe', !!Core.setSettings(db, by('u_claire'), { iban: 'FR00' }).error);
 
+// Signature puis démarrage, invitation, fichiers attendus, recalage
+const db2 = Core.seed(); const ines = db2.users.find((u) => u.id === 'u_ines'); const V = db2.projects.find((p) => p.id === 'p_vergers');
+Core.apply(db2, 'p_vergers', ines, { type: 'proposal.accept', prid: 'pr_vergers', agree: true, name: 'Inès Delmas' });
+ok('Signature : devis coché, acompte et rendez-vous de démarrage dans « À faire »', V.phases[0].items.find((i) => /Devis/.test(i.t)).status === 'done' && V.tasks.some((t) => t.auto === 'acompte') && V.tasks.some((t) => t.go === 'cal') && V.next.go === 'cal');
+ok('Signature : fichiers attendus de l’offre ajoutés', V.missing.length >= 2);
+const cp = Core.createProject(db2, db2.users.find((u) => u.id === 'u_louis'), { client: 'Sans registre', email: 'x@y.fr' });
+ok('Création refusée sans registre explicite (côté serveur aussi)', /tutoiement/.test(cp.error || ''));
+const cp2 = Core.createProject(db2, db2.users.find((u) => u.id === 'u_louis'), { client: 'Atelier Neuf', email: 'a@atelier-neuf.fr', registre: 'vous', offer: 'site' });
+const nu = db2.users.find((u) => u.email === 'a@atelier-neuf.fr');
+ok('Création : invitation à envoyer, accès au nom de domaine attendu', cp2.invite === nu.id && db2.projects[0].missing.some((m) => /nom de domaine/.test(m.t)));
+const im = Core.inviteMail(nu, db2.projects[0], db2.users.find((u) => u.id === 'u_louis'), 'http://x');
+ok('E-mail d’invitation au vouvoiement, signé par le chef de projet', /Votre espace Atelier Neuf est prêt/.test(im.subject) && /Louis/.test(im.html) && !/\u2014/.test(im.html));
+ok('Le client ne peut plus retirer un fichier attendu sans rien déposer', !!Core.apply(db2, 'p_varenne', db2.users.find((u) => u.id === 'u_julie'), { type: 'missing.done', mid: 'vm1' }).error);
+ok('Relance des fichiers attendus après 5 jours ouvrés', Core.runReminders(db2, Date.now() + 9 * 864e5).notices.some((n) => n.userId === 'u_julie' && /il nous manque/.test(n.text)));
+const db3 = Core.seed(); const vv = db3.projects.find((p) => p.id === 'p_varenne'); const g = vv.golive;
+Core.runReminders(db3, Date.now() + 20 * 864e5);
+ok('Recalage : une validation pas encore demandée par l’agence ne décale rien', vv.golive === g);
 console.log(R.join('\n'));
 process.exitCode = R.some((l) => l.startsWith('✘')) ? 1 : 0;

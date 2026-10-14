@@ -71,7 +71,7 @@ const errs = [];
   ok('Compte à rebours : « 10 jours » avant la mise en ligne', /10\s*jours/i.test(await claire.locator('.countdown').innerText().catch(() => '')));
   await claire.screenshot({ path: OUT + '/waouh-3-compte-a-rebours.png' });
   await louis.click('#tab-liens'); await louis.fill('#lk-o', 'https://ancien.maisonlumen.fr'); await louis.click('form[data-form=links] button[type=submit]'); await louis.waitForTimeout(300);
-  await louis.click('#tab-livraison'); await louis.fill('#dl-s', 'https://www.maisonlumen.fr'); await louis.click('form[data-form=deliver] button[type=submit]'); await louis.waitForTimeout(500);
+  await louis.click('#tab-livraison'); await louis.fill('#dl-s', 'https://www.maisonlumen.fr'); if (await louis.$('#dl-f')) await louis.fill('#dl-f', 'Réception validée par téléphone'); await louis.click('form[data-form=deliver] button[type=submit]'); await louis.waitForTimeout(500);
   await go(claire, 'accueil');
   ok('Kit de lancement : avant/après et post LinkedIn', /Kit de lancement/.test(await main(claire)) && /Avant/i.test(await main(claire)) && /maisonlumen\.fr/.test(await claire.inputValue('#lk-post')));
   ok('Post LinkedIn sans tiret long', !/[—–]/.test(await claire.inputValue('#lk-post')));

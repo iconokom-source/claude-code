@@ -706,3 +706,4 @@ h1:focus{outline:none}
 .undo .btn{background:var(--on-cta);color:var(--cta)}
 .row.done .title,.row .title s{text-decoration:line-through}
 @media (max-width:860px){ .bell-pop{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px));left:auto;right:16px} .undo{bottom:calc(84px + env(safe-area-inset-bottom,0px))} }
+.login-art .proof{font-size:var(--t-sm);color:var(--night-hl);margin-top:18px}.prop-proof{border-top:1px solid var(--line);padding-top:12px}

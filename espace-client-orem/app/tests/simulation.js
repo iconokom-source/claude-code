@@ -72,7 +72,7 @@ const text = async (p, t) => (await p.locator('#main').innerText()).includes(t);
     await task(P, p, 'Voir les maquettes', async ({ click }) => { await click('.side [data-go=maquettes]'); }, () => visible(p, 'iframe, .shot, a[href*="figma"]'));
     await goHome(p);
     await task(P, p, 'Connaître le prochain rendez-vous', async () => {}, () => visible(p, '.meet'));
-    await task(P, p, 'Savoir combien il reste à payer', async ({ click }) => { await click('[data-act=qa][data-id=payer]'); }, () => text(p, 'Reste'));
+    await task(P, p, 'Savoir combien il reste à payer', async ({ click }) => { await click('[data-act=qa][data-id=payer]'); }, () => text(p, 'Déjà réglé'));
     await task(P, p, 'Retrouver le compte rendu de la visio', async ({ click }) => { await click('.side [data-go=fichiers]'); }, () => text(p, 'Compte rendu'));
     await task(P, p, 'Écrire à l’équipe', async ({ click, fill }) => { await click('.side [data-go=messages]'); await fill('#msg-t', 'Merci Clément, c’est très clair !'); await click('form[data-form=msg] button'); }, () => text(p, 'très clair'));
     await axe(p, 'Fichiers');

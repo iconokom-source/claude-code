@@ -56,6 +56,13 @@
       { d: [26, 30], txt: 'On documente ce qui a été fait et ce que ça change.', items: [['Rapport mensuel', 30]] }
     ], validations: [['priorites', 'Priorités du mois', 'Ce qu’on fait évoluer ce mois-ci', 6]] }
   };
+  const DEFAULT_MISSING = {
+    site: [['Logo et charte actuelle', 'Les fichiers que vous avez, même anciens.'], ['Photos', 'Équipe, lieux, produits : ce que vous avez déjà.'], ['Accès au nom de domaine', 'L’identifiant de l’hébergeur (OVH, Gandi…) ou la personne qui le gère.']],
+    da: [['Logo actuel', 'Même ancien, en bonne qualité si possible.'], ['3 ou 4 marques que vous aimez', 'Des liens ou des captures, avec un mot sur ce qui vous plaît.']],
+    conseil: [['Documents existants', 'Plaquette, présentation, chiffres clés : ce qui aide à comprendre l’activité.']],
+    evolution: [['Accès Google Analytics et Search Console', 'Pour lire les chiffres du site chaque mois.']]
+  };
+  const PRELAUNCH = ['Redirections 301 de l’ancien site', 'Mentions légales et politique de confidentialité', 'Bandeau cookies conforme', 'Nom de domaine et DNS prêts', 'Titres et descriptions des pages', 'Formulaires testés de bout en bout', 'Google Analytics et Search Console installés'];
   const DEFAULT_TOOLS = { site: ['brand', 'signature', 'request', 'webflow'], da: ['brand', 'signature'], conseil: ['request'], evolution: ['brand', 'signature', 'request', 'webflow'] };
   const HANDOVER = ['Accès administrateur Webflow transmis', 'Fichiers sources Figma partagés', 'Guide de réutilisation remis', 'Formation réalisée', 'Google Analytics et Search Console connectés'];
   const GENERIC_TUTORIALS = [['Modifier un texte ou une image', '3 min'], ['Ajouter une page à partir d’un modèle', '4 min'], ['Publier un article', '3 min'], ['Publier ses changements en toute sécurité', '2 min']];
@@ -85,6 +92,7 @@
       brand: { colors: [], fonts: [] },
       results: null, deliveredAt: null, archivedAt: null,
       handover: of === 'site' ? HANDOVER.map((t) => ({ t, done: false })) : [],
+      prelaunch: of === 'site' ? PRELAUNCH.map((t) => ({ t, done: false })) : [], cycle: of === 'evolution' ? 1 : undefined,
       review: null,
       proposals: [], versions: [], pins: [], reports: [],
       team: { lead: null, members: [] }
@@ -107,7 +115,7 @@
     const approve = (p, key, d, by) => { const v = p.validations.find((x) => x.key === key); v.status = 'approved'; v.readyAt = addDays(d, -2); v.history.push({ at: addDays(d, -2), by: 'u_louis', action: 'requested' }, { at: d, by, action: 'approved' }); };
 
     /* Exemple 1 : Maison Lumen (fictif). Site web en cours, le plan du site attend la validation de Claire. */
-    const a = newProject({ client: 'Maison Lumen', projet: 'Refonte du site maisonlumen.fr', contactName: 'Claire', start: at(-12), registre: 'vous', amountHT: 6900, offer: 'site' });
+    const a = newProject({ client: 'Maison Lumen', projet: 'Refonte du site maisonlumen.fr', contactName: 'Claire', start: at(-6), registre: 'vous', amountHT: 6900, offer: 'site' });
     a.id = 'p_lumen'; a.phase = 1;
     a.phases[0].items.forEach((i) => { if (!i.val) i.status = 'done'; });
     a.phases[0].items[3].status = 'done';
@@ -117,7 +125,7 @@
     a.note = { text: 'Le plan du site est prêt : 7 pages, avec une page par atelier comme on en a parlé en visio. Clément démarre les premières pistes graphiques dès votre feu vert.', by: 'u_louis', at: at(-1, 17) };
     a.meeting = { title: 'Point d’étape (visio, 30 min)', when: at(8, 10) };
     a.tasks = [{ id: 't1', t: 'Réserver la visio de cadrage', done: true }, { id: 't2', t: 'Régler l’acompte de 50 %', done: true, auto: 'acompte', go: 'documents' }];
-    a.missing = [{ id: 'm1', t: 'Photos de l’équipe', sub: 'Pour la page À propos. Portraits ou photos de groupe.' }, { id: 'm2', t: '2 ou 3 témoignages clients', sub: 'Un texte court suffit, on s’occupe de la mise en forme.' }];
+    a.missing = [{ id: 'm1', t: 'Photos de l’équipe', sub: 'Pour la page À propos. Portraits ou photos de groupe.', at: at(-4) }, { id: 'm2', t: '2 ou 3 témoignages clients', sub: 'Un texte court suffit, on s’occupe de la mise en forme.', at: at(-4) }];
     a.billing = { totalHT: 6900, totalTTC: 8280, quote: 'D-2026-0142', signedAt: at(-15, 15) };
     a.invoices = [
       { id: 'inv1', num: 'F-2026-0187', label: 'Facture d’acompte (50 %)', ht: 3450, ttc: 4140, status: 'paid', date: at(-14, 9), paidAt: at(-13, 10) },
@@ -126,7 +134,7 @@
     a.links = { figma: 'https://www.figma.com/design/exemple-maison-lumen', proto: 'https://www.figma.com/proto/exemple-maison-lumen-plan', preview: '', site: 'https://www.maisonlumen.fr' };
     a.files = [
       f('Plan du site, version 1 (Figma)', 'Livrable', 'agence', 'u_clement', at(-2, 11), 0, { url: 'https://www.figma.com/proto/exemple-maison-lumen-plan' }),
-      f('Compte rendu de la visio de cadrage.pdf', 'Livrable', 'agence', 'u_louis', at(-9, 16), 412000),
+      f('Compte rendu de la visio de cadrage.pdf', 'Livrable', 'agence', 'u_louis', at(-4, 16), 412000),
       f('Devis D-2026-0142 signé.pdf', 'Devis', 'agence', 'u_louis', at(-15, 15), 98000),
       f('Facture F-2026-0187.pdf', 'Facture', 'agence', 'u_louis', at(-14, 9), 87000),
       f('IBAN ICONOKOM.pdf', 'RIB', 'agence', 'u_louis', at(-14, 9), 61000),
@@ -138,7 +146,7 @@
     ];
     a.messages = [
       { id: 'lm1', fromAgency: true, readByClient: false, by: 'u_clement', at: at(-2, 11), text: 'Claire, je vous présente le plan du site en vidéo, page par page, avant que vous le validiez.', loom: { url: 'https://www.loom.com/share/8b9f66df6c52449fa0ff18afea1658b3', title: 'Le plan du site expliqué', duration: '4 min' } },
-      { id: 'lm2', fromAgency: true, by: 'u_louis', at: at(-9, 16), text: 'Merci pour la visio de cadrage ! Le compte rendu est dans vos fichiers.' }
+      { id: 'lm2', fromAgency: true, by: 'u_louis', at: at(-4, 16), text: 'Merci pour la visio de cadrage ! Le compte rendu est dans vos fichiers.' }
     ];
     a.activity = [
       { at: at(-2, 11), by: 'u_louis', text: 'a demandé la validation : plan du site' },
@@ -206,7 +214,7 @@
     c.phases[0].items[0].status = 'done'; c.phases[0].items[1].status = 'done';
     c.next = { title: 'Réserver la visio de cadrage', text: 'Une heure pour caler ensemble vos objectifs, vos cibles et le plan du site. Choisissez le créneau qui vous arrange.', go: 'cal' };
     c.tasks = [{ id: 'vt1', t: 'Réserver la visio de cadrage (1 h)', done: false, go: 'cal' }, { id: 'vt2', t: 'Régler l’acompte de 50 %', done: false, go: 'documents', auto: 'acompte' }];
-    c.missing = [{ id: 'vm1', t: 'Logo et charte actuelle', sub: 'Les fichiers que vous avez, même anciens.' }, { id: 'vm2', t: 'Photos du cabinet et de l’équipe', sub: 'Si vous en avez déjà, sinon on en parle en visio.' }];
+    c.missing = [{ id: 'vm1', t: 'Logo et charte actuelle', sub: 'Les fichiers que vous avez, même anciens.', at: at(-1) }, { id: 'vm2', t: 'Photos du cabinet et de l’équipe', sub: 'Si vous en avez déjà, sinon on en parle en visio.', at: at(-1) }, { id: 'vm3', t: 'Accès au nom de domaine', sub: 'L’identifiant de votre hébergeur (OVH, Gandi…) ou la personne qui le gère.', at: at(-1) }];
     c.billing.quote = 'D-2026-0151'; c.billing.signedAt = at(-3, 15);
     c.invoices = [{ id: 'vinv1', num: 'F-2026-0199', label: 'Facture d’acompte (50 %)', ht: 3800, ttc: 4560, status: 'due', date: at(-1, 9) }, { id: 'vinv2', num: '', label: 'Facture de solde (50 %)', ht: 3800, ttc: 4560, status: 'future', date: null }];
     c.files = [f('Devis D-2026-0151 signé.pdf', 'Devis', 'agence', 'u_theo', at(-3, 15), 97000), f('Facture F-2026-0199.pdf', 'Facture', 'agence', 'u_theo', at(-1, 9), 88000), f('IBAN ICONOKOM.pdf', 'RIB', 'agence', 'u_theo', at(-1, 9), 61000)];
@@ -242,7 +250,7 @@
     a.team = { lead: 'u_louis', members: ['u_louis', 'u_clement'] };
     b.team = { lead: 'u_louis', members: ['u_louis', 'u_theo', 'u_clement'] };
     c.team = { lead: 'u_theo', members: ['u_theo', 'u_louis'] };
-    const N = (userId, p, type, text, by, d, go) => ({ id: uid('n'), userId, projectId: p.id, client: p.client, type, act: { files: 'file.add', requests: 'request.add', activity: 'val.request' }[type], text, by, at: d, read: false, go: { view: 'admin', tab: go } });
+    const N = (userId, p, type, text, by, d, go) => ({ id: uid('n'), userId, projectId: p.id, client: p.client, type, act: { files: 'file.add', requests: 'request.add', activity: 'val.request' }[type], rid: type === 'requests' ? 'hr1' : undefined, done: type === 'requests', read: type === 'requests', text, by, at: d, go: { view: 'admin', tab: go } });
     const notifications = [
       N('u_louis', a, 'files', 'Claire a déposé « Texte À propos.docx »', 'u_claire', at(-3, 18), 'fichiers'),
       N('u_clement', a, 'files', 'Claire a déposé « Texte À propos.docx »', 'u_claire', at(-3, 18), 'fichiers'),
@@ -282,7 +290,8 @@
     const newMessages = (project.messages || []).filter((m) => m.readByAgency === false).length;
     const requests = (project.requests || []).filter((r) => r.status === 'Nouveau').length;
     const due = (project.invoices || []).filter((i) => i.status === 'due').length, missing = (project.missing || []).length;
-    return { newFiles, changes, unseen, waiting, newMessages, requests, due, missing };
+    const proposals = (project.proposals || []).filter((x) => x.status === 'sent').length;
+    return { newFiles, changes, unseen, waiting, newMessages, requests, due, missing, proposals };
   }
 
   function nextStep(project) {
@@ -304,7 +313,7 @@
     const ph = project.phases[project.phase - 1] || {};
     return { id: project.id, client: project.client, projet: project.projet, phase: project.phase, offer: project.offer, offerLabel: (OFFERS[project.offer] || OFFERS.site).label,
       phaseName: (ph.letter ? ph.letter + ' · ' : '') + (ph.t || ''), delivered: !!project.deliveredAt, archived: !!project.archivedAt, draft: !!project.draft, golive: project.golive, next: nextStep(project), alerts: alerts(project),
-      lastActivity: project.activity[0] || null, team: project.team || { lead: null, members: [] } };
+      lastActivity: project.activity[0] || null, proposalsSent: (project.proposals || []).filter((x) => x.status === 'sent').map((x) => ({ title: x.title, sentAt: x.sentAt, validUntil: x.validUntil, ht: x.lines.reduce((t, l) => t + l.ht, 0) })), team: project.team || { lead: null, members: [] } };
   }
 
   /* Ce qu'un client reçoit : pas de notes internes, pas de drapeaux « vu ». */
@@ -320,12 +329,12 @@
   }
 
   /* ---------- Écriture ---------- */
-  const CLIENT_ACTIONS = new Set(['user.prefs', 'val.undo', 'file.remove', 'proposal.accept', 'proposal.decline', 'pin.add', 'val.approve', 'val.changes', 'task.toggle', 'missing.done', 'user.onboarded', 'msg.post', 'msg.read', 'request.add', 'review.add']);
+  const CLIENT_ACTIONS = new Set(['user.prefs', 'val.undo', 'file.remove', 'proposal.accept', 'proposal.decline', 'pin.add', 'val.approve', 'val.changes', 'task.toggle', 'user.onboarded', 'msg.post', 'msg.read', 'request.add', 'review.add']);
 
   /* ---------- Validation des données entrantes ----------
      Tout ce qui vient du navigateur est borné en taille, et les liens doivent être en https. */
-  const SHORT = new Set(['prid', 'quote', 'ga4', 'gsc', 'abby', 'type', 'kind', 'priority', 'title', 't', 'sub', 'label', 'num', 'name', 'client', 'projet', 'contactName', 'status', 'lead', 'iid', 'vid', 'tid', 'mid', 'fid', 'rid', 'aid', 'id', 'go', 'registre', 'quote', 'email', 'duration', 'cat', 'offer', 'level']);
-  const URLS = new Set(['old', 'payUrl', 'link', 'url', 'figma', 'proto', 'preview', 'site', 'img', 'review', 'video', 'booking', 'training', 'reviewUrl']);
+  const SHORT = new Set(['owner', 'force', 'prid', 'quote', 'ga4', 'gsc', 'abby', 'type', 'kind', 'priority', 'title', 't', 'sub', 'label', 'num', 'name', 'client', 'projet', 'contactName', 'status', 'lead', 'iid', 'vid', 'tid', 'mid', 'fid', 'rid', 'aid', 'id', 'go', 'registre', 'quote', 'email', 'duration', 'cat', 'offer', 'level']);
+  const URLS = new Set(['welcomeLoom', 'cgvUrl', 'old', 'payUrl', 'link', 'url', 'figma', 'proto', 'preview', 'site', 'img', 'review', 'video', 'booking', 'training', 'reviewUrl']);
   function safeUrl(v, key) {
     v = String(v || '').trim(); if (!v) return '';
     if (/^https:\/\/[^\s<>"']+$/i.test(v)) return v.slice(0, 1000);
@@ -354,7 +363,7 @@
     const project = store.projects.find((p) => p.id === projectId);
     if (!project || !canSee(user, project)) return { error: 'Projet introuvable.' };
     if (action.type === 'file.add' && !internal) return { error: 'Action inconnue.' };
-    if (user.role !== 'admin' && !CLIENT_ACTIONS.has(action.type) && !(action.type === 'file.add' && internal)) return { error: 'Action réservée à l’agence.' };
+    if (user.role !== 'admin' && !CLIENT_ACTIONS.has(action.type) && !(internal && ['file.add', 'missing.done'].includes(action.type))) return { error: 'Action réservée à l’agence.' };
     // Un espace archivé reste consultable, mais plus rien ne s'y écrit (sauf pour le désarchiver).
     if (project.archivedAt && action.type !== 'project.archive' && !['msg.read', 'seen'].includes(action.type)) return { error: 'Cet espace est archivé : il reste consultable, en lecture seule.' };
     const v = action.vid && project.validations.find((x) => x.id === action.vid);
@@ -394,6 +403,7 @@
         if (!v) return { error: 'Validation introuvable.' };
         v.status = 'wait'; v.history.push({ at: now, by: user.id, action: 'reset' }); break;
       case 'next.set':
+        if (action.go && !['accueil', 'cal', 'valider', 'fichiers', 'projet', 'documents', 'equipe', 'messages', 'maquettes', 'outils', 'proposition'].includes(action.go)) return { error: 'Destination invalide.' };
         project.next = { title: String(action.title || ''), text: String(action.text || ''), go: action.go || 'accueil' };
         log(project, user, 'a mis à jour la prochaine étape'); break;
       case 'phase.set': {
@@ -423,7 +433,7 @@
       case 'task.remove': project.tasks = project.tasks.filter((x) => x.id !== action.tid); break;
       case 'missing.add':
         if (!String(action.t || '').trim()) return { error: 'Écrivez ce qu’il manque.' };
-        project.missing.push({ id: uid('m'), t: String(action.t), sub: String(action.sub || '') }); break;
+        project.missing.push({ id: uid('m'), t: String(action.t), sub: String(action.sub || ''), at: now }); break;
       case 'missing.done': case 'missing.remove':
         project.missing = project.missing.filter((m) => m.id !== action.mid); break;
       case 'file.add': {
@@ -472,12 +482,18 @@
         const email = String(action.email || '').trim().toLowerCase();
         if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { error: 'Adresse e-mail invalide.' };
         if (store.users.some((u) => u.email === email)) return { error: 'Cette adresse a déjà un accès.' };
-        store.users.push({ id: uid('u'), email, name: String(action.name || email.split('@')[0]), role: 'client', projectId: project.id });
-        log(project, user, 'a donné l’accès à ' + email); break;
+        const nu = { id: uid('u'), email, name: String(action.name || email.split('@')[0]).slice(0, 80), role: 'client', projectId: project.id, invitedAt: project.draft ? undefined : now };
+        store.users.push(nu);
+        log(project, user, 'a donné l’accès à ' + email); return { ok: true, invite: project.draft ? undefined : nu.id };
+      }
+      case 'user.invite': {
+        const u = store.users.find((x) => x.id === action.id && x.projectId === project.id); if (!u) return { error: 'Accès introuvable.' };
+        if (project.draft) return { error: 'Ouvrez d’abord l’espace (offre et registre).' };
+        u.invitedAt = now; log(project, user, 'a renvoyé l’invitation à ' + u.email); return { ok: true, invite: u.id };
       }
       case 'user.onboarded': {
         const u = store.users.find((x) => x.id === user.id); if (!u) return { error: 'Utilisateur introuvable.' };
-        u.onboardedAt = now; if (action.prefs) u.prefs = { mail: !!action.prefs.mail, whatsapp: !!action.prefs.whatsapp, weekly: !!action.prefs.weekly };
+        u.onboardedAt = now; if (action.prefs) u.prefs = { mail: !!action.prefs.mail, weekly: !!action.prefs.weekly };
         log(project, user, 'a découvert son espace'); break;
       }
       case 'msg.post': {
@@ -494,6 +510,10 @@
         if (!text) return { error: 'Décrivez votre demande.' };
         project.requests.unshift({ id: uid('r'), by: user.id, at: now, type: String(action.kind || 'Autre'), priority: String(action.priority || 'Normal'), text: text.slice(0, 4000), status: user.role === 'admin' ? 'Proposé' : 'Nouveau' });
         log(project, user, 'a demandé une évolution : ' + String(action.kind || 'autre').toLowerCase()); break;
+      }
+      case 'request.owner': {
+        const r = project.requests.find((x) => x.id === action.rid); if (!r) return { error: 'Demande introuvable.' };
+        const ad = store.users.find((u) => u.id === action.owner && u.role === 'admin'); r.owner = ad ? ad.id : undefined; break;
       }
       case 'request.status': {
         const r = project.requests.find((x) => x.id === action.rid); if (!r) return { error: 'Demande introuvable.' };
@@ -525,7 +545,10 @@
       case 'project.deliver': {
         // Mise en ligne : les trois premiers temps sont terminés, on entre dans « Mesurer ».
         if (action.undo) { project.deliveredAt = null; project.phase = Math.min(project.phase, project.phases.length - 1); log(project, user, 'a annulé la mise en ligne'); break; }
+        const pv = project.validations.find((x) => x.key === 'pv');
+        if (pv && pv.status !== 'approved' && !String(action.force || '').trim()) return { error: 'La réception du site (procès-verbal) n’est pas encore validée par le client. Demandez-la, ou indiquez pourquoi livrer sans.' };
         const when = action.when && validDate(action.when) ? iso(action.when) : now;
+        if (pv && pv.status !== 'approved') project.deliveredWithoutPv = { at: now, by: user.id, reason: String(action.force).slice(0, 300) };
         project.deliveredAt = when; project.golive = when; project.phase = project.phases.length;
         project.phases.slice(0, -1).forEach((ph) => ph.items.forEach((i) => { i.status = 'done'; }));
         if (project.links.preview && !project.links.site) project.links.site = project.links.preview;
@@ -556,6 +579,19 @@
         project.review = { score, text: String(action.text || '').slice(0, 2000), public: !!action.public, by: user.id, at: now, seen: false };
         log(project, user, 'a laissé un avis (' + score + '/5)'); break;
       }
+      case 'prelaunch.toggle': {
+        const h = (project.prelaunch || [])[Number(action.n)]; if (!h) return { error: 'Élément introuvable.' };
+        h.done = !h.done; break;
+      }
+      case 'cycle.next': {
+        // Évolution : chaque mois, un nouveau cycle O.R.E.M. ; le précédent est gardé.
+        if (project.offer !== 'evolution') return { error: 'Réservé à l’offre Évolution.' };
+        const T = newProject({ client: project.client, start: now, registre: project.registre, offer: 'evolution' });
+        project.cycles = (project.cycles || []).concat([{ n: project.cycle || 1, from: project.start, phases: project.phases, validations: project.validations }]).slice(-24);
+        Object.assign(project, { cycle: (project.cycle || 1) + 1, start: now, phases: T.phases, validations: T.validations, phase: 1, golive: T.golive });
+        project.next = { title: 'Visio de pilotage du mois', text: '', go: 'cal' };
+        log(project, user, 'a démarré le mois ' + project.cycle + ' d’Évolution'); break;
+      }
       case 'review.seen': if (project.review) project.review.seen = true; break;
       case 'project.tutorials': {
         project.tutorials = (Array.isArray(action.tutorials) ? action.tutorials : []).filter((x) => x && x.t).slice(0, 12).map((x) => ({ t: String(x.t).slice(0, 120), d: String(x.d || '').slice(0, 20), url: x.url ? safeUrl(x.url, 'url') : '' })); break;
@@ -571,8 +607,11 @@
         for (const k of ['offer', 'registre', 'golive', 'phases', 'validations', 'tools', 'tutorials', 'handover']) project[k] = T[k];
         if (!project.projet || project.projet === project.client) project.projet = T.projet;
         project.phase = 1; delete project.draft;
-        if (email) store.users.push({ id: uid('u'), email, name: String(action.name || project.contactName || email.split('@')[0]).slice(0, 80), role: 'client', projectId: project.id });
-        log(project, user, 'a ouvert l’espace (' + OFFERS[offer].label + ', ' + (action.registre === 'tu' ? 'tutoiement' : 'vouvoiement') + ')'); break;
+        let invite;
+        if (email) { const nu = { id: uid('u'), email, name: String(action.name || project.contactName || email.split('@')[0]).slice(0, 80), role: 'client', projectId: project.id, invitedAt: now }; store.users.push(nu); invite = nu.id; }
+        project.missing = (DEFAULT_MISSING[offer] || []).map(([t, sub]) => ({ id: uid('m'), t, sub, at: now }));
+        for (const k of ['prelaunch', 'cycle']) project[k] = T[k];
+        log(project, user, 'a ouvert l’espace (' + OFFERS[offer].label + ', ' + (action.registre === 'tu' ? 'tutoiement' : 'vouvoiement') + ')'); return { ok: true, invite };
       }
       case 'project.ext': {
         project.ext = project.ext || {};
@@ -608,7 +647,7 @@
         const pr = (project.proposals || []).find((x) => x.id === action.prid); if (!pr) return { error: 'Proposition introuvable.' };
         if (pr.status === 'accepted') return { error: 'Cette proposition est déjà acceptée.' };
         pr.status = 'sent'; pr.sentAt = now; delete pr.declined;
-        if (pr.from) { const rq = project.requests.find((r) => r.id === pr.from); if (rq) rq.status = 'Proposé'; }
+        if (pr.from) { const rq = project.requests.find((r) => r.id === pr.from); if (rq) rq.status = 'Proposé'; (store.notifications || []).forEach((n) => { if (n.projectId === project.id && n.act === 'request.add' && n.rid === pr.from) { n.done = true; n.read = true; } }); }
         log(project, user, 'a envoyé la proposition : ' + pr.title); break;
       }
       case 'proposal.accept': {
@@ -621,10 +660,19 @@
         Object.assign(pr, { status: 'accepted', acceptedAt: now, acceptedBy: user.id, signName: sign.slice(0, 120) });
         if (pr.depositPct > 0) { const dep = Math.round(ht * pr.depositPct) / 100; project.invoices.push({ id: uid('inv'), num: '', label: `Facture d’acompte (${pr.depositPct} %)${pr.from ? ' : ' + pr.title.toLowerCase() : ''}`, ht: dep, ttc: Math.round(dep * 120) / 100, status: 'due', date: now }); }
         if (pr.from) { const rq = project.requests.find((r) => r.id === pr.from); if (rq) rq.status = 'En cours'; }
-        else { project.billing.totalHT = ht; project.billing.totalTTC = Math.round(ht * 120) / 100; project.billing.quote = pr.quote || project.billing.quote; project.billing.signedAt = now; }
+        else {
+          project.billing.totalHT = ht; project.billing.totalTTC = Math.round(ht * 120) / 100; project.billing.quote = pr.quote || project.billing.quote; project.billing.signedAt = now;
+          // La signature lance le projet : devis coché, acompte et visio de démarrage dans « À faire ».
+          project.phases[0].items.forEach((i) => { if (/proposition|devis/i.test(i.t)) i.status = 'done'; });
+          if (pr.depositPct > 0 && !project.tasks.some((t) => t.auto === 'acompte')) project.tasks.push({ id: uid('t'), t: `Régler l’acompte de ${pr.depositPct} %`, done: false, auto: 'acompte', go: 'documents' });
+          const kick = project.phases[0].items.find((i) => /visio|atelier|entretiens/i.test(i.t));
+          if (kick && !project.tasks.some((t) => t.go === 'cal')) project.tasks.push({ id: uid('t'), t: 'Réserver : ' + kick.t.charAt(0).toLowerCase() + kick.t.slice(1), done: false, go: 'cal' });
+          if (!project.missing.length) project.missing = (DEFAULT_MISSING[project.offer] || []).map(([t, sub]) => ({ id: uid('m'), t, sub, at: now }));
+          project.next = kick ? { title: 'Réserver : ' + kick.t.charAt(0).toLowerCase() + kick.t.slice(1), text: (project.registre === 'tu' ? 'Merci pour ta confiance ! On démarre par ce rendez-vous. Choisis le créneau qui t’arrange.' : 'Merci pour votre confiance ! On démarre par ce rendez-vous. Choisissez le créneau qui vous arrange.'), go: 'cal' } : { title: '', text: '', go: 'accueil' };
+        }
         project.tasks.forEach((t) => { if (t.auto === 'proposal') t.done = true; });
         if (project.next.go === 'proposition') project.next = { title: '', text: '', go: 'accueil' };
-        log(project, user, 'a accepté la proposition : ' + pr.title); return { ok: true, proposal: pr.title };
+        log(project, user, 'a accepté la proposition : ' + pr.title); return { ok: true, proposal: pr.title, accepted: pr.id };
       }
       case 'proposal.decline': {
         const pr = (project.proposals || []).find((x) => x.id === action.prid);
@@ -713,7 +761,7 @@
     for (const r of to) {
       const u = store.users.find((x) => x.id === r.id); if (!u) continue;
       const text = describe(action, user, project, res, r.audience);
-      const n = { id: uid('n'), userId: u.id, projectId: project.id, client: project.client, type, act: action.type, vid: action.vid || undefined, fid: res.file ? res.file.id : undefined, text, by: user.id, at, read: false, reg: r.audience === 'client' ? project.registre : undefined,
+      const n = { id: uid('n'), userId: u.id, projectId: project.id, client: project.client, type, act: action.type, vid: action.vid || undefined, fid: res.file ? res.file.id : undefined, rid: action.type === 'request.add' ? project.requests[0].id : undefined, text, by: user.id, at, read: false, reg: r.audience === 'client' ? project.registre : undefined,
         go: r.audience === 'team' ? { view: 'admin', tab: action.type.startsWith('proposal') ? 'factures' : TAB[type] } : { view: CLIENT_VIEW_ACT[action.type] || CLIENT_VIEW[type] } };
       store.notifications.unshift(n); out.push(n);
     }
@@ -792,7 +840,7 @@
   /* Réglages de l'agence (coordonnées bancaires, liens de réservation…) : plus rien d'écrit en dur dans l'interface. */
   const DEFAULT_SETTINGS = {
     holder: 'ICONOKOM', address: '34 place du Général de Gaulle, Bureau 3, 59000 Lille', iban: 'FR76 1695 8000 0188 1420 4296 259', bic: 'QNTOFRP1XXX', bank: 'Qonto',
-    booking: 'https://app.iclosed.io/e/Orem/rdv-30min', training: 'https://app.iclosed.io/e/Orem/rdv-30min', reviewUrl: '', site: 'https://www.agence-orem.fr'
+    booking: 'https://app.iclosed.io/e/Orem/rdv-30min', training: '', reviewUrl: '', welcomeLoom: '', cgvUrl: '', site: 'https://www.agence-orem.fr'
   };
   const settingsOf = (store) => ({ ...DEFAULT_SETTINGS, ...(store.settings || {}) });
   function publicConfig(store) { return settingsOf(store); }
@@ -815,9 +863,11 @@
   /* Planning : une validation en retard de plus d'un jour décale d'autant tout ce qui vient après (livrables, temps, mise en ligne). */
   function replan(p, now) {
     if (p.deliveredAt || p.archivedAt || p.draft) return 0;
-    const late = (p.validations || []).filter((v) => v.status !== 'approved' && new Date(v.due).getTime() < now - DAY).sort((a, b) => new Date(a.due) - new Date(b.due))[0];
+    // Seul le retard du client compte : une validation prête, sans réponse 3 jours ouvrés après son échéance.
+    const late = (p.validations || []).filter((v) => v.status === 'ready' && v.readyAt && new Date(v.due).getTime() < now - DAY && workDaysBetween(v.readyAt, now) > 3).sort((a, b) => new Date(a.due) - new Date(b.due))[0];
     if (!late) return 0;
     const from = new Date(late.due).getTime(), shift = Math.ceil((now - from) / DAY);
+    if (shift < 1) return 0;
     const mv = (d) => (d && new Date(d).getTime() >= from ? addDays(d, shift) : d);
     p.validations.forEach((v) => { if (v.status !== 'approved') v.due = mv(v.due); });
     p.phases.forEach((ph) => { ph.items.forEach((i) => { if (i.status !== 'done') i.due = mv(i.due); }); ph.to = mv(ph.to); if (new Date(ph.from).getTime() > from) ph.from = mv(ph.from); });
@@ -829,11 +879,15 @@
     for (const p of store.projects || []) {
       if (p.archivedAt || p.draft) continue;
       const shifted = replan(p, now);
-      if (shifted) {
-        p.activity.unshift({ at, by: 'u_agence', text: `planning recalé de ${shifted} jour${shifted > 1 ? 's' : ''} (validation en attente)`, seen: false });
+      p.replanned = (p.replanned || 0) + shifted;
+      // L'équipe reçoit un résumé du recalage au plus une fois par semaine.
+      if (p.replanned && (!p.replanNoticeAt || now - new Date(p.replanNoticeAt).getTime() > 7 * DAY)) {
+        const total = p.replanned; p.replanned = 0; p.replanNoticeAt = at;
+        const shiftedTxt = total;
+        p.activity.unshift({ at, by: 'u_agence', text: `planning recalé de ${shiftedTxt} jour${shiftedTxt > 1 ? 's' : ''} (validation en attente chez le client)`, seen: false });
         const team0 = (p.team && p.team.members && p.team.members.length) ? p.team.members : store.users.filter((u) => u.role === 'admin').map((u) => u.id);
         store.notifications = store.notifications || [];
-        for (const id of team0) { const n = { id: uid('n'), userId: id, projectId: p.id, client: p.client, type: 'activity', act: 'replan', text: `Planning ${p.client} recalé de ${shifted} jour${shifted > 1 ? 's' : ''} : mise en ligne vers le ${new Date(p.golive).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}`, by: 'u_agence', at, read: false, go: { view: 'admin', tab: 'pilotage' } }; store.notifications.unshift(n); out.push(n); }
+        for (const id of team0) { const n = { id: uid('n'), userId: id, projectId: p.id, client: p.client, type: 'activity', act: 'replan', text: `Planning ${p.client} recalé de ${shiftedTxt} jour${shiftedTxt > 1 ? 's' : ''} : mise en ligne vers le ${new Date(p.golive).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}`, by: 'u_agence', at, read: false, go: { view: 'admin', tab: 'pilotage' } }; store.notifications.unshift(n); out.push(n); }
       }
       const tu = p.registre === 'tu', clients = store.users.filter((u) => u.projectId === p.id);
       const team = (p.team && p.team.members && p.team.members.length) ? p.team.members : store.users.filter((u) => u.role === 'admin').map((u) => u.id);
@@ -851,6 +905,11 @@
           `Relance automatique envoyée à ${p.contactName || p.client} : ${v.t.toLowerCase()}`, 'valider');
         p.activity.unshift({ at, by: lead.id, text: 'a relancé automatiquement : ' + v.t.toLowerCase(), seen: true });
       }
+      const late = (p.missing || []).filter((m) => !m.remindedAt && workDaysBetween(m.at || p.start, now) >= 5);
+      if (late.length && !p.deliveredAt) {
+        late.forEach((m) => (m.remindedAt = at));
+        push('files', `Petit rappel : il nous manque ${late.map((m) => m.t.toLowerCase()).join(', ')}. ${tu ? 'Tu peux les déposer' : 'Vous pouvez les déposer'} dans Fichiers.`, `Relance automatique envoyée à ${p.contactName || p.client} : ${late.length} fichier${late.length > 1 ? 's' : ''} attendu${late.length > 1 ? 's' : ''}`, 'fichiers');
+      }
       for (const inv of p.invoices || []) {
         if (inv.status !== 'due' || !inv.date || inv.remindedAt || now - new Date(inv.date).getTime() < 10 * DAY) continue;
         inv.remindedAt = at;
@@ -862,6 +921,15 @@
     return { notices: out };
   }
 
+  /* Invitation : le premier e-mail du client, dans son registre, signé par le chef de projet. */
+  function inviteMail(user, project, lead, baseUrl) {
+    const tu = project.registre === 'tu', T = (v, t) => (tu ? t : v), first = esc(String(user.name || '').split(' ')[0]);
+    const who = lead ? esc(lead.name.split(' ')[0]) : 'L\u2019équipe Orem';
+    const url = `${baseUrl}/?email=${encodeURIComponent(user.email)}`;
+    return { to: user.email, name: user.name, subject: `${T('Votre', 'Ton')} espace ${project.client} est prêt`,
+      text: `Bonjour ${user.name},\n${T('Votre', 'Ton')} espace projet est prêt : ${url}\n${T('Connectez-vous', 'Connecte-toi')} avec cette adresse e-mail, sans mot de passe.\n${who}, Orem`,
+      html: `<div style="background:#f3f2ef;padding:32px 16px;font-family:Arial,Helvetica,sans-serif"><table width="100%" style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:16px;padding:28px" cellpadding="0" cellspacing="0"><tr><td style="font-family:Georgia,serif;font-size:22px;color:#000012;padding-bottom:16px">Orem</td></tr><tr><td style="font-size:15px;color:#0b0b12">Bonjour ${first},</td></tr><tr><td style="font-size:15px;color:#2f2f3a;padding:8px 0 16px">${T('Votre', 'Ton')} espace pour le projet <strong>${esc(project.projet)}</strong> est prêt : le planning, ce qu\u2019on attend de ${T('vous', 'toi')}, ${T('vos', 'tes')} fichiers et ${T('vos', 'tes')} factures, au même endroit. Pas de mot de passe : ${T('saisissez', 'saisis')} simplement cette adresse e-mail.</td></tr><tr><td><a href="${esc(url)}" style="display:inline-block;background:#092482;color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:10px;font-size:15px">${T('Ouvrir mon espace', 'Ouvrir mon espace')}</a></td></tr><tr><td style="font-size:15px;color:#2f2f3a;padding-top:20px">${T('À très vite', 'À très vite')},<br>${who}${lead && lead.title ? ', ' + esc(lead.title.toLowerCase()) : ''}</td></tr></table></div>` };
+  }
   function loginMail(user, code, link, registre) {
     const tu = user.role === 'admin' || registre === 'tu', T = (v, t) => (tu ? t : v);
     const first = esc(String(user.name || '').split(' ')[0]);
@@ -890,16 +958,22 @@
   function createProject(store, user, data) {
     if (user.role !== 'admin') return { error: 'Action réservée à l’agence.' };
     if (!String(data.client || '').trim()) return { error: 'Indiquez le nom du client.' };
+    // Le registre n'est jamais deviné : sans choix explicite, l'espace reste en brouillon (cas Pipedrive).
+    if (!['tu', 'vous'].includes(data.registre) && !data.draft) return { error: 'Choisissez le tutoiement ou le vouvoiement.' };
     const p = newProject(data);
     p.team = { lead: user.id, members: [user.id] };
+    p.missing = (DEFAULT_MISSING[p.offer] || []).map(([t, sub]) => ({ id: uid('m'), t, sub, at: iso(Date.now()) }));
+    if (data.draft) p.draft = { from: data.draft, at: iso(Date.now()) };
     store.projects.unshift(p);
+    let invite;
     if (data.email) {
       const r = apply(store, p.id, user, { type: 'user.add', email: data.email, name: data.contactName });
       if (r.error) { store.projects.shift(); return r; }
+      invite = r.invite;
     }
     log(p, user, 'a créé l’espace');
-    return { ok: true, id: p.id };
+    return { ok: true, id: p.id, invite };
   }
 
-  return { seed, newProject, OFFERS, OREM, itemState, phaseState, offerOf: (p) => (OFFERS[p.offer] || OFFERS.site).label, apply, addFile, createProject, summary, forUser, nextStep, alerts, canSee, inbox, readNotif, doneNotif, setPrefs, prefsOf, emailsFor, digestFor, loginMail, publicConfig, setSettings, settingsOf, runReminders, FILE_CATS, AGENCY_CATS, HANDOVER, workDaysBetween, reg, replan };
+  return { seed, newProject, OFFERS, OREM, itemState, phaseState, offerOf: (p) => (OFFERS[p.offer] || OFFERS.site).label, apply, addFile, createProject, summary, forUser, nextStep, alerts, canSee, inbox, readNotif, doneNotif, setPrefs, prefsOf, emailsFor, digestFor, loginMail, inviteMail, publicConfig, setSettings, settingsOf, runReminders, FILE_CATS, AGENCY_CATS, HANDOVER, workDaysBetween, reg, replan };
 });

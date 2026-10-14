@@ -69,7 +69,7 @@ const CLIENT_VIEWS = ['accueil', 'projet', 'valider', 'maquettes', 'messages', '
   // 5. Louis met en ligne Maison Lumen
   await go(louis, 'clients'); await louis.click('.cat[data-mine="0"]'); await louis.click('[data-open=p_lumen]'); await louis.click('[data-tab=livraison]'); await louis.waitForTimeout(200);
   ok('Onglet « Mise en ligne » avec l’alerte du procès-verbal non validé', /Réception du site/.test(await main(louis)));
-  await louis.fill('#dl-s', 'https://www.maisonlumen.fr'); await louis.click('form[data-form=deliver] button[type=submit]'); await louis.waitForTimeout(500);
+  await louis.fill('#dl-s', 'https://www.maisonlumen.fr'); if (await louis.$('#dl-f')) await louis.fill('#dl-f', 'Réception validée par téléphone'); await louis.click('form[data-form=deliver] button[type=submit]'); await louis.waitForTimeout(500);
   ok('Mise en ligne faite côté agence', /Site en ligne depuis le/.test(await main(louis)));
   await louis.fill('#rs-p', 'Depuis la mise en ligne'); await louis.fill('#rs-s', '12 | demandes de devis\n3 400 | visiteurs'); await louis.click('form[data-form=results] button'); await louis.waitForTimeout(300);
   await louis.check('[data-handover="0"]'); await louis.waitForTimeout(300);

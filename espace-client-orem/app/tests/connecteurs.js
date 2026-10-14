@@ -9,7 +9,7 @@ const { spawn } = require('node:child_process');
 const R = []; const ok = (l, v, extra) => R.push(`${v ? '✔' : '✘'} ${l}${!v && extra ? ' → ' + extra : ''}`);
 const MOCK = 3999, APP = 3124, B = `http://127.0.0.1:${APP}`;
 const { publicKey, privateKey } = crypto.generateKeyPairSync('rsa', { modulusLength: 2048 });
-const calls = []; let qontoDown = false, gscCalls = 0, lastAsk = null;
+const calls = []; let qontoDown = false, gscCalls = 0, lastAsk = null, dealWon = null;
 let hasSdk = true; try { require.resolve('@anthropic-ai/sdk'); } catch { hasSdk = false; }
 
 /* ---------- Faux outils ---------- */
@@ -17,6 +17,7 @@ const mock = http.createServer((req, res) => {
   let body = []; req.on('data', (c) => body.push(c)); req.on('end', () => {
     body = Buffer.concat(body); calls.push({ method: req.method, url: req.url, headers: req.headers, body });
     const json = (o, st = 200) => { res.writeHead(st, { 'content-type': 'application/json' }); res.end(JSON.stringify(o)); };
+    if (req.url.startsWith('/pipedrive/deals/501') && req.method === 'PUT') { dealWon = JSON.parse(body).status; return json({ success: true }); }
     if (req.url.startsWith('/pipedrive/persons/77')) return req.headers['x-api-token'] === 'test-pipedrive' ? json({ data: { name: 'Marie Martin', first_name: 'Marie', email: [{ value: 'marie@boulangerie-martin.fr', primary: true }] } }) : json({}, 401);
     if (req.url.startsWith('/abby/v2/customers/C-42/documents')) return json({ documents: [
       { type: 'quote', number: 'D-2026-0151', status: 'signed', signedAt: '2026-10-11T15:00:00.000Z', amountHT: 7600, amountTTC: 9120, pdfUrl: `http://127.0.0.1:${MOCK}/abby/pdf/D-2026-0151` },
@@ -91,7 +92,14 @@ const mock = http.createServer((req, res) => {
     ok('Contact récupéré dans Pipedrive (Marie, marie@boulangerie-martin.fr), pas encore d’accès client', draft.draft.email === 'marie@boulangerie-martin.fr' && draft.contactName === 'Marie' && draft.billing.totalHT === 5400);
     ok('Le registre n’est jamais deviné : ouverture refusée sans tu/vous', /tutoiement/.test((await louis.act(pid, { type: 'project.confirm', offer: 'site' })).body.error || ''));
     ok('Ouverture : offre Site web au tutoiement', (await louis.act(pid, { type: 'project.confirm', offer: 'site', registre: 'tu' })).status === 200);
+    const inv = (await louis.call('/api/outbox')).body.items.find((m) => m.to === 'marie@boulangerie-martin.fr');
+    ok('Invitation envoyée à Marie, au tutoiement', inv && /Ton espace Boulangerie Martin est prêt/.test(inv.subject), JSON.stringify(inv && inv.subject));
     const marie = await session('marie@boulangerie-martin.fr');
+    await louis.act(pid, { type: 'proposal.save', title: 'Site de la boulangerie', lines: [{ t: 'Site vitrine', ht: 5400 }], depositPct: 50 });
+    const prid = (await louis.project(pid)).proposals[0].id; await louis.act(pid, { type: 'proposal.send', prid });
+    await marie.act(pid, { type: 'proposal.accept', prid, agree: true, name: 'Marie Martin' });
+    for (let i = 0; i < 20 && !dealWon; i++) await new Promise((r) => setTimeout(r, 100));
+    ok('Proposition acceptée dans l’espace : le deal Pipedrive passe en « gagné »', dealWon === 'won');
     const mp = await marie.project(pid);
     ok('Marie peut se connecter à son espace, au tutoiement, sans données internes', mp && mp.registre === 'tu' && !mp.draft && !mp.source && !mp.ext);
 
