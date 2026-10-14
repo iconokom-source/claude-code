@@ -1126,8 +1126,8 @@
       case 'user-remove': act({ type: 'user.remove', id }, 'Accès retiré.'); break;
       case 'seen': act({ type: 'seen' }, 'Tout est marqué comme vu.'); break;
       case 'valreset': act({ type: 'val.reset', vid: id }, 'Validation remise en attente.'); break;
-      case 'undeliver': if (confirm('Annuler la mise en ligne ? L’accueil du client repasse en projet en cours.')) act({ type: 'project.deliver', undo: true }, 'Mise en ligne annulée.'); break;
-      case 'archive': if (confirm('Archiver cet espace ? Le client le garde en lecture seule.')) act({ type: 'project.archive' }, 'Espace archivé.'); break;
+      case 'undeliver': if (API.demo || confirm('Annuler la mise en ligne ? L’accueil du client repasse en projet en cours.')) act({ type: 'project.deliver', undo: true }, 'Mise en ligne annulée.'); break;
+      case 'archive': if (API.demo || confirm('Archiver cet espace ? Le client le garde en lecture seule.')) act({ type: 'project.archive' }, 'Espace archivé.'); break;
       case 'unarchive': act({ type: 'project.archive', undo: true }, 'Espace désarchivé.'); break;
       case 'preview': S.preview = true; S.view = 'accueil'; render(true); break;
       case 'endpreview': S.preview = false; S.ob = null; S.view = 'admin'; render(true); break;
