@@ -94,7 +94,7 @@ Louis a validé : **« Lance tout »** = les 8 lots ci-dessous, dans l'ordre.
 
 ## 5. Le plan : 8 lots pour passer à 10/10
 
-Statut au moment de la coupure : **lot 1 commencé** (brouillon `docs/reprise/server.wip.js`), lots 2 à 8 à faire.
+Statut : **les 8 lots sont faits** ; voir « Point d'arrêt » à la fin pour le réaudit en cours.
 
 ### Lot 1. Sécurité et robustesse (en cours)
 
@@ -214,24 +214,24 @@ Failles vérifiées (fichier:ligne dans la version actuelle) :
 3. Copier le brouillon sur `app/server.js`, adapter `app.js` (écran de confirmation du lien, `/api/verify` ne renvoie plus `user`).
 4. Rejouer les deux tests + les tests de sécurité de l'audit (faux `file.add`, `Host` piégé, cookie mal formé, champs de 1 Mo, date invalide).
 
-## Point d'arrêt (lots 2 et 4 commencés)
+## Point d'arrêt (session du 14 octobre 2026, soir)
 
-Fait dans `core.js` :
-- gabarits par offre `OFFERS` (site, da, conseil, evolution) en 4 temps O.R.E.M. (`OREM`) ;
-- `newProject` avec `offer`, `handover`, `tutorials`, `review`, `archivedAt` ;
-- seed refait (dates Huchet réelles, vidéo de bienvenue de Théophile pour Varenne, acompte en `auto`) ;
-- `itemState` et `phaseState` (exportés, pas encore utilisés par `app.js`) ;
-- nouvelles actions `project.deliver`, `project.results`, `project.brand`, `project.tools`, `handover.toggle`, `review.add` (client), `project.archive` ;
-- acompte payé, donc action client cochée automatiquement ;
-- registre tu/vous dans les notifications, les e-mails et l'e-mail de connexion ;
-- `app.js` : nombre d'étapes dynamique (plus de « sur 5 » en dur).
+**Les 8 lots sont faits, testés et poussés** (commits `551723c` à `63271b0`), puis le réaudit indépendant a été lancé (4 relecteurs) et ses correctifs appliqués en partie. `docs/reprise/server.wip.js` est obsolète (le serveur actuel l'a remplacé).
 
-Reste à faire pour ces lots dans `app.js` :
-- afficher la lettre O/R/E/M et utiliser `itemState`/`phaseState` partout ;
-- choisir l'offre à la création ;
-- panneau « Mettre en ligne » (`project.deliver`), checklist de remise, avis client ;
-- retirer la case WhatsApp de l'accueil guidé ;
-- tutoriels lus dans `p.tutorials` ;
-- `runReminders` réel.
+Démo privée à jour jusqu'au lot 8 : https://claude.ai/artifact/BVAN9vWbkvpfS6FpXTpMeo (compte de Théophile ; `node build-demo.js` produit `dist/espace-client-demo.html` autonome et `dist/espace-client-artifact.html` pour la publication).
 
-Ensuite : lots 3, 5, 6, 7, 8 (voir §5).
+**Tests** : `cd app && NODE_PATH=$(npm root -g):<dossier axe-core>:<dossier @anthropic-ai/sdk facultatif> CHROMIUM=/opt/pw-browsers/chromium-1194/chrome-linux/chrome ./tests/tout.sh /tmp/orem-tests` rejoue 11 suites, chacune sur des données neuves (simulation 25, equipe 14, lots 24, a11y 24, agence 26, waouh 20, accueil 25, connecteurs 38, securite 13, core 39). Dernier passage complet à 100 % avant le dernier commit.
+
+**Réaudit (notes reçues)** : sécurité 6/10 (toutes les failles corrigées, commit `20c0350`) ; produit 6,5 à 7,5/10 (corrigé : invitation, signature puis démarrage, mode prospect, PV bloquant, recalage, fichiers attendus, Évolution mensuelle, propositions dans la grille ; commit `cd89c17`) ; UX 7/10 client, 6/10 agence ; accessibilité : rapport pas encore reçu au moment de la pause (relancer un relecteur accessibilité et mobile).
+
+**Dernier commit (« en cours, tests non rejoués »)** : correctifs de l'audit UX dans `core.js` et `app.js` : catégorie « Documents », date de livraison des offres hors site, « À venir » avant signature, retards affichés, proposition en prochaine étape et dans la cloche de Hugo, enregistrement automatique sur toute la fiche client (formulaires `data-autosave="submit"`, boutons à masquer), compteurs unifiés au périmètre « mes clients », « Tout marquer comme traité », pilotage avec l'état calculé, « 1er » du mois, textes par offre, « À valider » dans la barre du bas mobile (icône `menu` à ajouter au sprite de `index.html`), un nom par page (« Étapes »), répétitions retirées, outils vides masqués, carte « À régler » en tête des factures, accueil guidé selon le stade, onglet Mise en ligne à partir du temps E, textes de démo retirés.
+
+**À faire en reprenant, dans l'ordre :**
+1. Ajouter le symbole `i-menu` au sprite d'`app/public/index.html`, styles `.pay` / `.pay-a` (carte « À régler ») et masquer les boutons « Enregistrer » des formulaires `[data-autosave=submit]`.
+2. Adapter les tests qui cliquaient ces boutons : remplacer `click('form[data-form=X] button')` par `locator('form[data-form=X]').evaluate((f) => f.requestSubmit())` (lots, waouh, equipe, agence, accueil) ; l'onglet « Mise en ligne » n'existe plus avant le temps E (passer le projet en E dans les tests) ; la barre du bas mobile a « À valider » au lieu d'« Étapes » (simulation : tâches Julie/Hugo qui passent par « Plus ») ; le titre de la page Étapes est « Étapes ».
+3. Rejouer `tests/tout.sh` jusqu'à 100 %, regénérer la démo, commit, push, republier l'artifact (même adresse).
+4. Restes de l'audit UX : grille Clients et factures en cartes à 390 px (CSS), `white-space:nowrap` sur numéros et dates, volet de la cloche qui recouvre le bloc Évolution, regroupement des onglets de la fiche (10 aujourd'hui), « Aperçu des écrans » réservé aux vraies maquettes.
+5. Restes de l'audit produit : PDF du procès-verbal et réserves, espace prospect créé à « Proposition envoyée » dans Pipedrive, devis et facture d'acompte dans Abby à l'acceptation (chemins de l'API à confirmer), lien de paiement Qonto généré, responsable sur les livrables et notes internes, données de démo montrant chaque moment waouh (bilan, épingles Lumen, avant/après, avis).
+6. Relancer l'audit accessibilité et un audit final des 4 angles, viser 10/10.
+
+**À valider par Louis** : formules et prix de l'offre Évolution ; nom de famille de Clément (laissé « Clément ») ; lien de réservation d'une formation (vide, le bouton est masqué) ; lien des conditions générales et vidéo d'accueil (Réglages) ; branchement réel des connecteurs (clés dans le coffre Notion).

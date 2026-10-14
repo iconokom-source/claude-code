@@ -11,7 +11,7 @@
   const uid = (p) => p + '_' + rnd();
   /* Textes à deux registres : « {vous|te} forme » donne « vous forme » ou « te forme » selon le projet. */
   const reg = (text, registre) => String(text || '').replace(/\{([^{}|]*)\|([^{}]*)\}/g, (m, v, t) => (registre === 'tu' ? t : v));
-  const FILE_CATS = ['Images', 'Vidéos', 'Textes', 'Autres'];
+  const FILE_CATS = ['Images', 'Vidéos', 'Documents', 'Autres'];
   const AGENCY_CATS = ['Livrable', 'Devis', 'Facture', 'Contrat', 'RIB', 'Bibliothèque'];
 
   /* ---------- Offres et méthode O.R.E.M. ----------
@@ -75,7 +75,7 @@
     const lastDay = Math.max(...T.phases.map((p) => p.d[1]));
     return {
       id: uid('p'), client, projet: projet || `${T.label} ${client}`, contactName: contactName || '', offer: of,
-      registre: registre === 'tu' ? 'tu' : 'vous', start: s, golive: addDays(s, of === 'site' ? 36 : lastDay), createdAt: iso(Date.now()),
+      registre: registre === 'tu' ? 'tu' : 'vous', start: s, golive: addDays(s, of === 'site' ? 36 : of === 'evolution' ? lastDay : Math.max(...T.phases[2].items.map((i) => i[1]))), createdAt: iso(Date.now()),
       phase: 1,
       phases: T.phases.map((p, i) => ({ n: i + 1, letter: OREM[i][0], t: OREM[i][1], from: addDays(s, p.d[0]), to: addDays(s, p.d[1]), txt: p.txt, // « {vous|te} » : résolu à l'affichage selon le registre du projet
         items: p.items.map(([t, d, val]) => ({ id: uid('i'), t, due: addDays(s, d), status: 'wait', val: val || undefined })) })),
@@ -139,8 +139,8 @@
       f('Facture F-2026-0187.pdf', 'Facture', 'agence', 'u_louis', at(-14, 9), 87000),
       f('IBAN ICONOKOM.pdf', 'RIB', 'agence', 'u_louis', at(-14, 9), 61000),
       f('Film de marque.mp4', 'Vidéos', 'client', 'u_claire', at(-5, 14), 212000000),
-      f('Charte graphique 2019.pdf', 'Textes', 'client', 'u_claire', at(-6, 9), 4100000),
-      f('Texte À propos.docx', 'Textes', 'client', 'u_claire', at(-3, 18), 32000, { seen: false }),
+      f('Charte graphique 2019.pdf', 'Documents', 'client', 'u_claire', at(-6, 9), 4100000),
+      f('Texte À propos.docx', 'Documents', 'client', 'u_claire', at(-3, 18), 32000, { seen: false }),
       f('Photos atelier (12 fichiers).zip', 'Images', 'client', 'u_claire', at(-7, 10), 86000000),
       f('Logo Maison Lumen.svg', 'Images', 'client', 'u_claire', at(-11, 12), 48000)
     ];
@@ -163,7 +163,7 @@
     done(b, at(0));
     b.phases[3].items[1].status = 'on';
     [['plan', '2025-12-16'], ['da', '2026-02-06'], ['maquettes', '2026-03-13'], ['site', '2026-06-10'], ['pv', '2026-06-16']].forEach(([k, d]) => { b.validations.find((v) => v.key === k).due = iso(d); approve(b, k, iso(d + 'T15:00:00.000Z'), 'u_hugo'); });
-    b.next = { title: 'Ton site est en ligne', text: 'Il génère environ 5 demandes qualifiées par semaine. Pour qu’il continue de progresser, on peut le faire évoluer chaque mois avec toi.', go: 'outils' };
+    b.next = { title: 'Ton site est en ligne', text: 'Pour qu’il continue de progresser, on peut le faire évoluer chaque mois avec toi.', go: 'outils' };
     b.note = { text: 'Point à 4 mois envoyé : chaque associé ressort en position 1 sur son nom, et 68 % du trafic vient de la recherche Google, sans budget média. Prochaine étape proposée : le parcours des formulaires d’annonces.', by: 'u_louis', at: at(-6, 17) };
     b.meeting = { title: 'Point évolution du site (visio, 30 min)', when: at(6, 11) };
     b.billing = { totalHT: 9800, totalTTC: 11760, quote: 'D-2025-0098', signedAt: '2025-11-20T10:00:00.000Z' };
@@ -202,7 +202,7 @@
       f('Facture F-2026-0112.pdf', 'Facture', 'agence', 'u_louis', '2026-06-15T10:00:00.000Z', 90000),
       f('Facture F-2025-0131.pdf', 'Facture', 'agence', 'u_louis', '2025-11-21T10:00:00.000Z', 88000),
       f('Devis D-2025-0098 signé.pdf', 'Devis', 'agence', 'u_louis', '2025-11-20T10:00:00.000Z', 98000),
-      f('Textes des annonces.docx', 'Textes', 'client', 'u_hugo', '2025-12-10T11:00:00.000Z', 64000),
+      f('Textes des annonces.docx', 'Documents', 'client', 'u_hugo', '2025-12-10T11:00:00.000Z', 64000),
       f('Photos du cabinet (24 fichiers).zip', 'Images', 'client', 'u_hugo', '2025-12-04T09:00:00.000Z', 154000000),
       f('Logo Huchet-Demorge HD.svg', 'Images', 'client', 'u_hugo', '2025-11-27T10:00:00.000Z', 52000)
     ];
@@ -236,6 +236,7 @@
     b.proposals = [{ id: 'pr_hd1', status: 'sent', title: 'Évolution : l’annonce dans chaque e-mail de contact', quote: 'D-2026-0161', sentAt: at(-3, 10), validUntil: at(27), from: 'hr1',
       intro: 'Suite à ta demande : chaque e-mail de contact indiquera l’annonce concernée (intitulé et lien).', lines: [{ t: 'Champ caché « annonce » sur les formulaires et modèle d’e-mail', ht: 450 }], depositPct: 0, example: true }];
     b.requests[0].status = 'Proposé';
+    const hugoNotice = { id: uid('n'), userId: 'u_hugo', projectId: 'p_huchet', client: 'Huchet-Demorge', type: 'validations', act: 'proposal.send', text: 'Louis t’a envoyé une proposition : Évolution : l’annonce dans chaque e-mail de contact', by: 'u_louis', at: at(-3, 10), read: false, reg: 'tu', go: { view: 'proposition' } };
     a.versions = [{ id: 've1', label: 'V1', t: 'Plan du site', url: 'https://www.figma.com/proto/exemple-maison-lumen-plan', at: at(-2, 11) }];
     b.versions = [{ id: 'hv2', label: 'V2', t: 'Maquettes finales', url: b.links.proto, at: '2026-03-13T10:00:00.000Z' }, { id: 'hv1', label: 'V1', t: 'Maquettes desktop', url: b.links.proto, at: '2026-02-20T10:00:00.000Z' }];
     users.push(
@@ -258,6 +259,7 @@
       N('u_theo', b, 'requests', 'Hugo demande une évolution (Formulaires) : « Indiquer l’annonce concernée dans chaque e-mail de contact »', 'u_hugo', at(-5, 9), 'demandes'),
       N('u_clement', a, 'activity', 'Louis a demandé la validation du plan du site', 'u_louis', at(-2, 11), 'validations')
     ];
+    notifications.push(hugoNotice);
     return { users, projects: [a, b, c, d], notifications, outbox: [] };
   }
 
@@ -275,13 +277,16 @@
     }
     return item.status;
   }
+  const unsigned = (project) => !project.billing.signedAt && (project.proposals || []).some((x) => !x.from) && !(project.proposals || []).some((x) => !x.from && x.status === 'accepted');
   function phaseState(project, ph) {
+    if (unsigned(project)) return 'wait';
     if (project.deliveredAt && ph.n < project.phases.length) return 'done';
     if (ph.n < project.phase) return 'done';
     if (ph.n === project.phase) return 'on';
     return 'wait';
   }
 
+  function lateDays(project, ph) { if (phaseState(project, ph) !== 'on' || project.deliveredAt) return 0; const d = Math.floor((Date.now() - new Date(ph.to).getTime()) / DAY); return d > 0 ? d : 0; }
   function alerts(project) {
     const newFiles = project.files.filter((f) => f.from === 'client' && !f.seen).length;
     const changes = project.validations.filter((v) => v.status === 'changes').length;
@@ -295,9 +300,9 @@
   }
 
   function nextStep(project) {
-    if (project.next && project.next.title) return project.next;
     const prop = (project.proposals || []).find((x) => x.status === 'sent');
-    if (prop) return { title: 'Découvrir la proposition', text: prop.title, go: 'proposition' };
+    if (prop && (!project.next || project.next.go !== 'proposition')) return { title: prop.from ? 'Répondre au devis d’évolution' : 'Découvrir la proposition', text: prop.title, go: 'proposition' };
+    if (project.next && project.next.title) return project.next;
     const ready = project.validations.find((v) => v.status === 'ready');
     if (ready) return { title: 'Valider : ' + ready.t.toLowerCase(), text: '', go: 'valider' };
     const miss = project.missing[0];
@@ -975,5 +980,5 @@
     return { ok: true, id: p.id, invite };
   }
 
-  return { seed, newProject, OFFERS, OREM, itemState, phaseState, offerOf: (p) => (OFFERS[p.offer] || OFFERS.site).label, apply, addFile, createProject, summary, forUser, nextStep, alerts, canSee, inbox, readNotif, doneNotif, setPrefs, prefsOf, emailsFor, digestFor, loginMail, inviteMail, publicConfig, setSettings, settingsOf, runReminders, FILE_CATS, AGENCY_CATS, HANDOVER, workDaysBetween, reg, replan };
+  return { seed, newProject, OFFERS, OREM, itemState, phaseState, lateDays, offerOf: (p) => (OFFERS[p.offer] || OFFERS.site).label, apply, addFile, createProject, summary, forUser, nextStep, alerts, canSee, inbox, readNotif, doneNotif, setPrefs, prefsOf, emailsFor, digestFor, loginMail, inviteMail, publicConfig, setSettings, settingsOf, runReminders, FILE_CATS, AGENCY_CATS, HANDOVER, workDaysBetween, reg, replan };
 });
