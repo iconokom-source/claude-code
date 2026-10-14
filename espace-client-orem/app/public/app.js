@@ -73,7 +73,7 @@
 
   /* ---------- État ---------- */
   const S = { me: null, team: [], projects: [], project: null, access: [], people: {}, view: 'accueil', tab: 'pilotage', preview: false,
-    cat: 'Tous', valForm: null, login: { step: 'email', email: '', dev: null }, uploading: null, loading: true };
+    cat: 'Tous', valForm: null, qa: null, ob: null, login: { step: 'email', email: '', dev: null }, uploading: null, loading: true };
   const isAdmin = () => S.me && S.me.role === 'admin';
   const clientMode = () => !isAdmin() || S.preview;
   const R = (vous, tu) => (S.project && S.project.registre === 'tu' ? tu : vous);
@@ -158,30 +158,33 @@
       ...p.tasks.map((t) => ({ t: t.t, done: t.done, tid: t.id }))
     ];
     const doneN = actions.filter((a) => a.done).length;
+    let rk = 0;
     const note = p.note && p.note.text;
     const author = S.team.find((u) => u.id === p.note.by);
     const delivs = p.files.filter((f) => f.from === 'agence' && f.cat === 'Livrable').slice(0, 3);
     return `
-    <div class="head"><div><div class="eyebrow">${esc(cap(fmtLong(Date.now())))}</div><h1>Bonjour ${esc(p.contactName || S.me.name)}</h1></div><span class="small muted">${esc(p.projet)}</span></div>
+    <div class="head"><div><h1 class="brandish">Bonjour ${esc(p.contactName || S.me.name)}</h1><p class="lead">${esc(cap(fmtLong(Date.now())))} · ${esc(p.projet)}</p></div></div>
     <section class="next" aria-labelledby="nx"><div><div class="k">Prochaine étape</div><h2 id="nx">${esc(nx.title)}</h2>${nx.text ? `<p>${esc(nx.text)}</p>` : ''}<div class="meta">Étape ${p.phase} sur 5 · ${esc(ph.t)}</div></div>${cta ? `<a class="btn" href="#${cta[1]}" data-go="${cta[1]}">${cta[0]} ${ic('arrow')}</a>` : ''}</section>
+    ${kpisClient()}
     <section class="panel" aria-labelledby="av">
       <div class="panel-head"><h2 id="av">${ic('map')}Où en est le projet</h2><a href="#projet" data-go="projet">Voir le détail</a></div>
       <div class="steps">${p.phases.map((x, i) => `<div class="step ${x.n === p.phase ? 'on' : ''}"><div class="bar"><i style="width:${phaseProgress(x, i)}%"></i></div><div class="t">${esc(x.t)}</div><div class="d">${fmt(x.from)} au ${fmt(x.to)}</div></div>`).join('')}</div>
-      <p class="small muted" style="margin-top:14px">Mise en ligne prévue vers le ${fmt(p.golive, { day: 'numeric', month: 'long' })}. Dates indicatives, ajustées ensemble à chaque étape.</p>
+      <p class="steps-foot">Mise en ligne prévue vers le ${fmt(p.golive, { day: 'numeric', month: 'long' })}. Dates indicatives, ajustées ensemble à chaque étape.</p>
     </section>
     <div class="grid2">
       <section class="panel" aria-labelledby="td">
         <div class="panel-head"><h2 id="td">${ic('ok')}${R('Vos actions', 'Tes actions')}</h2>${actions.length ? `<span class="small muted num">${doneN} sur ${actions.length}</span>` : ''}</div>
         <div class="list">${actions.map((a) => a.tid
           ? `<div class="row ${a.done ? 'done' : ''}"><button class="check ${a.done ? 'done' : ''}" data-act="task" data-id="${a.tid}" aria-label="${a.done ? 'Décocher' : 'Cocher'} : ${esc(a.t)}" aria-pressed="${!!a.done}">${a.done ? ic('check') : ''}</button><div class="grow"><div class="title">${esc(a.t)}</div></div></div>`
-          : `<div class="row"><span class="check"></span><div class="grow"><div class="title">${esc(a.t)}</div>${a.sub ? `<div class="sub">${esc(a.sub)}</div>` : ''}</div><a class="btn btn-line btn-sm" href="#${a.go}" data-go="${a.go}">Ouvrir</a></div>`).join('') || `<p class="muted">${R('Rien à faire de votre côté pour le moment.', 'Rien à faire de ton côté pour le moment.')}</p>`}</div>
+          : `<div class="row"><span class="rank">${String(++rk).padStart(2, '0')}</span><div class="grow"><div class="title">${esc(a.t)}</div>${a.sub ? `<div class="sub">${esc(a.sub)}</div>` : ''}</div><a class="btn btn-line btn-sm" href="#${a.go}" data-go="${a.go}">Ouvrir</a></div>`).join('') || `<p class="muted">${R('Rien à faire de votre côté pour le moment.', 'Rien à faire de ton côté pour le moment.')}</p>`}</div>
       </section>
       <section class="panel" aria-labelledby="sm">
         <div class="panel-head"><h2 id="sm">${ic('cal')}Cette semaine</h2>${p.note.at ? `<span class="small muted">Mis à jour le ${fmt(p.note.at, { day: 'numeric', month: 'long' })}</span>` : ''}</div>
         ${note ? `<div class="note">${author && IMG[author.photo] ? `<img class="avatar" src="${IMG[author.photo]}" alt="">` : ''}<div><blockquote>${esc(note)}</blockquote><div class="who">${esc(author ? author.name.split(' ')[0] + ', ' + (author.title || '').toLowerCase() : '')}</div></div></div>` : `<p class="muted">Le point de la semaine arrive bientôt.</p>`}
-        ${p.meeting && p.meeting.when ? `<div class="row" style="margin-top:18px;padding-top:16px;border-top:1px solid var(--line)"><span class="ico">${ic('cal')}</span><div class="grow"><div class="title">${esc(p.meeting.title || 'Rendez-vous')}</div><div class="sub">${esc(cap(fmtTime(p.meeting.when)))}</div></div></div>` : ''}
+        ${p.meeting && p.meeting.when ? `<div class="meet"><span class="ico">${ic('cal')}</span><div class="grow"><div class="title">${esc(p.meeting.title || 'Rendez-vous')}</div><div class="sub">${esc(cap(fmtTime(p.meeting.when)))}</div></div></div>` : ''}
       </section>
     </div>
+    ${qaPanel()}
     ${delivs.length ? `<section class="panel" aria-labelledby="dl"><div class="panel-head"><h2 id="dl">${ic('figma')}Derniers ajouts de l’agence</h2><a href="#fichiers" data-go="fichiers">Tous les fichiers</a></div><div class="list">${delivs.map(fileRow).join('')}</div></section>` : ''}`;
   }
   const cap = (s) => (s ? s[0].toUpperCase() + s.slice(1) : s);
@@ -195,7 +198,7 @@
   function vProjet() {
     const p = S.project;
     return `
-    <div class="head"><div><div class="eyebrow">${esc(p.projet)}</div><h1>${R('Votre projet', 'Ton projet')}</h1></div><span class="chip hl">Étape ${p.phase} sur 5</span></div>
+    <div class="head"><div><h1>${R('Votre projet', 'Ton projet')}</h1><p class="lead">${esc(p.projet)}</p></div><span class="chip hl">Étape ${p.phase} sur 5</span></div>
     <p class="muted" style="max-width:62ch;margin-top:-12px">Cinq étapes, de la première visio à la livraison. On ne passe à l’étape suivante qu’avec ${R('votre', 'ton')} feu vert. Les dates sont indicatives et ajustées ensemble.</p>
     <section class="panel">
     ${p.phases.map((ph, i) => { const st = ph.n < p.phase ? 'done' : ph.n === p.phase ? 'on' : 'wait';
@@ -215,15 +218,15 @@
     const card = (v) => {
       const form = S.valForm === v.id
         ? `<form class="field" data-form="changes" data-id="${v.id}"><label for="chg-${v.id}">Qu’${R('aimeriez-vous', 'aimerais-tu')} changer ?</label><textarea id="chg-${v.id}" required placeholder="Par exemple : regrouper deux pages, ajouter une page Presse…"></textarea><span class="small muted">L’équipe ${R('vous', 'te')} répond sous 24 h ouvrées.</span><div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-primary" type="submit">Envoyer mes remarques</button><button class="btn btn-line" type="button" data-act="valcancel">Annuler</button></div></form>`
-        : `<div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-primary" data-act="approve" data-id="${v.id}">${ic('check')}${R('Je valide', 'Je valide')}</button><button class="btn btn-line" data-act="changes" data-id="${v.id}">Demander des modifications</button></div>
+        : `<div class="acts"><button class="btn btn-primary" data-act="approve" data-id="${v.id}">${ic('check')}${R('Je valide', 'Je valide')}</button><button class="btn btn-line" data-act="changes" data-id="${v.id}">Demander des modifications</button></div>
            <p class="small muted">Valider, c’est donner ${R('votre', 'ton')} feu vert écrit pour passer à la suite. Il est enregistré avec la date et l’heure.</p>`;
-      return `<section class="panel" style="display:flex;flex-direction:column;gap:14px"><div><span class="chip warn">En attente de ${R('votre', 'ta')} validation</span></div>
+      return `<section class="panel valcard"><div><span class="chip warn">En attente de ${R('votre', 'ta')} validation</span></div>
         <h2>${esc(v.t)}</h2><p class="muted">${esc(v.sub)}. Prêt depuis le ${fmt(v.readyAt, { day: 'numeric', month: 'long' })}.</p>
         ${v.link ? `<a class="link" href="${esc(v.link)}" target="_blank" rel="noopener">Ouvrir et regarder ${ic('arrow', 'width:14px;height:14px;vertical-align:-2px')}</a>` : ''}
         ${form}</section>`;
     };
     return `
-    <div class="head"><div><div class="eyebrow">On avance avec ${R('votre', 'ton')} feu vert</div><h1>À valider</h1></div></div>
+    <div class="head"><div><h1>À valider</h1><p class="lead">On avance avec ${R('votre', 'ton')} feu vert</p></div></div>
     ${ready.map(card).join('') || `<div class="empty">Rien à valider pour l’instant. On ${R('vous', 'te')} prévient dès que la prochaine étape est prête.</div>`}
     ${done.length ? `<section class="panel"><div class="panel-head"><h2>${ic('ok')}Déjà ${R('traité', 'traité')}</h2></div><div class="list">${done.map((v) => { const h = v.history[v.history.length - 1] || {};
       return `<div class="row"><span class="ico ${v.status === 'approved' ? 'ok' : ''}">${ic(v.status === 'approved' ? 'ok' : 'chat')}</span><div class="grow"><div class="title">${esc(v.t)}</div><div class="sub">${v.status === 'approved' ? 'Validé le ' + fmt(h.at, { day: 'numeric', month: 'long' }) : 'Remarques envoyées le ' + fmt(h.at, { day: 'numeric', month: 'long' }) + (h.comment ? ' : « ' + esc(h.comment) + ' »' : '')}</div></div>${v.status === 'approved' ? '<span class="chip ok">Validé</span>' : '<span class="chip hl">En cours de reprise</span>'}</div>`; }).join('')}</div></section>` : ''}
@@ -238,7 +241,7 @@
     const count = (c) => (c === 'Tous' ? mine.length : mine.filter((f) => f.cat === c).length);
     const delivs = p.files.filter((f) => f.from === 'agence' && f.cat === 'Livrable');
     return `
-    <div class="head"><div><div class="eyebrow">Pas besoin de compte Google</div><h1>Fichiers</h1></div></div>
+    <div class="head"><div><h1>Fichiers</h1><p class="lead">Pas besoin de compte Google</p></div></div>
     <label class="drop" id="drop" for="file-in">
       <span class="ico hl">${ic('up')}</span>
       <strong>${R('Glissez vos fichiers ici, ou cliquez pour choisir', 'Glisse tes fichiers ici, ou clique pour choisir')}</strong>
@@ -263,7 +266,7 @@
     const docs = p.files.filter((f) => f.from === 'agence' && f.cat !== 'Livrable');
     const st = { paid: '<span class="chip ok">Payée</span>', due: '<span class="chip warn">À régler</span>', future: '<span class="chip idle">À venir</span>' };
     return `
-    <div class="head"><div><div class="eyebrow">Devis, factures et paiement</div><h1>Documents</h1></div></div>
+    <div class="head"><div><h1>Documents</h1><p class="lead">Devis, factures et paiement</p></div></div>
     <div class="grid2">
       <section class="panel"><div class="small muted">Montant du projet</div><div class="money num" style="margin-top:6px">${money(b.totalHT)} HT</div><div class="small muted num">${money(b.totalTTC)} TTC${b.quote ? ' · devis ' + esc(b.quote) : ''}${b.signedAt ? ' signé le ' + fmt(b.signedAt) : ''}</div></section>
       <section class="panel"><div class="small muted">Déjà réglé</div><div class="money num" style="margin-top:6px">${money(paid)} TTC</div><div class="small muted num">Reste ${money(Math.max(0, b.totalTTC - paid))} TTC</div></section>
@@ -277,17 +280,109 @@
 
   function vEquipe() {
     return `
-    <div class="head"><div><div class="eyebrow">Une question ? On répond sous 24 h ouvrées</div><h1>Équipe et aide</h1></div></div>
-    <div class="team">${S.team.map((u) => `<section class="panel person">${IMG[u.photo] ? `<img src="${IMG[u.photo]}" alt="">` : ''}<div><h3>${esc(u.name)}</h3><div class="role">${esc(u.title || '')}</div>${u.phone ? `<div class="small muted num" style="margin-top:4px">${esc(u.phone)}</div>` : ''}</div>${u.wa ? `<a class="btn btn-line btn-sm" href="${u.wa}" target="_blank" rel="noopener">${ic('chat')}WhatsApp</a>` : '<span class="small muted">Joignable via Louis</span>'}</section>`).join('')}</div>
+    <div class="head"><div><h1>Équipe et aide</h1><p class="lead">Une question ? On répond sous 24 h ouvrées</p></div><button class="btn btn-line" data-act="obopen">${ic('play')}Revoir la visite guidée</button></div>
+    <div class="team">${S.team.map((u) => `<section class="panel person">${IMG[u.photo] ? `<img src="${IMG[u.photo]}" alt="">` : ''}<div><h3>${esc(u.name)}</h3><div class="role-t">${esc(u.title || '')}</div>${u.phone ? `<div class="small muted num" style="margin-top:4px">${esc(u.phone)}</div>` : ''}</div>${u.wa ? `<a class="btn btn-line btn-sm" href="${u.wa}" target="_blank" rel="noopener">${ic('chat')}WhatsApp</a>` : '<span class="small muted">Joignable via Louis</span>'}</section>`).join('')}</div>
     <section class="panel" style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between">
       <div style="min-width:0;flex:1 1 280px"><h2>Besoin d’en parler de vive voix ?</h2><p class="muted" style="margin-top:6px">${R('Réservez', 'Réserve')} une visio de 30 minutes quand ${R('vous voulez', 'tu veux')}.</p></div>
       <a class="btn btn-primary" href="${CAL}" target="_blank" rel="noopener">${ic('cal')}Réserver une visio</a></section>
+    ${qaPanel()}
     <section class="panel"><div class="panel-head"><h2>${ic('chat')}Questions fréquentes</h2></div>
       <details><summary>Que se passe-t-il quand je valide une étape ?</summary><p>La validation est enregistrée avec la date et l’heure, l’équipe est prévenue et l’étape suivante démarre.</p></details>
       <details><summary>Le site m’appartient-il ?</summary><p>Oui. Le site est hébergé sur ${R('votre', 'ton')} propre compte Webflow : ${R('vous en êtes propriétaire, vous êtes libres', 'tu en es propriétaire, tu es libre')}.</p></details>
       <details><summary>Où déposer un fichier très lourd ?</summary><p>Dans l’onglet Fichiers, jusqu’à 2 Go par fichier. Au-delà, ${R('envoyez', 'envoie')}-nous un lien WeTransfer sur WhatsApp.</p></details>
       <details><summary>Comment me reconnecter ?</summary><p>Sur la page de connexion, ${R('saisissez votre', 'saisis ton')} e-mail : un lien et un code arrivent en quelques secondes. Pas de mot de passe à retenir.</p></details>
     </section>`;
+  }
+
+
+  /* ---------- Chiffres clés ---------- */
+  const daysTo = (d) => Math.ceil((new Date(d).setHours(0, 0, 0, 0) - new Date().setHours(0, 0, 0, 0)) / 864e5);
+  function kpisClient() {
+    const p = S.project, j = daysTo(p.golive);
+    const sent = p.files.filter((f) => f.from === 'client').length;
+    const k = (v, l, go) => `<a class="kpi" href="#${go}" data-go="${go}"><span class="v num">${v}</span><span class="l">${l}</span></a>`;
+    return `<div class="kpis">
+      ${k(j > 0 ? `J-${j}` : 'En ligne', j > 0 ? 'avant la mise en ligne' : R('Votre', 'Ton') + ' site est publié', 'projet')}
+      ${k(`${p.phase}<small>/5</small>`, esc(p.phases[p.phase - 1].t), 'projet')}
+      ${k(pending(), pending() > 1 ? 'éléments à valider' : 'élément à valider', 'valider')}
+      ${k(`${sent}`, sent > 1 ? 'fichiers envoyés' : 'fichier envoyé', 'fichiers')}
+    </div>`;
+  }
+  function kpisAdmin() {
+    const P = S.projects, sum = (f) => P.reduce((s, p) => s + f(p), 0);
+    const k = (v, l) => `<div class="kpi"><span class="v num">${v}</span><span class="l">${l}</span></div>`;
+    const pl = (n, one, many) => k(n, n > 1 ? many : one);
+    return `<div class="kpis">${pl(P.length, 'espace actif', 'espaces actifs')}${pl(P.filter((p) => p.alerts.newFiles || p.alerts.changes).length, 'à traiter par l’agence', 'à traiter par l’agence')}${pl(sum((p) => p.alerts.waiting), 'validation chez un client', 'validations chez les clients')}${pl(sum((p) => p.alerts.newFiles), 'nouveau fichier', 'nouveaux fichiers')}</div>`;
+  }
+
+  /* ---------- Réponses instantanées ---------- */
+  const QA = () => [['ou', 'Où en est le projet ?'], ['moi', 'Qu’attendez-vous de ' + R('moi', 'moi') + ' ?'], ['rdv', 'Quel est le prochain rendez-vous ?'], ['payer', 'Que reste-t-il à payer ?'], ['qui', 'Qui contacter ?']];
+  function qaAnswer(id) {
+    const p = S.project, ph = p.phases[p.phase - 1];
+    const done = ph.items.filter((i) => i.status === 'done').length;
+    const lead = S.team[0] || {};
+    switch (id) {
+      case 'ou': return `Le projet est à l’étape ${p.phase} sur 5 : <strong>${esc(ph.t)}</strong>. ${done} livrable${done > 1 ? 's' : ''} sur ${ph.items.length} ${done > 1 ? 'sont faits' : 'est fait'} sur cette étape. Mise en ligne prévue vers le <strong>${fmt(p.golive, { day: 'numeric', month: 'long' })}</strong>, dans ${Math.max(0, daysTo(p.golive))} jours. <a href="#projet" data-go="projet">Voir les étapes</a>`;
+      case 'moi': { const list = [...p.validations.filter((v) => v.status === 'ready').map((v) => 'valider ' + v.t.toLowerCase()), ...p.missing.map((m) => 'déposer ' + m.t.toLowerCase())];
+        return list.length ? `${list.length} chose${list.length > 1 ? 's' : ''} ${R('vous attendent', 't’attendent')} : ${list.map(esc).join(', ')}. <a href="#${pending() ? 'valider' : 'fichiers'}" data-go="${pending() ? 'valider' : 'fichiers'}">Commencer</a>` : `Rien pour le moment. On ${R('vous', 'te')} prévient dès qu’on a besoin de ${R('vous', 'toi')}.`; }
+      case 'rdv': return p.meeting && p.meeting.when ? `<strong>${esc(p.meeting.title)}</strong>, ${esc(fmtTime(p.meeting.when))}. Besoin d’un autre créneau ? <a href="${CAL}" target="_blank" rel="noopener">Réserver une visio</a>` : `Aucun rendez-vous fixé. <a href="${CAL}" target="_blank" rel="noopener">Réserver une visio de 30 minutes</a>`;
+      case 'payer': { const paid = p.invoices.filter((i) => i.status === 'paid').reduce((s, i) => s + i.ttc, 0); const next = p.invoices.find((i) => i.status !== 'paid');
+        return `Déjà réglé : <strong>${money(paid)} TTC</strong> sur ${money(p.billing.totalTTC)} TTC. Reste <strong>${money(Math.max(0, p.billing.totalTTC - paid))} TTC</strong>${next ? (next.status === 'due' ? ', à régler maintenant' : ', facturés à la livraison') : ''}. <a href="#documents" data-go="documents">Voir les factures</a>`; }
+      case 'qui': return `${esc(lead.name || 'Louis')}, ${esc((lead.title || 'chef de projet').toLowerCase())}, est ${R('votre', 'ton')} interlocuteur principal${lead.phone ? ` : <strong class="num">${esc(lead.phone)}</strong>` : ''}. ${lead.wa ? `<a href="${lead.wa}" target="_blank" rel="noopener">Écrire sur WhatsApp</a>` : ''}`;
+    }
+    return '';
+  }
+  function qaPanel() {
+    const lead = S.team[0] || {};
+    return `<section class="panel" aria-labelledby="qa"><div class="panel-head"><h2 id="qa">${ic('chat')}Une question ?</h2><span class="aside">Réponse immédiate, tirée de ${R('votre', 'ton')} projet</span></div>
+      <div class="qa-chips" role="group" aria-label="Questions fréquentes">${QA().map(([id, q]) => `<button data-act="qa" data-id="${id}" aria-pressed="${S.qa === id}">${q}</button>`).join('')}</div>
+      ${S.qa ? `<div class="qa-answer" role="status">${lead.photo && IMG[lead.photo] ? `<img src="${IMG[lead.photo]}" alt="">` : ''}<p>${qaAnswer(S.qa)}</p></div>` : ''}</section>`;
+  }
+
+  /* ---------- Accueil guidé (première connexion) ---------- */
+  function onboarding() {
+    const p = S.project, st = S.ob.step, first = (p.contactName || S.me.name || '').split(' ')[0];
+    const lead = S.team[0] || {};
+    const faces = S.team.filter((u) => IMG[u.photo]).map((u) => `<img src="${IMG[u.photo]}" alt="${esc(u.name)}">`).join('');
+    const arts = [
+      ['Bienvenue', `Bienvenue ${esc(first)}, ${R('votre', 'ton')} projet démarre ici.`],
+      ['Le chemin', '5 étapes jusqu’à la mise en ligne.'],
+      ['Pour démarrer', `${R('Vos', 'Tes')} premières actions.`],
+      ['Dernier détail', `On ${R('vous', 'te')} prévient comment ?`]
+    ];
+    const actions = [...p.validations.filter((v) => v.status === 'ready').map((v) => ['Valider : ' + v.t.toLowerCase(), 'Environ 5 minutes']), ...p.missing.map((m) => ['Déposer : ' + m.t.toLowerCase(), m.sub]), ...p.tasks.filter((t) => !t.done).map((t) => [t.t, ''])].slice(0, 3);
+    const bodies = [
+      `<h3>Un mot de ${esc((lead.name || 'Louis').split(' ')[0])}</h3>
+       <p>Merci de nous faire confiance pour ce projet : <strong>${esc(p.projet)}</strong>. Cet espace remplace les mails éparpillés : ${R('vous y trouverez', 'tu y trouveras')} où en est le site, ce qu’on attend de ${R('vous', 'toi')}, ${R('vos', 'tes')} fichiers et ${R('vos', 'tes')} factures.</p>
+       <p>On ne passe jamais à l’étape suivante sans ${R('votre', 'ton')} feu vert. Et si quelque chose n’est pas clair, on est à un message de ${R('vous', 'toi')}.</p>
+       <p class="muted small">${esc(lead.name || '')}${lead.title ? ', ' + esc(lead.title.toLowerCase()) : ''}</p>`,
+      `<h3>${R('Votre', 'Ton')} planning</h3>
+       <div class="ob-tl">${p.phases.map((x) => `<div class="tl ${x.n < p.phase ? 'done' : x.n === p.phase ? 'on' : ''}"><i></i><strong style="font-weight:${x.n === p.phase ? 600 : 400}">${esc(x.t)}</strong><span class="num">${fmt(x.from)}</span></div>`).join('')}</div>
+       <p class="small muted">Mise en ligne prévue vers le <strong style="color:var(--fg)">${fmt(p.golive, { day: 'numeric', month: 'long' })}</strong>. Les dates sont ajustées ensemble à chaque étape.</p>`,
+      `<h3>${actions.length ? 'Ce qu’on attend de ' + R('vous', 'toi') : 'Rien à faire pour l’instant'}</h3>
+       ${actions.length ? `<div class="ob-list">${actions.map(([t, sub], i) => `<div class="li"><span class="rank">${String(i + 1).padStart(2, '0')}</span><div><strong>${esc(t)}</strong>${sub ? `<span>${esc(sub)}</span>` : ''}</div></div>`).join('')}</div>` : `<p>On ${R('vous', 'te')} prévient dès qu’on a besoin de ${R('vous', 'toi')}.</p>`}
+       <p class="small muted">${R('Vous les retrouverez', 'Tu les retrouveras')} toujours en haut de l’accueil.</p>`,
+      `<h3>Être prévenu au bon moment</h3>
+       <div class="ob-pref">
+         <label><input type="checkbox" id="pf-mail" checked> Un e-mail quand on a besoin de ${R('vous', 'toi')}</label>
+         <label><input type="checkbox" id="pf-wa"> Un message WhatsApp pour les validations</label>
+         <label><input type="checkbox" id="pf-week" checked> Le point de la semaine, chaque vendredi</label>
+       </div>`
+    ];
+    return `<div class="ob" role="dialog" aria-modal="true" aria-labelledby="ob-t"><div class="ob-card">
+      <div class="ob-art"><div><div class="k">${arts[st][0]} · ${st + 1} sur 4</div><h2 id="ob-t">${arts[st][1]}</h2></div><div class="faces">${faces}</div></div>
+      <div class="ob-body"><div class="ob-steps" aria-hidden="true">${[0, 1, 2, 3].map((i) => `<i class="${i <= st ? 'on' : ''}"></i>`).join('')}</div>
+        ${bodies[st]}
+        <div class="ob-foot">${st ? `<button class="ghost" data-act="ob-prev">${ic('back')}Retour</button>` : '<button class="ghost" data-act="ob-skip">Passer</button>'}
+          <button class="btn btn-primary" data-act="${st < 3 ? 'ob-next' : 'ob-done'}">${st < 3 ? 'Continuer' : 'Découvrir mon espace'} ${ic('arrow')}</button></div>
+      </div></div></div>`;
+  }
+  function celebrate() {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const c = document.createElement('div'); c.className = 'confetti'; c.setAttribute('aria-hidden', 'true');
+    const cols = ['#ff6200', '#092482', '#6cb5d7', '#0b6a3b', '#f4f4f6'];
+    for (let i = 0; i < 70; i++) { const e = document.createElement('i'); e.style.left = Math.random() * 100 + '%'; e.style.background = cols[i % cols.length]; e.style.animationDelay = Math.random() * 0.4 + 's'; e.style.animationDuration = 1.2 + Math.random() + 's'; c.appendChild(e); }
+    document.body.appendChild(c); setTimeout(() => c.remove(), 2800);
   }
 
   /* ---------- Vues agence ---------- */
@@ -300,14 +395,15 @@
       return `<button class="crow" data-open="${p.id}"><div><div class="c-name">${esc(p.client)}</div><div class="small muted">${esc(p.projet)}</div></div><div><div class="small"><span class="muted">Étape ${p.phase} · ${esc(p.phaseName)}</span></div><div class="small" style="margin-top:2px">${esc(p.next.title)}</div></div><div class="c-flags">${flags}</div></button>`; }).join('');
     const needs = S.projects.filter((p) => p.alerts.newFiles || p.alerts.changes).length;
     return `
-    <div class="head"><div><div class="eyebrow">${esc(cap(fmtLong(Date.now())))}</div><h1>Clients</h1></div><button class="btn btn-primary" data-go="nouveau">${ic('plus')}Nouvel espace client</button></div>
+    <div class="head"><div><h1>Clients</h1><p class="lead">${esc(cap(fmtLong(Date.now())))}</p></div><button class="btn btn-primary" data-go="nouveau">${ic('plus')}Nouvel espace client</button></div>
+    ${kpisAdmin()}
     ${needs ? `<div class="alert">${ic('alert')}<div><strong>${needs} client${needs > 1 ? 's' : ''} attend${needs > 1 ? 'ent' : ''} une action de l’agence.</strong> Nouveaux fichiers à récupérer ou modifications demandées.</div></div>` : ''}
     <section class="panel"><div class="clients">${rows || '<div class="empty">Aucun espace client pour l’instant.</div>'}</div></section>`;
   }
 
   function vNouveau() {
     return `
-    <div class="head"><div><div class="eyebrow">Le client reçoit un lien de connexion, sans mot de passe</div><h1>Nouvel espace client</h1></div></div>
+    <div class="head"><div><h1>Nouvel espace client</h1><p class="lead">Le client reçoit un lien de connexion, sans mot de passe</p></div></div>
     <form class="panel form" data-form="create">
       <div class="line"><div class="field"><label for="n-client">Client</label><input id="n-client" type="text" required placeholder="Maison Lumen"></div>
       <div class="field"><label for="n-projet">Projet</label><input id="n-projet" type="text" placeholder="Refonte du site maisonlumen.fr"></div></div>
@@ -329,7 +425,7 @@
     const body = { pilotage: tPilotage, validations: tValidations, fichiers: tFichiers, factures: tFactures, acces: tAcces, activite: tActivite }[S.tab]();
     return `
     <div><button class="ghost" data-go="clients" style="padding-left:0">${ic('back')}Tous les clients</button></div>
-    <div class="head"><div><div class="eyebrow">${esc(p.projet)} · Étape ${p.phase} sur 5</div><h1>${esc(p.client)}</h1></div><button class="btn btn-line" data-act="preview">${ic('eye')}Voir comme le client</button></div>
+    <div class="head"><div><h1>${esc(p.client)}</h1><p class="lead">${esc(p.projet)} · Étape ${p.phase} sur 5</p></div><div class="head-actions"><button class="btn btn-line" data-act="obpreview">${ic('play')}Accueil du client</button><button class="btn btn-line" data-act="preview">${ic('eye')}Voir comme le client</button></div></div>
     <div class="tabs" role="tablist">${TABS.map(([id, l]) => `<button role="tab" aria-selected="${S.tab === id}" data-tab="${id}">${l}${tabCount[id] ? `<span class="badge">${tabCount[id]}</span>` : ''}</button>`).join('')}</div>
     ${body}`;
   }
@@ -349,7 +445,7 @@
       <div class="line"><div class="field"><label for="a-mt">Prochain rendez-vous</label><input id="a-mt" type="text" value="${esc(p.meeting.title)}" placeholder="Point d’étape (visio, 30 min)"></div><div class="field"><label for="a-mw">Date et heure</label><input id="a-mw" type="datetime-local" value="${dtKey(p.meeting.when)}"></div></div>
       <div><button class="btn btn-primary btn-sm" type="submit">Publier</button></div></form>
     <section class="panel"><div class="panel-head"><h2>${ic('doc')}Livrables par étape</h2><span class="small muted">Visibles dans « Projet » côté client</span></div>
-      ${p.phases.map((ph) => `<h3 style="margin:14px 0 4px">${ph.n} · ${esc(ph.t)}</h3>${ph.items.map((it) => `<div class="it"><div>${esc(it.t)}</div>
+      ${p.phases.map((ph) => `<div class="phase-title">${ph.n} · ${esc(ph.t)}</div>${ph.items.map((it) => `<div class="it"><div>${esc(it.t)}</div>
         <select data-item="${it.id}" aria-label="Statut : ${esc(it.t)}">${[['wait', 'Prévu'], ['on', 'En cours'], ['done', 'Fait']].map(([v, l]) => `<option value="${v}" ${it.status === v ? 'selected' : ''}>${l}</option>`).join('')}</select>
         <input type="date" data-itemdate="${it.id}" value="${dayKey(it.due)}" aria-label="Date prévue : ${esc(it.t)}"></div>`).join('')}`).join('')}</section>
     <div class="grid2">
@@ -460,12 +556,13 @@
       if (!S.project) { root.innerHTML = shell('<div class="empty">Votre espace est en cours de préparation.</div>'); return; }
       const V = { accueil: vAccueil, projet: vProjet, valider: vValider, fichiers: vFichiers, documents: vDocuments, equipe: vEquipe };
       if (!V[S.view]) S.view = 'accueil';
-      root.innerHTML = shell(V[S.view]());
+      root.innerHTML = shell(V[S.view]()) + (S.ob ? onboarding() : '');
     } else {
       const V = { clients: vClients, nouveau: vNouveau, admin: vAdmin };
       if (!V[S.view] || (S.view === 'admin' && !S.project)) S.view = 'clients';
       root.innerHTML = shell(V[S.view]());
     }
+    if (S.ob) { const b = document.querySelector('.ob .btn-primary'); if (b) b.focus({ preventScroll: true }); }
     bindFiles();
     if (focus) { const m = $('#main'); if (m) m.focus({ preventScroll: true }); window.scrollTo(0, 0); }
   }
@@ -478,7 +575,7 @@
   async function enter() {
     const r = await API.me(); S.me = r.user; S.team = r.team || [];
     if (S.me.role === 'admin') { await loadProjects(); S.view = 'clients'; S.project = null; }
-    else { await loadProjects(); if (S.projects[0]) { const d = await API.project(S.projects[0].id); S.project = d.project; S.people = d.people || {}; } S.view = 'accueil'; }
+    else { await loadProjects(); if (S.projects[0]) { const d = await API.project(S.projects[0].id); S.project = d.project; S.people = d.people || {}; } S.view = 'accueil'; if (S.project && !S.me.onboardedAt) S.ob = { step: 0 }; }
     S.loading = false; render(true);
   }
   async function openProject(id) { S.tab = 'pilotage'; S.view = 'admin'; await loadProject(id); window.scrollTo(0, 0);
@@ -533,7 +630,7 @@
       case 'toast': e.preventDefault(); toast(a.dataset.msg); break;
       case 'theme': { const r = document.documentElement; const dark = r.dataset.theme ? r.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches; r.dataset.theme = dark ? 'light' : 'dark'; try { localStorage.setItem('orem-theme', r.dataset.theme); } catch {} break; }
       case 'logout': logout(); break;
-      case 'approve': if (S.preview) return toast('Aperçu : les actions sont désactivées.'); if (await act({ type: 'val.approve', vid: id }, 'Validation enregistrée. L’équipe est prévenue.')) { S.view = 'valider'; render(); } break;
+      case 'approve': if (S.preview) return toast('Aperçu : les actions sont désactivées.'); if (await act({ type: 'val.approve', vid: id }, 'Validation enregistrée. L’équipe est prévenue.')) { S.view = 'valider'; render(); celebrate(); } break;
       case 'changes': if (S.preview) return toast('Aperçu : les actions sont désactivées.'); S.valForm = id; render(); { const t = $('#chg-' + id); t && t.focus(); } break;
       case 'valcancel': S.valForm = null; render(); break;
       case 'task': if (S.preview) return toast('Aperçu : les actions sont désactivées.'); act({ type: 'task.toggle', tid: id }); break;
@@ -544,9 +641,19 @@
       case 'seen': act({ type: 'seen' }, 'Tout est marqué comme vu.'); break;
       case 'valreset': act({ type: 'val.reset', vid: id }, 'Validation remise en attente.'); break;
       case 'preview': S.preview = true; S.view = 'accueil'; render(true); break;
-      case 'endpreview': S.preview = false; S.view = 'admin'; render(true); break;
+      case 'endpreview': S.preview = false; S.ob = null; S.view = 'admin'; render(true); break;
       case 'login-back': S.login.step = 'email'; render(); break;
       case 'demo-as': API.as(a.dataset.email); enter(); break;
+      case 'qa': S.qa = S.qa === id ? null : id; render(); break;
+      case 'obopen': S.ob = { step: 0 }; render(); break;
+      case 'obpreview': S.preview = true; S.view = 'accueil'; S.ob = { step: 0 }; render(true); break;
+      case 'ob-next': S.ob.step++; render(); break;
+      case 'ob-prev': S.ob.step--; render(); break;
+      case 'ob-skip': case 'ob-done': {
+        const prefs = { mail: !!($('#pf-mail') || {}).checked, whatsapp: !!($('#pf-wa') || {}).checked, weekly: !!($('#pf-week') || {}).checked };
+        const wasDone = a.dataset.act === 'ob-done'; S.ob = null;
+        if (!S.preview && !S.me.onboardedAt) { S.me.onboardedAt = new Date().toISOString(); try { await API.action(S.project.id, { type: 'user.onboarded', prefs: wasDone ? prefs : undefined }); } catch {} }
+        render(); if (wasDone) { celebrate(); toast(R('Bienvenue dans votre espace.', 'Bienvenue dans ton espace.')); } break; }
       case 'demo-switch': API.as(isAdmin() ? 'claire@maisonlumen.fr' : 'louis@agence-orem.fr'); S.preview = false; enter(); break;
       case 'copy': { const txt = $('#iban').textContent; const sel = () => { const r = document.createRange(); r.selectNodeContents($('#iban')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast('IBAN sélectionné, copiez-le avec Ctrl+C.'); };
         try { navigator.clipboard.writeText(txt).then(() => toast('IBAN copié.'), sel); } catch { sel(); } break; }
@@ -597,6 +704,7 @@
     }
   });
   document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && S.ob) { S.ob = null; render(); return; }
     if (e.target.closest && e.target.closest('.otp') && e.key === 'Backspace' && !e.target.value && e.target.previousElementSibling) e.target.previousElementSibling.focus();
   });
 

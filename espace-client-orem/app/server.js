@@ -65,7 +65,7 @@ function openSession(res, user) {
   save();
   res.setHeader('Set-Cookie', `sid=${sid}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${SESSION_TTL / 1000}${DEV ? '' : '; Secure'}`);
 }
-const publicUser = (u) => u && { id: u.id, email: u.email, name: u.name, role: u.role, projectId: u.projectId, title: u.title, wa: u.wa, phone: u.phone, photo: u.photo };
+const publicUser = (u) => u && { id: u.id, email: u.email, name: u.name, role: u.role, projectId: u.projectId, title: u.title, wa: u.wa, phone: u.phone, photo: u.photo, onboardedAt: u.onboardedAt, prefs: u.prefs };
 const team = () => db.users.filter((u) => u.role === 'admin').map(publicUser);
 
 /* ---------- Connexion par code / lien magique ---------- */

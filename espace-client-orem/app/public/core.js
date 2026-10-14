@@ -167,7 +167,7 @@
   }
 
   /* ---------- Écriture ---------- */
-  const CLIENT_ACTIONS = new Set(['val.approve', 'val.changes', 'task.toggle', 'missing.done', 'file.add']);
+  const CLIENT_ACTIONS = new Set(['val.approve', 'val.changes', 'task.toggle', 'missing.done', 'file.add', 'user.onboarded']);
 
   function log(project, user, text) {
     project.activity.unshift({ at: iso(Date.now()), by: user.id, text, seen: user.role === 'admin' });
@@ -261,6 +261,11 @@
         if (store.users.some((u) => u.email === email)) return { error: 'Cette adresse a déjà un accès.' };
         store.users.push({ id: uid('u'), email, name: String(action.name || email.split('@')[0]), role: 'client', projectId: project.id });
         log(project, user, 'a donné l’accès à ' + email); break;
+      }
+      case 'user.onboarded': {
+        const u = store.users.find((x) => x.id === user.id); if (!u) return { error: 'Utilisateur introuvable.' };
+        u.onboardedAt = now; if (action.prefs) u.prefs = { mail: !!action.prefs.mail, whatsapp: !!action.prefs.whatsapp, weekly: !!action.prefs.weekly };
+        log(project, user, 'a découvert son espace'); break;
       }
       case 'user.remove': {
         const u = store.users.find((x) => x.id === action.id && x.projectId === project.id);
