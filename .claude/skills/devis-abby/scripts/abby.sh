@@ -83,7 +83,7 @@ case "$cmd" in
       | jq -r '.docs[] | "\(.id)\t\(.name)\t\(.emails // [] | join(","))\tSIRET \(.siret // "-")"'
     echo "## Contacts"
     api GET "/contacts?page=1&limit=10&search=$q" \
-      | jq -r '.docs[] | "\(.id)\t\(.firstname) \(.lastname)\t\(.emails // [] | join(","))\torg: \(.organization.name // "-")"' ;;
+      | jq -r '.docs[] | "\(.id)\t\(.fullname)\t\(.emails // [] | join(","))\torg: \(.organization.name // "-")"' ;;
 
   org-contacts)
     api GET "/organization/${1:?orgId}/contacts" | jq . ;;

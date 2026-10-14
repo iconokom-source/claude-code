@@ -11,7 +11,7 @@ Source : SDK officiel `@abby-inc/node` 2.5.0 (types générés depuis l'OpenAPI)
 | Action | Méthode | Chemin | Corps |
 |---|---|---|---|
 | Chercher organisations | GET | `/organizations?page=1&limit=10&search=` | — → `{docs:[{id,name,emails,siret}]}` |
-| Chercher contacts | GET | `/contacts?page=1&limit=10&search=` | — → `{docs:[{id,firstname,lastname,emails,organization}]}` |
+| Chercher contacts | GET | `/contacts?page=1&limit=10&search=` | — → `{docs:[{id,fullname,emails,organization,defaultContact}]}` |
 | Contacts d'une organisation | GET | `/organization/{id}/contacts` | — |
 | Créer organisation | POST | `/organization` | `{name, emails?, siret?, vatNumber?, billingAddress?}` |
 | Créer contact | POST | `/contact` | `{firstname, lastname, emails?, phone?, billingAddress?}` |
