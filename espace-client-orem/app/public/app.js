@@ -51,7 +51,9 @@
       setPrefs: (p) => j('/api/me/prefs', { method: 'POST', body: JSON.stringify(p) }),
       outbox: () => j('/api/outbox'),
       digest: () => j('/api/digest', { method: 'POST' }),
-      settings: (b) => j('/api/settings', { method: 'POST', body: JSON.stringify(b) })
+      settings: (b) => j('/api/settings', { method: 'POST', body: JSON.stringify(b) }),
+      connectors: () => j('/api/connectors'),
+      sync: (name, projectId) => j('/api/connectors/' + name + '/sync', { method: 'POST', body: JSON.stringify({ projectId }) })
     };
   }
   function demoApi() {
@@ -85,6 +87,8 @@
       setPrefs: (p) => { const r = Core.setPrefs(store, me, p); if (r.ok) me.notify = r.notify; return r.error ? fail(r.error) : wait(r); },
       outbox: () => wait({ enabled: false, items: store.outbox }),
       settings: (b) => { const r = Core.setSettings(store, me, b); return r.error ? fail(r.error) : wait(r); },
+      connectors: () => wait({ connectors: [['pipedrive', 'Pipedrive'], ['abby', 'Abby'], ['qonto', 'Qonto'], ['google', 'Google Drive'], ['claude', 'Assistant (API Claude)']].map(([id, label]) => ({ id, label, configured: false, missing: ['clés à fournir au lancement du serveur'], does: '' })) }),
+      sync: () => fail('Dans la démo, aucun outil n’est connecté.'),
       digest: () => { const m = Core.digestFor(store, me, '2000', BASE); if (m) store.outbox.unshift({ ...m, at: new Date().toISOString() }); return wait({ ok: true, sent: m ? 1 : 0 }); }
     };
   }
@@ -315,7 +319,7 @@
       <section class="panel"><div class="small muted">Montant du projet</div><div class="money num" style="margin-top:6px">${money(b.totalHT)} HT</div><div class="small muted num">${money(b.totalTTC)} TTC${b.quote ? ' · devis ' + esc(b.quote) : ''}${b.signedAt ? ' signé le ' + fmt(b.signedAt) : ''}</div></section>
       <section class="panel"><div class="small muted">Déjà réglé</div><div class="money num" style="margin-top:6px">${money(paid)} TTC</div><div class="small muted num">Reste ${money(Math.max(0, b.totalTTC - paid))} TTC</div></section>
     </div>
-    <section class="panel"><div class="panel-head"><h2>${ic('doc')}Factures</h2></div><div class="list">${p.invoices.map((i) => `<div class="row"><span class="ico ${i.status === 'paid' ? 'ok' : ''}">${ic('doc')}</span><div class="grow"><div class="title">${esc(i.label)}${i.num ? ' ' + esc(i.num) : ''}</div><div class="sub num">${money(i.ht)} HT · ${money(i.ttc)} TTC${i.status === 'paid' && i.paidAt ? ' · réglée le ' + fmt(i.paidAt) : i.status === 'future' ? ' · envoyée à la livraison' : ''}</div></div>${st[i.status] || ''}${pdfBtn(pdfOf(i))}</div>`).join('') || '<p class="muted">Aucune facture pour le moment.</p>'}</div></section>
+    <section class="panel"><div class="panel-head"><h2>${ic('doc')}Factures</h2></div><div class="list">${p.invoices.map((i) => `<div class="row"><span class="ico ${i.status === 'paid' ? 'ok' : ''}">${ic('doc')}</span><div class="grow"><div class="title">${esc(i.label)}${i.num ? ' ' + esc(i.num) : ''}</div><div class="sub num">${money(i.ht)} HT · ${money(i.ttc)} TTC${i.status === 'paid' && i.paidAt ? ' · réglée le ' + fmt(i.paidAt) : i.status === 'future' ? ' · envoyée à la livraison' : ''}</div></div>${st[i.status] || ''}${i.status === 'due' && i.payUrl ? `<a class="btn btn-primary btn-sm" href="${esc(i.payUrl)}" target="_blank" rel="noopener">Payer en ligne</a>` : ''}${pdfBtn(pdfOf(i))}</div>`).join('') || '<p class="muted">Aucune facture pour le moment.</p>'}</div></section>
     <section class="panel"><div class="panel-head"><h2>${ic('down')}Devis, contrat et RIB</h2></div><div class="list">${docs.map(fileRow).join('') || '<p class="muted">Le devis signé et les autres documents apparaîtront ici.</p>'}</div></section>
     <section class="panel"><div class="panel-head"><h2>${ic('copy')}Coordonnées bancaires</h2><span class="small muted">Banque ${esc(cfg().bank)}</span></div>
       <dl class="kv"><dt>Titulaire</dt><dd>${esc(cfg().holder)}, ${esc(cfg().address)}</dd><dt>IBAN</dt><dd id="iban">${esc(cfg().iban)}</dd><dt>BIC</dt><dd>${esc(cfg().bic)}</dd></dl>
@@ -752,6 +756,9 @@
         <div class="field"><label for="st-a">Adresse</label><input id="st-a" type="text" value="${esc(cfg().address)}"></div>
         <div class="line"><div class="field"><label for="st-i">IBAN</label><input id="st-i" type="text" value="${esc(cfg().iban)}"></div><div class="field"><label for="st-c">BIC</label><input id="st-c" type="text" value="${esc(cfg().bic)}"></div></div>
         <div><button class="btn btn-primary btn-sm" type="submit">Enregistrer</button></div></form>
+      <section class="panel"><div class="panel-head"><h2>${ic('globe')}Outils connectés</h2><span class="aside">Clés dans le coffre Notion, fournies au lancement du serveur</span></div>
+        <div class="list">${(S.connectors || []).map((c) => `<div class="row"><span class="ico ${c.configured ? 'ok' : ''}">${ic(c.configured ? 'ok' : 'lock')}</span><div class="grow"><div class="title">${esc(c.label)}</div><div class="sub">${esc(c.does)}${c.last ? ` · dernière synchronisation ${ago(c.last.at)} : ${esc(c.last.summary)}` : ''}${!c.configured ? ` · à fournir : ${esc((c.missing || []).join(', '))}` : ''}</div></div>${c.configured ? '<span class="chip ok">Connecté</span>' : '<span class="chip idle">Non connecté</span>'}${c.configured && ['abby', 'qonto'].includes(c.id) ? `<button class="btn btn-line btn-sm" data-act="sync" data-id="${c.id}">Synchroniser</button>` : ''}</div>`).join('') || '<p class="muted">Aucun connecteur.</p>'}</div>
+        <p class="hint">Rien n’est appelé tant qu’une clé n’est pas fournie. Pipedrive prépare l’espace d’un deal gagné ; l’offre et le registre restent à choisir par l’équipe.</p></section>
       <section class="panel"><div class="panel-head"><h2>${ic('mail')}E-mails envoyés</h2><span class="aside">${ob.enabled ? 'Envoi réel activé' : 'Envoi réel désactivé : les e-mails restent ici tant que l’espace n’est pas en ligne'}</span></div>
         <div class="list">${(ob.items || []).slice(0, 15).map((m, i) => `<button class="row inbox-row" data-mail="${i}"><span class="ico">${ic('mail')}</span><span class="grow"><span class="title">${esc(m.subject)}</span><span class="sub">À ${esc(m.to)} · ${ago(m.at)}</span></span>${ic('eye', 'width:18px;height:18px;color:var(--muted);flex:none')}</button>`).join('') || '<p class="muted">Aucun e-mail pour l’instant. Déposez un fichier côté client pour voir ce que reçoit l’équipe.</p>'}</div></section>`;
   }
@@ -850,7 +857,8 @@
         a.waiting ? `<span class="chip hl">Validation chez le client</span>` : '',
         a.newMessages ? `<span class="chip warn">${a.newMessages} message${a.newMessages > 1 ? 's' : ''}</span>` : '',
         a.requests ? `<span class="chip warn">Demande d\u2019évolution</span>` : '',
-        !a.newFiles && !a.changes && !a.waiting && !a.newMessages && !a.requests ? '<span class="chip idle">Rien de neuf</span>' : ''].join('');
+        p.draft ? '<span class="chip warn">À ouvrir</span>' : '',
+        !a.newFiles && !a.changes && !a.waiting && !a.newMessages && !a.requests && !p.draft ? '<span class="chip idle">Rien de neuf</span>' : ''].join('');
       return `<button class="crow" data-open="${p.id}"><div><div class="c-name">${esc(p.client)}</div><div class="small muted">${esc(p.projet)}</div>${p.team ? faces(p.team.members) : ''}</div><div><div class="small"><span class="muted">${esc(p.offerLabel || '')}${p.offerLabel ? ' · ' : ''}${esc(p.phaseName)}${p.archived ? ' · archivé' : p.delivered ? ' · livré' : ''}</span></div><div class="small" style="margin-top:2px">${esc(p.next.title)}</div></div><div class="c-flags">${flags}</div></button>`; }).join('');
     const needs = S.projects.filter((p) => p.alerts.newFiles || p.alerts.changes || p.alerts.newMessages || p.alerts.requests).length;
     return `
@@ -888,6 +896,11 @@
     return `
     <div><button class="ghost" data-go="clients" style="padding-left:0">${ic('back')}Tous les clients</button></div>
     <div class="head"><div><h1>${esc(p.client)}</h1><p class="lead">${esc(p.projet)} · ${esc(Core.offerOf(p))} · ${esc(phName(p.phases[p.phase - 1]))}${p.deliveredAt ? ' · livré le ' + fmt(p.deliveredAt, { day: 'numeric', month: 'long' }) : ''}</p></div><div class="head-actions"><button class="btn btn-primary" data-act="compose">${ic('plus')}Ajouter</button><button class="btn btn-line" data-act="obpreview">${ic('play')}Accueil du client</button><button class="btn btn-line" data-act="preview">${ic('eye')}Voir comme le client</button></div></div>
+    ${p.draft ? `<form class="panel form draft" data-form="confirm"><div class="panel-head" style="margin:0"><h2>${ic('alert')}Espace préparé depuis ${esc(p.draft.from)}, à ouvrir</h2><span class="aside">Le client n’a pas encore accès</span></div>
+      <fieldset class="field" style="border:0;padding:0;margin:0"><legend style="font-size:14px;font-weight:500;margin-bottom:8px">Offre</legend><div class="offers">${Object.entries(Core.OFFERS).map(([k, o]) => `<label class="offer"><input type="radio" name="cf-offer" value="${k}" ${p.offer === k ? 'checked' : ''}><span><strong>${esc(o.label)}</strong></span></label>`).join('')}</div></fieldset>
+      <fieldset class="field" style="border:0;padding:0;margin:0"><legend style="font-size:14px;font-weight:500;margin-bottom:8px">Tutoiement ou vouvoiement</legend><div class="radio"><label><input type="radio" name="cf-reg" value="vous"> Vouvoiement</label><label><input type="radio" name="cf-reg" value="tu"> Tutoiement</label></div></fieldset>
+      <div class="line"><div class="field"><label for="cf-n">Prénom du contact</label><input id="cf-n" type="text" value="${esc(p.draft.name || p.contactName)}"></div><div class="field"><label for="cf-e">E-mail du contact</label><input id="cf-e" type="email" value="${esc(p.draft.email)}"></div></div>
+      <div><button class="btn btn-primary" type="submit">Ouvrir l’espace</button></div></form>` : ''}
     ${p.archivedAt ? `<div class="alert">${ic('lock')}<div><strong>Espace archivé le ${fmt(p.archivedAt, { day: 'numeric', month: 'long' })}.</strong> Le client le consulte en lecture seule. <button class="ghost" data-act="unarchive">Désarchiver</button></div></div>` : ''}
     <div class="tabs" role="tablist" aria-label="Fiche ${esc(p.client)}">${TABS().map(([id, l]) => `<button role="tab" id="tab-${id}" aria-controls="tabpanel" aria-selected="${S.tab === id}" tabindex="${S.tab === id ? 0 : -1}" data-tab="${id}">${l}${tabCount[id] ? `<span class="badge">${tabCount[id]}<span class="sr"> à traiter</span></span>` : ''}</button>`).join('')}</div>
     <div role="tabpanel" id="tabpanel" aria-labelledby="tab-${S.tab}" class="tabpanel">${body}</div>`;
@@ -954,12 +967,14 @@
       <div><button class="btn btn-line btn-sm" type="submit">Enregistrer</button></div></form>
     <section class="panel"><div class="panel-head"><h2>${ic('doc')}Factures</h2></div>
       <div class="list">${p.invoices.map((i) => `<div class="row"><div class="grow"><div class="title">${esc(i.label)} ${esc(i.num)}</div><div class="sub num">${money(i.ht)} HT · ${money(i.ttc)} TTC</div></div>
-        <select data-inv="${i.id}" style="width:auto" aria-label="Statut de la facture">${[['future', 'À venir'], ['due', 'À régler'], ['paid', 'Payée']].map(([v, l]) => `<option value="${v}" ${i.status === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>`).join('') || '<p class="muted">Aucune facture.</p>'}</div>
+        <select data-inv="${i.id}" style="width:auto" aria-label="Statut de la facture">${[['future', 'À venir'], ['due', 'À régler'], ['paid', 'Payée']].map(([v, l]) => `<option value="${v}" ${i.status === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+        ${i.status === 'due' ? `<form class="inline" data-form="payurl" data-id="${i.id}" style="margin:-4px 0 10px"><input type="url" id="pu-${i.id}" value="${esc(i.payUrl || '')}" placeholder="Lien de paiement (facultatif)" aria-label="Lien de paiement : ${esc(i.label)}"><button class="btn btn-line btn-sm" type="submit">Enregistrer</button></form>` : ''}`).join('') || '<p class="muted">Aucune facture.</p>'}</div>
+      ${(S.connectors || []).some((c) => ['abby', 'qonto'].includes(c.id) && c.configured) ? `<div class="inline" style="margin-top:12px">${(S.connectors || []).filter((c) => ['abby', 'qonto'].includes(c.id) && c.configured).map((c) => `<button class="btn btn-line btn-sm" data-act="sync" data-id="${c.id}" data-project="1">Synchroniser avec ${esc(c.label)}</button>`).join('')}</div>` : ''}
       <form class="form" data-form="invoice" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--line)">
         <div class="line"><div class="field"><label for="i-l">Libellé</label><input id="i-l" type="text" placeholder="Facture d’acompte (50 %)"></div><div class="field"><label for="i-n">Numéro</label><input id="i-n" type="text" placeholder="F-2026-0187"></div></div>
         <div class="line"><div class="field"><label for="i-ht">Montant HT (€)</label><input id="i-ht" type="number" min="0" step="0.01"></div><div class="field"><label for="i-s">Statut</label><select id="i-s"><option value="due">À régler</option><option value="paid">Payée</option><option value="future">À venir</option></select></div></div>
         <div><button class="btn btn-line btn-sm" type="submit">Ajouter la facture</button></div>
-        <p class="small muted">Le PDF se dépose dans l’onglet Fichiers, catégorie « Facture ». Plus tard : import automatique depuis Abby et paiement détecté dans Qonto.</p></form></section>`;
+        <p class="small muted">Le PDF se dépose dans l’onglet Fichiers, catégorie « Facture ». Avec Abby et Qonto connectés (Réglages), factures et paiements arrivent tout seuls.</p></form></section>`;
   }
   function tAcces() {
     const p = S.project;
@@ -972,6 +987,10 @@
       <div class="line"><div class="field"><label for="p-c">Client</label><input id="p-c" type="text" value="${esc(p.client)}"></div><div class="field"><label for="p-p">Projet</label><input id="p-p" type="text" value="${esc(p.projet)}"></div></div>
       <div class="line"><div class="field"><label for="p-ct">Prénom du contact</label><input id="p-ct" type="text" value="${esc(p.contactName)}"></div><div class="field"><label for="p-g">Mise en ligne prévue</label><input id="p-g" type="date" value="${dayKey(p.golive)}"></div></div>
       <fieldset class="field" style="border:0;padding:0;margin:0"><legend style="font-size:14px;font-weight:500;margin-bottom:8px">Registre</legend><div class="radio"><label><input type="radio" name="p-r" value="vous" ${p.registre !== 'tu' ? 'checked' : ''}> Vouvoiement</label><label><input type="radio" name="p-r" value="tu" ${p.registre === 'tu' ? 'checked' : ''}> Tutoiement</label></div></fieldset>
+      <div><button class="btn btn-line btn-sm" type="submit">Enregistrer</button></div></form>
+    <form class="panel form" data-form="ext"><div class="panel-head" style="margin:0"><h2>${ic('globe')}Outils de l’agence</h2><span class="aside">Pour les synchronisations automatiques</span></div>
+      <div class="line"><div class="field"><label for="x-a">Identifiant du client dans Abby</label><input id="x-a" type="text" value="${esc((p.ext || {}).abby)}"></div><div class="field"><label for="x-d">Dossier Google Drive du client</label><input id="x-d" type="text" value="${esc((p.ext || {}).drive)}" placeholder="https://drive.google.com/drive/folders/…"></div></div>
+      <p class="hint">Les fichiers déposés par le client sont copiés dans ce dossier dès que Google est connecté. Partagez le dossier avec le compte de service.</p>
       <div><button class="btn btn-line btn-sm" type="submit">Enregistrer</button></div></form>`;
   }
   function tActivite() {
@@ -1072,14 +1091,14 @@
     if (v === 'deconnexion') return logout();
     if (v === 'compose') return openCompose();
     if (v === 'inbox' && isAdmin()) { await loadInbox(); await loadProjects(); }
-    if (v === 'reglages' && isAdmin()) { try { S.outbox = await API.outbox(); } catch { S.outbox = null; } }
+    if (v === 'reglages' && isAdmin()) { try { S.outbox = await API.outbox(); } catch { S.outbox = null; } try { S.connectors = (await API.connectors()).connectors; } catch { S.connectors = []; } }
     if (v === 'clients' && isAdmin() && !S.preview) { S.project = null; await loadProjects(); }
     S.view = v; S.valForm = null; S.tool = v === 'outils' ? S.tool : null; render(true);
     if (v === 'messages' && S.project && (isAdmin() ? false : unread()) && !S.preview) { try { await API.action(S.project.id, { type: 'msg.read' }); await loadProject(S.project.id); } catch {} }
   }
   async function enter() {
     const r = await API.me(); S.me = r.user; S.team = r.team || []; S.config = r.config || {};
-    if (S.me.role === 'admin') { await loadProjects(); await loadInbox(); S.view = 'inbox'; S.project = null; }
+    if (S.me.role === 'admin') { await loadProjects(); await loadInbox(); S.view = 'inbox'; S.project = null; try { S.connectors = (await API.connectors()).connectors; } catch { S.connectors = []; } }
     else { await loadProjects(); if (S.projects[0]) { const d = await API.project(S.projects[0].id); S.project = d.project; S.people = d.people || {}; } S.view = 'accueil'; if (S.project && !S.me.onboardedAt) S.ob = { step: 0 }; orderTeam(); }
     S.loading = false; render(); window.scrollTo(0, 0);
     // Mise en ligne récente : une célébration, une seule fois par appareil.
@@ -1173,6 +1192,7 @@
       case 'valreset': act({ type: 'val.reset', vid: id }, 'Validation remise en attente.'); break;
       case 'undeliver': if (API.demo || confirm('Annuler la mise en ligne ? L’accueil du client repasse en projet en cours.')) act({ type: 'project.deliver', undo: true }, 'Mise en ligne annulée.'); break;
       case 'archive': if (API.demo || confirm('Archiver cet espace ? Le client le garde en lecture seule.')) act({ type: 'project.archive' }, 'Espace archivé.'); break;
+      case 'sync': { a.disabled = true; try { const r = await API.sync(id, a.dataset.project ? S.project.id : undefined); toast('Synchronisation faite : ' + r.summary + '.'); try { S.connectors = (await API.connectors()).connectors; } catch {} if (S.project && S.view === 'admin') await loadProject(S.project.id); else render(); } catch (err) { toast(err.message); a.disabled = false; } break; }
       case 'unarchive': act({ type: 'project.archive', undo: true }, 'Espace désarchivé.'); break;
       case 'preview': S.preview = true; S.view = 'accueil'; render(true); break;
       case 'endpreview': S.preview = false; S.ob = null; S.view = 'admin'; render(true); break;
@@ -1259,6 +1279,10 @@
       case 'tutorials': act({ type: 'project.tutorials', tutorials: lines(v('tu-l'), 3).map(([t, d, url]) => ({ t, d, url })) }, 'Vidéos enregistrées.'); break;
       case 'review': { const sc = Number((f.querySelector('[name=rv-s]:checked') || {}).value); if (!sc) return fieldError(f.querySelector('[name=rv-s]'), 'Choisissez une note de 1 à 5.'); if (S.preview) return toast('Aperçu : les actions sont désactivées.');
         if (await act({ type: 'review.add', score: sc, text: v('rv-t'), public: $('#rv-p').checked }, R('Merci ! Votre avis est transmis à l’équipe.', 'Merci ! Ton avis est transmis à l’équipe.'))) S.rvScore = 0; break; }
+      case 'confirm': { const reg = (f.querySelector('[name=cf-reg]:checked') || {}).value; if (!reg) return fieldError(f.querySelector('[name=cf-reg]'), 'Choisissez le tutoiement ou le vouvoiement.');
+        if (await act({ type: 'project.confirm', offer: (f.querySelector('[name=cf-offer]:checked') || {}).value, registre: reg, email: v('cf-e'), name: v('cf-n') }, 'Espace ouvert. Le client peut se connecter avec son e-mail.')) await loadProjects(); break; }
+      case 'ext': act({ type: 'project.ext', abby: v('x-a'), drive: v('x-d') }, 'Enregistré.'); break;
+      case 'payurl': act({ type: 'invoice.pay', iid: f.dataset.id, payUrl: v('pu-' + f.dataset.id) }, 'Lien de paiement enregistré. Le client voit « Payer en ligne ».'); break;
       case 'settings': try { const r = await API.settings({ booking: v('st-b'), training: v('st-t'), reviewUrl: v('st-r'), holder: v('st-h'), bank: v('st-k'), address: v('st-a'), iban: v('st-i'), bic: v('st-c') }); S.config = r.settings; render(); toast('Réglages de l’agence enregistrés.'); } catch (err) { toast(err.message); } break;
       case 'infos': act({ type: 'project.update', client: v('p-c'), projet: v('p-p'), contactName: v('p-ct'), golive: v('p-g') || undefined, registre: (f.querySelector('[name=p-r]:checked') || {}).value }, 'Infos enregistrées.'); break;
     }

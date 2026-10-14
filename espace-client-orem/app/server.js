@@ -88,15 +88,21 @@ function sendDigests(force, onlyUser) {
   return n;
 }
 /* Tâches de fond : récap à 18 h, relances automatiques, purge des sessions et codes expirés. */
-setInterval(() => {
+setInterval(() => { try { background(); } catch (e) { log('error', { where: 'background', message: e.message }); } }, 5 * 60 * 1000).unref();
+function background() {
   sendDigests(false);
   const r = Core.runReminders(db, Date.now()); if (r.notices.length) { save(); deliver(r.notices); }
+  // Synchronisations automatiques, seulement si les clés sont fournies : Qonto chaque heure, Abby toutes les 6 heures.
+  for (const [name, every] of [['qonto', 3600e3], ['abby', 6 * 3600e3]]) {
+    const last = db.meta.connectors && db.meta.connectors[name] ? new Date(db.meta.connectors[name].at).getTime() : 0;
+    if (Connectors.configured(name, process.env) && Date.now() - last > every) Connectors.sync(name, db, process.env, null, null, connectorCtx()).then((x) => { save(); if (x.notices) deliver(x.notices); if (x.error) log('sync.error', { name, message: x.error }); });
+  }
   const now = Date.now(); let changed = false;
   for (const [k, s] of Object.entries(db.sessions)) if (s.exp < now) { delete db.sessions[k]; changed = true; }
   for (const [k, c] of Object.entries(db.codes)) if (c.exp < now) { delete db.codes[k]; changed = true; }
   for (const [k, v] of hits) if (v.reset < now) hits.delete(k);
   if (changed) save();
-}, 5 * 60 * 1000).unref();
+}
 
 /* ---------- Limitation de débit ---------- */
 const hits = new Map();
@@ -274,6 +280,28 @@ function exportEntries(pr, user) {
     .map(({ f, abs }) => ({ name: (f.from === 'client' ? 'Fichiers déposés/' : 'Documents de l’agence/') + f.name, abs, size: Number(f.size) || 0 }));
   return [{ name: 'Récapitulatif du projet.txt', data: Buffer.from('﻿' + lines.join('\n'), 'utf8') }, ...files];
 }
+/* Contexte donné aux connecteurs : enregistrer un PDF importé (Abby) comme un fichier déposé par l'agence. */
+function connectorCtx() {
+  return {
+    fetch: globalThis.fetch,
+    saveFile: async (projectId, name, buf, cat) => {
+      const pr = db.projects.find((x) => x.id === projectId); if (!pr) return;
+      const id = 'f_' + crypto.randomBytes(12).toString('hex'), dir = path.join(UPLOADS, pr.id); fs.mkdirSync(dir, { recursive: true });
+      const dest = path.join(dir, id); await fs.promises.writeFile(dest, buf);
+      const by = db.users.find((u) => u.id === (pr.team && pr.team.lead)) || db.users.find((u) => u.role === 'admin');
+      const r = Core.addFile(db, pr.id, by, { id, name, size: buf.length, cat, path: path.relative(DATA, dest) });
+      if (r.error) fs.rm(dest, { force: true }, () => {});
+    }
+  };
+}
+/* Copie vers le dossier Drive du client, en arrière-plan : un échec est journalisé, jamais bloquant pour le client. */
+function driveCopy(pr, file) {
+  if (!Connectors.configured('google', process.env) || !(pr.ext && pr.ext.drive)) return;
+  const abs = filePath(file); if (!abs) return;
+  fs.promises.readFile(abs).then((buf) => Connectors.copyToDrive(pr, file, buf, process.env, connectorCtx()))
+    .then((r) => { if (r && r.ok) { file.drive = r.id; save(); log('drive.copy', { project: pr.id, file: file.id }); } })
+    .catch((e) => log('drive.error', { project: pr.id, message: e.message }));
+}
 function projectBytes(pr) { return pr.files.reduce((s, f) => s + (f.path ? Number(f.size) || 0 : 0), 0); }
 
 async function handle(req, res) {
@@ -287,7 +315,8 @@ async function handle(req, res) {
   let m = p.match(/^\/api\/hooks\/([a-z]+)$/);
   if (m && req.method === 'POST') {
     const body = await readJson(req, 512 * 1024);
-    const r = Connectors.webhook(m[1], body, req.headers, db, process.env);
+    if (limited('hook-ip:' + ip, 60, 60e3)) return send(res, 429, { error: 'Trop de requêtes.' });
+    const r = await Connectors.webhook(m[1], body, req.headers, db, process.env, connectorCtx());
     if (r.error) { log('hook.refused', { source: m[1], reason: r.error }); return send(res, r.status || 400, { error: r.error }); }
     save(); deliver(r.notices); log('hook.ok', { source: m[1], result: r.summary });
     return send(res, 200, { ok: true });
@@ -336,7 +365,7 @@ async function handle(req, res) {
   if (m && req.method === 'POST') {
     if (user.role !== 'admin') return send(res, 403, { error: 'Réservé à l’équipe.' });
     const b = await readJson(req);
-    const r = await Connectors.sync(m[1], db, process.env, typeof b.projectId === 'string' ? b.projectId : null, user);
+    const r = await Connectors.sync(m[1], db, process.env, typeof b.projectId === 'string' ? b.projectId : null, user, connectorCtx());
     if (r.error) return send(res, 400, { error: r.error });
     save(); deliver(r.notices); return send(res, 200, { ok: true, summary: r.summary });
   }
@@ -409,13 +438,15 @@ async function handle(req, res) {
     req.on('error', () => fail(400, 'Envoi interrompu.'));
     out.on('error', () => fail(500, 'Enregistrement impossible. Réessayez.'));
     req.pipe(out);
-    out.on('finish', () => {
+    out.on('finish', () => { try { finishUpload(); } catch (e) { log('error', { message: e.message }); fs.rm(dest, { force: true }, () => {}); if (!res.headersSent) send(res, 500, { error: 'Enregistrement impossible. Réessayez.' }); } });
+    const finishUpload = () => {
       if (done) return; done = true;
       const r = Core.addFile(db, pr.id, user, { id, name, size, cat: url.searchParams.get('cat'), path: path.relative(DATA, dest) });
       if (r.error) { fs.rm(dest, { force: true }, () => {}); return send(res, 400, { error: r.error }); }
       save(); deliver(r.notices);
-      send(res, 200, { ok: true, file: Core.forUser({ files: [r.file], activity: [] }, user).files[0] });
-    });
+      if (user.role !== 'admin') driveCopy(pr, pr.files.find((x) => x.id === r.file.id));
+      send(res, 200, { ok: true, file: Core.forUser({ files: [r.file], activity: [], invoices: [] }, user).files[0] });
+    };
     return;
   }
 

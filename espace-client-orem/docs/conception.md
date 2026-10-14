@@ -118,3 +118,19 @@ La clé Brevo est dans le coffre Notion. Le domaine d'envoi doit être authentif
 - **Archivage** : l'espace reste consultable en lecture seule. **Export ZIP** (récapitulatif + fichiers) pour le client comme pour l'agence.
 - **Relances automatiques** (une fois chacune) : validation en attente depuis 3 jours ouvrés, facture à régler depuis 10 jours. Le client reçoit un rappel dans son registre, l'équipe le voit dans sa boîte de réception.
 - Le point de la semaine part par e-mail au client qui l'a demandé dans son accueil guidé (la promesse WhatsApp, jamais tenue, est retirée).
+
+## 9. Connecteurs (lot 5)
+
+Rien n'est appelé tant que les clés ne sont pas fournies au lancement du serveur. Les clés sont dans le coffre Notion de Louis (skill `cles-api`) et ne sont jamais écrites dans le dépôt. **Aucun branchement sur les vrais comptes sans l'accord de Louis.**
+
+| Outil | Variables | Ce que ça fait |
+|---|---|---|
+| Pipedrive | `PIPEDRIVE_API_KEY`, `PIPEDRIVE_WEBHOOK_SECRET` | Webhook « Deal mis à jour » vers `/api/hooks/pipedrive` (authentification HTTP `orem` / secret). Un deal gagné prépare l'espace en brouillon (client, montant, contact, chef de projet). L'équipe choisit l'offre et le registre, puis l'accès du client est créé. |
+| Abby | `ABBY_API_KEY` | Import du devis signé et des factures, avec leurs PDF, pour les projets dont l'identifiant client Abby est renseigné (« Accès et infos »). Toutes les 6 heures, ou bouton « Synchroniser ». Chemins de l'API à confirmer avec la documentation Abby avant le premier branchement. |
+| Qonto | `QONTO_LOGIN`, `QONTO_SECRET_KEY` (option `QONTO_IBAN`) | Chaque heure : un virement reçu du montant TTC d'une facture « À régler », citant son numéro ou le nom du client, la passe en « Payée », coche l'acompte et remercie le client dans son registre. Une seule fois par virement. |
+| Google Drive | `GOOGLE_SERVICE_ACCOUNT_JSON` | Copie de chaque fichier déposé par le client dans son dossier Drive (renseigné dans « Accès et infos », partagé avec le compte de service). |
+| Paiement en ligne | aucune | Lien de paiement collé par facture (onglet Factures) : le client voit « Payer en ligne ». |
+
+Planning : une validation en retard de plus d'un jour décale tout ce qui vient après (livrables, temps, mise en ligne) et l'équipe est prévenue. Toute synchronisation est « tout ou rien » : si l'outil répond mal, rien n'est modifié.
+
+Tests : `node tests/connecteurs.js` lance un faux serveur local qui imite les quatre outils et une instance de l'app avec de fausses clés de test (28 vérifications, aucun appel hors de la machine).

@@ -110,7 +110,7 @@
     a.id = 'p_lumen'; a.phase = 1;
     a.phases[0].items.forEach((i) => { if (!i.val) i.status = 'done'; });
     a.phases[0].items[3].status = 'done';
-    const lp = a.validations.find((v) => v.key === 'plan'); lp.status = 'ready'; lp.readyAt = at(-2, 11); lp.link = 'https://www.figma.com/proto/exemple-maison-lumen-plan';
+    const lp = a.validations.find((v) => v.key === 'plan'); lp.status = 'ready'; lp.readyAt = at(-2, 11); lp.due = at(1, 18); a.phases[0].items[3].due = at(-2, 11); lp.link = 'https://www.figma.com/proto/exemple-maison-lumen-plan';
     lp.history.push({ at: at(-2, 11), by: 'u_louis', action: 'requested' });
     a.next = { title: 'Valider le plan du site', text: 'Le plan des pages est prêt. Regardez la vidéo de Clément, puis validez ou dites-nous ce que vous voulez changer. La direction artistique démarre juste après.', go: 'valider' };
     a.note = { text: 'Le plan du site est prêt : 7 pages, avec une page par atelier comme on en a parlé en visio. Clément démarre les premières pistes graphiques dès votre feu vert.', by: 'u_louis', at: at(-1, 17) };
@@ -277,7 +277,7 @@
   function summary(project) {
     const ph = project.phases[project.phase - 1] || {};
     return { id: project.id, client: project.client, projet: project.projet, phase: project.phase, offer: project.offer, offerLabel: (OFFERS[project.offer] || OFFERS.site).label,
-      phaseName: (ph.letter ? ph.letter + ' · ' : '') + (ph.t || ''), delivered: !!project.deliveredAt, archived: !!project.archivedAt, golive: project.golive, next: nextStep(project), alerts: alerts(project),
+      phaseName: (ph.letter ? ph.letter + ' · ' : '') + (ph.t || ''), delivered: !!project.deliveredAt, archived: !!project.archivedAt, draft: !!project.draft, golive: project.golive, next: nextStep(project), alerts: alerts(project),
       lastActivity: project.activity[0] || null, team: project.team || { lead: null, members: [] } };
   }
 
@@ -285,6 +285,8 @@
   function forUser(project, user) {
     if (user.role === 'admin') return project;
     const p = JSON.parse(JSON.stringify(project));
+    delete p.ext; delete p.source; delete p.draft;
+    (p.invoices || []).forEach((i) => { delete i.paidTx; delete i.remindedAt; });
     p.activity = p.activity.map(({ seen, ...a }) => a);
     p.files = p.files.map(({ seen, path, ...f }) => f);
     return p;
@@ -295,8 +297,8 @@
 
   /* ---------- Validation des données entrantes ----------
      Tout ce qui vient du navigateur est borné en taille, et les liens doivent être en https. */
-  const SHORT = new Set(['type', 'kind', 'priority', 'title', 't', 'sub', 'label', 'num', 'name', 'client', 'projet', 'contactName', 'status', 'lead', 'iid', 'vid', 'tid', 'mid', 'fid', 'rid', 'aid', 'id', 'go', 'registre', 'quote', 'email', 'duration', 'cat', 'offer', 'level']);
-  const URLS = new Set(['link', 'url', 'figma', 'proto', 'preview', 'site', 'img', 'review', 'video', 'booking', 'training', 'reviewUrl']);
+  const SHORT = new Set(['abby', 'type', 'kind', 'priority', 'title', 't', 'sub', 'label', 'num', 'name', 'client', 'projet', 'contactName', 'status', 'lead', 'iid', 'vid', 'tid', 'mid', 'fid', 'rid', 'aid', 'id', 'go', 'registre', 'quote', 'email', 'duration', 'cat', 'offer', 'level']);
+  const URLS = new Set(['payUrl', 'link', 'url', 'figma', 'proto', 'preview', 'site', 'img', 'review', 'video', 'booking', 'training', 'reviewUrl']);
   function safeUrl(v, key) {
     v = String(v || '').trim(); if (!v) return '';
     if (/^https:\/\/[^\s<>"']+$/i.test(v)) return v.slice(0, 1000);
@@ -505,6 +507,29 @@
       case 'project.tutorials': {
         project.tutorials = (Array.isArray(action.tutorials) ? action.tutorials : []).filter((x) => x && x.t).slice(0, 12).map((x) => ({ t: String(x.t).slice(0, 120), d: String(x.d || '').slice(0, 20), url: x.url ? safeUrl(x.url, 'url') : '' })); break;
       }
+      case 'project.confirm': {
+        // Espace préparé depuis Pipedrive : l'équipe choisit l'offre et le registre, puis l'accès du client est créé.
+        if (!project.draft) return { error: 'Cet espace est déjà ouvert.' };
+        if (!['tu', 'vous'].includes(action.registre)) return { error: 'Choisissez le tutoiement ou le vouvoiement.' };
+        const offer = OFFERS[action.offer] ? action.offer : 'site';
+        const email = String(action.email || project.draft.email || '').trim().toLowerCase();
+        if (email && (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || store.users.some((u) => u.email === email))) return { error: 'Adresse e-mail invalide ou déjà utilisée.' };
+        const T = newProject({ client: project.client, projet: project.projet, contactName: project.contactName, start: project.start, registre: action.registre, amountHT: project.billing.totalHT, offer });
+        for (const k of ['offer', 'registre', 'golive', 'phases', 'validations', 'tools', 'tutorials', 'handover']) project[k] = T[k];
+        if (!project.projet || project.projet === project.client) project.projet = T.projet;
+        project.phase = 1; delete project.draft;
+        if (email) store.users.push({ id: uid('u'), email, name: String(action.name || project.contactName || email.split('@')[0]).slice(0, 80), role: 'client', projectId: project.id });
+        log(project, user, 'a ouvert l’espace (' + OFFERS[offer].label + ', ' + (action.registre === 'tu' ? 'tutoiement' : 'vouvoiement') + ')'); break;
+      }
+      case 'project.ext': {
+        project.ext = project.ext || {};
+        for (const k of ['abby', 'drive']) if (action[k] !== undefined) project.ext[k] = String(action[k] || '').trim().slice(0, 300);
+        break;
+      }
+      case 'invoice.pay': {
+        const inv = project.invoices.find((i) => i.id === action.iid); if (!inv) return { error: 'Facture introuvable.' };
+        inv.payUrl = action.payUrl ? safeUrl(action.payUrl, 'url') : ''; break;
+      }
       case 'project.archive':
         project.archivedAt = action.undo ? null : now; break;
       default: return { error: 'Action inconnue.' };
@@ -652,10 +677,29 @@
     while (d < end) { d.setDate(d.getDate() + 1); if (d <= end && d.getDay() % 6 !== 0) n++; }
     return n;
   }
+  /* Planning : une validation en retard de plus d'un jour décale d'autant tout ce qui vient après (livrables, temps, mise en ligne). */
+  function replan(p, now) {
+    if (p.deliveredAt || p.archivedAt || p.draft) return 0;
+    const late = (p.validations || []).filter((v) => v.status !== 'approved' && new Date(v.due).getTime() < now - DAY).sort((a, b) => new Date(a.due) - new Date(b.due))[0];
+    if (!late) return 0;
+    const from = new Date(late.due).getTime(), shift = Math.ceil((now - from) / DAY);
+    const mv = (d) => (d && new Date(d).getTime() >= from ? addDays(d, shift) : d);
+    p.validations.forEach((v) => { if (v.status !== 'approved') v.due = mv(v.due); });
+    p.phases.forEach((ph) => { ph.items.forEach((i) => { if (i.status !== 'done') i.due = mv(i.due); }); ph.to = mv(ph.to); if (new Date(ph.from).getTime() > from) ph.from = mv(ph.from); });
+    p.golive = mv(p.golive);
+    return shift;
+  }
   function runReminders(store, now = Date.now()) {
     const out = [], at = iso(now);
     for (const p of store.projects || []) {
-      if (p.archivedAt) continue;
+      if (p.archivedAt || p.draft) continue;
+      const shifted = replan(p, now);
+      if (shifted) {
+        p.activity.unshift({ at, by: 'u_agence', text: `planning recalé de ${shifted} jour${shifted > 1 ? 's' : ''} (validation en attente)`, seen: false });
+        const team0 = (p.team && p.team.members && p.team.members.length) ? p.team.members : store.users.filter((u) => u.role === 'admin').map((u) => u.id);
+        store.notifications = store.notifications || [];
+        for (const id of team0) { const n = { id: uid('n'), userId: id, projectId: p.id, client: p.client, type: 'activity', act: 'replan', text: `Planning ${p.client} recalé de ${shifted} jour${shifted > 1 ? 's' : ''} : mise en ligne vers le ${new Date(p.golive).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}`, by: 'u_agence', at, read: false, go: { view: 'admin', tab: 'pilotage' } }; store.notifications.unshift(n); out.push(n); }
+      }
       const tu = p.registre === 'tu', clients = store.users.filter((u) => u.projectId === p.id);
       const team = (p.team && p.team.members && p.team.members.length) ? p.team.members : store.users.filter((u) => u.role === 'admin').map((u) => u.id);
       const lead = store.users.find((u) => u.id === (p.team && p.team.lead)) || store.users.find((u) => u.role === 'admin') || { id: 'u_agence', name: 'L’équipe' };
@@ -714,5 +758,5 @@
     return { ok: true, id: p.id };
   }
 
-  return { seed, newProject, OFFERS, OREM, itemState, phaseState, offerOf: (p) => (OFFERS[p.offer] || OFFERS.site).label, apply, addFile, createProject, summary, forUser, nextStep, alerts, canSee, inbox, readNotif, setPrefs, prefsOf, emailsFor, digestFor, loginMail, publicConfig, setSettings, settingsOf, runReminders, FILE_CATS, AGENCY_CATS, HANDOVER, workDaysBetween, reg };
+  return { seed, newProject, OFFERS, OREM, itemState, phaseState, offerOf: (p) => (OFFERS[p.offer] || OFFERS.site).label, apply, addFile, createProject, summary, forUser, nextStep, alerts, canSee, inbox, readNotif, setPrefs, prefsOf, emailsFor, digestFor, loginMail, publicConfig, setSettings, settingsOf, runReminders, FILE_CATS, AGENCY_CATS, HANDOVER, workDaysBetween, reg, replan };
 });
