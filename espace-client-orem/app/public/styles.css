@@ -6,7 +6,7 @@
    des contrastes AA renforcés. Trykker est réservé aux moments de marque (prochaine étape, accueil, connexion).
    Accent Orem : bleu #092482 sur fond clair, orange #ff6200 sur fond sombre. */
 :root{
-  --frame:#000012; --side-fg:#f4f4f6; --side-muted:rgba(244,244,246,.70); --side-faint:rgba(244,244,246,.45); --side-line:rgba(244,244,246,.10); --side-hover:rgba(244,244,246,.07); --side-active:rgba(244,244,246,.11); --side-hl:#ff6200;
+  --frame:#000012; --side-fg:#f4f4f6; --side-muted:rgba(244,244,246,.70); --side-faint:rgba(244,244,246,.62); --side-line:rgba(244,244,246,.10); --side-hover:rgba(244,244,246,.07); --side-active:rgba(244,244,246,.11); --side-hl:#ff6200;
   --bg:#f3f2ef; --dot:#dddcd6; --surface:#ffffff; --surface-2:#efeeea; --surface-3:#e5e4df;
   --fg:#0b0b12; --fg-2:#2f2f3a; --muted:#585865; --line:#e2e1dc; --line-2:#d3d2cc;
   --hl:#092482; --hl-soft:#e9ecf6; --on-hl:#ffffff;
@@ -55,6 +55,8 @@ p{margin:0}
 .logo{width:28px;height:28px}
 
 /* ---------- Cadre ---------- */
+.skip{position:fixed;left:16px;top:-60px;z-index:100;background:var(--cta);color:var(--on-cta);padding:10px 16px;border-radius:10px;font-weight:500;text-decoration:none}
+.skip:focus{top:calc(12px + env(safe-area-inset-top,0px))}
 .app{display:grid;grid-template-columns:272px minmax(0,1fr);min-height:100vh;background:var(--frame)}
 .side{position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:14px;padding:20px 14px 16px;padding-left:max(14px,env(safe-area-inset-left,0px));color:var(--side-fg);overflow-y:auto;scrollbar-width:none}
 .side :focus-visible{outline-color:var(--side-hl)}
@@ -445,7 +447,7 @@ input[type=email],input[type=text],input[type=password],input[type=url],input[ty
 .tz-top{display:flex;justify-content:space-between;gap:10px;font-size:11px;letter-spacing:.18em;text-transform:uppercase;padding-bottom:12px;border-bottom:1px solid color-mix(in srgb,var(--tz-dark) 18%,transparent)}
 .tz-top span:first-child{font-weight:600}
 .tz-title{font-family:var(--serif);font-size:24px;line-height:1.2;margin-top:6px}
-.tz-city{color:var(--tz);font-weight:500}
+.tz-city{color:color-mix(in srgb,var(--tz) 72%,#000);font-weight:600}
 .tz-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:6px 0}
 .tz-kpis div{background:#fff;border-radius:10px;padding:10px;display:flex;flex-direction:column}
 .tz-kpis b{font-weight:600;font-size:15px}

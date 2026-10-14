@@ -164,8 +164,8 @@
     const c = newProject({ client: 'Cabinet Varenne', projet: 'Refonte cabinet-varenne.fr', contactName: 'Julie', start: at(-1), registre: 'vous', amountHT: 7600 });
     c.id = 'p_varenne'; c.phase = 1;
     c.phases[0].items[0].status = 'done'; c.phases[0].items[1].status = 'done';
-    c.next = { title: 'Réserver la visio de cadrage', text: 'Une heure pour caler ensemble vos objectifs, vos cibles et le plan du site. Choisissez le créneau qui vous arrange.', go: 'equipe' };
-    c.tasks = [{ id: 'vt1', t: 'Réserver la visio de cadrage (1 h)', done: false }, { id: 'vt2', t: 'Régler l’acompte de 50 %', done: false }];
+    c.next = { title: 'Réserver la visio de cadrage', text: 'Une heure pour caler ensemble vos objectifs, vos cibles et le plan du site. Choisissez le créneau qui vous arrange.', go: 'cal' };
+    c.tasks = [{ id: 'vt1', t: 'Réserver la visio de cadrage (1 h)', done: false, go: 'cal' }, { id: 'vt2', t: 'Régler l’acompte de 50 %', done: false, go: 'documents' }];
     c.missing = [{ id: 'vm1', t: 'Logo et charte actuelle', sub: 'Les fichiers que vous avez, même anciens.' }, { id: 'vm2', t: 'Photos du cabinet et de l’équipe', sub: 'Si vous en avez déjà, sinon on en parle en visio.' }];
     c.billing.quote = 'D-2026-0151'; c.billing.signedAt = at(-3);
     c.invoices = [{ id: 'vinv1', num: 'F-2026-0199', label: 'Facture d’acompte (50 %)', ht: 3800, ttc: 4560, status: 'due', date: at(-1) }, { id: 'vinv2', num: '', label: 'Facture de solde (50 %)', ht: 3800, ttc: 4560, status: 'future', date: null }];
