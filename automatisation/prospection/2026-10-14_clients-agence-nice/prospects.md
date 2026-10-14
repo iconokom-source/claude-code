@@ -4,7 +4,7 @@ Recherche du 14/10/2026 : sites des clients, mentions légales et registre reche
 
 Contrairement à ce qu'on pensait, la clientèle n'est pas surtout sur la Côte d'Azur : seuls le Club Nautique et le Santa Lucia y sont. Les autres sont dans l'Ain, le Bas-Rhin, le Finistère, le Gard, l'Hérault, la Charente-Maritime et en Meurthe-et-Moselle.
 
-## Importés dans Lemlist (campagne `cam_cDpBjZcbFcztRXsk5`, lancée le 14/10)
+## Importés dans Lemlist (campagne `cam_cDpBjZcbFcztRXsk5`, en pause)
 
 | Entreprise | Ville | Décideur | Email | Tél | `siteObservation` (vérifié le 14/10) |
 |---|---|---|---|---|---|
