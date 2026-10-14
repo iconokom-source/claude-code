@@ -55,6 +55,10 @@ Remplacer l'espace client actuel (galerie Notion + Google Drive) par **une app w
 | `app/build-demo.js` | Fabrique la démo autonome |
 | `app/tests/simulation.js` | 5 profils clients, 25 tâches, axe-core, cloisonnement (serveur sur le port 3123) |
 | `app/tests/equipe.js` | 14 vérifications du circuit équipe (serveur sur le port 3123) |
+| `app/tests/lots.js` | 24 vérifications des lots 2 et 4 (registre dans tout le rendu, O.R.E.M., mise en ligne, avis, export ZIP) |
+| `app/tests/a11y.js` | 24 vérifications du lot 3 (focus, dialogues, onglets, erreurs, 320 px, démo) |
+| `app/tests/core.js` | 29 tests de la logique métier, sans navigateur |
+| `app/tests/tout.sh` | Rejoue tout, chaque test sur des données neuves |
 | `docs/conception.md` | Choix UX, DA, sécurité, côté équipe, envoi des e-mails |
 | `docs/simulation-parcours.md` | Résultats de la simulation des 5 clients |
 | `docs/reprise/server.wip.js` | **Brouillon** de réécriture sécurisée du serveur (lot 1), pas encore branché |

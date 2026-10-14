@@ -14,7 +14,7 @@ const img = { logo: b64('assets/logo-black.png', 'image/png'), louis: b64('asset
 
 const hd = Object.fromEntries(fs.readdirSync(pub('assets/hd')).map((f) => ['assets/hd/' + f, b64('assets/hd/' + f, 'image/jpeg')]));
 
-const out = `<title>Espace client Orem</title>
+const inner = `<title>Espace client Orem</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <style>
 ${css}
@@ -28,7 +28,11 @@ ${fs.readFileSync(pub('core.js'), 'utf8')}
 ${fs.readFileSync(pub('app.js'), 'utf8')}
 </script>
 `;
+// Version autonome (à ouvrir telle quelle) : doctype, langue et viewport, sinon mode quirks et 980 px sur mobile.
+const out = `<!doctype html>\n<html lang="fr">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">\n${inner.replace('</style>', '</style>\n</head>\n<body>')}</body>\n</html>\n`;
 fs.mkdirSync(path.join(__dirname, 'dist'), { recursive: true });
 const dest = path.join(__dirname, 'dist', 'espace-client-demo.html');
 fs.writeFileSync(dest, out);
+// Fragment pour l'artifact privé : le lecteur ajoute lui-même doctype, head et body.
+fs.writeFileSync(path.join(__dirname, 'dist', 'espace-client-artifact.html'), inner);
 console.log(dest, Math.round(out.length / 1024) + ' Ko');
