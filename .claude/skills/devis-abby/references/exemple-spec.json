@@ -1,0 +1,37 @@
+{
+  "customerId": "<id Abby de l'organisation Maison & Cinéma>",
+  "estimateType": "estimate",
+  "title": "Refonte stratégique du site Maison & Cinéma : repositionnement digital, refonte UX/UI, retravail éditorial, développement, outils de mesure, mise en ligne et accompagnement",
+  "validityDays": 30,
+  "finalize": false,
+  "lines": [
+    {
+      "designation": "Cadrage stratégique et repositionnement digital",
+      "description": "- Analyse du positionnement actuel de Maison & Cinéma\n- Clarification des axes de communication prioritaires\n- Cadrage du projet et des objectifs du futur site\n- Préparation de la structure de travail avant conception",
+      "quantity": 1, "quantityUnit": "fixed_rate", "unitPrice": 99000,
+      "type": "service_delivery", "vatCode": "FR_2000"
+    },
+    {
+      "designation": "Refonte UX/UI, direction artistique et retravail éditorial",
+      "description": "- Refonte de l'expérience utilisateur\n- Direction artistique du futur site\n- Montée en gamme de la perception visuelle\n- Retravail éditorial des contenus et de la lisibilité de l'offre\n- Clarification des messages et de la proposition de valeur",
+      "quantity": 1, "quantityUnit": "fixed_rate", "unitPrice": 175000,
+      "type": "service_delivery", "vatCode": "FR_2000"
+    },
+    {
+      "designation": "Développement du site, intégration et mise en ligne",
+      "description": "- Développement du site\n- Intégration des contenus et des blocs\n- Configuration technique\n- Mise en ligne du site final\n- Base administrable et réutilisable",
+      "quantity": 1, "quantityUnit": "fixed_rate", "unitPrice": 155000,
+      "type": "service_delivery", "vatCode": "FR_2000"
+    },
+    {
+      "designation": "Mise en place des outils de mesure, formation et accompagnement post-livraison",
+      "description": "- Installation de Google Search Console\n- Installation de Google Analytics\n- Installation de Google Tag Manager\n- Formation à la prise en main\n- 2 mois d'assistance post-livraison",
+      "quantity": 1, "quantityUnit": "fixed_rate", "unitPrice": 70000,
+      "type": "service_delivery", "vatCode": "FR_2000"
+    }
+  ],
+  "generalInformations": {
+    "paymentMethods": ["transfer"],
+    "footerNote": "Modalités de règlement :\nLe règlement de la prestation s'effectuera en 5 échéances mensuelles de 998 € HT (1 197,60 € TTC). Le premier versement interviendra à la signature du devis, puis les 4 suivants à échéance mensuelle.\n\nObservations :\nLa présente prestation porte sur la refonte stratégique du site Maison & Cinéma, incluant le cadrage du projet, le repositionnement digital, la refonte UX/UI, le retravail éditorial, le développement, la mise en place des outils de mesure (Google Search Console, Google Analytics, Google Tag Manager), la mise en ligne, la formation à la prise en main ainsi que 2 mois d'assistance post-livraison.\nLe site livré est conçu pour être administrable, réutilisable et évolutif.\n\nPérimètre :\nLe périmètre précis des pages, contenus, blocs et priorités de production sera validé lors de la phase de cadrage au démarrage du projet.\n\nOptions hors devis (sur devis complémentaire) : brochures et supports PDF téléchargeables ; accompagnement mensuel post-livraison ; version multilingue, contenus additionnels ou pages supplémentaires."
+  }
+}
