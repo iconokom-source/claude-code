@@ -14,13 +14,37 @@
 #   abby.sh finalize <devisId>          finalise (attribue le numéro D-AAAA-NNNN, irréversible)
 #   abby.sh download <devisId> <out.pdf>
 #   abby.sh delete <devisId>            supprime un brouillon
+#   abby.sh preview <spec.json>         contrôle la spec et calcule les totaux, sans appel API ni clé
 set -euo pipefail
 
 BASE="${ABBY_BASE_URL:-https://api.abby.fr}"
 
 die() { echo "ERREUR: $*" >&2; exit 1; }
-[ -n "${ABBY_API_KEY:-}" ] || die "ABBY_API_KEY absente de l'environnement."
 command -v jq >/dev/null || die "jq requis."
+
+# Contrôle local de la spec + totaux (centimes → euros). Remise globale ignorée dans le calcul.
+if [ "${1:-}" = preview ]; then
+  jq -r '
+    def eur: (. / 100 | tostring | if test("\\.") then . else . + ".00" end);
+    def rate: {"FR_2000":20,"FR_1000":10,"FR_850":8.5,"FR_550":5.5,"FR_210":2.1}[.vatCode // "FR_2000"] // 0;
+    def req($l): ["designation","quantity","quantityUnit","unitPrice","type"] | map(select($l[.] == null));
+    (if (.customerId // "") == "" then "⚠️  customerId manquant\n" else "" end),
+    ("Titre : \(.title // "-")"),
+    ("Validité : \(.validityDays // "défaut Abby") j · Finaliser : \(.finalize // false)"),
+    "",
+    (.lines | to_entries[] | .key as $i | .value as $l
+      | "\($i+1). \($l.designation)  —  \($l.quantity) × \($l.unitPrice|eur) € HT  =  \(($l.quantity*$l.unitPrice)|round|eur) € HT  (TVA \($l|rate) %)"
+        + (if (req($l)|length) > 0 then "\n   ⚠️  champs manquants : \(req($l)|join(", "))" else "" end)),
+    "",
+    ([.lines[] | .quantity*.unitPrice] | add | round) as $ht
+    | ([.lines[] | .quantity*.unitPrice*(rate)/100] | add | round) as $tva
+    | "Total HT : \($ht|eur) €\nTVA : \($tva|eur) €\nTotal TTC : \(($ht+$tva)|eur) €",
+    (if .discount then "⚠️  remise globale non déduite ci-dessus" else empty end)
+  ' "${2:?spec.json requis}"
+  exit 0
+fi
+
+[ -n "${ABBY_API_KEY:-}" ] || die "ABBY_API_KEY absente de l'environnement."
 
 # api METHOD PATH [BODY]  → corps JSON sur stdout, échoue (avec le corps d'erreur) si HTTP >= 400
 api() {
@@ -126,5 +150,5 @@ case "$cmd" in
   delete)
     api DELETE "/v2/billing/${1:?id}" >/dev/null && echo "Supprimé : $1" ;;
 
-  *) sed -n '2,18p' "$0"; exit 1 ;;
+  *) sed -n '2,19p' "$0"; exit 1 ;;
 esac

@@ -12,6 +12,7 @@ Outil : `scripts/abby.sh` (curl + jq). Détail de l'API, format de la spec et va
 ## 0. Prérequis
 
 - Clé : variable d'environnement **`ABBY_API_KEY`** (Abby → Paramètres → Intégrations → Clés API). Ne jamais l'écrire dans le dépôt, dans un fichier ou dans le chat, ni la demander dans le chat.
+- Si Louis colle la clé dans le chat : ne jamais la recopier dans un fichier, un commit, une note Pipedrive ou Notion, ni une mémoire. Lui rappeler de la mettre dans l'environnement et de révoquer celle qui a été exposée.
 - `scripts/abby.sh check` :
   - `ABBY_API_KEY absente` → dire en une ligne de l'ajouter aux variables d'environnement de la session cloud (menu de l'environnement → Edit), ou dans `~/.claude/settings.json` → `"env"` en local, puis arrêter.
   - erreur réseau → domaine `api.abby.fr` à autoriser dans l'accès réseau de l'environnement, puis arrêter.
@@ -26,8 +27,20 @@ Outil : `scripts/abby.sh` (curl + jq). Détail de l'API, format de la spec et va
 2. **Contenu** : prendre ce que Louis donne (texte, proposition commerciale, deal Pipedrive). Pour chaque ligne : désignation, description, quantité, unité, prix unitaire **HT**, TVA (par défaut 20 %, `FR_2000`), type (par défaut `service_delivery`). Remise éventuelle.
 3. **Options** : titre du devis, validité (défaut 30 jours), délai de paiement, note d'en-tête/de pied (acompte, planning…).
 4. Ne jamais inventer un prix, une quantité ou une ligne : ce qui manque est demandé.
+5. **Brief rédigé (texte de conseil, exemple Shannen/ChatGPT)** : n'en reprendre que le contenu du devis, jamais les conseils.
+   - Source prioritaire : la section « version prête à copier-coller ». Sinon : les lignes détaillées.
+   - Titre : la version que le texte dit préférer (souvent la longue, qui protège le périmètre).
+   - Description d'une ligne : les puces deviennent des lignes `- …` séparées par `\n`.
+   - Unité `fixed_rate` (forfait) quand la quantité vaut 1 sur une prestation globale.
+   - `footerNote` : « Modalités de règlement » + « Observations » + mention de périmètre + options hors devis, dans cet ordre et en reprenant le texte tel quel.
+   - Les options « sur devis complémentaire » ne deviennent **jamais** des lignes. Proposer de les citer en pied de devis.
+   - Ignorer les listes « à ne pas écrire » et les commentaires (« Franchement… », « Pourquoi ? »), mais vérifier que rien de cette liste ne se retrouve dans le devis.
+   - Contrôles : la somme des lignes doit égaler le total annoncé ; les échéances × nombre doivent égaler le total (HT et TTC). Tout écart est signalé.
+6. **Cohérence avec Pipedrive** (si connecté) : `searchDeals` sur le client → comparer le montant du deal et le périmètre promis dans les dernières notes (ex. livrables évoqués en visio mais absents du devis). Signaler les écarts dans le récap, sans les corriger soi-même.
 
 ## 2. Récapituler et faire valider
+
+Écrire d'abord la spec (étape 3.1), puis `scripts/abby.sh preview <spec.json>` : ce contrôle local recalcule les totaux et ne demande ni clé ni réseau. Exemple complet : `references/exemple-spec.json`.
 
 Afficher le récap avant toute création :
 
