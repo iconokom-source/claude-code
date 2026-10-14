@@ -55,6 +55,7 @@
       digest: () => j('/api/digest', { method: 'POST' }),
       settings: (b) => j('/api/settings', { method: 'POST', body: JSON.stringify(b) }),
       connectors: () => j('/api/connectors'),
+      ask: (id, question) => j('/api/projects/' + id + '/ask', { method: 'POST', body: JSON.stringify({ question }) }),
       sync: (name, projectId) => j('/api/connectors/' + name + '/sync', { method: 'POST', body: JSON.stringify({ projectId }) })
     };
   }
@@ -93,6 +94,7 @@
       settings: (b) => { const r = Core.setSettings(store, me, b); return r.error ? fail(r.error) : wait(r); },
       connectors: () => wait({ connectors: [['pipedrive', 'Pipedrive'], ['abby', 'Abby'], ['qonto', 'Qonto'], ['google', 'Google Drive'], ['claude', 'Assistant (API Claude)']].map(([id, label]) => ({ id, label, configured: false, missing: ['clés à fournir au lancement du serveur'], does: '' })) }),
       sync: () => fail('Dans la démo, aucun outil n’est connecté.'),
+      ask: () => wait({ answer: null, fallback: true }),
       digest: () => { const m = Core.digestFor(store, me, '2000', BASE); if (m) store.outbox.unshift({ ...m, at: new Date().toISOString() }); return wait({ ok: true, sent: m ? 1 : 0 }); }
     };
   }
@@ -143,20 +145,21 @@
   /* ---------- Coque ---------- */
   const CLIENT_NAV = [['accueil', 'Accueil', 'home'], ['projet', R('Mon projet', 'Mon projet'), 'map'], ['valider', 'À valider', 'ok'], ['fichiers', 'Fichiers', 'folder'], ['documents', 'Documents', 'doc'], ['equipe', 'Équipe et aide', 'team']];
   const pending = () => (S.project ? S.project.validations.filter((v) => v.status === 'ready').length : 0);
+  const propsSent = () => (S.project ? (S.project.proposals || []).filter((x) => x.status === 'sent').length : 0);
 
   function shell(content) {
     const p = S.project;
     const admin = !clientMode();
-    const link = ([id, l, i]) => `<a href="#${id}" data-go="${id}" ${S.view === id || (id === 'clients' && S.view === 'admin') ? 'aria-current="page"' : ''}>${ic(i)}<span>${l}</span>${id === 'valider' && pending() ? `<span class="badge" aria-label="${pending()} à valider">${pending()}</span>` : ''}${id === 'messages' && unread() ? `<span class="badge" aria-label="${unread()} non lus">${unread()}</span>` : ''}${id === 'inbox' && todoInbox() ? `<span class="badge" aria-label="${todoInbox()} à traiter">${todoInbox()}</span>` : ''}</a>`;
+    const link = ([id, l, i]) => `<a href="#${id}" data-go="${id}" ${S.view === id || (id === 'clients' && S.view === 'admin') ? 'aria-current="page"' : ''}>${ic(i)}<span>${l}</span>${id === 'valider' && pending() ? `<span class="badge" aria-label="${pending()} à valider">${pending()}</span>` : ''}${id === 'proposition' && propsSent() ? `<span class="badge" aria-label="${propsSent()} à lire">${propsSent()}</span>` : ''}${id === 'messages' && unread() ? `<span class="badge" aria-label="${unread()} non lus">${unread()}</span>` : ''}${id === 'inbox' && todoInbox() ? `<span class="badge" aria-label="${todoInbox()} à traiter">${todoInbox()}</span>` : ''}</a>`;
     const groups = admin
       ? [['Au quotidien', [['inbox', 'Boîte de réception', 'mail'], ['clients', 'Clients', 'team']]], ['Gérer', [['nouveau', 'Nouvel espace client', 'plus'], ['reglages', 'Réglages', 'gear']]]]
-      : [['Mon projet', [['accueil', 'Accueil', 'home'], ['projet', 'Étapes', 'map'], ['valider', 'À valider', 'ok'], ['maquettes', 'Maquettes', 'figma']]],
+      : [['Mon projet', [['accueil', 'Accueil', 'home'], ...(p && (p.proposals || []).length ? [['proposition', (p.proposals || []).some((x) => x.status === 'sent') ? 'Proposition' : 'Propositions', 'doc']] : []), ['projet', 'Étapes', 'map'], ['valider', 'À valider', 'ok'], ['maquettes', 'Maquettes', 'figma']]],
          ['Échanges', [['messages', 'Messages', 'chat'], ['fichiers', 'Fichiers', 'folder'], ['documents', 'Documents', 'doc']]],
          ['Outils', [['outils', 'Boîte à outils', 'plus'], ['biblio', 'Bibliothèque', 'eye']]],
          ['Aide', [['equipe', 'Équipe et aide', 'team']]]];
     const navHtml = groups.map(([t, items]) => `<div class="sec">${t}</div>${items.map(link).join('')}`).join('');
     const tabs = admin ? [['inbox', 'Réception', 'mail'], ['clients', 'Clients', 'team'], ['compose', 'Ajouter', 'plus'], ['reglages', 'Réglages', 'gear']] : [['accueil', 'Accueil', 'home'], ['projet', 'Étapes', 'map'], ['messages', 'Messages', 'chat'], ['fichiers', 'Fichiers', 'folder'], ['plus', 'Plus', 'team']];
-    const tabHtml = tabs.map(([id, l, i]) => { const cur = id === 'plus' ? ['plus', 'valider', 'maquettes', 'documents', 'outils', 'biblio', 'equipe'].includes(S.view) : S.view === id || (id === 'clients' && S.view === 'admin');
+    const tabHtml = tabs.map(([id, l, i]) => { const cur = id === 'plus' ? ['plus', 'proposition', 'valider', 'maquettes', 'documents', 'outils', 'biblio', 'equipe'].includes(S.view) : S.view === id || (id === 'clients' && S.view === 'admin');
       return `<a href="#${id}" data-go="${id}" ${cur ? 'aria-current="page"' : ''}>${ic(i)}<span>${l}</span>${id === 'inbox' && todoInbox() ? `<span class="badge">${todoInbox()}<span class="sr"> à traiter</span></span>` : ''}${id === 'messages' && unread() ? `<span class="badge">${unread()}</span>` : ''}${id === 'plus' && pending() ? `<span class="badge">${pending()}</span>` : ''}</a>`; }).join('');
     let card;
     if (admin) {
@@ -175,7 +178,7 @@
         ${card}
         ${admin ? `<button class="add-btn" data-act="compose">${ic('plus')}Ajouter pour un client</button>` : ''}
         <nav class="nav">${navHtml}</nav>
-        ${API.demo && !S.preview ? `<label class="demo-sel"><span>${ic('eye')}Démo : voir l\u2019espace de</span><select data-demo aria-label="Changer d\u2019espace de démo">${[['claire@maisonlumen.fr', 'Claire · Maison Lumen (en cours)'], ['julie@cabinet-varenne.fr', 'Julie · Cabinet Varenne (démarrage)'], ['hugo@huchet-demorge.fr', 'Hugo · Huchet-Demorge (livré)'], ['louis@agence-orem.fr', 'Louis · agence'], ['theophile@agence-orem.fr', 'Théophile · agence'], ['clement@agence-orem.fr', 'Clément · agence']].map(([e, l]) => `<option value="${e}" ${S.me.email === e ? 'selected' : ''}>${l}</option>`).join('')}</select></label>` : ''}
+        ${API.demo && !S.preview ? `<label class="demo-sel"><span>${ic('eye')}Démo : voir l\u2019espace de</span><select data-demo aria-label="Changer d\u2019espace de démo">${[['claire@maisonlumen.fr', 'Claire · Maison Lumen (en cours)'], ['julie@cabinet-varenne.fr', 'Julie · Cabinet Varenne (démarrage)'], ['ines@domaine-des-vergers.fr', 'Inès · Domaine des Vergers (proposition)'], ['hugo@huchet-demorge.fr', 'Hugo · Huchet-Demorge (livré)'], ['louis@agence-orem.fr', 'Louis · agence'], ['theophile@agence-orem.fr', 'Théophile · agence'], ['clement@agence-orem.fr', 'Clément · agence']].map(([e, l]) => `<option value="${e}" ${S.me.email === e ? 'selected' : ''}>${l}</option>`).join('')}</select></label>` : ''}
         <div class="side-foot">
           <div class="me-av">${meImg}</div>
           <div class="me-txt"><strong>${esc(S.preview ? p.contactName || p.client : S.me.name)}</strong><span class="role">${admin ? 'Agence' : 'Client'}</span></div>
@@ -184,7 +187,7 @@
         </div>
       </aside>
       <div class="stage">
-        <header class="topbar"><div class="brand"><img class="logo" src="${IMG.logo}" alt=""><b>Orem</b></div>${API.demo && !S.preview ? `<label class="demo-sel top"><span>${ic('eye')}Démo : voir l\u2019espace de</span><select data-demo aria-label="Changer d\u2019espace de démo">${[['claire@maisonlumen.fr', 'Claire · Maison Lumen (en cours)'], ['julie@cabinet-varenne.fr', 'Julie · Cabinet Varenne (démarrage)'], ['hugo@huchet-demorge.fr', 'Hugo · Huchet-Demorge (livré)'], ['louis@agence-orem.fr', 'Louis · agence'], ['theophile@agence-orem.fr', 'Théophile · agence'], ['clement@agence-orem.fr', 'Clément · agence']].map(([e, l]) => `<option value="${e}" ${S.me.email === e ? 'selected' : ''}>${l}</option>`).join('')}</select></label>` : ''}${API.demo && !S.preview ? '' : `<span class="small">${admin ? 'Espace agence' : esc(p.client)}</span>`}</header>
+        <header class="topbar"><div class="brand"><img class="logo" src="${IMG.logo}" alt=""><b>Orem</b></div>${API.demo && !S.preview ? `<label class="demo-sel top"><span>${ic('eye')}Démo : voir l\u2019espace de</span><select data-demo aria-label="Changer d\u2019espace de démo">${[['claire@maisonlumen.fr', 'Claire · Maison Lumen (en cours)'], ['julie@cabinet-varenne.fr', 'Julie · Cabinet Varenne (démarrage)'], ['ines@domaine-des-vergers.fr', 'Inès · Domaine des Vergers (proposition)'], ['hugo@huchet-demorge.fr', 'Hugo · Huchet-Demorge (livré)'], ['louis@agence-orem.fr', 'Louis · agence'], ['theophile@agence-orem.fr', 'Théophile · agence'], ['clement@agence-orem.fr', 'Clément · agence']].map(([e, l]) => `<option value="${e}" ${S.me.email === e ? 'selected' : ''}>${l}</option>`).join('')}</select></label>` : ''}${API.demo && !S.preview ? '' : `<span class="small">${admin ? 'Espace agence' : esc(p.client)}</span>`}</header>
         <div class="sheet"><main class="main" id="main" tabindex="-1"><div class="wrap">${wrapHtml(content)}</div></main></div>
       </div>
       <nav class="tabbar" aria-label="Navigation principale" style="grid-template-columns:repeat(${tabs.length},minmax(0,1fr))">${tabHtml}</nav>
@@ -202,7 +205,7 @@
     const v = ph.items.reduce((s, it) => s + ({ done: 1, review: 0.75, on: 0.5 }[itS(it)] || 0), 0);
     return Math.max(8, Math.round((v / n) * 100));
   }
-  const CTA = { valider: ['Voir et valider', 'valider'], fichiers: ['Déposer mes fichiers', 'fichiers'], projet: ['Voir le projet', 'projet'], documents: ['Voir les documents', 'documents'], equipe: ['Voir les créneaux', 'equipe'], outils: ['Ouvrir la boîte à outils', 'outils'], messages: ['Lire le message', 'messages'], maquettes: ['Voir les maquettes', 'maquettes'] };
+  const CTA = { proposition: ['Lire la proposition', 'proposition'], valider: ['Voir et valider', 'valider'], fichiers: ['Déposer mes fichiers', 'fichiers'], projet: ['Voir le projet', 'projet'], documents: ['Voir les documents', 'documents'], equipe: ['Voir les créneaux', 'equipe'], outils: ['Ouvrir la boîte à outils', 'outils'], messages: ['Lire le message', 'messages'], maquettes: ['Voir les maquettes', 'maquettes'] };
 
   function vAccueil() {
     const p = S.project, nx = Core.nextStep(p), ph = p.phases[p.phase - 1];
@@ -223,6 +226,7 @@
     <div class="head"><div><h1 class="brandish">Bonjour ${esc(p.contactName || S.me.name)}</h1><p class="lead">${esc(cap(fmtLong(Date.now())))} · ${esc(p.projet)}</p></div></div>
     <section class="next" aria-labelledby="nx"><div><div class="k">Prochaine étape</div><h2 id="nx">${esc(nx.title)}</h2>${nx.text ? `<p>${esc(nx.text)}</p>` : ''}<div class="meta">${esc(phName(ph))} · étape ${p.phase} sur ${p.phases.length}</div></div>${ctaHtml}</section>
     ${unreadBanner()}
+    ${countdown()}
     ${kpisClient()}
     <section class="panel" aria-labelledby="av">
       <div class="panel-head"><h2 id="av">${ic('map')}Où en est le projet</h2><a href="#projet" data-go="projet">Voir le détail</a></div>
@@ -247,6 +251,13 @@
     ${qaPanel()}
     ${delivs.length ? `<section class="panel" aria-labelledby="dl"><div class="panel-head"><h2 id="dl">${ic('figma')}Derniers ajouts de l’agence</h2><a href="#fichiers" data-go="fichiers">Tous les fichiers</a></div><div class="list">${delivs.map(fileRow).join('')}</div></section>` : ''}`;
   }
+  // Compte à rebours : les trois dernières semaines avant la mise en ligne.
+  function countdown() {
+    const p = S.project, j = daysTo(p.golive);
+    if (p.deliveredAt || p.offer !== 'site' || j < 0 || j > 21 || p.phase < 3) return '';
+    const h = Math.max(0, Math.round((new Date(p.golive) - Date.now()) / 36e5));
+    return `<section class="countdown" aria-label="Compte à rebours"><div class="cd-n num">${j}<small>${j > 1 ? 'jours' : 'jour'}</small></div><div><div class="k">Mise en ligne</div><strong>${esc(cap(fmtLong(p.golive)))}</strong><span class="small">${j ? `Encore ${h} heures. ` : 'C’est aujourd’hui. '}${R('Votre', 'Ton')} site arrive.</span></div></section>`;
+  }
   const cap = (s) => (s ? s[0].toUpperCase() + s.slice(1) : s);
 
   function fileRow(f) {
@@ -269,6 +280,28 @@
       </div></li>`; }).join('')}
     </ol></section>
     ${handoverPanel()}`;
+  }
+
+  /* ---------- Proposition (avant signature, ou devis d'évolution) ---------- */
+  function vProposition() {
+    const p = S.project, L = (p.proposals || []).slice().sort((a, b) => (a.status === 'sent' ? -1 : 0) - (b.status === 'sent' ? -1 : 0));
+    const card = (pr) => {
+      const ht = pr.lines.reduce((t, l) => t + l.ht, 0), dep = Math.round(ht * pr.depositPct) / 100;
+      const head = `<div class="prop-h"><div><div class="k">${pr.from ? 'Devis d’évolution' : 'Proposition'}${pr.quote ? ' · ' + esc(pr.quote) : ''}</div><h2>${esc(pr.title)}</h2></div>${{ sent: `<span class="chip warn">En attente de ${R('votre', 'ta')} réponse</span>`, accepted: '<span class="chip ok">Acceptée</span>', declined: '<span class="chip idle">Déclinée</span>' }[pr.status] || ''}</div>`;
+      const table = `<div class="table-wrap"><table class="prop-t"><caption class="sr">Détail de la proposition</caption><thead><tr><th scope="col">Ce qu’on fait</th><th scope="col" class="num">Montant HT</th></tr></thead><tbody>${pr.lines.map((l) => `<tr><td>${esc(l.t)}</td><td class="num">${money(l.ht)}</td></tr>`).join('')}</tbody>
+        <tfoot><tr><th scope="row">Total HT</th><td class="num">${money(ht)}</td></tr><tr><th scope="row">TVA (20 %)</th><td class="num">${money(Math.round(ht * 20) / 100)}</td></tr><tr class="ttc"><th scope="row">Total TTC</th><td class="num">${money(Math.round(ht * 120) / 100)}</td></tr></tfoot></table></div>`;
+      const terms = `<p class="small muted">${pr.depositPct ? `Acompte de ${pr.depositPct} % à la signature (${money(dep)} HT), solde à la livraison. ` : 'Facturé à la livraison. '}${pr.status === 'sent' && pr.validUntil ? 'Proposition valable jusqu’au ' + fmt(pr.validUntil, { day: 'numeric', month: 'long' }) + '.' : ''}${pr.example ? ' Montants d’exemple.' : ''}</p>`;
+      const foot = pr.status === 'accepted' ? `<div class="prop-ok">${ic('ok')}<div><strong>Acceptée le ${esc(fmtTime(pr.acceptedAt))}</strong><span class="small muted">Signé « ${esc(pr.signName)} » depuis l’espace. ${pr.depositPct ? 'La facture d’acompte est dans Documents.' : ''}</span></div>${pr.depositPct ? `<a class="btn btn-line btn-sm" href="#documents" data-go="documents">Voir la facture</a>` : ''}</div>`
+        : pr.status === 'declined' ? `<p class="muted">${R('Vous avez décliné', 'Tu as décliné')} cette proposition le ${fmt(pr.declined.at, { day: 'numeric', month: 'long' })}. On revient vers ${R('vous', 'toi')} avec une nouvelle version.</p>`
+        : S.propDecline === pr.id ? `<form class="form" data-form="decline" data-id="${pr.id}"><div class="field"><label for="dc-${pr.id}">Qu’est-ce qui ne ${R('vous', 'te')} convient pas ?</label><textarea id="dc-${pr.id}" rows="3"></textarea></div><div class="inline"><button class="btn btn-line" type="submit">Envoyer ma réponse</button><button class="ghost" type="button" data-act="decline-cancel">Annuler</button></div></form>`
+        : `<form class="form prop-sign" data-form="accept" data-id="${pr.id}"><label class="check-l"><input type="checkbox" id="ac-ok-${pr.id}"> J’ai lu la proposition et je l’accepte${pr.depositPct ? `, acompte de ${pr.depositPct} % compris` : ''}.</label>
+            <div class="field"><label for="ac-n-${pr.id}">Votre nom, pour signer</label><input id="ac-n-${pr.id}" type="text" autocomplete="name" placeholder="ex. ${esc(p.contactName || 'Prénom')} Nom"></div>
+            <div class="inline"><button class="btn btn-primary" type="submit">${ic('check')}J’accepte la proposition</button><a class="btn btn-line" href="#messages" data-go="messages">Poser une question</a><button class="ghost" type="button" data-act="decline" data-id="${pr.id}">Décliner</button></div>
+            <p class="small muted">L’acceptation est enregistrée avec la date et l’heure, comme une signature.</p></form>`;
+      return `<section class="panel prop">${head}${pr.intro ? `<p class="prop-intro">${esc(pr.intro)}</p>` : ''}${table}${terms}${foot}</section>`;
+    };
+    return `<div class="head"><div><h1>${L.length > 1 ? 'Propositions' : 'Proposition'}</h1><p class="lead">${esc(p.client)} · ${esc(Core.offerOf(p))}</p></div></div>
+      ${L.map(card).join('') || '<div class="empty">Aucune proposition pour l’instant.</div>'}`;
   }
 
   function vValider() {
@@ -405,7 +438,10 @@
   }
   function qaPanel() {
     const lead = S.team[0] || {};
-    return `<section class="panel" aria-labelledby="qa"><div class="panel-head"><h2 id="qa">${ic('chat')}Une question ?</h2><span class="aside">Réponse immédiate, tirée de ${R('votre', 'ton')} projet</span></div>
+    const A = cfg().assistant;
+    return `<section class="panel" aria-labelledby="qa"><div class="panel-head"><h2 id="qa">${ic('chat')}${A ? 'Une question ?' : 'Réponses rapides'}</h2><span class="aside">Réponse immédiate, tirée de ${R('votre', 'ton')} projet</span></div>
+      ${A ? `<form class="inline ask" data-form="ask"><label class="sr" for="ask-q">${R('Votre', 'Ta')} question</label><input id="ask-q" type="text" maxlength="600" placeholder="${R('Posez votre question sur le projet', 'Pose ta question sur le projet')}" value="${esc(S.askQ || '')}"><button class="btn btn-primary btn-sm" type="submit">Demander</button></form>
+        ${S.askA ? `<div class="qa-answer" role="status">${lead.photo && IMG[lead.photo] ? `<img src="${IMG[lead.photo]}" alt="">` : ''}<p>${S.askA === '…' ? 'Je regarde dans le projet…' : esc(S.askA)}</p></div><p class="small muted">Réponse générée à partir des données du projet. Pour une décision, ${R('écrivez', 'écris')} à l’équipe.</p>` : ''}` : ''}
       <div class="qa-chips" role="group" aria-label="Questions fréquentes">${QA().map(([id, q]) => `<button data-act="qa" data-id="${id}" aria-pressed="${S.qa === id}">${q}</button>`).join('')}</div>
       ${S.qa ? `<div class="qa-answer" role="status">${lead.photo && IMG[lead.photo] ? `<img src="${IMG[lead.photo]}" alt="">` : ''}<p>${qaAnswer(S.qa)}</p></div>` : ''}</section>`;
   }
@@ -414,7 +450,8 @@
   function onboarding() {
     const p = S.project, st = S.ob.step, first = (p.contactName || S.me.name || '').split(' ')[0];
     const lead = S.team[0] || {};
-    const faces = S.team.filter((u) => IMG[u.photo]).map((u) => `<img src="${IMG[u.photo]}" alt="${esc(u.name)}">`).join('');
+    const faces = S.team.filter((u) => IMG[u.photo]).map((u) => `<figure class="face"><img src="${IMG[u.photo]}" alt=""><figcaption>${esc(u.name.split(' ')[0])}</figcaption></figure>`).join('');
+    const welcome = (p.messages || []).filter((m) => m.fromAgency && m.loom && /bienvenue/i.test(m.loom.title)).sort((a, b) => new Date(a.at) - new Date(b.at))[0] || (cfg().welcomeLoom ? { loom: { url: cfg().welcomeLoom, title: 'Bienvenue chez Orem', duration: '' } } : null);
     const arts = [
       ['Bienvenue', `Bienvenue ${esc(first)}, ${R('votre', 'ton')} projet démarre ici.`],
       ['Le chemin', `${p.phases.length} temps, de la première visio ${p.offer === 'site' ? 'à la mise en ligne' : 'à la livraison'}.`],
@@ -434,6 +471,7 @@
       `<h3>Un mot de ${esc((lead.name || 'Louis').split(' ')[0])}</h3>
        <p>Merci de nous faire confiance pour ce projet : <strong>${esc(p.projet)}</strong>. Cet espace remplace les mails éparpillés : ${R('vous y trouverez', 'tu y trouveras')} où en est le site, ce qu’on attend de ${R('vous', 'toi')}, ${R('vos', 'tes')} fichiers et ${R('vos', 'tes')} factures.</p>
        <p>On ne passe jamais à l’étape suivante sans ${R('votre', 'ton')} feu vert. Et si quelque chose n’est pas clair, on est à un message de ${R('vous', 'toi')}.</p>
+       ${welcome ? `<div class="ob-video">${videoCard(welcome)}</div>` : ''}
        <p class="muted small">${esc(lead.name || '')}${lead.title ? ', ' + esc(lead.title.toLowerCase()) : ''}</p>`,
       `<h3>${R('Votre', 'Ton')} planning</h3>
        <div class="ob-tl">${p.phases.map((x) => `<div class="tl ${phS(x) === 'wait' ? '' : phS(x)}"><i></i><strong style="font-weight:${phS(x) === 'on' ? 600 : 400}">${esc(phName(x))}</strong><span class="num">${fmt(x.from)}</span></div>`).join('')}</div>
@@ -457,10 +495,12 @@
   }
   function celebrate() {
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const host = document.querySelector('#main .next, #main .head') || document.body;
     const c = document.createElement('div'); c.className = 'confetti'; c.setAttribute('aria-hidden', 'true');
     const cols = ['#ff6200', '#092482', '#6cb5d7', '#0b6a3b', '#f4f4f6'];
     for (let i = 0; i < 70; i++) { const e = document.createElement('i'); e.style.left = Math.random() * 100 + '%'; e.style.background = cols[i % cols.length]; e.style.animationDelay = Math.random() * 0.4 + 's'; e.style.animationDuration = 1.2 + Math.random() + 's'; c.appendChild(e); }
-    document.body.appendChild(c); setTimeout(() => c.remove(), 2800);
+    if (host !== document.body) { c.classList.add('in'); if (getComputedStyle(host).position === 'static') host.style.position = 'relative'; }
+    host.appendChild(c); setTimeout(() => c.remove(), 2800);
   }
 
 
@@ -491,9 +531,11 @@
       <div class="empty big">${ic('figma')}<strong>Les maquettes arrivent avec le temps « Représenter »</strong><span>Dès que Clément commence le design, ${R('vous les verrez', 'tu les verras')} ici en direct, sans compte Figma.</span></div>`;
     return `<div class="head"><div><h1>Maquettes</h1><p class="lead">En direct depuis Figma, toujours la dernière version</p></div>
       <div class="head-actions">${L.proto ? `<a class="btn btn-primary" href="${esc(L.proto)}" target="_blank" rel="noopener">${ic('play')}Tester le prototype</a>` : ''}${L.figma ? `<a class="btn btn-line" href="${esc(L.figma)}" target="_blank" rel="noopener">${ic('figma')}Ouvrir dans Figma</a>` : ''}</div></div>
-      ${!API.demo && (L.proto || L.figma) ? `<section class="panel flush"><div class="figma-frame"><iframe src="${figmaEmbed(L.proto || L.figma)}" title="Maquettes Figma" allowfullscreen loading="lazy"></iframe></div></section>`
-        : `<section class="panel"><div class="panel-head"><h2>${ic('eye')}Aperçu des écrans</h2><span class="aside">Le prototype s’ouvre dans un nouvel onglet, sans compte Figma</span></div>
-          ${shots.length ? `<div class="shots">${shots.map((a) => `<button class="shot" data-act="zoom" data-src="${esc(a.img)}" data-title="${esc(a.title)}"><img src="${esc(asset(a.img))}" alt="${esc(a.title)}" loading="lazy"><span>${esc(a.title)}</span></button>`).join('')}</div>` : '<p class="muted">Les captures des écrans apparaîtront ici.</p>'}</section>`}
+      ${!API.demo && (L.proto || L.figma) ? `<section class="panel flush"><div class="figma-frame"><iframe src="${figmaEmbed(L.proto || L.figma)}" title="Maquettes Figma" allowfullscreen loading="lazy"></iframe></div></section>` : ''}
+      ${API.demo || shots.length ? `<section class="panel"><div class="panel-head"><h2>${ic('eye')}${API.demo ? 'Aperçu des écrans' : 'Commenter un écran'}</h2><span class="aside">Le prototype s’ouvre dans un nouvel onglet, sans compte Figma</span></div>
+          ${shots.length ? `<p class="small muted" style="margin-bottom:12px">${R('Cliquez sur un écran, puis sur l’endroit à commenter', 'Clique sur un écran, puis sur l’endroit à commenter')}.</p><div class="shots">${shots.map((a) => `<button class="shot" data-act="zoom" data-pin="1" data-src="${esc(a.img)}" data-title="${esc(a.title)}"><img src="${esc(asset(a.img))}" alt="${esc(a.title)}" loading="lazy"><span>${esc(a.title)}</span></button>`).join('')}</div>` : '<p class="muted">Les captures des écrans apparaîtront ici.</p>'}</section>` : ''}
+      ${(p.versions || []).length ? `<section class="panel"><div class="panel-head"><h2>${ic('figma')}Versions</h2><span class="aside">La plus récente en premier</span></div><ul class="list plain">${p.versions.map((v, i) => `<li class="row"><span class="chip ${i ? 'idle' : 'hl'}">${esc(v.label)}</span><div class="grow"><div class="title">${esc(v.t)}</div><div class="sub">${fmt(v.at, { day: 'numeric', month: 'long' })}${i ? '' : ' · dernière version'}</div></div><a class="btn btn-line btn-sm" href="${esc(v.url)}" target="_blank" rel="noopener">Ouvrir<span class="sr"> ${esc(v.label)}</span></a></li>`).join('')}</ul></section>` : ''}
+      ${pinsPanel()}
       <section class="panel"><div class="panel-head"><h2>${ic('chat')}Comment donner ${R('votre', 'ton')} avis</h2></div>
         <div class="tips"><div><span class="rank">01</span><p>${R('Ouvrez le prototype et cliquez', 'Ouvre le prototype et clique')} comme sur le vrai site.</p></div><div><span class="rank">02</span><p>${R('Notez ce qui vous gêne', 'Note ce qui te gêne')}, écran par écran.</p></div><div><span class="rank">03</span><p>${R('Validez ou demandez', 'Valide ou demande')} des modifications dans « À valider ».</p></div></div></section>`;
   }
@@ -609,7 +651,7 @@
 
   /* ---------- Plus (mobile) ---------- */
   function vPlus() {
-    const items = [['valider', 'À valider', 'ok'], ['maquettes', 'Maquettes', 'figma'], ['documents', 'Documents', 'doc'], ['outils', 'Boîte à outils', 'plus'], ['biblio', 'Bibliothèque', 'folder'], ['equipe', 'Équipe et aide', 'team']];
+    const items = [...((S.project.proposals || []).length ? [['proposition', 'Proposition', 'doc']] : []), ['valider', 'À valider', 'ok'], ['maquettes', 'Maquettes', 'figma'], ['documents', 'Documents', 'doc'], ['outils', 'Boîte à outils', 'plus'], ['biblio', 'Bibliothèque', 'folder'], ['equipe', 'Équipe et aide', 'team']];
     return `<div class="head"><div><h1>Tout ${R('votre', 'ton')} espace</h1></div></div><section class="panel"><div class="list">${items.map(([id, l, i]) => `<a class="row linkrow" href="#${id}" data-go="${id}"><span class="ico">${ic(i)}</span><div class="grow"><div class="title">${l}</div></div>${id === 'valider' && pending() ? `<span class="badge">${pending()}</span>` : ''}${ic('arrow', 'width:18px;height:18px;color:var(--muted)')}</a>`).join('')}</div></section>`;
   }
 
@@ -621,6 +663,8 @@
       <section class="next live"><div><div class="k"><span class="pulse"></span>En ligne depuis le ${fmt(p.deliveredAt, { day: 'numeric', month: 'long', year: 'numeric' })}</div><h2>${R('Votre', 'Ton')} site travaille pour ${R('vous', 'toi')}.</h2><p>${esc(p.next.text || '')}</p></div>
         ${p.links.site ? `<a class="btn" href="${esc(p.links.site)}" target="_blank" rel="noopener">Voir le site ${ic('arrow')}</a>` : ''}</section>
       ${p.results ? `<div class="kpis">${p.results.stats.map(([v, l]) => `<div class="kpi"><span class="v num">${esc(v)}</span><span class="l">${esc(l)}</span></div>`).join('')}</div><p class="steps-foot" style="margin-top:-8px">${esc(p.results.period)} · chiffres Google Analytics et Search Console</p>` : ''}
+      ${launchKit()}
+      ${monthlyReport()}
       ${evolutionCard()}
       <div class="grid2">
         ${last ? `<section class="panel"><div class="panel-head"><h2>${ic('play')}Dernière vidéo de l’équipe</h2><a href="#messages" data-go="messages">Tous les messages</a></div><p style="margin-bottom:12px">${esc(last.text)}</p>${last.loom ? videoCard(last) : ''}</section>` : ''}
@@ -632,6 +676,25 @@
         <div class="quick">${[(p.tools || []).includes('teaser') ? ['tool:teaser', 'Fiche teaser', 'Présenter un bien en 2 minutes', 'doc'] : ['outils', 'Boîte à outils', 'Kit de marque, signature…', 'plus'], ['maquettes', 'Maquettes', 'Le fichier Figma et le prototype', 'figma'], ['biblio', 'Bibliothèque', `${(p.assets || []).length} visuels et cas d’étude`, 'folder'], ['fichiers', 'Fichiers', 'Guide Webflow, accès, bilans', 'doc']].map(([g, t, d, i]) => `<a class="qcard" href="#${g.replace('tool:', '')}" ${g.startsWith('tool:') ? `data-tool="${g.slice(5)}"` : `data-go="${g}"`}><span class="ico hl">${ic(i)}</span><strong>${t}</strong><span>${esc(d)}</span></a>`).join('')}</div></section>
       ${reviewPanel()}
       ${qaPanel()}`;
+  }
+
+  function monthlyReport() {
+    const rp = (S.project.reports || [])[0]; if (!rp) return '';
+    const mName = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' }).format(new Date(rp.month + '-15'));
+    const n = (x) => new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 1 }).format(x).replace(/\u202f/g, ' ');
+    return `<section class="panel" aria-labelledby="bm"><div class="panel-head"><h2 id="bm">${ic('map')}Bilan de ${esc(mName)}</h2><span class="aside">Google Analytics et Search Console, comparé au mois précédent</span></div>
+      <div class="kpis">${rp.stats.map(([l, v, pv]) => { const better = /Position/.test(l) ? pv != null && v < pv : pv != null && v > pv, d = pv != null && pv !== 0 ? Math.round(((v - pv) / pv) * 100) : null;
+        return `<div class="kpi"><span class="v num">${n(v)}</span><span class="l">${esc(l)}</span>${pv != null ? `<span class="small ${better ? 'up' : v === pv ? '' : 'down'}">${/Position/.test(l) ? (better ? 'meilleure que' : 'contre') + ' ' + n(pv) : (d > 0 ? '+' : '') + d + ' %'} <span class="sr">par rapport au mois précédent</span></span>` : ''}</div>`; }).join('')}</div></section>`;
+  }
+  /* Kit de lancement : les 60 jours après la mise en ligne. */
+  function launchKit() {
+    const p = S.project; if (!p.deliveredAt || p.offer !== 'site' || Date.now() - new Date(p.deliveredAt) > 60 * 864e5) return '';
+    const site = (p.links.site || '').replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '');
+    const post = S.post ?? `Notre nouveau site est en ligne : ${site}\n\nOn voulait un site qui nous ressemble et qui parle à nos clients. Merci à l’agence Orem pour l’accompagnement, de la stratégie à la mise en ligne.\n\nVos retours nous intéressent !`;
+    return `<section class="panel" aria-labelledby="lk"><div class="panel-head"><h2 id="lk">${ic('globe')}Kit de lancement</h2><span class="aside">Pour annoncer ${R('votre', 'ton')} nouveau site</span></div>
+      ${p.links.old ? `<div class="ba"><a class="ba-c" href="${esc(p.links.old)}" target="_blank" rel="noopener"><span class="k">Avant</span><strong>L’ancien site</strong><span class="small muted">${esc(p.links.old.replace(/^https?:\/\//, ''))}</span></a><a class="ba-c now" href="${esc(p.links.site)}" target="_blank" rel="noopener"><span class="k">Après</span><strong>${esc(site)}</strong><span class="small">En ligne depuis le ${fmt(p.deliveredAt, { day: 'numeric', month: 'long' })}</span></a></div>` : ''}
+      <div class="field"><label for="lk-post">Post LinkedIn, prêt à copier</label><textarea id="lk-post" rows="5" data-post="1">${esc(post)}</textarea></div>
+      <div class="inline"><button class="btn btn-primary btn-sm" data-act="copypost">${ic('copy')}Copier le post</button><a class="btn btn-line btn-sm" href="#biblio" data-go="biblio">${ic('eye')}Visuels du site</a>${(p.tools || []).includes('signature') ? `<button class="btn btn-line btn-sm" data-tool="signature">${ic('mail')}Signature e-mail</button>` : ''}</div></section>`;
   }
 
   /* ---------- Fin de projet : remise, avis ---------- */
@@ -701,7 +764,21 @@
 
   /* Agrandissement d'une image */
   function lightbox() {
-    return S.zoom ? `<div class="lb" role="dialog" aria-modal="true" aria-label="${esc(S.zoom.title)}" data-act="unzoom"><figure><img src="${esc(S.zoom.src)}" alt="${esc(S.zoom.title)}"><figcaption>${esc(S.zoom.title)}</figcaption></figure><button class="lb-x" data-act="unzoom" aria-label="Fermer">×</button></div>` : '';
+    if (!S.zoom) return '';
+    const Z = S.zoom, pins = Z.pin ? (S.project.pins || []).filter((x) => x.img === Z.key) : [];
+    const v = (S.project.versions || [])[0];
+    return `<div class="lb" role="dialog" aria-modal="true" aria-label="${esc(Z.title)}" data-act="unzoom"><figure>
+      <div class="pin-wrap">${Z.pin ? `<button class="pin-area" data-act="pin-here" aria-label="Commenter cet endroit de l’écran : ${esc(Z.title)}"><img src="${esc(Z.src)}" alt="${esc(Z.title)}"></button>` : `<img src="${esc(Z.src)}" alt="${esc(Z.title)}">`}
+        ${pins.map((x, i) => `<span class="pin ${x.status}" style="left:${x.x}%;top:${x.y}%" title="${esc(x.text)}">${i + 1}</span>`).join('')}
+        ${Z.at ? `<form class="pin-form" data-form="pin" style="left:${Math.min(Z.at.x, 70)}%;top:${Math.min(Z.at.y, 80)}%"><label class="sr" for="pin-t">${R('Votre', 'Ton')} commentaire</label><textarea id="pin-t" rows="2" placeholder="${R('Votre', 'Ton')} commentaire à cet endroit"></textarea><div class="inline"><button class="btn btn-primary btn-sm" type="submit">Épingler</button><button class="ghost" type="button" data-act="pin-cancel">Annuler</button></div></form>` : ''}</div>
+      <figcaption>${esc(Z.title)}${Z.pin ? ` · ${pins.length} commentaire${pins.length > 1 ? 's' : ''}${v ? ' · ' + esc(v.label) : ''}` : ''}</figcaption>
+      ${pins.length ? `<ol class="pin-list">${pins.map((x) => `<li class="${x.status}"><span>${esc(x.text)}</span><span class="small">${esc(who(x.by))} · ${fmt(x.at)}${x.status === 'resolved' ? ' · traité' : ''}</span></li>`).join('')}</ol>` : ''}</figure>
+      <button class="lb-x" data-act="unzoom" aria-label="Fermer">×</button></div>`;
+  }
+  function pinsPanel() {
+    const P = S.project.pins || []; if (!P.length) return '';
+    const open = P.filter((x) => x.status === 'open').length;
+    return `<section class="panel"><div class="panel-head"><h2>${ic('chat')}Commentaires sur les écrans</h2><span class="aside">${open} en cours · ${P.length - open} traité${P.length - open > 1 ? 's' : ''}</span></div><ul class="list plain">${P.map((x) => `<li class="row"><span class="chip ${x.status === 'open' ? 'warn' : 'ok'}">${x.status === 'open' ? 'En cours' : 'Traité'}</span><div class="grow"><div class="title" style="font-weight:400">${esc(x.text)}</div><div class="sub">${esc(who(x.by))} · ${fmt(x.at)}${x.version ? ' · ' + esc(x.version) : ''}</div></div>${isAdmin() && !S.preview ? `<button class="btn btn-line btn-sm" data-act="pin-resolve" data-id="${x.id}">${x.status === 'open' ? 'Marquer traité' : 'Rouvrir'}</button>` : ''}</li>`).join('')}</ul></section>`;
   }
 
   /* ---------- Agence : messages et liens ---------- */
@@ -717,7 +794,7 @@
   function tDemandes() {
     const p = S.project, R0 = p.requests || [];
     return `<section class="panel"><div class="panel-head"><h2>${ic('plus')}Demandes d’évolution</h2><span class="aside">${R0.filter((r) => r.status === 'Nouveau').length} nouvelle${R0.filter((r) => r.status === 'Nouveau').length > 1 ? 's' : ''}</span></div><div class="list">${R0.map((r) => `<div class="row"><div class="grow"><div class="title">${esc(r.type)} · ${esc(r.priority)}</div><div class="sub">${esc(r.text)}</div><div class="sub">${esc(who(r.by))} · ${fmt(r.at, { day: 'numeric', month: 'long' })}</div></div>
-        <label class="sr" for="rq-${r.id}">Statut de la demande</label><select id="rq-${r.id}" data-req="${r.id}" style="width:auto">${['Nouveau', 'Proposé', 'En cours', 'Fait'].map((x) => `<option ${r.status === x ? 'selected' : ''}>${x}</option>`).join('')}</select></div>`).join('') || '<p class="muted">Aucune demande.</p>'}</div></section>`;
+        ${r.status !== 'Fait' && !(p.proposals || []).some((x) => x.from === r.id) ? `<button class="btn btn-line btn-sm" data-act="prop-from" data-id="${r.id}">Proposer un devis</button>` : (p.proposals || []).some((x) => x.from === r.id) ? '<span class="chip hl">Devis envoyé</span>' : ''}<label class="sr" for="rq-${r.id}">Statut de la demande</label><select id="rq-${r.id}" data-req="${r.id}" style="width:auto">${['Nouveau', 'Proposé', 'En cours', 'Fait'].map((x) => `<option ${r.status === x ? 'selected' : ''}>${x}</option>`).join('')}</select></div>`).join('') || '<p class="muted">Aucune demande.</p>'}</div></section>`;
   }
   function msgBubbleAdmin(m) {
     const u = person(m.by), agency = !!m.fromAgency;
@@ -730,8 +807,13 @@
       <div class="field"><label for="lk-p">Prototype Figma</label><input id="lk-p" type="url" value="${esc(L.proto)}" placeholder="https://www.figma.com/proto/…"></div>
       <div class="field"><label for="lk-w">Prévisualisation Webflow</label><input id="lk-w" type="url" value="${esc(L.preview)}" placeholder="https://….webflow.io"></div>
       <div class="field"><label for="lk-s">Site en ligne</label><input id="lk-s" type="url" value="${esc(L.site)}" placeholder="https://www.…"></div>
+      <div class="field"><label for="lk-o">Ancien site (pour l’avant/après du kit de lancement)</label><input id="lk-o" type="url" value="${esc(L.old || '')}" placeholder="https://…"></div>
       <p class="hint">Partagez le fichier Figma en « Can view » : le client le voit sans compte.</p>
-      <div><button class="btn btn-primary" type="submit">Enregistrer</button></div></form>`;
+      <div><button class="btn btn-primary" type="submit">Enregistrer</button></div></form>
+    <form class="panel form" data-form="version"><div class="panel-head" style="margin:0"><h2>${ic('figma')}Versions des maquettes</h2><span class="aside">${(S.project.versions || []).map((v) => esc(v.label)).join(', ') || 'Aucune'}</span></div>
+      <div class="line"><div class="field"><label for="ve-t">Ce qui change</label><input id="ve-t" type="text" placeholder="ex. Maquettes après vos retours"></div><div class="field"><label for="ve-u">Lien Figma</label><input id="ve-u" type="url" value="${esc(L.proto || L.figma || '')}"></div></div>
+      <div><button class="btn btn-line btn-sm" type="submit">Publier la version ${(S.project.versions || []).length + 1}</button></div></form>
+    ${pinsPanel()}`;
   }
 
 
@@ -787,7 +869,7 @@
         <div class="line"><div class="field"><label for="st-i">IBAN</label><input id="st-i" type="text" value="${esc(cfg().iban)}"></div><div class="field"><label for="st-c">BIC</label><input id="st-c" type="text" value="${esc(cfg().bic)}"></div></div>
         <div><button class="btn btn-primary btn-sm" type="submit">Enregistrer</button></div></form>
       <section class="panel"><div class="panel-head"><h2>${ic('globe')}Outils connectés</h2><span class="aside">Clés dans le coffre Notion, fournies au lancement du serveur</span></div>
-        <div class="list">${(S.connectors || []).map((c) => `<div class="row"><span class="ico ${c.configured ? 'ok' : ''}">${ic(c.configured ? 'ok' : 'lock')}</span><div class="grow"><div class="title">${esc(c.label)}</div><div class="sub">${esc(c.does)}${c.last ? ` · dernière synchronisation ${ago(c.last.at)} : ${esc(c.last.summary)}` : ''}${!c.configured ? ` · à fournir : ${esc((c.missing || []).join(', '))}` : ''}</div></div>${c.configured ? '<span class="chip ok">Connecté</span>' : '<span class="chip idle">Non connecté</span>'}${c.configured && ['abby', 'qonto'].includes(c.id) ? `<button class="btn btn-line btn-sm" data-act="sync" data-id="${c.id}">Synchroniser</button>` : ''}</div>`).join('') || '<p class="muted">Aucun connecteur.</p>'}</div>
+        <div class="list">${(S.connectors || []).map((c) => `<div class="row"><span class="ico ${c.configured ? 'ok' : ''}">${ic(c.configured ? 'ok' : 'lock')}</span><div class="grow"><div class="title">${esc(c.label)}</div><div class="sub">${esc(c.does)}${c.last ? ` · dernière synchronisation ${ago(c.last.at)} : ${esc(c.last.summary)}` : ''}${!c.configured ? ` · à fournir : ${esc((c.missing || []).join(', '))}` : ''}</div></div>${c.configured ? '<span class="chip ok">Connecté</span>' : '<span class="chip idle">Non connecté</span>'}${c.configured && ['abby', 'qonto', 'google'].includes(c.id) ? `<button class="btn btn-line btn-sm" data-act="sync" data-id="${c.id}">Synchroniser</button>` : ''}</div>`).join('') || '<p class="muted">Aucun connecteur.</p>'}</div>
         <p class="hint">Rien n’est appelé tant qu’une clé n’est pas fournie. Pipedrive prépare l’espace d’un deal gagné ; l’offre et le registre restent à choisir par l’équipe.</p></section>
       <section class="panel"><div class="panel-head"><h2>${ic('mail')}E-mails envoyés</h2><span class="aside">${ob.enabled ? 'Envoi réel activé' : 'Envoi réel désactivé : les e-mails restent ici tant que l’espace n’est pas en ligne'}</span></div>
         <div class="list">${(ob.items || []).slice(0, 15).map((m, i) => `<button class="row inbox-row" data-mail="${i}"><span class="ico">${ic('mail')}</span><span class="grow"><span class="title">${esc(m.subject)}</span><span class="sub">À ${esc(m.to)} · ${ago(m.at)}</span></span>${ic('eye', 'width:18px;height:18px;color:var(--muted);flex:none')}</button>`).join('') || '<p class="muted">Aucun e-mail pour l’instant. Déposez un fichier côté client pour voir ce que reçoit l’équipe.</p>'}</div></section>`;
@@ -1018,9 +1100,23 @@
       <p class="small muted" style="margin-bottom:12px">« Livrable » apparaît dans Fichiers côté client. Devis, factures, contrat et RIB apparaissent dans Documents.</p>
       <div class="list">${fromAgency.map(fileRow).join('') || '<p class="muted">Rien de partagé pour l’instant.</p>'}</div></section>`;
   }
+  function propEditor() {
+    const p = S.project, D0 = S.propDraft && S.propDraft.pid === p.id ? S.propDraft : null;
+    const edit = D0 && D0.prid ? (p.proposals || []).find((x) => x.id === D0.prid) : null, base = edit || D0 || {};
+    const L = p.proposals || [];
+    const st = { draft: '<span class="chip idle">Brouillon</span>', sent: '<span class="chip hl">Chez le client</span>', accepted: '<span class="chip ok">Acceptée</span>', declined: '<span class="chip warn">Déclinée</span>' };
+    return `<section class="panel"><div class="panel-head"><h2>${ic('doc')}Propositions et devis</h2>${D0 ? '' : '<button class="btn btn-line btn-sm" data-act="prop-new">Nouvelle proposition</button>'}</div>
+      <ul class="list plain">${L.map((x) => `<li class="row"><div class="grow"><div class="title">${esc(x.title)}</div><div class="sub">${money(x.lines.reduce((t, l) => t + l.ht, 0))} HT${x.from ? ' · depuis une demande' : ''}${x.acceptedAt ? ' · acceptée le ' + fmt(x.acceptedAt, { day: 'numeric', month: 'long' }) + ' par « ' + esc(x.signName) + ' »' : x.sentAt ? ' · envoyée le ' + fmt(x.sentAt, { day: 'numeric', month: 'long' }) : ''}${x.declined && x.declined.comment ? ' · « ' + esc(x.declined.comment) + ' »' : ''}</div></div>${st[x.status] || ''}${x.status !== 'accepted' ? `<button class="btn btn-line btn-sm" data-act="prop-edit" data-id="${x.id}">Modifier</button>` : ''}${x.status === 'draft' || x.status === 'declined' ? `<button class="btn btn-primary btn-sm" data-act="prop-send" data-id="${x.id}">Envoyer</button>` : ''}</li>`).join('') || '<p class="muted">Aucune proposition. Celle d’avant signature et les devis d’évolution se préparent ici.</p>'}</ul>
+      ${D0 ? `<form class="form" data-form="proposal" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--line)">
+        <div class="line"><div class="field"><label for="pp-t">Titre</label><input id="pp-t" type="text" value="${esc(base.title || '')}" placeholder="ex. Refonte du site"></div><div class="field"><label for="pp-q">N° de devis</label><input id="pp-q" type="text" value="${esc(base.quote || '')}" placeholder="ex. D-2026-0160"></div></div>
+        <div class="field"><label for="pp-i">Introduction</label><textarea id="pp-i" rows="3" placeholder="ex. Ce qu’on a compris de votre besoin">${esc(base.intro || '')}</textarea></div>
+        <div class="field"><label for="pp-l">Lignes : libellé | montant HT</label><textarea id="pp-l" rows="4" placeholder="ex. Atelier de cadrage | 900">${esc((base.lines || []).map((l) => l.t + ' | ' + l.ht).join('\n'))}</textarea></div>
+        <div class="line"><div class="field"><label for="pp-d">Acompte (%)</label><input id="pp-d" type="number" min="0" max="100" value="${base.depositPct ?? (base.rid ? 0 : 50)}"></div><div class="field"><label for="pp-v">Valable jusqu’au</label><input id="pp-v" type="date" value="${dayKey(base.validUntil || Date.now() + 30 * 864e5)}"></div></div>
+        <div class="inline"><button class="btn btn-line" type="submit" name="pp-go" value="save">Enregistrer le brouillon</button><button class="btn btn-primary" type="submit" name="pp-go" value="send">Envoyer au client</button><button class="ghost" type="button" data-act="prop-cancel">Annuler</button></div></form>` : ''}</section>`;
+  }
   function tFactures() {
     const p = S.project, b = p.billing;
-    return `
+    return `${propEditor()}
     <form class="panel form" data-form="billing"><div class="panel-head" style="margin:0"><h2>${ic('doc')}Montant du projet</h2></div>
       <div class="line"><div class="field"><label for="b-ht">Montant HT (€)</label><input id="b-ht" type="number" min="0" step="0.01" value="${b.totalHT}"></div><div class="field"><label for="b-q">N° de devis</label><input id="b-q" type="text" value="${esc(b.quote)}" placeholder="ex. D-2026-0142"></div></div>
       <div><button class="btn btn-line btn-sm" type="submit">Enregistrer</button></div></form>
@@ -1049,7 +1145,8 @@
       <div><button class="btn btn-line btn-sm" type="submit">Enregistrer</button></div></form>
     <form class="panel form" data-form="ext"><div class="panel-head" style="margin:0"><h2>${ic('globe')}Outils de l’agence</h2><span class="aside">Pour les synchronisations automatiques</span></div>
       <div class="line"><div class="field"><label for="x-a">Identifiant du client dans Abby</label><input id="x-a" type="text" value="${esc((p.ext || {}).abby)}"></div><div class="field"><label for="x-d">Dossier Google Drive du client</label><input id="x-d" type="text" value="${esc((p.ext || {}).drive)}" placeholder="https://drive.google.com/drive/folders/…"></div></div>
-      <p class="hint">Les fichiers déposés par le client sont copiés dans ce dossier dès que Google est connecté. Partagez le dossier avec le compte de service.</p>
+      <div class="line"><div class="field"><label for="x-g">Propriété Google Analytics 4</label><input id="x-g" type="text" value="${esc((p.ext || {}).ga4)}" placeholder="ex. 312345678"></div><div class="field"><label for="x-s">Site Search Console</label><input id="x-s" type="text" value="${esc((p.ext || {}).gsc)}" placeholder="ex. sc-domain:client.fr"></div></div>
+      <p class="hint">Les fichiers déposés par le client sont copiés dans ce dossier dès que Google est connecté, et le bilan mensuel se calcule tout seul. Partagez le dossier, la propriété et le site avec le compte de service.</p>
       <div><button class="btn btn-line btn-sm" type="submit">Enregistrer</button></div></form>`;
   }
   function tActivite() {
@@ -1106,7 +1203,7 @@
     return null;
   }
   const dialogOpen = () => !!(S.ob || S.zoom || S.compose || S.mailView);
-  const TITLES = { accueil: 'Accueil', projet: 'Étapes', valider: 'À valider', maquettes: 'Maquettes', messages: 'Messages', fichiers: 'Fichiers', documents: 'Documents', outils: 'Boîte à outils', biblio: 'Bibliothèque', equipe: 'Équipe et aide', plus: 'Plus', inbox: 'Boîte de réception', reglages: 'Réglages', clients: 'Clients', nouveau: 'Nouvel espace client' };
+  const TITLES = { proposition: 'Proposition', accueil: 'Accueil', projet: 'Étapes', valider: 'À valider', maquettes: 'Maquettes', messages: 'Messages', fichiers: 'Fichiers', documents: 'Documents', outils: 'Boîte à outils', biblio: 'Bibliothèque', equipe: 'Équipe et aide', plus: 'Plus', inbox: 'Boîte de réception', reglages: 'Réglages', clients: 'Clients', nouveau: 'Nouvel espace client' };
   let wasDialog = false;
   /* onlyMain : seule la zone principale change (filtre, question rapide) ; la barre latérale et le reste ne sont pas reconstruits. */
   function render(focus, onlyMain) {
@@ -1117,7 +1214,7 @@
     if (!S.me) { root.innerHTML = vConnexion(); }
     else if (clientMode()) {
       if (!S.project) { root.innerHTML = shell('<div class="empty">Votre espace est en cours de préparation.</div>'); return; }
-      const V = { accueil: () => (S.project.deliveredAt ? vAccueilLivre() : vAccueil()), projet: vProjet, valider: vValider, maquettes: vMaquettes, messages: vMessages, fichiers: vFichiers, documents: vDocuments, outils: vOutils, biblio: vBiblio, equipe: vEquipe, plus: vPlus };
+      const V = { accueil: () => (S.project.deliveredAt ? vAccueilLivre() : vAccueil()), proposition: vProposition, projet: vProjet, valider: vValider, maquettes: vMaquettes, messages: vMessages, fichiers: vFichiers, documents: vDocuments, outils: vOutils, biblio: vBiblio, equipe: vEquipe, plus: vPlus };
       if (!V[S.view]) S.view = 'accueil';
       if (wrap) wrap.innerHTML = wrapHtml(V[S.view]()); else root.innerHTML = shell(V[S.view]()) + (S.ob ? onboarding() : '') + lightbox();
     } else {
@@ -1275,8 +1372,20 @@
       case 'inbox-all': try { await API.readNotif(); } catch {} await loadInbox(); render(); toast('Tout est lu.'); break;
       case 'digest': try { const r = await API.digest(); S.outbox = await API.outbox(); render(); toast(r.sent ? 'Récap envoyé. Il apparaît dans « E-mails envoyés ».' : 'Rien de nouveau à récapituler.'); } catch (err) { toast(err.message); } break;
       case 'qa': S.qa = S.qa === id ? null : id; render(false, true); break;
-      case 'zoom': S.zoom = { src: asset(a.dataset.src), title: a.dataset.title }; render(); break;
-      case 'unzoom': if (e.target.tagName === 'IMG') return; S.zoom = null; render(); break;
+      case 'zoom': S.zoom = { src: asset(a.dataset.src), key: a.dataset.src, title: a.dataset.title, pin: !!a.dataset.pin && !isAdmin() }; render(); break;
+      case 'pin-here': { e.stopPropagation(); const im = a.querySelector('img').getBoundingClientRect(); const x = e.clientX ? ((e.clientX - im.left) / im.width) * 100 : 50, y = e.clientY ? ((e.clientY - im.top) / im.height) * 100 : 50;
+        S.zoom.at = { x: Math.max(0, Math.min(100, Math.round(x * 10) / 10)), y: Math.max(0, Math.min(100, Math.round(y * 10) / 10)) }; render(); const t = $('#pin-t'); t && t.focus(); break; }
+      case 'pin-cancel': S.zoom.at = null; render(); break;
+      case 'pin-resolve': act({ type: 'pin.resolve', id }, 'Commentaire mis à jour.'); break;
+      case 'unzoom': if (e.target.tagName === 'IMG' || e.target.closest('.pin-form, .pin-list, .pin-area')) return; S.zoom = null; render(); break;
+      case 'decline': S.propDecline = id; render(); { const t = $('#dc-' + id); t && t.focus(); } break;
+      case 'decline-cancel': S.propDecline = null; render(); break;
+      case 'prop-new': S.propDraft = { pid: S.project.id }; render(); { const t = $('#pp-t'); t && t.focus(); } break;
+      case 'prop-edit': S.propDraft = { pid: S.project.id, prid: id }; render(); { const t = $('#pp-t'); t && t.focus(); } break;
+      case 'prop-cancel': S.propDraft = null; render(); break;
+      case 'prop-send': act({ type: 'proposal.send', prid: id }, 'Proposition envoyée. Le client est prévenu.'); break;
+      case 'prop-from': { const rq = S.project.requests.find((r) => r.id === id); S.propDraft = { pid: S.project.id, rid: id, title: 'Évolution : ' + rq.type.toLowerCase(), intro: (S.project.registre === 'tu' ? 'Suite à ta demande : ' : 'Suite à votre demande : ') + rq.text, lines: [{ t: rq.text.slice(0, 120), ht: 0 }], depositPct: 0 }; S.tab = 'factures'; render(); { const t = $('#pp-l'); t && t.focus(); } break; }
+      case 'copypost': copyText($('#lk-post').value, R('Post copié. Collez-le sur LinkedIn.', 'Post copié. Colle-le sur LinkedIn.')); break;
       case 'copytxt': copyText(a.dataset.txt, a.dataset.txt + ' copié.'); break;
       case 'copysig': copyHtml($('#sig-p').innerHTML, R('Signature copiée. Collez-la dans votre messagerie.', 'Signature copiée. Colle-la dans ta messagerie.')); break;
       case 'copyteaser': copyText($('#teaser-p').innerText, 'Texte de la fiche copié.'); break;
@@ -1325,7 +1434,20 @@
         break; }
       case 'msg': { const t = v('msg-t'); if (!t) return fieldError('msg-t', R('Écrivez votre message.', 'Écris ton message.')); if (S.preview) return toast('Aperçu : les actions sont désactivées.'); if (await act({ type: 'msg.post', text: t }, 'Message envoyé. Réponse sous 24 h ouvrées.')) { const th = document.querySelector('.thread'); if (th) th.lastElementChild && th.lastElementChild.scrollIntoView({ block: 'nearest' }); } break; }
       case 'amsg': { const t = v('am-t'); if (!t) return fieldError('am-t', 'Écrivez le message.'); act({ type: 'msg.post', text: t, loom: v('am-u') ? { url: v('am-u'), title: v('am-l') || 'Vidéo' } : undefined }, 'Message envoyé au client.'); break; }
-      case 'links': act({ type: 'links.set', figma: v('lk-f'), proto: v('lk-p'), preview: v('lk-w'), site: v('lk-s') }, 'Liens enregistrés.'); break;
+      case 'links': act({ type: 'links.set', figma: v('lk-f'), proto: v('lk-p'), preview: v('lk-w'), site: v('lk-s'), old: v('lk-o') }, 'Liens enregistrés.'); break;
+      case 'version': if (!v('ve-t')) return fieldError('ve-t', 'Dites ce qui change dans cette version.'); act({ type: 'version.add', t: v('ve-t'), url: v('ve-u') }, 'Version publiée. Le client est prévenu.'); break;
+      case 'proposal': { const go = (e.submitter && e.submitter.value) || 'save'; const D0 = S.propDraft || {};
+        const lns = lines(v('pp-l'), 2).map(([t, ht]) => ({ t, ht: Number(String(ht || '').replace(/\s/g, '').replace(',', '.')) || 0 }));
+        if (!v('pp-t')) return fieldError('pp-t', 'Donnez un titre.'); if (!lns.length) return fieldError('pp-l', 'Ajoutez au moins une ligne : libellé | montant HT.');
+        try { const r = await API.action(S.project.id, { type: 'proposal.save', prid: D0.prid, rid: D0.rid, title: v('pp-t'), quote: v('pp-q'), intro: v('pp-i'), lines: lns, depositPct: v('pp-d'), validUntil: v('pp-v') || undefined });
+          if (go === 'send') await API.action(S.project.id, { type: 'proposal.send', prid: r.prid });
+          S.propDraft = null; await loadProject(S.project.id); toast(go === 'send' ? 'Proposition envoyée. Le client est prévenu.' : 'Brouillon enregistré.'); } catch (err) { toast(err.message); } break; }
+      case 'accept': { const id2 = f.dataset.id; if (!$('#ac-ok-' + id2).checked) return fieldError('ac-ok-' + id2, 'Cochez la case pour accepter.'); if (v('ac-n-' + id2).length < 2) return fieldError('ac-n-' + id2, R('Écrivez votre nom pour signer.', 'Écris ton nom pour signer.'));
+        if (S.preview) return toast('Aperçu : les actions sont désactivées.');
+        if (await act({ type: 'proposal.accept', prid: id2, agree: true, name: v('ac-n-' + id2) }, R('Proposition acceptée. Merci pour votre confiance !', 'Proposition acceptée. Merci pour ta confiance !'))) celebrate(); break; }
+      case 'decline': if (await act({ type: 'proposal.decline', prid: f.dataset.id, comment: v('dc-' + f.dataset.id) }, 'Réponse envoyée à l’équipe.')) { S.propDecline = null; render(); } break;
+      case 'pin': { const t = v('pin-t'); if (!t) return fieldError('pin-t', R('Écrivez votre commentaire.', 'Écris ton commentaire.')); if (S.preview) return toast('Aperçu : les actions sont désactivées.');
+        try { await API.action(S.project.id, { type: 'pin.add', img: S.zoom.key, x: S.zoom.at.x, y: S.zoom.at.y, text: t, version: ((S.project.versions || [])[0] || {}).label }); S.zoom.at = null; await loadProject(S.project.id); toast('Commentaire épinglé. L’équipe est prévenue.'); } catch (err) { toast(err.message); } break; }
       case 'request': { const t = v('rq-t'); if (!t) return fieldError('rq-t', R('Décrivez votre demande.', 'Décris ta demande.')); if (S.preview) return toast('Aperçu : les actions sont désactivées.'); act({ type: 'request.add', kind: v('rq-k'), priority: v('rq-p'), text: t }, R('Demande envoyée. On revient vers vous sous 48 h.', 'Demande envoyée. On revient vers toi sous 48 h.')); break; }
       case 'teaser': case 'sig': break;
       case 'compose': composeSubmit(); break;
@@ -1350,17 +1472,21 @@
         if (await act({ type: 'review.add', score: sc, text: v('rv-t'), public: $('#rv-p').checked }, R('Merci ! Votre avis est transmis à l’équipe.', 'Merci ! Ton avis est transmis à l’équipe.'))) S.rvScore = 0; break; }
       case 'confirm': { const reg = (f.querySelector('[name=cf-reg]:checked') || {}).value; if (!reg) return fieldError(f.querySelector('[name=cf-reg]'), 'Choisissez le tutoiement ou le vouvoiement.');
         if (await act({ type: 'project.confirm', offer: (f.querySelector('[name=cf-offer]:checked') || {}).value, registre: reg, email: v('cf-e'), name: v('cf-n') }, 'Espace ouvert. Le client peut se connecter avec son e-mail.')) await loadProjects(); break; }
-      case 'ext': act({ type: 'project.ext', abby: v('x-a'), drive: v('x-d') }, 'Enregistré.'); break;
+      case 'ext': act({ type: 'project.ext', abby: v('x-a'), drive: v('x-d'), ga4: v('x-g'), gsc: v('x-s') }, 'Enregistré.'); break;
       case 'payurl': act({ type: 'invoice.pay', iid: f.dataset.id, payUrl: v('pu-' + f.dataset.id) }, 'Lien de paiement enregistré. Le client voit « Payer en ligne ».'); break;
       case 'reply': { const n = S.inbox.find((x) => x.id === f.dataset.id), t = v('rp-' + f.dataset.id); if (!t) return fieldError('rp-' + f.dataset.id, 'Écrivez la réponse.');
         try { await API.action(n.projectId, { type: 'msg.post', text: t }); await API.doneNotif(n.id); S.replyTo = null; await loadInbox(); render(false, true); renderBadges(); toast('Réponse envoyée dans l’espace de ' + n.client + '.'); } catch (err) { toast(err.message); } break; }
       case 'meeting': break;
+      case 'ask': { const q = v('ask-q'); if (!q) return fieldError('ask-q', R('Écrivez votre question.', 'Écris ta question.')); S.askQ = q; S.askA = '…'; render(false, true);
+        try { const r = await API.ask(S.project.id, q); S.askA = r.answer || R('Je ne trouve pas la réponse dans le projet. Écrivez à l’équipe depuis Messages, elle répond sous 24 h ouvrées.', 'Je ne trouve pas la réponse dans le projet. Écris à l’équipe depuis Messages, elle répond sous 24 h ouvrées.'); } catch (err) { S.askA = err.message; }
+        render(false, true); break; }
       case 'settings': try { const r = await API.settings({ booking: v('st-b'), training: v('st-t'), reviewUrl: v('st-r'), holder: v('st-h'), bank: v('st-k'), address: v('st-a'), iban: v('st-i'), bic: v('st-c') }); S.config = r.settings; render(); toast('Réglages de l’agence enregistrés.'); } catch (err) { toast(err.message); } break;
       case 'infos': act({ type: 'project.update', client: v('p-c'), projet: v('p-p'), contactName: v('p-ct'), golive: v('p-g') || undefined, registre: (f.querySelector('[name=p-r]:checked') || {}).value }, 'Infos enregistrées.'); break;
     }
   });
   document.addEventListener('input', (e) => {
     const t = e.target;
+    if (t.dataset && t.dataset.post) { S.post = t.value; return; }
     if (t.dataset && t.dataset.clsearch) { S.cq = t.value; render(false, true); return; }
     if (t.dataset && t.dataset.draft && S.project) { (S.drafts[S.project.id] = S.drafts[S.project.id] || {})[t.dataset.draft] = t.value; }
     if (t.getAttribute && t.getAttribute('aria-invalid') === 'true') { t.removeAttribute('aria-invalid'); const sp = document.getElementById((t.id || t.name) + '-err'); if (sp) sp.remove(); }

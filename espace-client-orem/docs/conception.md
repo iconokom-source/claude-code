@@ -134,3 +134,13 @@ Rien n'est appelé tant que les clés ne sont pas fournies au lancement du serve
 Planning : une validation en retard de plus d'un jour décale tout ce qui vient après (livrables, temps, mise en ligne) et l'équipe est prévenue. Toute synchronisation est « tout ou rien » : si l'outil répond mal, rien n'est modifié.
 
 Tests : `node tests/connecteurs.js` lance un faux serveur local qui imite les quatre outils et une instance de l'app avec de fausses clés de test (28 vérifications, aucun appel hors de la machine).
+
+## 10. Moments waouh (lot 7)
+
+- **Proposition avant signature** : le client la lit dans son espace (détail, HT, TVA, TTC, acompte, validité), l'accepte en cochant et en écrivant son nom ; l'acceptation est horodatée, le devis passe en signé et la facture d'acompte se crée. Il peut aussi poser une question ou décliner avec un mot. L'équipe prépare les propositions dans l'onglet Factures.
+- **Devis d'un clic depuis une demande d'évolution** : bouton « Proposer un devis » dans l'onglet Demandes, formulaire prérempli, même parcours d'acceptation pour le client. Les montants des exemples sont fictifs. **Les formules Évolution et leurs prix restent à valider avec Louis** : rien n'est affiché tant que ce n'est pas fait.
+- **Mise en ligne mise en scène** : compte à rebours les trois dernières semaines, célébration une fois, kit de lancement pendant 60 jours (avant/après, post LinkedIn prêt à copier, visuels, signature e-mail), puis demande d'avis.
+- **Bilan mensuel** depuis Google Analytics 4 et Search Console (propriété et site renseignés par projet), comparé au mois précédent.
+- **Versions V1, V2** des maquettes et **commentaires épinglés** sur les écrans : le client clique à l'endroit voulu, l'équipe les marque traités.
+- **Assistant** (API Claude, SDK `@anthropic-ai/sdk` en dépendance facultative, clé `ANTHROPIC_API_KEY` dans le coffre) : répond seulement à partir des données du projet, dans le registre du client, renvoie vers l'équipe sinon. Modèle `claude-opus-5-5` par défaut (`ASSISTANT_MODEL` pour en changer), effort bas, repli automatique côté serveur en cas de refus. Sans clé, le panneau s'appelle « Réponses rapides ».
+- Vidéo de bienvenue dans l'accueil guidé, prénoms sous les photos, confettis contenus dans le bandeau.

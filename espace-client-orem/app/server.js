@@ -93,7 +93,7 @@ function background() {
   sendDigests(false);
   const r = Core.runReminders(db, Date.now()); if (r.notices.length) { save(); deliver(r.notices); }
   // Synchronisations automatiques, seulement si les clés sont fournies : Qonto chaque heure, Abby toutes les 6 heures.
-  for (const [name, every] of [['qonto', 3600e3], ['abby', 6 * 3600e3]]) {
+  for (const [name, every] of [['qonto', 3600e3], ['abby', 6 * 3600e3], ['google', 7 * 864e5]]) {
     const last = db.meta.connectors && db.meta.connectors[name] ? new Date(db.meta.connectors[name].at).getTime() : 0;
     if (Connectors.configured(name, process.env) && Date.now() - last > every) Connectors.sync(name, db, process.env, null, null, connectorCtx()).then((x) => { save(); if (x.notices) deliver(x.notices); if (x.error) log('sync.error', { name, message: x.error }); });
   }
@@ -352,7 +352,7 @@ async function handle(req, res) {
   if (!user) return send(res, 401, { error: 'Connectez-vous pour continuer.' });
   if (mutating && limited('act:' + user.id, 120, 60e3)) return send(res, 429, { error: 'Trop d’actions en peu de temps. Patientez une minute.' });
 
-  if (p === '/api/me') return send(res, 200, { user: publicUser(user, user), team: team(user), config: Core.publicConfig(db) });
+  if (p === '/api/me') return send(res, 200, { user: publicUser(user, user), team: team(user), config: { ...Core.publicConfig(db), assistant: Connectors.assistantReady(process.env) } });
   if (p === '/api/logout-all' && req.method === 'POST') { for (const [k, s] of Object.entries(db.sessions)) if (s.uid === user.id) delete db.sessions[k]; save(); clearCookie(res); return send(res, 200, { ok: true }); }
   if (p === '/api/inbox' && req.method === 'GET') return send(res, 200, { items: Core.inbox(db, user) });
   if (p === '/api/inbox/done' && req.method === 'POST') { if (user.role !== 'admin') return send(res, 403, { error: 'Réservé à l’équipe.' }); const b = await readJson(req); const r = Core.doneNotif(db, user, String(b.id || ''), !!b.undo); if (r.ok) save(); return send(res, r.error ? 400 : 200, r); }

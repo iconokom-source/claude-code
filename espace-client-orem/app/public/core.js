@@ -86,6 +86,7 @@
       results: null, deliveredAt: null, archivedAt: null,
       handover: of === 'site' ? HANDOVER.map((t) => ({ t, done: false })) : [],
       review: null,
+      proposals: [], versions: [], pins: [], reports: [],
       team: { lead: null, members: [] }
     };
   }
@@ -212,7 +213,25 @@
     c.messages = [{ id: 'vm-1', fromAgency: true, readByClient: false, by: 'u_theo', at: at(-1, 10), text: 'Bienvenue Julie ! Petite vidéo de 2 minutes pour vous présenter votre espace et la suite du projet.', loom: { url: 'https://www.loom.com/share/8b9f66df6c52449fa0ff18afea1658b3', title: 'Bienvenue dans votre espace', duration: '2 min' } }];
     c.activity = [];
 
+    /* Exemple 4 : Domaine des Vergers (fictif), avant signature : Inès découvre sa proposition et l'accepte en ligne. */
+    const d = newProject({ client: 'Domaine des Vergers', projet: 'Identité du Domaine des Vergers', contactName: 'Inès', start: at(10), registre: 'vous', amountHT: 0, offer: 'da' });
+    d.id = 'p_vergers'; d.phase = 1;
+    d.proposals = [{ id: 'pr_vergers', status: 'sent', title: 'Direction artistique du Domaine des Vergers', quote: 'D-2026-0158', sentAt: at(-1, 17), validUntil: at(29),
+      intro: 'Merci pour notre échange de mardi. Vous voulez une identité qui raconte le domaine familial et parle aux cavistes comme aux visiteurs. Voici ce que nous proposons.',
+      lines: [{ t: 'Atelier de marque et plateforme de marque', ht: 1800 }, { t: 'Pistes créatives et direction artistique finale', ht: 2600 }, { t: 'Logo, charte graphique et fichiers sources', ht: 1400 }], depositPct: 50, example: true }];
+    d.tasks = [{ id: 'dt1', t: 'Accepter la proposition', done: false, auto: 'proposal', go: 'proposition' }];
+    d.next = { title: 'Découvrir votre proposition', text: 'Tout est détaillé : ce qu’on fait, dans quel ordre, et le budget. Vous pouvez l’accepter en ligne, ou nous poser vos questions.', go: 'proposition' };
+    d.messages = [{ id: 'dm1', fromAgency: true, readByClient: false, by: 'u_theo', at: at(-1, 17), text: 'Bonjour Inès, votre proposition est en ligne. Je reste disponible pour en parler.' }];
+    d.activity = [{ at: at(-1, 17), by: 'u_theo', text: 'a envoyé la proposition', seen: true }];
+    d.team = { lead: 'u_theo', members: ['u_theo', 'u_clement'] };
+    // Huchet : devis d'un clic depuis la demande d'évolution (montant fictif)
+    b.proposals = [{ id: 'pr_hd1', status: 'sent', title: 'Évolution : l’annonce dans chaque e-mail de contact', quote: 'D-2026-0161', sentAt: at(-3, 10), validUntil: at(27), from: 'hr1',
+      intro: 'Suite à ta demande : chaque e-mail de contact indiquera l’annonce concernée (intitulé et lien).', lines: [{ t: 'Champ caché « annonce » sur les formulaires et modèle d’e-mail', ht: 450 }], depositPct: 0, example: true }];
+    b.requests[0].status = 'Proposé';
+    a.versions = [{ id: 've1', label: 'V1', t: 'Plan du site', url: 'https://www.figma.com/proto/exemple-maison-lumen-plan', at: at(-2, 11) }];
+    b.versions = [{ id: 'hv2', label: 'V2', t: 'Maquettes finales', url: b.links.proto, at: '2026-03-13T10:00:00.000Z' }, { id: 'hv1', label: 'V1', t: 'Maquettes desktop', url: b.links.proto, at: '2026-02-20T10:00:00.000Z' }];
     users.push(
+      { id: 'u_ines', email: 'ines@domaine-des-vergers.fr', name: 'Inès', role: 'client', projectId: d.id },
       { id: 'u_claire', email: 'claire@maisonlumen.fr', name: 'Claire', role: 'client', projectId: a.id },
       { id: 'u_hugo', email: 'hugo@huchet-demorge.fr', name: 'Hugo', role: 'client', projectId: b.id, onboardedAt: '2025-11-24T10:00:00.000Z', prefs: { mail: true, weekly: true } },
       { id: 'u_julie', email: 'julie@cabinet-varenne.fr', name: 'Julie', role: 'client', projectId: c.id }
@@ -231,7 +250,7 @@
       N('u_theo', b, 'requests', 'Hugo demande une évolution (Formulaires) : « Indiquer l’annonce concernée dans chaque e-mail de contact »', 'u_hugo', at(-5, 9), 'demandes'),
       N('u_clement', a, 'activity', 'Louis a demandé la validation du plan du site', 'u_louis', at(-2, 11), 'validations')
     ];
-    return { users, projects: [a, b, c], notifications, outbox: [] };
+    return { users, projects: [a, b, c, d], notifications, outbox: [] };
   }
 
   /* ---------- Lecture ---------- */
@@ -268,6 +287,8 @@
 
   function nextStep(project) {
     if (project.next && project.next.title) return project.next;
+    const prop = (project.proposals || []).find((x) => x.status === 'sent');
+    if (prop) return { title: 'Découvrir la proposition', text: prop.title, go: 'proposition' };
     const ready = project.validations.find((v) => v.status === 'ready');
     if (ready) return { title: 'Valider : ' + ready.t.toLowerCase(), text: '', go: 'valider' };
     const miss = project.missing[0];
@@ -287,6 +308,7 @@
     if (user.role === 'admin') return project;
     const p = JSON.parse(JSON.stringify(project));
     delete p.ext; delete p.source; delete p.draft;
+    p.proposals = (p.proposals || []).filter((x) => x.status !== 'draft');
     (p.invoices || []).forEach((i) => { delete i.paidTx; delete i.remindedAt; });
     p.activity = p.activity.map(({ seen, ...a }) => a);
     p.files = p.files.map(({ seen, path, ...f }) => f);
@@ -294,12 +316,12 @@
   }
 
   /* ---------- Écriture ---------- */
-  const CLIENT_ACTIONS = new Set(['val.approve', 'val.changes', 'task.toggle', 'missing.done', 'user.onboarded', 'msg.post', 'msg.read', 'request.add', 'review.add']);
+  const CLIENT_ACTIONS = new Set(['proposal.accept', 'proposal.decline', 'pin.add', 'val.approve', 'val.changes', 'task.toggle', 'missing.done', 'user.onboarded', 'msg.post', 'msg.read', 'request.add', 'review.add']);
 
   /* ---------- Validation des données entrantes ----------
      Tout ce qui vient du navigateur est borné en taille, et les liens doivent être en https. */
-  const SHORT = new Set(['abby', 'type', 'kind', 'priority', 'title', 't', 'sub', 'label', 'num', 'name', 'client', 'projet', 'contactName', 'status', 'lead', 'iid', 'vid', 'tid', 'mid', 'fid', 'rid', 'aid', 'id', 'go', 'registre', 'quote', 'email', 'duration', 'cat', 'offer', 'level']);
-  const URLS = new Set(['payUrl', 'link', 'url', 'figma', 'proto', 'preview', 'site', 'img', 'review', 'video', 'booking', 'training', 'reviewUrl']);
+  const SHORT = new Set(['prid', 'quote', 'ga4', 'gsc', 'abby', 'type', 'kind', 'priority', 'title', 't', 'sub', 'label', 'num', 'name', 'client', 'projet', 'contactName', 'status', 'lead', 'iid', 'vid', 'tid', 'mid', 'fid', 'rid', 'aid', 'id', 'go', 'registre', 'quote', 'email', 'duration', 'cat', 'offer', 'level']);
+  const URLS = new Set(['old', 'payUrl', 'link', 'url', 'figma', 'proto', 'preview', 'site', 'img', 'review', 'video', 'booking', 'training', 'reviewUrl']);
   function safeUrl(v, key) {
     v = String(v || '').trim(); if (!v) return '';
     if (/^https:\/\/[^\s<>"']+$/i.test(v)) return v.slice(0, 1000);
@@ -449,7 +471,7 @@
         r.status = String(action.status); break;
       }
       case 'links.set':
-        for (const k of ['figma', 'proto', 'preview', 'site']) if (action[k] !== undefined) project.links[k] = String(action[k]).trim();
+        for (const k of ['figma', 'proto', 'preview', 'site', 'old']) if (action[k] !== undefined) project.links[k] = String(action[k]).trim();
         log(project, user, 'a mis à jour les liens du projet'); break;
       case 'user.remove': {
         const u = store.users.find((x) => x.id === action.id && x.projectId === project.id);
@@ -524,7 +546,7 @@
       }
       case 'project.ext': {
         project.ext = project.ext || {};
-        for (const k of ['abby', 'drive']) if (action[k] !== undefined) project.ext[k] = String(action[k] || '').trim().slice(0, 300);
+        for (const k of ['abby', 'drive', 'ga4', 'gsc']) if (action[k] !== undefined) project.ext[k] = String(action[k] || '').trim().slice(0, 300);
         break;
       }
       case 'invoice.pay': {
@@ -539,6 +561,65 @@
         if (project.activity.some((x) => x.by === user.id && /^a relancé le client/.test(x.text) && Date.now() - new Date(x.at) < DAY)) return { error: 'Client déjà relancé aujourd’hui.' };
         log(project, user, 'a relancé le client : ' + what); return { ok: true, remind: what };
       }
+      case 'proposal.save': {
+        // Proposition (avant signature) ou devis d'évolution (depuis une demande du client).
+        const lines = (Array.isArray(action.lines) ? action.lines : []).filter((l) => l && String(l.t || '').trim()).slice(0, 20).map((l) => ({ t: String(l.t).slice(0, 160), ht: Math.max(0, Number(l.ht) || 0) }));
+        if (!String(action.title || '').trim()) return { error: 'Donnez un titre à la proposition.' };
+        if (!lines.length) return { error: 'Ajoutez au moins une ligne.' };
+        if (action.validUntil && !validDate(action.validUntil)) return { error: 'Date de validité invalide.' };
+        project.proposals = project.proposals || [];
+        let pr = action.prid && project.proposals.find((x) => x.id === action.prid);
+        if (pr && pr.status === 'accepted') return { error: 'Cette proposition est déjà acceptée.' };
+        if (!pr) { pr = { id: uid('pr'), status: 'draft', from: action.rid || undefined }; project.proposals.unshift(pr); }
+        Object.assign(pr, { title: String(action.title).slice(0, 160), intro: String(action.intro || '').slice(0, 2000), lines, quote: String(action.quote || pr.quote || ''), validUntil: action.validUntil ? iso(action.validUntil) : addDays(Date.now(), 30), depositPct: Math.min(100, Math.max(0, Number(action.depositPct ?? 50))) });
+        return { ok: true, prid: pr.id };
+      }
+      case 'proposal.send': {
+        const pr = (project.proposals || []).find((x) => x.id === action.prid); if (!pr) return { error: 'Proposition introuvable.' };
+        if (pr.status === 'accepted') return { error: 'Cette proposition est déjà acceptée.' };
+        pr.status = 'sent'; pr.sentAt = now; delete pr.declined;
+        if (pr.from) { const rq = project.requests.find((r) => r.id === pr.from); if (rq) rq.status = 'Proposé'; }
+        log(project, user, 'a envoyé la proposition : ' + pr.title); break;
+      }
+      case 'proposal.accept': {
+        const pr = (project.proposals || []).find((x) => x.id === action.prid);
+        if (!pr || pr.status !== 'sent') return { error: 'Cette proposition n’attend pas de réponse.' };
+        if (pr.validUntil && new Date(pr.validUntil) < new Date()) return { error: 'Cette proposition a expiré. Écrivez-nous, on la met à jour.' };
+        if (!action.agree) return { error: 'Cochez la case pour accepter la proposition.' };
+        const sign = String(action.name || '').trim(); if (sign.length < 2) return { error: 'Écrivez votre nom pour signer.' };
+        const ht = pr.lines.reduce((t, l) => t + l.ht, 0);
+        Object.assign(pr, { status: 'accepted', acceptedAt: now, acceptedBy: user.id, signName: sign.slice(0, 120) });
+        if (pr.depositPct > 0) { const dep = Math.round(ht * pr.depositPct) / 100; project.invoices.push({ id: uid('inv'), num: '', label: `Facture d’acompte (${pr.depositPct} %)${pr.from ? ' : ' + pr.title.toLowerCase() : ''}`, ht: dep, ttc: Math.round(dep * 120) / 100, status: 'due', date: now }); }
+        if (pr.from) { const rq = project.requests.find((r) => r.id === pr.from); if (rq) rq.status = 'En cours'; }
+        else { project.billing.totalHT = ht; project.billing.totalTTC = Math.round(ht * 120) / 100; project.billing.quote = pr.quote || project.billing.quote; project.billing.signedAt = now; }
+        project.tasks.forEach((t) => { if (t.auto === 'proposal') t.done = true; });
+        if (project.next.go === 'proposition') project.next = { title: '', text: '', go: 'accueil' };
+        log(project, user, 'a accepté la proposition : ' + pr.title); return { ok: true, proposal: pr.title };
+      }
+      case 'proposal.decline': {
+        const pr = (project.proposals || []).find((x) => x.id === action.prid);
+        if (!pr || pr.status !== 'sent') return { error: 'Cette proposition n’attend pas de réponse.' };
+        pr.status = 'declined'; pr.declined = { at: now, by: user.id, comment: String(action.comment || '').slice(0, 2000) };
+        log(project, user, 'a décliné la proposition : ' + pr.title); break;
+      }
+      case 'version.add': {
+        if (!String(action.t || '').trim() || !action.url) return { error: 'Donnez un titre et un lien.' };
+        project.versions = project.versions || [];
+        project.versions.unshift({ id: uid('ve'), label: 'V' + (project.versions.length + 1), t: String(action.t).slice(0, 120), url: String(action.url), at: now });
+        log(project, user, 'a publié une nouvelle version : ' + action.t); break;
+      }
+      case 'pin.add': {
+        const text = String(action.text || '').trim(); if (!text) return { error: 'Écrivez votre commentaire.' };
+        const x = Number(action.x), y = Number(action.y);
+        if (!(x >= 0 && x <= 100 && y >= 0 && y <= 100) || !String(action.img || '')) return { error: 'Placez le commentaire sur l’image.' };
+        project.pins = project.pins || [];
+        project.pins.push({ id: uid('pin'), img: String(action.img).slice(0, 300), x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10, text: text.slice(0, 1000), by: user.id, at: now, status: 'open', version: String(action.version || '').slice(0, 10) });
+        log(project, user, 'a commenté une maquette'); break;
+      }
+      case 'pin.resolve': {
+        const pn = (project.pins || []).find((x) => x.id === action.id); if (!pn) return { error: 'Commentaire introuvable.' };
+        pn.status = pn.status === 'resolved' ? 'open' : 'resolved'; pn.resolvedAt = now; break;
+      }
       case 'project.archive':
         project.archivedAt = action.undo ? null : now; break;
       default: return { error: 'Action inconnue.' };
@@ -551,10 +632,12 @@
      et les autres membres de l'équipe. Chacun règle ce qu'il reçoit et à quel rythme. */
   const EVENT = {
     'file.add': 'files', 'msg.post': 'messages', 'val.approve': 'validations', 'val.changes': 'validations',
-    'request.add': 'requests', 'review.add': 'messages', 'client.remind': 'validations', 'project.deliver': 'activity', 'val.request': 'validations', 'user.onboarded': 'activity', 'asset.add': 'files', 'next.set': 'activity', 'note.set': 'activity'
+    'request.add': 'requests', 'review.add': 'messages', 'client.remind': 'validations',
+    'proposal.send': 'validations', 'proposal.accept': 'validations', 'proposal.decline': 'messages', 'pin.add': 'messages', 'version.add': 'files', 'project.deliver': 'activity', 'val.request': 'validations', 'user.onboarded': 'activity', 'asset.add': 'files', 'next.set': 'activity', 'note.set': 'activity'
   };
   const TAB = { files: 'fichiers', messages: 'messages', validations: 'validations', requests: 'demandes', activity: 'activite' };
   const CLIENT_VIEW = { files: 'fichiers', messages: 'messages', validations: 'valider', activity: 'accueil', requests: 'outils' };
+  const CLIENT_VIEW_ACT = { 'proposal.send': 'proposition', 'version.add': 'maquettes' };
   const DEFAULT_PREFS = { email: 'instant', events: { files: true, messages: true, validations: true, requests: true, activity: false } };
   const prefsOf = (u) => ({ ...DEFAULT_PREFS, ...(u.notify || {}), events: { ...DEFAULT_PREFS.events, ...((u.notify || {}).events || {}) } });
   function describe(action, user, project, res, audience) {
@@ -569,6 +652,11 @@
       case 'user.onboarded': return `${who} a découvert son espace`;
       case 'asset.add': return `${who} a ajouté « ${action.title} » à la bibliothèque`;
       case 'next.set': return `${who} a mis à jour la prochaine étape`;
+      case 'proposal.send': { const pr = project.proposals.find((x) => x.id === action.prid); return audience === 'client' ? `${who} ${project.registre === 'tu' ? 't’' : 'vous '}a envoyé une proposition : ${pr ? pr.title : ''}` : `${who} a envoyé la proposition ${pr ? pr.title : ''}`; }
+      case 'proposal.accept': return `${who} a accepté la proposition : ${res.proposal}`;
+      case 'proposal.decline': { const pr = project.proposals.find((x) => x.id === action.prid); return `${who} a décliné la proposition${pr ? ' « ' + pr.title + ' »' : ''}${action.comment ? ' : « ' + String(action.comment).slice(0, 100) + ' »' : ''}`; }
+      case 'pin.add': return `${who} a commenté une maquette : « ${String(action.text).slice(0, 100)} »`;
+      case 'version.add': return `${who} a publié une nouvelle version : ${action.t}`;
       case 'client.remind': return audience === 'client' ? `Petit rappel de ${who} : ${res.remind} attend ${project.registre === 'tu' ? 'ton' : 'votre'} retour.` : `${who} a relancé ${project.contactName || project.client} : ${res.remind}`;
       case 'review.add': return `${who} a laissé un avis : ${action.score}/5${action.text ? ' « ' + String(action.text).slice(0, 100) + ' »' : ''}`;
       case 'project.deliver': return action.undo ? `${who} a annulé la mise en ligne` : audience === 'client' ? `${who} a annoncé la mise en ligne : ${project.offer === 'site' ? (project.registre === 'tu' ? 'ton' : 'votre') + ' site est en ligne' : 'le projet est livré'}` : `${who} a mis en ligne le projet ${project.client}`;
@@ -596,7 +684,7 @@
       const u = store.users.find((x) => x.id === r.id); if (!u) continue;
       const text = describe(action, user, project, res, r.audience);
       const n = { id: uid('n'), userId: u.id, projectId: project.id, client: project.client, type, act: action.type, text, by: user.id, at, read: false, reg: r.audience === 'client' ? project.registre : undefined,
-        go: r.audience === 'team' ? { view: 'admin', tab: TAB[type] } : { view: CLIENT_VIEW[type] } };
+        go: r.audience === 'team' ? { view: 'admin', tab: action.type.startsWith('proposal') ? 'factures' : TAB[type] } : { view: CLIENT_VIEW_ACT[action.type] || CLIENT_VIEW[type] } };
       store.notifications.unshift(n); out.push(n);
     }
     if (store.notifications.length > 2000) store.notifications.length = 2000;
@@ -746,7 +834,7 @@
 
   /* Boîte de réception et préférences (par personne).
      « À traiter » : ce qu'un client attend de l'équipe (message, fichier, modifications, demande d'évolution, deal à ouvrir). */
-  const TODO_ACTS = new Set(['msg.post', 'file.add', 'val.changes', 'request.add', 'pipedrive', 'review.add']);
+  const TODO_ACTS = new Set(['msg.post', 'file.add', 'val.changes', 'request.add', 'pipedrive', 'review.add', 'proposal.accept', 'proposal.decline', 'pin.add']);
   const isTodo = (store, n) => { if (!TODO_ACTS.has(n.act)) return false; if (n.act === 'pipedrive') return true; const by = store.users.find((u) => u.id === n.by); return !by || by.role !== 'admin'; };
   function inbox(store, user) { return (store.notifications || []).filter((n) => n.userId === user.id).slice(0, 200).map((n) => ({ ...n, todo: isTodo(store, n) && !n.done })); }
   function doneNotif(store, user, id, undo) { const n = (store.notifications || []).find((x) => x.userId === user.id && x.id === id); if (!n) return { error: 'Notification introuvable.' };

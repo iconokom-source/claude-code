@@ -9,7 +9,8 @@ const { spawn } = require('node:child_process');
 const R = []; const ok = (l, v, extra) => R.push(`${v ? '✔' : '✘'} ${l}${!v && extra ? ' → ' + extra : ''}`);
 const MOCK = 3999, APP = 3124, B = `http://127.0.0.1:${APP}`;
 const { publicKey, privateKey } = crypto.generateKeyPairSync('rsa', { modulusLength: 2048 });
-const calls = []; let qontoDown = false;
+const calls = []; let qontoDown = false, gscCalls = 0, lastAsk = null;
+let hasSdk = true; try { require.resolve('@anthropic-ai/sdk'); } catch { hasSdk = false; }
 
 /* ---------- Faux outils ---------- */
 const mock = http.createServer((req, res) => {
@@ -36,6 +37,11 @@ const mock = http.createServer((req, res) => {
       const valid = crypto.createVerify('RSA-SHA256').update(h + '.' + c).verify(publicKey, Buffer.from(sig || '', 'base64url'));
       return valid ? json({ access_token: 'tok-test', expires_in: 3600 }) : json({ error: 'invalid_grant' }, 400);
     }
+    if (req.url.startsWith('/ga4/properties/312345678:runReport')) { const b = JSON.parse(body); return req.headers.authorization === 'Bearer tok-test' && b.dateRanges.length === 2 ? json({ rows: [
+      { dimensionValues: [{ value: 'date_range_0' }], metricValues: [{ value: '1250' }, { value: '1710' }, { value: '23' }] },
+      { dimensionValues: [{ value: 'date_range_1' }], metricValues: [{ value: '1000' }, { value: '1500' }, { value: '20' }] }] }) : json({}, 400); }
+    if (req.url.startsWith('/gsc/sites/' + encodeURIComponent('sc-domain:huchet-demorge.fr') + '/searchAnalytics/query')) { gscCalls++; return json({ rows: [gscCalls % 2 ? { clicks: 2100, impressions: 40000, position: 6.2 } : { clicks: 1800, impressions: 36000, position: 7.1 }] }); }
+    if (req.url.startsWith('/v1/messages')) { lastAsk = JSON.parse(body); return json({ id: 'msg_test', type: 'message', role: 'assistant', model: lastAsk.model, content: [{ type: 'text', text: 'La mise en ligne est prévue vers le 7 novembre — on vous tient au courant.' }], stop_reason: 'end_turn', stop_sequence: null, usage: { input_tokens: 10, output_tokens: 10 } }); }
     if (req.url.startsWith('/drive/files')) return req.headers.authorization === 'Bearer tok-test' ? json({ id: 'drive-file-1' }) : json({}, 401);
     json({ error: 'inconnu ' + req.url }, 404);
   });
@@ -49,6 +55,7 @@ const mock = http.createServer((req, res) => {
     ABBY_API_KEY: 'test-abby', ABBY_API_URL: `http://127.0.0.1:${MOCK}/abby`,
     QONTO_LOGIN: 'test-login', QONTO_SECRET_KEY: 'test-secret', QONTO_API_URL: `http://127.0.0.1:${MOCK}/qonto`,
     GOOGLE_SERVICE_ACCOUNT_JSON: JSON.stringify({ client_email: 'espace@test.iam.gserviceaccount.com', private_key: privateKey.export({ type: 'pkcs8', format: 'pem' }) }),
+    GA4_API_URL: `http://127.0.0.1:${MOCK}/ga4`, GSC_API_URL: `http://127.0.0.1:${MOCK}/gsc`, ANTHROPIC_API_KEY: 'test-anthropic', ANTHROPIC_BASE_URL: `http://127.0.0.1:${MOCK}`,
     GOOGLE_TOKEN_URL: `http://127.0.0.1:${MOCK}/google/token`, GOOGLE_DRIVE_UPLOAD_URL: `http://127.0.0.1:${MOCK}/drive` };
   const srv = spawn(process.execPath, [path.join(__dirname, '..', 'server.js')], { env, stdio: ['ignore', 'pipe', 'pipe'] });
   let log = ''; srv.stdout.on('data', (c) => (log += c)); srv.stderr.on('data', (c) => (log += c));
@@ -65,7 +72,7 @@ const mock = http.createServer((req, res) => {
     }
     const louis = await session('louis@agence-orem.fr');
     const st = (await louis.call('/api/connectors')).body.connectors;
-    ok('Réglages : Pipedrive, Abby, Qonto et Google se déclarent connectés', ['pipedrive', 'abby', 'qonto', 'google'].every((k) => st.find((c) => c.id === k).configured) && !st.find((c) => c.id === 'claude').configured);
+    ok('Réglages : Pipedrive, Abby, Qonto, Google et l’assistant se déclarent connectés', ['pipedrive', 'abby', 'qonto', 'google', 'claude'].every((k) => st.find((c) => c.id === k).configured));
     ok('La réponse ne contient aucune clé', !JSON.stringify(st).includes('test-pipedrive') && !JSON.stringify(st).includes('test-secret'));
 
     // 1. Pipedrive : deal gagné → espace en brouillon
@@ -122,15 +129,38 @@ const mock = http.createServer((req, res) => {
     ok('Drive : jeton obtenu avec un JWT signé par le compte de service', calls.some((c) => c.url === '/google/token') && up.status === 200);
     ok('Drive : fichier envoyé dans le dossier du client', dc && dc.body.toString().includes('"parents":["DOSSIER-VARENNE"]') && dc.body.toString().includes('Logo Varenne.png') && dc.body.toString().includes('PNGTEST'));
 
-    // 5. Planning recalé et relances (logique, sans réseau)
+    // 5. Bilan mensuel GA4 + Search Console
+    await louis.act('p_huchet', { type: 'project.ext', ga4: '312345678', gsc: 'sc-domain:huchet-demorge.fr' });
+    const gr = await louis.call('/api/connectors/google/sync', { method: 'POST', body: JSON.stringify({ projectId: 'p_huchet' }) });
+    const hp = await louis.project('p_huchet'); const rp = (hp.reports || [])[0] || { stats: [] };
+    ok('Bilan mensuel : synchronisation faite', gr.status === 200 && /1 bilan/.test(gr.body.summary), JSON.stringify(gr.body));
+    ok('Bilan : visiteurs 1 250 contre 1 000, demandes 23, clics Google 2 100, position 6,2', JSON.stringify(rp.stats) === JSON.stringify([['Visiteurs', 1250, 1000], ['Visites', 1710, 1500], ['Demandes (conversions)', 23, 20], ['Clics depuis Google', 2100, 1800], ['Position moyenne', 6.2, 7.1]]), JSON.stringify(rp.stats));
+    await louis.call('/api/connectors/google/sync', { method: 'POST', body: JSON.stringify({ projectId: 'p_huchet' }) });
+    ok('Bilan : un seul par mois', (await louis.project('p_huchet')).reports.length === 1);
+
+    // 6. Assistant (API Claude) contre un faux point d'accès local
+    const hugo = await session('hugo@huchet-demorge.fr');
+    const me = (await hugo.call('/api/me')).body;
+    const ans = await hugo.call('/api/projects/p_huchet/ask', { method: 'POST', body: JSON.stringify({ question: 'Quand passe-t-on au bilan suivant ?' }) });
+    if (hasSdk) {
+      ok('Assistant : annoncé au client', me.config.assistant === true);
+      ok('Assistant : réponse renvoyée, tiret long retiré', ans.status === 200 && ans.body.answer && !/[\u2014\u2013]/.test(ans.body.answer), JSON.stringify(ans.body));
+      const sys = lastAsk && JSON.stringify(lastAsk.system);
+      ok('Assistant : modèle par défaut, effort bas, repli serveur activé', lastAsk && lastAsk.model === 'claude-opus-5-5' && lastAsk.output_config.effort === 'low' && lastAsk.fallbacks === 'default');
+      ok('Assistant : consignes au tutoiement pour Hugo, données du projet sans clés', /Tutoie le client/.test(sys) && /Huchet-Demorge/.test(sys) && !/test-anthropic|test-secret|C-42/.test(sys));
+      const ju = await session('julie@cabinet-varenne.fr');
+      ok('Assistant : Julie ne peut pas interroger le projet d’un autre client', (await ju.call('/api/projects/p_huchet/ask', { method: 'POST', body: JSON.stringify({ question: 'x' }) })).status === 404);
+    } else ok('Assistant : SDK absent, repli sur les réponses rapides (npm install @anthropic-ai/sdk pour l’activer)', me.config.assistant === false && ans.body.fallback === true);
+
+    // 7. Planning recalé et relances (logique, sans réseau)
     const Core = require('../public/core.js'); const db = Core.seed(); const lumen = db.projects.find((p) => p.id === 'p_lumen'); const g0 = lumen.golive;
     const rr = Core.runReminders(db, Date.now() + 9 * 864e5);
     ok('Planning : validation en retard, mise en ligne recalée et équipe prévenue', new Date(lumen.golive) > new Date(g0) && rr.notices.some((n) => n.act === 'replan' && n.userId === 'u_louis'));
     ok('Planning : pas de recalage d’un projet livré', Core.replan(db.projects.find((p) => p.id === 'p_huchet'), Date.now() + 30 * 864e5) === 0);
 
-    ok('Aucun appel hors de la machine (tous les appels vers le faux serveur local)', calls.length > 0 && !/api\.pipedrive\.com|qonto\.com|googleapis|app-abby/.test(log));
+    ok('Aucun appel hors de la machine (tous les appels vers le faux serveur local)', calls.length > 0 && !/api\.pipedrive\.com|qonto\.com|googleapis|app-abby|api\.anthropic\.com/.test(log));
   } catch (e) { R.push('✘ Erreur : ' + e.stack + '\n' + log.split('\n').slice(-15).join('\n')); }
-  finally { srv.kill(); mock.close(); fs.rmSync(data, { recursive: true, force: true }); }
+  finally { const gone = new Promise((r) => srv.once('exit', r)); srv.kill(); await gone; mock.close(); fs.rmSync(data, { recursive: true, force: true, maxRetries: 5 }); }
   console.log(R.join('\n'));
   process.exitCode = R.some((x) => x.startsWith('✘')) ? 1 : 0;
 })();

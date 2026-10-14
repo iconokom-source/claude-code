@@ -632,3 +632,50 @@ h1:focus{outline:none}
   .grid-clients th:nth-child(5),.grid-clients td:nth-child(5){display:none}
 }
 .linklike .small{font-weight:400}
+
+/* ---------- Lot 7 : moments waouh ---------- */
+.confetti.in{position:absolute;inset:0;z-index:0;border-radius:inherit}
+.countdown{display:flex;gap:20px;align-items:center;padding:20px 24px;border-radius:var(--r);background:var(--night);color:var(--night-fg)}
+.countdown .cd-n{font-family:var(--serif);font-size:56px;line-height:1;display:flex;flex-direction:column;align-items:center;min-width:88px}
+.countdown .cd-n small{font-family:var(--sans);font-size:var(--t-xs);text-transform:uppercase;letter-spacing:.08em;color:var(--night-muted);margin-top:6px}
+.countdown>div:last-child{display:flex;flex-direction:column;gap:4px}
+.countdown .k{font-size:var(--t-xs);text-transform:uppercase;letter-spacing:.08em;color:var(--night-hl)}
+.countdown .small{color:var(--night-muted)}
+.prop{display:flex;flex-direction:column;gap:16px}
+.prop-h{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.prop-h .k{font-size:var(--t-xs);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.prop-h h2{font-family:var(--serif);font-weight:400;font-size:var(--t-xl);margin-top:4px;text-wrap:balance}
+.prop-intro{max-width:65ch;color:var(--fg-2)}
+.prop-t{width:100%;border-collapse:collapse}
+.prop-t th,.prop-t td{text-align:left;padding:12px 0;border-top:1px solid var(--line)}
+.prop-t thead th{border-top:0;font-size:var(--t-xs);text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:500}
+.prop-t .num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.prop-t tfoot th{font-weight:400;color:var(--muted)}
+.prop-t tr.ttc th,.prop-t tr.ttc td{font-weight:600;color:var(--fg);font-size:var(--t-lg)}
+.prop-sign{padding-top:16px;border-top:1px solid var(--line)}
+.check-l{display:flex;gap:10px;align-items:flex-start;font-weight:400}
+.check-l input{margin-top:4px;width:18px;height:18px}
+.prop-ok{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:14px 16px;border-radius:12px;background:var(--ok-soft)}
+.prop-ok>div{display:flex;flex-direction:column;flex:1 1 220px}
+.prop-ok svg{width:22px;height:22px;color:var(--ok)}
+.ba{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:16px}
+.ba-c{display:flex;flex-direction:column;gap:4px;padding:16px;border-radius:14px;border:1px solid var(--line);text-decoration:none;color:inherit}
+.ba-c.now{background:var(--night);color:var(--night-fg);border-color:transparent}
+.ba-c .k{font-size:var(--t-xs);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.ba-c.now .k{color:var(--night-hl)}
+.pin-wrap{position:relative;display:inline-block;max-width:100%}
+.pin-area{display:block;padding:0;border:0;background:none;cursor:crosshair}
+.pin-area img{display:block}
+.pin{position:absolute;transform:translate(-50%,-50%);width:28px;height:28px;border-radius:50%;background:var(--night-hl);color:#0b0b12;display:grid;place-items:center;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(0,0,18,.35);pointer-events:none}
+.pin.resolved{background:var(--ok);color:#fff}
+.pin-form{position:absolute;width:min(280px,80%);background:var(--surface);color:var(--fg);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:8px;box-shadow:0 12px 32px rgba(0,0,18,.35)}
+.pin-list{margin:12px 0 0;padding-left:22px;color:var(--night-fg);display:flex;flex-direction:column;gap:6px;text-align:left;max-width:640px}
+.pin-list li span{display:block}
+.pin-list li .small{color:var(--night-muted)}
+.ob-video{margin-top:8px}
+.faces .face{margin:0;display:flex;flex-direction:column;align-items:center;gap:4px}
+.faces .face figcaption{font-size:var(--t-xs);color:var(--night-muted)}
+@media (max-width:860px){ .ba{grid-template-columns:minmax(0,1fr)} .countdown .cd-n{font-size:44px;min-width:64px} }
+.ob-art .faces{gap:10px}.ob-art .faces .face img{margin-right:0}
+.kpi .up{color:var(--ok)}.kpi .down{color:var(--bad)}
+.ask{margin-bottom:12px}
