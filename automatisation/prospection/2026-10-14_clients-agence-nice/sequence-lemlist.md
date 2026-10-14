@@ -1,6 +1,6 @@
 # Séquence Lemlist : « Site payé au mois, jamais vraiment à vous »
 
-Campagne Lemlist « 🔑 FR - Site en location / reprise en main - Multicanal » (`cam_cDpBjZcbFcztRXsk5`), **en pause** avec 7 leads, aucun message envoyé (lancée puis mise en pause le 14/10 après un malentendu ; validation automatique des nouveaux leads désactivée). Expéditeur : Louis, boîte iconokom@gmail.com (choix du 14/10, louis@iconokom.fr envisagée plus tard) + son compte LinkedIn. L'ancienne version linéaire (`cam_z37C7sANHetY9Bh4J`) est archivée.
+Campagne Lemlist « 🔑 FR - Site en location / reprise en main - Multicanal » (`cam_cDpBjZcbFcztRXsk5`), **en pause** avec 21 leads, aucun message envoyé (lancée puis mise en pause le 14/10 après un malentendu ; validation automatique des nouveaux leads désactivée). Expéditeur : Louis, boîte iconokom@gmail.com (choix du 14/10, louis@iconokom.fr envisagée plus tard) + son compte LinkedIn. L'ancienne version linéaire (`cam_z37C7sANHetY9Bh4J`) est archivée.
 
 ## Cible
 
@@ -13,6 +13,7 @@ Les clients d'une agence web niçoise : les réalisations affichées sur son sit
 - On ne prétend pas savoir combien ils paient : on pose la question.
 - Pas de conseil juridique : on propose un état des lieux technique (qui détient le domaine, le site, les accès).
 - Vouvoiement. Signature : Louis.
+- Jamais « de {{companyName}} » dans un modèle : beaucoup de noms commencent par une voyelle (Arthemis, Ananda…). Écrire « votre site ».
 
 ## Le fil rouge
 
@@ -97,9 +98,9 @@ Orem
 
 ## Invitation LinkedIn (J2, branche LinkedIn)
 
-**Note standard (≤ 200 caractères)** : Bonjour {{firstName}}, je vous ai écrit au sujet du site de {{companyName}}. J'aide des dirigeants à reprendre la main sur leur site internet. Au plaisir d'échanger ici. Louis
+**Note standard (≤ 200 caractères)** : Bonjour {{firstName}}, je vous ai écrit par email au sujet de votre site internet. J'aide des dirigeants à reprendre la main sur leur site. Au plaisir d'échanger ici. Louis
 
-**Note Premium (≤ 300 caractères)** : Bonjour {{firstName}}, je vous ai écrit au sujet du site de {{companyName}}. J'aide des dirigeants qui paient leur site au mois sans en être propriétaires à reprendre la main dessus. Au plaisir d'échanger ici. Louis
+**Note Premium (≤ 300 caractères)** : Bonjour {{firstName}}, je vous ai écrit par email au sujet de votre site internet. J'aide des dirigeants qui paient leur site au mois sans en être propriétaires à reprendre la main dessus. Au plaisir d'échanger ici. Louis
 
 ---
 
@@ -140,7 +141,7 @@ Branche sans LinkedIn : demander aussi s'il est sur LinkedIn. À noter dans Pipe
 
 > Merci d'avoir accepté, {{firstName}}.
 >
-> Dans mon email, je vous posais trois questions sur le site de {{companyName}}. Je vous laisse ici la plus simple, elle prend 30 secondes : tapez votre nom de domaine sur un site « whois » et regardez qui en est le titulaire.
+> Dans mon email, je vous posais trois questions sur votre site. Je vous laisse ici la plus simple, elle prend 30 secondes : tapez votre nom de domaine sur un site « whois » et regardez qui en est le titulaire.
 >
 > Si c'est {{companyName}}, tant mieux. Si c'est un prestataire, l'adresse de votre site ne vous appartient pas vraiment : le jour où le contrat s'arrête, elle peut partir avec lui.
 >
@@ -179,7 +180,7 @@ Louis
 
 ## SMS (tâche, mobile uniquement)
 
-Bonjour {{firstName}}, Louis de l'agence Orem. Je vous ai écrit au sujet du site de {{companyName}} : si vous le payez encore au mois, je vous offre 15 min pour vérifier qui en est vraiment propriétaire. Bonne journée.
+Bonjour {{firstName}}, Louis de l'agence Orem. Je vous ai écrit au sujet de votre site internet : si vous le payez encore au mois, je vous offre 15 min pour vérifier qui en est vraiment propriétaire. Bonne journée.
 
 ---
 

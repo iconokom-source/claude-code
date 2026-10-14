@@ -33,3 +33,31 @@ Les adresses Gmail, Hotmail et Outlook sont celles que les entreprises publient 
 - Nutritionniste Pierre Thomas : aucun site ni correspondance sûre au registre.
 - Avocate Katia Ouddiz-Nakache (Toulouse) : site introuvable.
 - Auteurs d'avis sans entreprise identifiable : voir `avis-google.md`.
+
+## Ajoutés le 14/10 depuis les avis Google (même campagne, en pause)
+
+Source : `prospects-avis.md` (clients confirmés par le crédit « Group Easyweb » sur leur site). Aucun n'existait dans les contacts Lemlist. LinkedIn via la base Lemlist ou la recherche.
+
+| Entreprise | Ville | Décideur | Email | Tél | LinkedIn | `siteObservation` |
+|---|---|---|---|---|---|---|
+| Les Services de Magali | Grenoble (38) | Magali Gousseau-Gandolfo | contact@lesservicesdemagali.fr | 07 52 63 54 88 | non | aucune |
+| Domaine de Pécany | Le Buisson-de-Cadouin (24) | Laurence Bonnière | contact@gites24.fr | 05 53 61 30 42 | oui | aucune |
+| LOCMAFER | Nuits-Saint-Georges (21) | Alexis Renevet, PDG | contact@locmafer.fr | non publié | oui | aucune |
+| Maison Carabin | Blénod-lès-Pont-à-Mousson (54) | Anthony Carabin | maison.carabin@gmail.com | 07 87 08 72 26 | oui | aucune |
+| Arthemis | Chalon-sur-Saône (71) | Fanny Berthet | contact@arthemis-diagnostics.fr | 06 33 76 20 35 | oui | noindex (vérifié) |
+| Ciné Chez Soi | Savas-Mépin (38) | Hervé Thiollier | contact@ht-consulting.co | 06 66 90 63 29 | non | aucune |
+| Espace Nature et Bien-être | Mazères (09) | Sandrine Raffel | naturoarriege-sandrineraffel@mail.fr | 06 05 34 47 53 | non | titre « Accueil - » (vérifié) |
+| Aurélie Lejeune | Pantin (93) | Aurélie Lejeune | contact@aurelielejeune.co | 06 81 71 74 57 | oui | aucune |
+| Christophe Jouffre | Rixheim (68) | Christophe Jouffre | contact@christophe-jouffre.com | 06 73 37 46 87 | non | aucune |
+| Ananda | Cannes (06) | Elisabeth Zouari | ananda.zouari@gmail.com | 06 59 35 59 58 | non | aucune |
+| Christine De Araujo | Annecy (74) | Christine De Araujo | christina.energeticienne@gmail.com | 06 73 88 51 12 | non | aucune |
+| Manipurah | Saintry-sur-Seine (91) | Farah Gentilini (Bachkata) | farah.bachkata@gmail.com | 06 87 20 53 44 | oui | aucune |
+| Ramos Rénovation | Versailles (78) | Valdemar Ramos Pestana | ramos.valdemar78@gmail.com | 06 10 64 24 67 | non | aucune |
+| Jery Massage Thérapie | Touët-sur-Var (06) | Jery Malpiece | jery-massage@hotmail.com | 06 23 48 36 90 | oui | aucune |
+
+Observations écartées après vérification : « site en double » pour Les Services de Magali et le Domaine de Pécany (le second domaine redirige simplement vers le premier).
+
+**Non importés :**
+- École de chamanisme (centrechamanique83@gmail.com) : l'avis est signé Sophie Sola mais le SIREN est celui de Marie-Laure Putz, interlocutrice à confirmer.
+- MG Vitrage Auto, Kalypso Tattoo, Vital'O 40 : ont quitté l'agence (site actif fait par une autre agence).
+- Sans email, à appeler : Pratiques Alternatives (06 24 74 30 01), MDB Immobilier (02 51 76 93 87), BHR Piscine (03 84 67 18 67), DPL Conseils / Netexco (06 65 63 70 99), BG Conduite (02 99 52 70 55), Izard et Compagnie (01 46 08 16 16).
