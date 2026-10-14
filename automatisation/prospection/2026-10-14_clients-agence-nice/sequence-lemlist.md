@@ -1,6 +1,6 @@
 # Séquence Lemlist : « Site payé au mois, jamais vraiment à vous »
 
-Campagne Lemlist « 🔑 FR - Site en location / reprise en main - Multicanal » (`cam_cDpBjZcbFcztRXsk5`), **en brouillon**, 7 leads, en attente de validation par Théophile. Expéditeur (boîte email + compte LinkedIn de Louis) à configurer avant lancement. L'ancienne version linéaire (`cam_z37C7sANHetY9Bh4J`) est archivée.
+Campagne Lemlist « 🔑 FR - Site en location / reprise en main - Multicanal » (`cam_cDpBjZcbFcztRXsk5`), **en brouillon**, 7 leads, en attente de validation par Théophile. Expéditeur : Louis, boîte iconokom@gmail.com (choix du 14/10, louis@iconokom.fr envisagée plus tard) + son compte LinkedIn. L'ancienne version linéaire (`cam_z37C7sANHetY9Bh4J`) est archivée.
 
 ## Cible
 
@@ -208,7 +208,7 @@ Orem
 ## Avant de lancer
 
 1. Validation de Théophile.
-2. Configurer l'expéditeur (email + LinkedIn de Louis) : c'est la seule erreur remontée par Lemlist.
+2. Expéditeur configuré (Louis, iconokom@gmail.com) : Lemlist indique la campagne prête à lancer.
 3. Remplir `{{segment}}` et `{{siteObservation}}` lead par lead : pas d'envoi en masse.
 4. Ne pas importer Emeline Russier (litige en cours) ni Delphine Belleville (activité fermée).
 5. RGPD : adresses professionnelles uniquement, lien de désinscription actif.
