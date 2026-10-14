@@ -73,7 +73,7 @@
 
   /* ---------- État ---------- */
   const S = { me: null, team: [], projects: [], project: null, access: [], people: {}, view: 'accueil', tab: 'pilotage', preview: false,
-    cat: 'Tous', valForm: null, qa: null, ob: null, login: { step: 'email', email: '', dev: null }, uploading: null, loading: true };
+    cat: 'Tous', valForm: null, qa: null, ob: null, tool: null, bk: null, zoom: null, teaser: null, sig: null, login: { step: 'email', email: '', dev: null }, uploading: null, loading: true };
   const isAdmin = () => S.me && S.me.role === 'admin';
   const clientMode = () => !isAdmin() || S.preview;
   const R = (vous, tu) => (S.project && S.project.registre === 'tu' ? tu : vous);
@@ -95,23 +95,24 @@
   function shell(content) {
     const p = S.project;
     const admin = !clientMode();
-    const link = ([id, l, i]) => `<a href="#${id}" data-go="${id}" ${S.view === id || (id === 'clients' && S.view === 'admin') ? 'aria-current="page"' : ''}>${ic(i)}<span>${l}</span>${id === 'valider' && pending() ? `<span class="badge" aria-label="${pending()} à valider">${pending()}</span>` : ''}${id === 'clients' ? alertsTotal() : ''}</a>`;
+    const link = ([id, l, i]) => `<a href="#${id}" data-go="${id}" ${S.view === id || (id === 'clients' && S.view === 'admin') ? 'aria-current="page"' : ''}>${ic(i)}<span>${l}</span>${id === 'valider' && pending() ? `<span class="badge" aria-label="${pending()} à valider">${pending()}</span>` : ''}${id === 'messages' && unread() ? `<span class="badge" aria-label="${unread()} non lus">${unread()}</span>` : ''}${id === 'clients' ? alertsTotal() : ''}</a>`;
     const groups = admin
       ? [['Pilotage', [['clients', 'Clients', 'team'], ['nouveau', 'Nouvel espace', 'plus']]]]
-      : [['Mon projet', [['accueil', 'Accueil', 'home'], ['projet', 'Étapes', 'map'], ['valider', 'À valider', 'ok']]],
-         ['Échanges', [['fichiers', 'Fichiers', 'folder'], ['documents', 'Documents', 'doc']]],
+      : [['Mon projet', [['accueil', 'Accueil', 'home'], ['projet', 'Étapes', 'map'], ['valider', 'À valider', 'ok'], ['maquettes', 'Maquettes', 'figma']]],
+         ['Échanges', [['messages', 'Messages', 'chat'], ['fichiers', 'Fichiers', 'folder'], ['documents', 'Documents', 'doc']]],
+         ['Outils', [['outils', 'Boîte à outils', 'plus'], ['biblio', 'Bibliothèque', 'eye']]],
          ['Aide', [['equipe', 'Équipe et aide', 'team']]]];
     const navHtml = groups.map(([t, items]) => `<div class="sec">${t}</div>${items.map(link).join('')}`).join('');
-    const tabs = admin ? [['clients', 'Clients', 'team'], ['nouveau', 'Nouvel espace', 'plus'], ['deconnexion', 'Sortir', 'out']] : [['accueil', 'Accueil', 'home'], ['projet', 'Étapes', 'map'], ['valider', 'Valider', 'ok'], ['fichiers', 'Fichiers', 'folder'], ['plus', 'Plus', 'team']];
-    const tabHtml = tabs.map(([id, l, i]) => { const cur = id === 'plus' ? ['documents', 'equipe'].includes(S.view) : S.view === id || (id === 'clients' && S.view === 'admin');
-      return `<a href="#${id}" data-go="${id}" ${cur ? 'aria-current="page"' : ''}>${ic(i)}<span>${l}</span>${id === 'valider' && pending() ? `<span class="badge">${pending()}</span>` : ''}</a>`; }).join('');
+    const tabs = admin ? [['clients', 'Clients', 'team'], ['nouveau', 'Nouvel espace', 'plus'], ['deconnexion', 'Sortir', 'out']] : [['accueil', 'Accueil', 'home'], ['projet', 'Étapes', 'map'], ['messages', 'Messages', 'chat'], ['fichiers', 'Fichiers', 'folder'], ['plus', 'Plus', 'team']];
+    const tabHtml = tabs.map(([id, l, i]) => { const cur = id === 'plus' ? ['plus', 'valider', 'maquettes', 'documents', 'outils', 'biblio', 'equipe'].includes(S.view) : S.view === id || (id === 'clients' && S.view === 'admin');
+      return `<a href="#${id}" data-go="${id}" ${cur ? 'aria-current="page"' : ''}>${ic(i)}<span>${l}</span>${id === 'messages' && unread() ? `<span class="badge">${unread()}</span>` : ''}${id === 'plus' && pending() ? `<span class="badge">${pending()}</span>` : ''}</a>`; }).join('');
     let card;
     if (admin) {
-      const waiting = S.projects.filter((x) => x.alerts.newFiles || x.alerts.changes).length;
+      const waiting = S.projects.filter((x) => x.alerts.newFiles || x.alerts.changes || x.alerts.newMessages || x.alerts.requests).length;
       card = `<div class="pcard"><strong>${S.projects.length} espace${S.projects.length > 1 ? 's' : ''} client${S.projects.length > 1 ? 's' : ''}</strong><span class="small">${waiting ? waiting + ' attend' + (waiting > 1 ? 'ent' : '') + ' une action de l’agence' : 'Rien en attente côté agence'}</span></div>`;
     } else {
-      const dots = p.phases.map((x) => `<i class="${x.n < p.phase ? 'done' : x.n === p.phase ? 'on' : ''}"></i>`).join('');
-      card = `<div class="pcard"><strong>${esc(p.client)}</strong><span class="small">Étape ${p.phase} · ${esc(p.phases[p.phase - 1].t)}</span><div class="pdots">${dots}<span>${p.phase}/5</span></div></div>`;
+      const dots = p.phases.map((x) => `<i class="${p.deliveredAt || x.n < p.phase ? 'done' : x.n === p.phase ? 'on' : ''}"></i>`).join('');
+      card = `<div class="pcard"><strong>${esc(p.client)}</strong><span class="small">${p.deliveredAt ? 'Site en ligne · projet livré' : `Étape ${p.phase} · ${esc(p.phases[p.phase - 1].t)}`}</span><div class="pdots">${dots}<span>${p.deliveredAt ? '5/5' : p.phase + '/5'}</span></div></div>`;
     }
     const meImg = S.me.photo && IMG[S.me.photo] && !S.preview ? `<img src="${IMG[S.me.photo]}" alt="">` : esc(((S.preview ? p.contactName : S.me.name) || '?')[0]);
     return `${S.preview ? `<div class="preview-bar">${ic('eye', 'width:18px;height:18px')}<span>Aperçu de l’espace de ${esc(p.client)}, tel que le client le voit</span><button data-act="endpreview">Revenir à l’administration</button></div>` : ''}
@@ -120,7 +121,7 @@
         <div class="brand"><img class="logo" src="${IMG.logo}" alt=""><b>Orem</b><span class="tag">${admin ? 'Agence' : 'Client'}</span></div>
         ${card}
         <nav class="nav">${navHtml}</nav>
-        ${API.demo && !S.preview ? `<button class="demo-switch" data-act="demo-switch">${ic('eye')}Démo : passer côté ${admin ? 'client' : 'agence'}</button>` : ''}
+        ${API.demo && !S.preview ? `<label class="demo-sel"><span>${ic('eye')}Démo : voir l\u2019espace de</span><select data-demo aria-label="Changer d\u2019espace de démo">${[['claire@maisonlumen.fr', 'Claire · Maison Lumen (en cours)'], ['julie@cabinet-varenne.fr', 'Julie · Cabinet Varenne (démarrage)'], ['hugo@huchet-demorge.fr', 'Hugo · Huchet-Demorge (livré)'], ['louis@agence-orem.fr', 'Louis · vue agence']].map(([e, l]) => `<option value="${e}" ${S.me.email === e ? 'selected' : ''}>${l}</option>`).join('')}</select></label>` : ''}
         <div class="side-foot">
           <div class="me-av">${meImg}</div>
           <div class="me-txt"><strong>${esc(S.preview ? p.contactName || p.client : S.me.name)}</strong><span class="role">${admin ? 'Agence' : 'Client'}</span></div>
@@ -129,13 +130,13 @@
         </div>
       </aside>
       <div class="stage">
-        <header class="topbar"><div class="brand"><img class="logo" src="${IMG.logo}" alt=""><b>Orem</b></div>${API.demo && !S.preview ? `<button class="demo-switch" data-act="demo-switch">Côté ${admin ? 'client' : 'agence'}</button>` : `<span class="small">${admin ? 'Espace agence' : esc(p.client)}</span>`}</header>
+        <header class="topbar"><div class="brand"><img class="logo" src="${IMG.logo}" alt=""><b>Orem</b></div>${API.demo && !S.preview ? `<label class="demo-sel top"><span>${ic('eye')}Démo : voir l\u2019espace de</span><select data-demo aria-label="Changer d\u2019espace de démo">${[['claire@maisonlumen.fr', 'Claire · Maison Lumen (en cours)'], ['julie@cabinet-varenne.fr', 'Julie · Cabinet Varenne (démarrage)'], ['hugo@huchet-demorge.fr', 'Hugo · Huchet-Demorge (livré)'], ['louis@agence-orem.fr', 'Louis · vue agence']].map(([e, l]) => `<option value="${e}" ${S.me.email === e ? 'selected' : ''}>${l}</option>`).join('')}</select></label>` : ''}${API.demo && !S.preview ? '' : `<span class="small">${admin ? 'Espace agence' : esc(p.client)}</span>`}</header>
         <div class="sheet"><main class="main" id="main" tabindex="-1"><div class="wrap">${content}</div></main></div>
       </div>
       <nav class="tabbar" aria-label="Navigation principale">${tabHtml}</nav>
     </div>`;
   }
-  function alertsTotal() { const n = S.projects.reduce((s, p) => s + p.alerts.newFiles + p.alerts.changes, 0); return n ? `<span class="badge">${n}</span>` : ''; }
+  function alertsTotal() { const n = S.projects.reduce((s, p) => s + p.alerts.newFiles + p.alerts.changes + p.alerts.newMessages + p.alerts.requests, 0); return n ? `<span class="badge">${n}</span>` : ''; }
 
   /* ---------- Vues client ---------- */
   function phaseProgress(ph, i) {
@@ -146,7 +147,7 @@
     const v = ph.items.reduce((s, it) => s + (it.status === 'done' ? 1 : it.status === 'on' ? 0.5 : 0), 0);
     return Math.max(8, Math.round((v / n) * 100));
   }
-  const CTA = { valider: ['Voir et valider', 'valider'], fichiers: ['Déposer mes fichiers', 'fichiers'], projet: ['Voir le projet', 'projet'], documents: ['Voir les documents', 'documents'], equipe: ['Contacter l’équipe', 'equipe'] };
+  const CTA = { valider: ['Voir et valider', 'valider'], fichiers: ['Déposer mes fichiers', 'fichiers'], projet: ['Voir le projet', 'projet'], documents: ['Voir les documents', 'documents'], equipe: ['Voir les créneaux', 'equipe'], outils: ['Ouvrir la boîte à outils', 'outils'], messages: ['Lire le message', 'messages'], maquettes: ['Voir les maquettes', 'maquettes'] };
 
   function vAccueil() {
     const p = S.project, nx = Core.nextStep(p), ph = p.phases[p.phase - 1];
@@ -165,6 +166,7 @@
     return `
     <div class="head"><div><h1 class="brandish">Bonjour ${esc(p.contactName || S.me.name)}</h1><p class="lead">${esc(cap(fmtLong(Date.now())))} · ${esc(p.projet)}</p></div></div>
     <section class="next" aria-labelledby="nx"><div><div class="k">Prochaine étape</div><h2 id="nx">${esc(nx.title)}</h2>${nx.text ? `<p>${esc(nx.text)}</p>` : ''}<div class="meta">Étape ${p.phase} sur 5 · ${esc(ph.t)}</div></div>${cta ? `<a class="btn" href="#${cta[1]}" data-go="${cta[1]}">${cta[0]} ${ic('arrow')}</a>` : ''}</section>
+    ${unreadBanner()}
     ${kpisClient()}
     <section class="panel" aria-labelledby="av">
       <div class="panel-head"><h2 id="av">${ic('map')}Où en est le projet</h2><a href="#projet" data-go="projet">Voir le détail</a></div>
@@ -295,6 +297,12 @@
   }
 
 
+  function unreadBanner() {
+    const n = unread(); if (!n) return '';
+    const m = (S.project.messages || []).filter((x) => x.readByClient === false).sort((a, b) => new Date(b.at) - new Date(a.at))[0];
+    const u = person(m.by);
+    return `<a class="newmsg" href="#messages" data-go="messages">${IMG[u.photo] ? `<img class="avatar" src="${IMG[u.photo]}" alt="">` : ''}<span class="grow"><strong>${esc(u.name.split(' ')[0])} ${m.loom ? R('vous a envoyé une vidéo', 't\u2019a envoyé une vidéo') : R('vous a écrit', 't\u2019a écrit')}</strong><span>${esc(m.loom ? m.loom.title + (m.loom.duration ? ' · ' + m.loom.duration : '') : m.text)}</span></span><span class="btn btn-primary btn-sm">${m.loom ? ic('play') + 'Regarder' : 'Lire'}</span></a>`;
+  }
   /* ---------- Chiffres clés ---------- */
   const daysTo = (d) => Math.ceil((new Date(d).setHours(0, 0, 0, 0) - new Date().setHours(0, 0, 0, 0)) / 864e5);
   function kpisClient() {
@@ -322,6 +330,7 @@
     const done = ph.items.filter((i) => i.status === 'done').length;
     const lead = S.team[0] || {};
     switch (id) {
+      case 'ou': if (p.deliveredAt) return `${R('Votre', 'Ton')} site est en ligne depuis le <strong>${fmt(p.deliveredAt, { day: 'numeric', month: 'long', year: 'numeric' })}</strong>. ${p.results ? esc(p.results.stats[0][0]) + ' ' + esc(p.results.stats[0][1]) + '. ' : ''}Pour aller plus loin, on peut le faire évoluer chaque mois. <a href="#outils" data-go="outils">Voir les options</a>`;
       case 'ou': return `Le projet est à l’étape ${p.phase} sur 5 : <strong>${esc(ph.t)}</strong>. ${done} livrable${done > 1 ? 's' : ''} sur ${ph.items.length} ${done > 1 ? 'sont faits' : 'est fait'} sur cette étape. Mise en ligne prévue vers le <strong>${fmt(p.golive, { day: 'numeric', month: 'long' })}</strong>, dans ${Math.max(0, daysTo(p.golive))} jours. <a href="#projet" data-go="projet">Voir les étapes</a>`;
       case 'moi': { const list = [...p.validations.filter((v) => v.status === 'ready').map((v) => 'valider ' + v.t.toLowerCase()), ...p.missing.map((m) => 'déposer ' + m.t.toLowerCase())];
         return list.length ? `${list.length} chose${list.length > 1 ? 's' : ''} ${R('vous attendent', 't’attendent')} : ${list.map(esc).join(', ')}. <a href="#${pending() ? 'valider' : 'fichiers'}" data-go="${pending() ? 'valider' : 'fichiers'}">Commencer</a>` : `Rien pour le moment. On ${R('vous', 'te')} prévient dès qu’on a besoin de ${R('vous', 'toi')}.`; }
@@ -385,15 +394,219 @@
     document.body.appendChild(c); setTimeout(() => c.remove(), 2800);
   }
 
+
+  /* ---------- Outils transverses ---------- */
+  const asset = (p) => (window.ASSETS && window.ASSETS[p]) || p;
+  const unread = () => (S.project ? (S.project.messages || []).filter((m) => m.readByClient === false).length : 0);
+  const person = (id) => S.team.find((u) => u.id === id) || { name: S.people[id] || (S.project && S.project.contactName) || '', photo: null };
+  const loomId = (u) => { const m = String(u || '').match(/loom\.com\/(?:share|embed)\/([a-z0-9]+)/i); return m ? m[1] : null; };
+  const figmaEmbed = (u) => 'https://www.figma.com/embed?embed_host=orem&url=' + encodeURIComponent(u);
+
+  function videoCard(m) {
+    const id = loomId(m.loom.url);
+    if (!API.demo && id) return `<div class="video"><iframe src="https://www.loom.com/embed/${id}" title="${esc(m.loom.title)}" allowfullscreen loading="lazy"></iframe></div>`;
+    return `<a class="video-card" href="${esc(m.loom.url)}" target="_blank" rel="noopener"><span class="play">${ic('play')}</span><span><strong>${esc(m.loom.title)}</strong><span>Vidéo${m.loom.duration ? ' · ' + esc(m.loom.duration) : ''} · s’ouvre dans Loom</span></span></a>`;
+  }
+  function msgBubble(m) {
+    const u = person(m.by), mine = !m.fromAgency;
+    return `<div class="msg ${mine ? 'mine' : ''}">${!mine ? (IMG[u.photo] ? `<img class="avatar" src="${IMG[u.photo]}" alt="">` : `<span class="avatar ph">${esc((u.name || '?')[0])}</span>`) : ''}
+      <div class="bubble"><div class="meta-l"><strong>${esc(mine ? R('Vous', 'Toi') : (u.name || '').split(' ')[0])}</strong><span>${esc(fmt(m.at, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }))}</span>${m.readByClient === false && !mine ? '<span class="chip hl">Nouveau</span>' : ''}</div>
+      <p>${esc(m.text)}</p>${m.loom ? videoCard(m) : ''}</div></div>`;
+  }
+
+  /* ---------- Maquettes ---------- */
+  function vMaquettes() {
+    const p = S.project, L = p.links || {};
+    const shots = (p.assets || []).filter((a) => a.img && (a.kind === 'Maquettes' || a.kind === 'Réalisation')).slice(0, 4);
+    if (!L.figma && !L.proto) return `<div class="head"><div><h1>Maquettes</h1><p class="lead">Les écrans du site, en direct depuis Figma</p></div></div>
+      <div class="empty big">${ic('figma')}<strong>Les maquettes arrivent à l’étape 2</strong><span>Dès que Clément commence le design, ${R('vous les verrez', 'tu les verras')} ici en direct, sans compte Figma.</span></div>`;
+    return `<div class="head"><div><h1>Maquettes</h1><p class="lead">En direct depuis Figma, toujours la dernière version</p></div>
+      <div class="head-actions">${L.proto ? `<a class="btn btn-primary" href="${esc(L.proto)}" target="_blank" rel="noopener">${ic('play')}Tester le prototype</a>` : ''}${L.figma ? `<a class="btn btn-line" href="${esc(L.figma)}" target="_blank" rel="noopener">${ic('figma')}Ouvrir dans Figma</a>` : ''}</div></div>
+      ${!API.demo && (L.proto || L.figma) ? `<section class="panel flush"><div class="figma-frame"><iframe src="${figmaEmbed(L.proto || L.figma)}" title="Maquettes Figma" allowfullscreen loading="lazy"></iframe></div></section>`
+        : `<section class="panel"><div class="panel-head"><h2>${ic('eye')}Aperçu des écrans</h2><span class="aside">Le prototype s’ouvre dans un nouvel onglet, sans compte Figma</span></div>
+          ${shots.length ? `<div class="shots">${shots.map((a) => `<button class="shot" data-act="zoom" data-src="${esc(asset(a.img))}" data-title="${esc(a.title)}"><img src="${esc(asset(a.img))}" alt="${esc(a.title)}" loading="lazy"><span>${esc(a.title)}</span></button>`).join('')}</div>` : '<p class="muted">Les captures des écrans apparaîtront ici.</p>'}</section>`}
+      <section class="panel"><div class="panel-head"><h2>${ic('chat')}Comment donner ${R('votre', 'ton')} avis</h2></div>
+        <div class="tips"><div><span class="rank">01</span><p>Ouvrez le prototype et cliquez comme sur le vrai site.</p></div><div><span class="rank">02</span><p>Notez ce qui vous gêne, écran par écran.</p></div><div><span class="rank">03</span><p>Validez ou demandez des modifications dans « À valider ».</p></div></div></section>`;
+  }
+
+  /* ---------- Messages ---------- */
+  function vMessages() {
+    const p = S.project;
+    const list = (p.messages || []).slice().sort((a, b) => new Date(a.at) - new Date(b.at));
+    const videos = list.filter((m) => m.loom).reverse();
+    return `<div class="head"><div><h1>Messages</h1><p class="lead">Les vidéos et les messages de l’équipe, au même endroit</p></div></div>
+      ${videos.length ? `<section class="panel"><div class="panel-head"><h2>${ic('play')}Vidéos de l’équipe</h2><span class="aside">${videos.length} vidéo${videos.length > 1 ? 's' : ''}</span></div><div class="videos">${videos.map((m) => `<div class="vitem">${videoCard(m)}<span class="small muted">${esc(person(m.by).name.split(' ')[0])} · ${fmt(m.at)}</span></div>`).join('')}</div></section>` : ''}
+      <section class="panel"><div class="panel-head"><h2>${ic('chat')}Conversation</h2><span class="aside">Réponse sous 24 h ouvrées</span></div>
+        <div class="thread">${list.map(msgBubble).join('') || '<p class="muted">Aucun message pour l’instant.</p>'}</div>
+        <form class="compose" data-form="msg"><label class="sr" for="msg-t">${R('Votre', 'Ton')} message</label><textarea id="msg-t" placeholder="${R('Écrivez votre message', 'Écris ton message')}…" rows="2"></textarea><button class="btn btn-primary" type="submit">Envoyer</button></form>
+      </section>`;
+  }
+
+  /* ---------- Bibliothèque ---------- */
+  function vBiblio() {
+    const p = S.project, A = p.assets || [];
+    const kinds = ['Tout', ...new Set(A.map((a) => a.kind))];
+    const k = S.bk && kinds.includes(S.bk) ? S.bk : 'Tout';
+    const shown = k === 'Tout' ? A : A.filter((a) => a.kind === k);
+    return `<div class="head"><div><h1>Bibliothèque</h1><p class="lead">Les visuels, maquettes et cas d’étude du projet, prêts à réutiliser</p></div></div>
+      ${A.length ? `<div class="cats" role="group" aria-label="Filtrer">${kinds.map((x) => `<button class="cat" data-bk="${esc(x)}" aria-pressed="${k === x}"><strong>${esc(x)}</strong><span class="num">${x === 'Tout' ? A.length : A.filter((a) => a.kind === x).length}</span></button>`).join('')}</div>
+      <div class="gallery">${shown.map((a) => `<article class="tile">${a.img ? `<button class="tile-img" data-act="zoom" data-src="${esc(asset(a.img))}" data-title="${esc(a.title)}" aria-label="Agrandir : ${esc(a.title)}"><img src="${esc(asset(a.img))}" alt="" loading="lazy"></button>` : ''}
+        <div class="tile-b"><span class="chip idle">${esc(a.kind)}</span><strong>${esc(a.title)}</strong><div class="tile-a">${a.url ? `<a class="btn btn-line btn-sm" href="${esc(a.url)}" target="_blank" rel="noopener">Ouvrir</a>` : ''}${a.img && !API.demo ? `<a class="btn btn-line btn-sm" href="${esc(a.img)}" download>${ic('down')}Télécharger</a>` : ''}</div></div></article>`).join('')}</div>`
+      : `<div class="empty big">${ic('folder')}<strong>La bibliothèque se remplit au fil du projet</strong><span>Maquettes, visuels et cas d’étude apparaîtront ici dès qu’ils sont prêts.</span></div>`}
+      ${p.brand && p.brand.colors.length ? `<section class="panel"><div class="panel-head"><h2>${ic('eye')}Couleurs de la marque</h2><span class="aside">Cliquez pour copier</span></div><div class="swatches">${p.brand.colors.map(([n, h]) => `<button class="sw" data-act="copytxt" data-txt="${h}"><i style="background:${h}"></i><strong>${esc(n)}</strong><span class="num">${h}</span></button>`).join('')}</div></section>` : ''}`;
+  }
+
+  /* ---------- Boîte à outils ---------- */
+  const TOOLS = {
+    teaser: ['doc', 'Fiche teaser de bien', 'Une fiche d’une page pour présenter un hôtel ou une boulangerie à un acquéreur, aux couleurs du cabinet.'],
+    brand: ['eye', 'Kit de marque', 'Couleurs, typographies et visuels officiels, à copier en un clic.'],
+    signature: ['mail', 'Signature e-mail', 'Une signature propre et cohérente pour toute l’équipe.'],
+    request: ['plus', 'Demander une évolution', 'Une idée, une correction, une nouvelle page : décrivez-la, on s’en occupe.'],
+    webflow: ['play', 'Se former à Webflow', 'Les vidéos pour modifier ${site} en autonomie.']
+  };
+  function vOutils() {
+    const p = S.project, tools = (p.tools || []).filter((t) => TOOLS[t]);
+    if (S.tool && tools.includes(S.tool)) return toolView(S.tool);
+    return `<div class="head"><div><h1>Boîte à outils</h1><p class="lead">Des outils pensés pour ${R('votre', 'ton')} quotidien, inclus dans l’espace</p></div></div>
+      ${p.deliveredAt ? evolutionCard() : ''}
+      <div class="toolgrid">${tools.map((t) => { const [i, n, d] = TOOLS[t]; return `<button class="toolcard" data-tool="${t}"><span class="ico hl">${ic(i)}</span><strong>${n}</strong><span>${d.replace('${site}', R('votre site', 'ton site'))}</span><em>Ouvrir ${ic('arrow')}</em></button>`; }).join('')}</div>`;
+  }
+  function evolutionCard() {
+    return `<section class="evo"><div><div class="k">Évolution</div><h2>${R('Votre', 'Ton')} site ne doit pas se figer.</h2><p>Chaque mois, on lit les chiffres avec ${R('vous', 'toi')}, on décide des priorités et on fait évoluer ce qui transforme : formulaires, pages, supports commerciaux.</p></div>
+      <div class="evo-a"><a class="btn" href="https://app.iclosed.io/e/Orem/rdv-30min" target="_blank" rel="noopener">Réserver un appel de 30 minutes ${ic('arrow')}</a><button class="ghost on-dark" data-tool="request">Ou ${R('décrivez', 'décris')} une demande</button></div></section>`;
+  }
+  function toolView(t) {
+    const p = S.project, [i, n] = TOOLS[t];
+    const back = `<div><button class="ghost" data-tool="">${ic('back')}Boîte à outils</button></div>`;
+    const head = `<div class="head"><div><h1>${n}</h1></div></div>`;
+    if (t === 'teaser') {
+      const T = S.teaser || (S.teaser = { type: 'Hôtel', name: 'Hôtel 3 étoiles, rive gauche', city: 'Paris 7e', size: '42 chambres', ca: '2,4 M€', price: 'Sur demande', points: 'Murs et fonds\nEmplacement à 5 minutes de la tour Eiffel\nTaux d’occupation de 86 %' });
+      const c = (p.brand && p.brand.colors) || [];
+      const main = (c[0] || [])[1] || '#092482', soft = (c[2] || [])[1] || '#f3f2ef', dark = (c[3] || [])[1] || '#0b0b12';
+      return `${back}${head}<div class="grid2 tool2">
+        <form class="panel form" data-form="teaser" id="teaser-f">
+          <div class="field"><label for="tz-type">Type de bien</label><select id="tz-type">${['Hôtel', 'Boulangerie'].map((x) => `<option ${T.type === x ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
+          <div class="field"><label for="tz-name">Intitulé (sans le nom de l’établissement)</label><input id="tz-name" type="text" value="${esc(T.name)}"></div>
+          <div class="line"><div class="field"><label for="tz-city">Localisation</label><input id="tz-city" type="text" value="${esc(T.city)}"></div><div class="field"><label for="tz-size">Taille</label><input id="tz-size" type="text" value="${esc(T.size)}"></div></div>
+          <div class="line"><div class="field"><label for="tz-ca">Chiffre d’affaires</label><input id="tz-ca" type="text" value="${esc(T.ca)}"></div><div class="field"><label for="tz-price">Prix</label><input id="tz-price" type="text" value="${esc(T.price)}"></div></div>
+          <div class="field"><label for="tz-points">Points forts (un par ligne)</label><textarea id="tz-points" rows="4">${esc(T.points)}</textarea></div>
+          <p class="hint">L’aperçu se met à jour pendant que ${R('vous tapez', 'tu tapes')}.</p>
+        </form>
+        <section class="panel"><div class="panel-head"><h2>${ic('eye')}Aperçu</h2><div class="inline">${API.demo ? '' : `<button class="btn btn-line btn-sm" data-act="print">${ic('down')}PDF</button>`}<button class="btn btn-line btn-sm" data-act="copyteaser">${ic('copy')}Copier le texte</button></div></div>
+          <div class="teaser" id="teaser-p" style="--tz:${main};--tz-soft:${soft};--tz-dark:${dark}">${teaserHtml(T)}</div></section></div>`;
+    }
+    if (t === 'brand') {
+      const b = p.brand || { colors: [], fonts: [] };
+      return `${back}${head}<section class="panel"><div class="panel-head"><h2>${ic('eye')}Couleurs</h2><span class="aside">Cliquez pour copier le code</span></div>
+        ${b.colors.length ? `<div class="swatches">${b.colors.map(([nm, h]) => `<button class="sw" data-act="copytxt" data-txt="${h}"><i style="background:${h}"></i><strong>${esc(nm)}</strong><span class="num">${h}</span></button>`).join('')}</div>` : '<p class="muted">Les couleurs arrivent avec la direction artistique.</p>'}</section>
+        <section class="panel"><div class="panel-head"><h2>${ic('doc')}Typographies</h2></div>${b.fonts.length ? `<dl class="kv">${b.fonts.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>` : '<p class="muted">Les typographies arrivent avec la direction artistique.</p>'}</section>
+        <section class="panel"><div class="panel-head"><h2>${ic('folder')}Visuels et logos</h2><a href="#biblio" data-go="biblio">Ouvrir la bibliothèque</a></div><p class="muted">Tous les visuels du projet sont rangés dans la bibliothèque, prêts à télécharger.</p></section>`;
+    }
+    if (t === 'signature') {
+      const G = S.sig || (S.sig = { name: S.me.name || '', role: '', phone: '' });
+      const main = ((p.brand && p.brand.colors[0]) || [])[1] || '#092482';
+      return `${back}${head}<div class="grid2 tool2"><form class="panel form" data-form="sig"><div class="field"><label for="sg-n">Prénom et nom</label><input id="sg-n" type="text" value="${esc(G.name)}"></div><div class="field"><label for="sg-r">Fonction</label><input id="sg-r" type="text" value="${esc(G.role)}" placeholder="Associé"></div><div class="field"><label for="sg-p">Téléphone</label><input id="sg-p" type="text" value="${esc(G.phone)}" placeholder="01 23 45 67 89"></div></form>
+        <section class="panel"><div class="panel-head"><h2>${ic('eye')}Aperçu</h2><button class="btn btn-line btn-sm" data-act="copysig">${ic('copy')}Copier la signature</button></div><div class="sig" id="sig-p">${sigHtml(G, main)}</div><p class="hint" style="margin-top:12px">Collez-la dans les réglages de signature de Gmail ou Outlook.</p></section></div>`;
+    }
+    if (t === 'request') {
+      const reqs = p.requests || [];
+      return `${back}${head}<div class="grid2 tool2"><form class="panel form" data-form="request">
+          <div class="field"><label for="rq-k">De quoi s’agit-il ?</label><select id="rq-k">${['Contenu', 'Design', 'Formulaires', 'Nouvelle page', 'Référencement', 'Autre'].map((x) => `<option>${x}</option>`).join('')}</select></div>
+          <div class="field"><label for="rq-p">Priorité</label><select id="rq-p"><option>Normal</option><option>Important</option><option>Urgent</option></select></div>
+          <div class="field"><label for="rq-t">${R('Décrivez votre', 'Décris ta')} demande</label><textarea id="rq-t" rows="5" placeholder="Ce que ${R('vous voulez', 'tu veux')} changer, sur quelle page, et pourquoi."></textarea></div>
+          <div><button class="btn btn-primary" type="submit">Envoyer la demande</button></div></form>
+        <section class="panel"><div class="panel-head"><h2>${ic('doc')}${R('Vos', 'Tes')} demandes</h2></div><div class="list">${reqs.map((r) => `<div class="row"><div class="grow"><div class="title">${esc(r.type)} · ${esc(r.priority)}</div><div class="sub">${esc(r.text)}</div></div><span class="chip ${r.status === 'Fait' ? 'ok' : r.status === 'Nouveau' ? 'warn' : 'hl'}">${esc(r.status)}</span></div>`).join('') || '<p class="muted">Aucune demande pour l’instant.</p>'}</div></section></div>`;
+    }
+    if (t === 'webflow') {
+      const vids = [['Modifier un texte ou une image', '3 min'], ['Ajouter un hôtel ou une boulangerie à vendre', '4 min'], ['Publier un article', '3 min'], ['Publier ses changements en toute sécurité', '2 min']];
+      return `${back}${head}<section class="panel"><div class="videos">${vids.map(([tt, d]) => `<div class="vitem">${videoCard({ loom: { url: 'https://www.loom.com/share/8b9f66df6c52449fa0ff18afea1658b3', title: tt, duration: d } })}</div>`).join('')}</div></section>
+        <section class="panel" style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between"><div style="flex:1 1 260px;min-width:0"><h2>Besoin d’un coup de main en direct ?</h2><p class="muted" style="margin-top:4px">Une session de formation en visio, sur ${R('votre', 'ton')} site.</p></div><a class="btn btn-primary" href="https://cal.com/iconokom/formation-webflow" target="_blank" rel="noopener">${ic('cal')}Réserver une formation</a></section>`;
+    }
+    return back;
+  }
+  function teaserHtml(T) {
+    const pts = String(T.points || '').split('\n').map((x) => x.trim()).filter(Boolean);
+    return `<div class="tz-top"><span>${esc(S.project.client.toUpperCase().replace('-', '\u2014'))}</span><span>${esc(T.type)} à vendre</span></div>
+      <div class="tz-title">${esc(T.name || 'Intitulé du bien')}</div><div class="tz-city">${esc(T.city)}</div>
+      <div class="tz-kpis"><div><b>${esc(T.size)}</b><span>Taille</span></div><div><b>${esc(T.ca)}</b><span>Chiffre d’affaires</span></div><div><b>${esc(T.price)}</b><span>Prix</span></div></div>
+      <ul>${pts.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>
+      <div class="tz-foot">Dossier confidentiel · Contactez le cabinet pour recevoir la fiche complète</div>`;
+  }
+  function sigHtml(G, main) {
+    return `<table cellpadding="0" cellspacing="0" style="font-family:Arial,sans-serif;font-size:13px;color:#1a1a1a"><tr><td style="border-left:3px solid ${main};padding-left:12px">
+      <div style="font-size:15px;font-weight:bold">${esc(G.name || 'Prénom Nom')}</div><div style="color:#555">${esc(G.role || 'Fonction')} · ${esc(S.project.client)}</div>
+      <div style="margin-top:6px">${esc(G.phone || '')}${G.phone ? ' · ' : ''}<a href="${esc((S.project.links && S.project.links.site) || '#')}" style="color:${main};text-decoration:none">${esc(((S.project.links && S.project.links.site) || '').replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '') || 'votre-site.fr')}</a></div></td></tr></table>`;
+  }
+
+  /* ---------- Plus (mobile) ---------- */
+  function vPlus() {
+    const items = [['valider', 'À valider', 'ok'], ['maquettes', 'Maquettes', 'figma'], ['documents', 'Documents', 'doc'], ['outils', 'Boîte à outils', 'plus'], ['biblio', 'Bibliothèque', 'folder'], ['equipe', 'Équipe et aide', 'team']];
+    return `<div class="head"><div><h1>Tout ${R('votre', 'ton')} espace</h1></div></div><section class="panel"><div class="list">${items.map(([id, l, i]) => `<a class="row linkrow" href="#${id}" data-go="${id}"><span class="ico">${ic(i)}</span><div class="grow"><div class="title">${l}</div></div>${id === 'valider' && pending() ? `<span class="badge">${pending()}</span>` : ''}${ic('arrow', 'width:18px;height:18px;color:var(--muted)')}</a>`).join('')}</div></section>`;
+  }
+
+  /* ---------- Accueil d'un projet livré ---------- */
+  function vAccueilLivre() {
+    const p = S.project, last = (p.messages || []).filter((m) => m.fromAgency && m.loom).sort((a, b) => new Date(b.at) - new Date(a.at))[0];
+    const author = S.team.find((u) => u.id === p.note.by);
+    return `<div class="head"><div><h1 class="brandish">Bonjour ${esc(p.contactName || S.me.name)}</h1><p class="lead">${esc(cap(fmtLong(Date.now())))} · ${esc(p.projet)}</p></div></div>
+      <section class="next live"><div><div class="k"><span class="pulse"></span>En ligne depuis le ${fmt(p.deliveredAt, { day: 'numeric', month: 'long', year: 'numeric' })}</div><h2>${R('Votre', 'Ton')} site travaille pour ${R('vous', 'toi')}.</h2><p>${esc(p.next.text || '')}</p></div>
+        ${p.links.site ? `<a class="btn" href="${esc(p.links.site)}" target="_blank" rel="noopener">Voir le site ${ic('arrow')}</a>` : ''}</section>
+      ${p.results ? `<div class="kpis">${p.results.stats.map(([v, l]) => `<div class="kpi"><span class="v num">${esc(v)}</span><span class="l">${esc(l)}</span></div>`).join('')}</div><p class="steps-foot" style="margin-top:-8px">${esc(p.results.period)} · chiffres Google Analytics et Search Console</p>` : ''}
+      ${evolutionCard()}
+      <div class="grid2">
+        ${last ? `<section class="panel"><div class="panel-head"><h2>${ic('play')}Dernière vidéo de l’équipe</h2><a href="#messages" data-go="messages">Tous les messages</a></div><p style="margin-bottom:12px">${esc(last.text)}</p>${last.loom ? videoCard(last) : ''}</section>` : ''}
+        <section class="panel"><div class="panel-head"><h2>${ic('cal')}Cette semaine</h2></div>
+          ${p.note.text ? `<div class="note">${author && IMG[author.photo] ? `<img class="avatar" src="${IMG[author.photo]}" alt="">` : ''}<div><blockquote>${esc(p.note.text)}</blockquote><div class="who">${esc(author ? author.name.split(' ')[0] : '')}</div></div></div>` : ''}
+          ${p.meeting && p.meeting.when ? `<div class="meet"><span class="ico">${ic('cal')}</span><div class="grow"><div class="title">${esc(p.meeting.title)}</div><div class="sub">${esc(cap(fmtTime(p.meeting.when)))}</div></div></div>` : ''}</section>
+      </div>
+      <section class="panel"><div class="panel-head"><h2>${ic('folder')}Tout ce qu’on a construit ensemble</h2></div>
+        <div class="quick">${[['maquettes', 'Maquettes', 'Le fichier Figma et le prototype', 'figma'], ['biblio', 'Bibliothèque', `${(p.assets || []).length} visuels et cas d’étude`, 'folder'], ['outils', 'Boîte à outils', 'Fiche teaser, kit de marque…', 'plus'], ['fichiers', 'Fichiers', 'Guide Webflow, accès, bilans', 'doc']].map(([g, t, d, i]) => `<a class="qcard" href="#${g}" data-go="${g}"><span class="ico hl">${ic(i)}</span><strong>${t}</strong><span>${esc(d)}</span></a>`).join('')}</div></section>
+      ${qaPanel()}`;
+  }
+
+  /* Agrandissement d'une image */
+  function lightbox() {
+    return S.zoom ? `<div class="lb" role="dialog" aria-modal="true" aria-label="${esc(S.zoom.title)}" data-act="unzoom"><figure><img src="${esc(S.zoom.src)}" alt="${esc(S.zoom.title)}"><figcaption>${esc(S.zoom.title)}</figcaption></figure><button class="lb-x" data-act="unzoom" aria-label="Fermer">×</button></div>` : '';
+  }
+
+  /* ---------- Agence : messages et liens ---------- */
+  function tMessages() {
+    const p = S.project, list = (p.messages || []).slice().sort((a, b) => new Date(a.at) - new Date(b.at));
+    return `<section class="panel"><div class="panel-head"><h2>${ic('chat')}Conversation avec ${esc(p.contactName || p.client)}</h2></div>
+      <div class="thread">${list.map((m) => msgBubbleAdmin(m)).join('') || '<p class="muted">Aucun message.</p>'}</div>
+      <form class="form" data-form="amsg" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--line)">
+        <div class="field"><label for="am-t">Message</label><textarea id="am-t" rows="2" placeholder="Bonjour ${esc(p.contactName || '')}, …"></textarea></div>
+        <div class="line"><div class="field"><label for="am-u">Vidéo Loom (facultatif)</label><input id="am-u" type="url" placeholder="https://www.loom.com/share/…"></div><div class="field"><label for="am-l">Titre de la vidéo</label><input id="am-l" type="text" placeholder="Présentation des maquettes"></div></div>
+        <div><button class="btn btn-primary" type="submit">Envoyer au client</button></div></form></section>
+      <section class="panel"><div class="panel-head"><h2>${ic('plus')}Demandes d’évolution</h2></div><div class="list">${(p.requests || []).map((r) => `<div class="row"><div class="grow"><div class="title">${esc(r.type)} · ${esc(r.priority)}</div><div class="sub">${esc(r.text)}</div></div>
+        <select data-req="${r.id}" style="width:auto" aria-label="Statut de la demande">${['Nouveau', 'Proposé', 'En cours', 'Fait'].map((x) => `<option ${r.status === x ? 'selected' : ''}>${x}</option>`).join('')}</select></div>`).join('') || '<p class="muted">Aucune demande.</p>'}</div></section>`;
+  }
+  function msgBubbleAdmin(m) {
+    const u = person(m.by), agency = !!m.fromAgency;
+    return `<div class="msg ${agency ? 'mine' : ''}">${!agency ? `<span class="avatar ph">${esc((u.name || '?')[0])}</span>` : ''}<div class="bubble"><div class="meta-l"><strong>${esc(agency ? (u.name || '').split(' ')[0] : (S.people[m.by] || S.project.contactName))}</strong><span>${esc(fmt(m.at, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }))}</span>${m.readByAgency === false ? '<span class="chip warn">Nouveau</span>' : ''}${agency && m.readByClient === false ? '<span class="chip idle">Pas encore lu</span>' : agency ? '<span class="chip ok">Lu</span>' : ''}</div><p>${esc(m.text)}</p>${m.loom ? videoCard(m) : ''}</div></div>`;
+  }
+  function tLiens() {
+    const L = S.project.links || {};
+    return `<form class="panel form" data-form="links"><div class="panel-head" style="margin:0"><h2>${ic('figma')}Liens du projet</h2><span class="aside">Visibles côté client dans « Maquettes » et sur l’accueil</span></div>
+      <div class="field"><label for="lk-f">Fichier Figma (lecture seule)</label><input id="lk-f" type="url" value="${esc(L.figma)}" placeholder="https://www.figma.com/design/…"></div>
+      <div class="field"><label for="lk-p">Prototype Figma</label><input id="lk-p" type="url" value="${esc(L.proto)}" placeholder="https://www.figma.com/proto/…"></div>
+      <div class="field"><label for="lk-w">Prévisualisation Webflow</label><input id="lk-w" type="url" value="${esc(L.preview)}" placeholder="https://….webflow.io"></div>
+      <div class="field"><label for="lk-s">Site en ligne</label><input id="lk-s" type="url" value="${esc(L.site)}" placeholder="https://www.…"></div>
+      <p class="hint">Partagez le fichier Figma en « Can view » : le client le voit sans compte.</p>
+      <div><button class="btn btn-primary" type="submit">Enregistrer</button></div></form>`;
+  }
+
   /* ---------- Vues agence ---------- */
   function vClients() {
     const rows = S.projects.map((p) => { const a = p.alerts;
       const flags = [a.newFiles ? `<span class="chip warn">${a.newFiles} nouveau${a.newFiles > 1 ? 'x' : ''} fichier${a.newFiles > 1 ? 's' : ''}</span>` : '',
         a.changes ? `<span class="chip warn">Modifications demandées</span>` : '',
         a.waiting ? `<span class="chip hl">Validation chez le client</span>` : '',
-        !a.newFiles && !a.changes && !a.waiting ? '<span class="chip idle">Rien de neuf</span>' : ''].join('');
+        a.newMessages ? `<span class="chip warn">${a.newMessages} message${a.newMessages > 1 ? 's' : ''}</span>` : '',
+        a.requests ? `<span class="chip warn">Demande d\u2019évolution</span>` : '',
+        !a.newFiles && !a.changes && !a.waiting && !a.newMessages && !a.requests ? '<span class="chip idle">Rien de neuf</span>' : ''].join('');
       return `<button class="crow" data-open="${p.id}"><div><div class="c-name">${esc(p.client)}</div><div class="small muted">${esc(p.projet)}</div></div><div><div class="small"><span class="muted">Étape ${p.phase} · ${esc(p.phaseName)}</span></div><div class="small" style="margin-top:2px">${esc(p.next.title)}</div></div><div class="c-flags">${flags}</div></button>`; }).join('');
-    const needs = S.projects.filter((p) => p.alerts.newFiles || p.alerts.changes).length;
+    const needs = S.projects.filter((p) => p.alerts.newFiles || p.alerts.changes || p.alerts.newMessages || p.alerts.requests).length;
     return `
     <div class="head"><div><h1>Clients</h1><p class="lead">${esc(cap(fmtLong(Date.now())))}</p></div><button class="btn btn-primary" data-go="nouveau">${ic('plus')}Nouvel espace client</button></div>
     ${kpisAdmin()}
@@ -418,11 +631,11 @@
     </form>`;
   }
 
-  const TABS = [['pilotage', 'Pilotage'], ['validations', 'Validations'], ['fichiers', 'Fichiers'], ['factures', 'Factures'], ['acces', 'Accès et infos'], ['activite', 'Activité']];
+  const TABS = [['pilotage', 'Pilotage'], ['messages', 'Messages'], ['validations', 'Validations'], ['fichiers', 'Fichiers'], ['liens', 'Liens'], ['factures', 'Factures'], ['acces', 'Accès et infos'], ['activite', 'Activité']];
   function vAdmin() {
     const p = S.project, a = Core.alerts(p);
-    const tabCount = { fichiers: a.newFiles, validations: a.changes };
-    const body = { pilotage: tPilotage, validations: tValidations, fichiers: tFichiers, factures: tFactures, acces: tAcces, activite: tActivite }[S.tab]();
+    const tabCount = { fichiers: a.newFiles, validations: a.changes, messages: a.newMessages + a.requests };
+    const body = { pilotage: tPilotage, messages: tMessages, liens: tLiens, validations: tValidations, fichiers: tFichiers, factures: tFactures, acces: tAcces, activite: tActivite }[S.tab]();
     return `
     <div><button class="ghost" data-go="clients" style="padding-left:0">${ic('back')}Tous les clients</button></div>
     <div class="head"><div><h1>${esc(p.client)}</h1><p class="lead">${esc(p.projet)} · Étape ${p.phase} sur 5</p></div><div class="head-actions"><button class="btn btn-line" data-act="obpreview">${ic('play')}Accueil du client</button><button class="btn btn-line" data-act="preview">${ic('eye')}Voir comme le client</button></div></div>
@@ -554,23 +767,24 @@
     if (!S.me) { root.innerHTML = vConnexion(); }
     else if (clientMode()) {
       if (!S.project) { root.innerHTML = shell('<div class="empty">Votre espace est en cours de préparation.</div>'); return; }
-      const V = { accueil: vAccueil, projet: vProjet, valider: vValider, fichiers: vFichiers, documents: vDocuments, equipe: vEquipe };
+      const V = { accueil: () => (S.project.deliveredAt ? vAccueilLivre() : vAccueil()), projet: vProjet, valider: vValider, maquettes: vMaquettes, messages: vMessages, fichiers: vFichiers, documents: vDocuments, outils: vOutils, biblio: vBiblio, equipe: vEquipe, plus: vPlus };
       if (!V[S.view]) S.view = 'accueil';
-      root.innerHTML = shell(V[S.view]()) + (S.ob ? onboarding() : '');
+      root.innerHTML = shell(V[S.view]()) + (S.ob ? onboarding() : '') + lightbox();
     } else {
       const V = { clients: vClients, nouveau: vNouveau, admin: vAdmin };
       if (!V[S.view] || (S.view === 'admin' && !S.project)) S.view = 'clients';
       root.innerHTML = shell(V[S.view]());
     }
     if (S.ob) { const b = document.querySelector('.ob .btn-primary'); if (b) b.focus({ preventScroll: true }); }
+    document.querySelectorAll('.thread').forEach((t) => (t.scrollTop = t.scrollHeight));
     bindFiles();
     if (focus) { const m = $('#main'); if (m) m.focus({ preventScroll: true }); window.scrollTo(0, 0); }
   }
   async function go(v) {
-    if (v === 'plus') v = 'equipe';
     if (v === 'deconnexion') return logout();
     if (v === 'clients' && isAdmin() && !S.preview) { S.project = null; await loadProjects(); }
-    S.view = v; S.valForm = null; render(true);
+    S.view = v; S.valForm = null; S.tool = v === 'outils' ? S.tool : null; render(true);
+    if (v === 'messages' && S.project && (isAdmin() ? false : unread()) && !S.preview) { try { await API.action(S.project.id, { type: 'msg.read' }); await loadProject(S.project.id); } catch {} }
   }
   async function enter() {
     const r = await API.me(); S.me = r.user; S.team = r.team || [];
@@ -580,6 +794,7 @@
   }
   async function openProject(id) { S.tab = 'pilotage'; S.view = 'admin'; await loadProject(id); window.scrollTo(0, 0);
     const a = Core.alerts(S.project); if (a.unseen) { try { await API.action(id, { type: 'seen' }); } catch {} } }
+  async function markAgencyRead() { const a = Core.alerts(S.project); if (a.newMessages) { try { await API.action(S.project.id, { type: 'msg.read' }); } catch {} } }
   async function logout() { try { await API.logout(); } catch {} S.me = null; S.project = null; S.preview = false; S.login = { step: 'email', email: '', dev: null }; render(true); }
 
   async function upload(files, opts = {}) {
@@ -607,8 +822,12 @@
   }
 
   /* ---------- Événements ---------- */
+  function copyText(t, ok) { try { navigator.clipboard.writeText(t).then(() => toast(ok), () => toast('Copie impossible ici. Sélectionnez le texte à la main.')); } catch { toast('Copie impossible ici. Sélectionnez le texte à la main.'); } }
+  function copyHtml(h, ok) { try { navigator.clipboard.write([new ClipboardItem({ 'text/html': new Blob([h], { type: 'text/html' }), 'text/plain': new Blob([h.replace(/<[^>]+>/g, ' ')], { type: 'text/plain' }) })]).then(() => toast(ok), () => copyText(h, ok)); } catch { copyText(h, ok); } }
   document.addEventListener('change', (e) => {
     const t = e.target;
+    if (t.matches('[data-demo]')) { API.as(t.value); S.preview = false; S.tool = null; S.ob = null; enter(); return; }
+    if (t.dataset.req) { act({ type: 'request.status', rid: t.dataset.req, status: t.value }, 'Statut mis à jour.'); return; }
     if (t.type === 'file' && t.files.length) {
       const files = [...t.files];
       if (t.dataset.agency) upload(files, { cat: $('#a-cat').value });
@@ -622,7 +841,9 @@
   document.addEventListener('click', async (e) => {
     const g = e.target.closest('[data-go]'); if (g) { e.preventDefault(); return go(g.dataset.go); }
     const o = e.target.closest('[data-open]'); if (o) return openProject(o.dataset.open);
-    const tb = e.target.closest('[data-tab]'); if (tb) { S.tab = tb.dataset.tab; return render(); }
+    const tb = e.target.closest('[data-tab]'); if (tb) { S.tab = tb.dataset.tab; render(); if (S.tab === 'messages') markAgencyRead(); return; }
+    const tl = e.target.closest('[data-tool]'); if (tl) { S.tool = tl.dataset.tool || null; if (S.view !== 'outils') S.view = 'outils'; render(true); return; }
+    const bk = e.target.closest('[data-bk]'); if (bk) { S.bk = bk.dataset.bk; return render(); }
     const c = e.target.closest('[data-cat]'); if (c) { S.cat = c.dataset.cat; return render(); }
     const a = e.target.closest('[data-act]'); if (!a) return;
     const id = a.dataset.id;
@@ -645,6 +866,12 @@
       case 'login-back': S.login.step = 'email'; render(); break;
       case 'demo-as': API.as(a.dataset.email); enter(); break;
       case 'qa': S.qa = S.qa === id ? null : id; render(); break;
+      case 'zoom': S.zoom = { src: a.dataset.src, title: a.dataset.title }; render(); break;
+      case 'unzoom': if (e.target.tagName === 'IMG') return; S.zoom = null; render(); break;
+      case 'copytxt': copyText(a.dataset.txt, a.dataset.txt + ' copié.'); break;
+      case 'copysig': copyHtml($('#sig-p').innerHTML, 'Signature copiée. Collez-la dans votre messagerie.'); break;
+      case 'copyteaser': copyText($('#teaser-p').innerText, 'Texte de la fiche copié.'); break;
+      case 'print': document.body.classList.add('printing'); window.print(); setTimeout(() => document.body.classList.remove('printing'), 500); break;
       case 'obopen': S.ob = { step: 0 }; render(); break;
       case 'obpreview': S.preview = true; S.view = 'accueil'; S.ob = { step: 0 }; render(true); break;
       case 'ob-next': S.ob.step++; render(); break;
@@ -654,7 +881,7 @@
         const wasDone = a.dataset.act === 'ob-done'; S.ob = null;
         if (!S.preview && !S.me.onboardedAt) { S.me.onboardedAt = new Date().toISOString(); try { await API.action(S.project.id, { type: 'user.onboarded', prefs: wasDone ? prefs : undefined }); } catch {} }
         render(); if (wasDone) { celebrate(); toast(R('Bienvenue dans votre espace.', 'Bienvenue dans ton espace.')); } break; }
-      case 'demo-switch': API.as(isAdmin() ? 'claire@maisonlumen.fr' : 'louis@agence-orem.fr'); S.preview = false; enter(); break;
+      case 'demo-switch-old': API.as(isAdmin() ? 'claire@maisonlumen.fr' : 'louis@agence-orem.fr'); S.preview = false; enter(); break;
       case 'copy': { const txt = $('#iban').textContent; const sel = () => { const r = document.createRange(); r.selectNodeContents($('#iban')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast('IBAN sélectionné, copiez-le avec Ctrl+C.'); };
         try { navigator.clipboard.writeText(txt).then(() => toast('IBAN copié.'), sel); } catch { sel(); } break; }
     }
@@ -683,6 +910,11 @@
         try { const r = await API.create({ client: v('n-client'), projet: v('n-projet'), contactName: v('n-contact'), email: v('n-email'), start: v('n-start') || undefined, amountHT: v('n-ht'), registre: (f.querySelector('[name=n-reg]:checked') || {}).value });
           await loadProjects(); await openProject(r.id); toast('Espace créé. Ajoutez la prochaine étape puis donnez l’accès au client.'); } catch (err) { toast(err.message); }
         break; }
+      case 'msg': { const t = v('msg-t'); if (!t) return toast('Écrivez votre message.'); if (S.preview) return toast('Aperçu : les actions sont désactivées.'); if (await act({ type: 'msg.post', text: t }, 'Message envoyé. Réponse sous 24 h ouvrées.')) { const th = document.querySelector('.thread'); if (th) th.lastElementChild && th.lastElementChild.scrollIntoView({ block: 'nearest' }); } break; }
+      case 'amsg': { const t = v('am-t'); if (!t) return toast('Écrivez le message.'); act({ type: 'msg.post', text: t, loom: v('am-u') ? { url: v('am-u'), title: v('am-l') || 'Vidéo' } : undefined }, 'Message envoyé au client.'); break; }
+      case 'links': act({ type: 'links.set', figma: v('lk-f'), proto: v('lk-p'), preview: v('lk-w'), site: v('lk-s') }, 'Liens enregistrés.'); break;
+      case 'request': { const t = v('rq-t'); if (!t) return toast('Décrivez votre demande.'); if (S.preview) return toast('Aperçu : les actions sont désactivées.'); act({ type: 'request.add', kind: v('rq-k'), priority: v('rq-p'), text: t }, 'Demande envoyée. On revient vers vous sous 48 h.'); break; }
+      case 'teaser': case 'sig': break;
       case 'phase': act({ type: 'phase.set', n: v('a-phase') }, 'Étape mise à jour.'); break;
       case 'next': act({ type: 'next.set', title: v('a-nt'), text: v('a-nx'), go: v('a-ng') }, 'Prochaine étape publiée.'); break;
       case 'note': if (await act({ type: 'note.set', text: v('a-note') })) act({ type: 'meeting.set', title: v('a-mt'), when: v('a-mw') || null }, 'Publié dans l’espace du client.'); break;
@@ -697,6 +929,8 @@
   });
   document.addEventListener('input', (e) => {
     const t = e.target;
+    if (t.closest('#teaser-f')) { const v = (id) => $('#' + id).value; S.teaser = { type: v('tz-type'), name: v('tz-name'), city: v('tz-city'), size: v('tz-size'), ca: v('tz-ca'), price: v('tz-price'), points: v('tz-points') }; $('#teaser-p').innerHTML = teaserHtml(S.teaser); return; }
+    if (t.closest('[data-form=sig]')) { S.sig = { name: $('#sg-n').value, role: $('#sg-r').value, phone: $('#sg-p').value }; $('#sig-p').innerHTML = sigHtml(S.sig, ((S.project.brand && S.project.brand.colors[0]) || [])[1] || '#092482'); return; }
     if (t.closest('.otp')) {
       const digits = t.value.replace(/\D/g, '');
       if (digits.length > 1) { const all = [...document.querySelectorAll('.otp input')]; digits.slice(0, 6).split('').forEach((d, i) => all[i] && (all[i].value = d)); all[Math.min(5, digits.length - 1)].focus(); return; }
@@ -704,7 +938,7 @@
     }
   });
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && S.ob) { S.ob = null; render(); return; }
+    if (e.key === 'Escape' && (S.ob || S.zoom)) { S.ob = null; S.zoom = null; render(); return; }
     if (e.target.closest && e.target.closest('.otp') && e.key === 'Backspace' && !e.target.value && e.target.previousElementSibling) e.target.previousElementSibling.focus();
   });
 

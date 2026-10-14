@@ -49,7 +49,14 @@
       files: [],
       billing: { totalHT: ht, totalTTC: Math.round(ht * 1.2 * 100) / 100, quote: '', signedAt: null },
       invoices: [],
-      activity: []
+      activity: [],
+      links: { figma: '', proto: '', preview: '', site: '' },
+      messages: [],
+      assets: [],
+      requests: [],
+      tools: ['brand', 'signature', 'request', 'webflow'],
+      brand: { colors: [], fonts: [] },
+      results: null, deliveredAt: null
     };
   }
 
@@ -99,33 +106,76 @@
       f('Photos atelier (12 fichiers).zip', 'Images', 'client', 'u_claire', -6, 86000000),
       f('Logo Maison Lumen.svg', 'Images', 'client', 'u_claire', -8, 48000)
     ];
+    a.links = { figma: 'https://www.figma.com/', proto: 'https://www.figma.com/', preview: '', site: '' };
+    a.messages = [
+      { id: 'lm1', by: 'u_clement', at: at(-2), text: 'Claire, je vous présente le plan du site en vidéo, page par page, avant que vous le validiez.', loom: { url: 'https://www.loom.com/share/8b9f66df6c52449fa0ff18afea1658b3', title: 'Le plan du site expliqué', duration: '4 min' }, fromAgency: true, readByClient: false },
+      { id: 'lm2', fromAgency: true, by: 'u_louis', at: at(-8), text: 'Merci pour la visio de cadrage ! Le compte rendu est dans vos fichiers.' }
+    ];
     a.activity = [
       { at: at(-2), by: 'u_louis', text: 'a demandé la validation du plan du site' },
       { at: at(-3), by: 'u_claire', text: 'a déposé « Texte À propos.docx »', seen: false },
       { at: at(-14), by: 'u_claire', text: 'a réglé l’acompte' }
     ];
 
-    /* Exemple 2 : en construction, rien n'attend. */
-    const b = newProject({ client: 'Atelier Nord', projet: 'Site vitrine atelier-nord.fr', contactName: 'Hugo', start: at(-30), registre: 'tu', amountHT: 4800 });
-    b.id = 'p_nord'; b.phase = 3;
-    b.phases[0].items.forEach((i) => (i.status = 'done'));
-    b.phases[1].items.forEach((i) => (i.status = 'done'));
-    b.phases[2].items[0].status = 'done'; b.phases[2].items[1].status = 'on';
-    b.validations.slice(0, 3).forEach((v) => { v.status = 'approved'; v.history.push({ at: at(-12), by: 'u_hugo', action: 'approved' }); });
-    b.next = { title: 'Rien à faire de ton côté cette semaine', text: 'On construit ton site sur Webflow. Le lien de prévisualisation arrive d’ici vendredi.', go: 'projet' };
-    b.activity = [{ at: at(-3), by: 'u_hugo', text: 'a validé les maquettes du site', seen: true }];
+    /* Exemple 2 : projet livré (Huchet-Demorge). Contenus repris du cas client Orem, facturation fictive. */
+    const b = newProject({ client: 'Huchet-Demorge', projet: 'Refonte du site huchet-demorge.fr', contactName: 'Hugo', start: '2025-11-24', registre: 'tu', amountHT: 9800 });
+    b.id = 'p_huchet'; b.phase = 5; b.golive = '2026-06-15T09:00:00.000Z'; b.deliveredAt = '2026-06-15T09:00:00.000Z';
+    b.phases.forEach((ph) => ph.items.forEach((i) => (i.status = 'done')));
+    b.validations.forEach((v) => { v.status = 'approved'; v.history.push({ at: v.due, by: 'u_hugo', action: 'approved' }); });
+    b.next = { title: 'Ton site est en ligne', text: 'Il génère environ 5 demandes qualifiées par semaine. Pour qu’il continue de progresser, on peut le faire évoluer chaque mois avec toi.', go: 'outils' };
+    b.note = { text: 'Bilan à 1 mois envoyé : chaque associé ressort en position 1 sur son nom, et 68 % du trafic vient de Google, sans budget média. Prochaine étape proposée : le parcours des formulaires d’annonces.', by: 'u_louis', at: at(-6) };
+    b.meeting = { title: 'Point évolution du site (visio, 30 min)', when: (() => { const d = new Date(at(6)); d.setHours(11, 0, 0, 0); return d.toISOString(); })() };
+    b.billing = { totalHT: 9800, totalTTC: 11760, quote: 'D-2025-0098', signedAt: '2025-11-20T10:00:00.000Z' };
+    b.invoices = [
+      { id: 'hinv1', num: 'F-2025-0131', label: 'Facture d’acompte (50 %)', ht: 4900, ttc: 5880, status: 'paid', date: '2025-11-21T10:00:00.000Z', paidAt: '2025-11-28T10:00:00.000Z' },
+      { id: 'hinv2', num: 'F-2026-0112', label: 'Facture de solde (50 %)', ht: 4900, ttc: 5880, status: 'paid', date: '2026-06-15T10:00:00.000Z', paidAt: '2026-06-22T10:00:00.000Z' }
+    ];
+    b.links = { figma: 'https://www.figma.com/design/irfVpJlJI85XG3Cv2h7cK5/Huchet-Demorge', proto: 'https://www.figma.com/proto/irfVpJlJI85XG3Cv2h7cK5/Huchet-Demorge', preview: '', site: 'https://www.huchet-demorge.fr/' };
+    b.results = { period: 'Depuis la mise en ligne', stats: [['~5', 'demandes qualifiées par semaine'], ['11 961', 'utilisateurs actifs'], ['22 825', 'clics depuis Google'], ['68 %', 'du trafic vient du SEO, sans budget média']] };
+    b.brand = { colors: [['Cognac', '#A8552D'], ['Cuivre', '#D67C53'], ['Pierre', '#EFE6DC'], ['Nuit', '#160700']], fonts: [['Titres', 'Sans géométrique, capitales espacées'], ['Texte', 'Sans humaniste']] };
+    b.tools = ['teaser', 'brand', 'signature', 'request', 'webflow'];
+    b.assets = [
+      { id: 'a1', kind: 'Réalisation', title: 'Visuel de couverture du cas client', img: 'assets/hd/cover.jpg', url: 'https://www.agence-orem.fr/realisations/huchet-demorge' },
+      { id: 'a2', kind: 'Réalisation', title: 'Mise en scène du site sur mobile', img: 'assets/hd/ecran-1.jpg' },
+      { id: 'a3', kind: 'Réalisation', title: 'Pages annonces d’hôtels', img: 'assets/hd/ecran-2.jpg' },
+      { id: 'a4', kind: 'Réalisation', title: 'Détail de la direction artistique', img: 'assets/hd/ecran-3.jpg' },
+      { id: 'a5', kind: 'Cas d’étude', title: 'Cas client Huchet-Demorge sur agence-orem.fr', img: 'assets/hd/cover.jpg', url: 'https://www.agence-orem.fr/realisations/huchet-demorge' },
+      { id: 'a6', kind: 'Maquettes', title: 'Fichier Figma complet (maquettes et composants)', img: 'assets/hd/ecran-2.jpg', url: b.links.figma },
+      { id: 'a7', kind: 'Maquettes', title: 'Prototype interactif', img: 'assets/hd/ecran-1.jpg', url: b.links.proto }
+    ];
+    b.messages = [
+      { id: 'hm1', fromAgency: true, by: 'u_louis', at: at(-6), text: 'Hugo, voici le bilan à 1 mois en vidéo : ce qui marche, ce qu’on surveille, et 3 idées pour la suite.', loom: { url: 'https://www.loom.com/share/8b9f66df6c52449fa0ff18afea1658b3', title: 'Bilan à 1 mois du site', duration: '6 min' } },
+      { id: 'hm2', by: 'u_hugo', at: at(-5), text: 'Top, merci. Nina aimerait savoir de quelle annonce vient chaque demande de contact. C’est faisable ?', readByAgency: true },
+      { id: 'hm3', fromAgency: true, by: 'u_louis', at: at(-4), text: 'Oui : on peut ajouter l’annonce (intitulé et lien) dans chaque e-mail de contact. Je te le propose dans le point évolution.' },
+      { id: 'hm4', fromAgency: true, by: 'u_clement', at: '2026-01-13T15:00:00.000Z', text: 'Présentation des wireframes et de la page d’accueil, avec les choix de direction artistique.', loom: { url: 'https://www.loom.com/share/8b9f66df6c52449fa0ff18afea1658b3', title: 'Wireframes et page d’accueil', duration: '9 min' } }
+    ];
+    b.requests = [{ id: 'hr1', by: 'u_hugo', at: at(-5), type: 'Formulaires', priority: 'Important', text: 'Indiquer l’annonce concernée (hôtel ou boulangerie) dans chaque e-mail de prise de contact.', status: 'Proposé' }];
+    const hf = (name, cat, d, sz) => ({ id: uid('f'), name, cat, from: 'agence', by: 'u_louis', at: d, size: sz, seen: true, demo: true });
+    b.files = [
+      hf('Guide de réutilisation Webflow.pdf', 'Livrable', '2026-06-15T10:00:00.000Z', 2400000),
+      hf('Bilan à 1 mois.pdf', 'Livrable', at(-6), 820000),
+      hf('Accès administrateur Webflow.pdf', 'Livrable', '2026-06-15T10:00:00.000Z', 120000),
+      hf('Facture F-2026-0112.pdf', 'Facture', '2026-06-15T10:00:00.000Z', 90000),
+      hf('Devis D-2025-0098 signé.pdf', 'Devis', '2025-11-20T10:00:00.000Z', 98000)
+    ];
+    b.activity = [{ at: at(-5), by: 'u_hugo', text: 'a demandé une évolution : formulaires', seen: false }];
 
-    /* Exemple 3 : démarrage, une demande de modification à traiter. */
-    const c = newProject({ client: 'Cabinet Varenne', projet: 'Refonte cabinet-varenne.fr', contactName: 'Julie', start: at(-9), registre: 'vous', amountHT: 7600 });
-    c.id = 'p_varenne'; c.phase = 2;
-    c.phases[0].items.forEach((i) => (i.status = 'done'));
-    c.phases[1].items[0].status = 'on';
-    c.validations[0].status = 'changes'; c.validations[0].history.push({ at: at(-1), by: 'u_julie', action: 'changes', comment: 'Pouvez-vous ajouter une page dédiée au droit de la famille ?' });
-    c.activity = [{ at: at(-1), by: 'u_julie', text: 'a demandé des modifications sur le plan du site', seen: false }];
+    /* Exemple 3 : tout début de projet, la cliente découvre son espace. */
+    const c = newProject({ client: 'Cabinet Varenne', projet: 'Refonte cabinet-varenne.fr', contactName: 'Julie', start: at(-1), registre: 'vous', amountHT: 7600 });
+    c.id = 'p_varenne'; c.phase = 1;
+    c.phases[0].items[0].status = 'done'; c.phases[0].items[1].status = 'done';
+    c.next = { title: 'Réserver la visio de cadrage', text: 'Une heure pour caler ensemble vos objectifs, vos cibles et le plan du site. Choisissez le créneau qui vous arrange.', go: 'equipe' };
+    c.tasks = [{ id: 'vt1', t: 'Réserver la visio de cadrage (1 h)', done: false }, { id: 'vt2', t: 'Régler l’acompte de 50 %', done: false }];
+    c.missing = [{ id: 'vm1', t: 'Logo et charte actuelle', sub: 'Les fichiers que vous avez, même anciens.' }, { id: 'vm2', t: 'Photos du cabinet et de l’équipe', sub: 'Si vous en avez déjà, sinon on en parle en visio.' }];
+    c.billing.quote = 'D-2026-0151'; c.billing.signedAt = at(-3);
+    c.invoices = [{ id: 'vinv1', num: 'F-2026-0199', label: 'Facture d’acompte (50 %)', ht: 3800, ttc: 4560, status: 'due', date: at(-1) }, { id: 'vinv2', num: '', label: 'Facture de solde (50 %)', ht: 3800, ttc: 4560, status: 'future', date: null }];
+    c.files = [hf('Devis D-2026-0151 signé.pdf', 'Devis', at(-3), 97000), hf('Facture F-2026-0199.pdf', 'Facture', at(-1), 88000), hf('IBAN ICONOKOM.pdf', 'RIB', at(-1), 61000)];
+    c.messages = [{ id: 'vm-1', fromAgency: true, readByClient: false, by: 'u_louis', at: at(-1), text: 'Bienvenue Julie ! Petite vidéo de 2 minutes pour vous présenter votre espace et la suite du projet.', loom: { url: 'https://www.loom.com/share/8b9f66df6c52449fa0ff18afea1658b3', title: 'Bienvenue dans votre espace', duration: '2 min' } }];
+    c.activity = [];
 
     users.push(
       { id: 'u_claire', email: 'claire@maisonlumen.fr', name: 'Claire', role: 'client', projectId: a.id },
-      { id: 'u_hugo', email: 'hugo@atelier-nord.fr', name: 'Hugo', role: 'client', projectId: b.id },
+      { id: 'u_hugo', email: 'hugo@huchet-demorge.fr', name: 'Hugo', role: 'client', projectId: b.id, onboardedAt: '2025-11-24T10:00:00.000Z' },
       { id: 'u_julie', email: 'julie@cabinet-varenne.fr', name: 'Julie', role: 'client', projectId: c.id }
     );
     return { users, projects: [a, b, c] };
@@ -139,7 +189,9 @@
     const changes = project.validations.filter((v) => v.status === 'changes').length;
     const unseen = project.activity.filter((a) => a.seen === false).length;
     const waiting = project.validations.filter((v) => v.status === 'ready').length;
-    return { newFiles, changes, unseen, waiting };
+    const newMessages = (project.messages || []).filter((m) => m.readByAgency === false).length;
+    const requests = (project.requests || []).filter((r) => r.status === 'Nouveau').length;
+    return { newFiles, changes, unseen, waiting, newMessages, requests };
   }
 
   function nextStep(project) {
@@ -167,7 +219,7 @@
   }
 
   /* ---------- Écriture ---------- */
-  const CLIENT_ACTIONS = new Set(['val.approve', 'val.changes', 'task.toggle', 'missing.done', 'file.add', 'user.onboarded']);
+  const CLIENT_ACTIONS = new Set(['val.approve', 'val.changes', 'task.toggle', 'missing.done', 'file.add', 'user.onboarded', 'msg.post', 'msg.read', 'request.add']);
 
   function log(project, user, text) {
     project.activity.unshift({ at: iso(Date.now()), by: user.id, text, seen: user.role === 'admin' });
@@ -267,6 +319,28 @@
         u.onboardedAt = now; if (action.prefs) u.prefs = { mail: !!action.prefs.mail, whatsapp: !!action.prefs.whatsapp, weekly: !!action.prefs.weekly };
         log(project, user, 'a découvert son espace'); break;
       }
+      case 'msg.post': {
+        const text = String(action.text || '').trim();
+        if (!text) return { error: 'Écrivez votre message.' };
+        const loom = action.loom && action.loom.url ? { url: String(action.loom.url), title: String(action.loom.title || 'Vidéo'), duration: String(action.loom.duration || '') } : undefined;
+        project.messages.unshift({ id: uid('m'), by: user.id, at: now, text: text.slice(0, 4000), loom, fromAgency: user.role === 'admin', readByAgency: user.role === 'admin', readByClient: user.role !== 'admin' });
+        log(project, user, loom ? 'a envoyé une vidéo' : 'a envoyé un message'); break;
+      }
+      case 'msg.read':
+        project.messages.forEach((m) => { if (user.role === 'admin') { if (m.readByAgency === false) m.readByAgency = true; } else if (m.readByClient === false) m.readByClient = true; }); break;
+      case 'request.add': {
+        const text = String(action.text || '').trim();
+        if (!text) return { error: 'Décrivez votre demande.' };
+        project.requests.unshift({ id: uid('r'), by: user.id, at: now, type: String(action.kind || 'Autre'), priority: String(action.priority || 'Normal'), text: text.slice(0, 4000), status: user.role === 'admin' ? 'Proposé' : 'Nouveau' });
+        log(project, user, 'a demandé une évolution : ' + String(action.kind || 'autre').toLowerCase()); break;
+      }
+      case 'request.status': {
+        const r = project.requests.find((x) => x.id === action.rid); if (!r) return { error: 'Demande introuvable.' };
+        r.status = String(action.status); break;
+      }
+      case 'links.set':
+        for (const k of ['figma', 'proto', 'preview', 'site']) if (action[k] !== undefined) project.links[k] = String(action[k]).trim();
+        log(project, user, 'a mis à jour les liens du projet'); break;
       case 'user.remove': {
         const u = store.users.find((x) => x.id === action.id && x.projectId === project.id);
         if (!u) return { error: 'Accès introuvable.' };

@@ -12,13 +12,15 @@ const html = fs.readFileSync(pub('index.html'), 'utf8');
 const body = html.slice(html.indexOf('<body>') + 6, html.indexOf('<script src="core.js">'));
 const img = { logo: b64('assets/logo-black.png', 'image/png'), louis: b64('assets/louis.jpg', 'image/jpeg'), theophile: b64('assets/theophile.jpg', 'image/jpeg'), clement: b64('assets/clement.jpg', 'image/jpeg') };
 
+const hd = Object.fromEntries(fs.readdirSync(pub('assets/hd')).map((f) => ['assets/hd/' + f, b64('assets/hd/' + f, 'image/jpeg')]));
+
 const out = `<title>Espace client Orem</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <style>
 ${css}
 </style>
 ${body}
-<script>window.DEMO = true; window.IMG = ${JSON.stringify(img)};</script>
+<script>window.DEMO = true; window.IMG = ${JSON.stringify(img)}; window.ASSETS = ${JSON.stringify(hd)};</script>
 <script>
 ${fs.readFileSync(pub('core.js'), 'utf8')}
 </script>
