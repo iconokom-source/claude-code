@@ -65,7 +65,19 @@ def table(lignes, cle, champs, tri, top=None):
     acc = defaultdict(dict)
     for l in lignes:
         k = tuple(l[c] for c in cle) if isinstance(cle, (list, tuple)) else l[cle]
-        acc[k][l["periode"]] = {c: l.get(c) for c in champs}
+        ligne = {c: l.get(c) for c in champs}
+        prec = acc[k].get(l["periode"])
+        if prec:  # même clé sur plusieurs lignes (ex. une source avec plusieurs supports) : additionner
+            poids = lambda d: d.get("sessions") or d.get("eventCount") or 0
+            p0, p1 = poids(prec), poids(ligne)
+            for c in champs:
+                a_, b_ = prec.get(c) or 0, ligne.get(c) or 0
+                if c in TAUX or c == "averageSessionDuration":
+                    prec[c] = (a_ * p0 + b_ * p1) / (p0 + p1) if p0 + p1 else 0
+                else:
+                    prec[c] = a_ + b_
+            continue
+        acc[k][l["periode"]] = ligne
     rows = []
     for k, per in acc.items():
         r = avec_ecarts(per, champs)
@@ -151,7 +163,7 @@ def main():
         k["ga4"]["evenements"] = table(ev, "eventName", ["eventCount", "keyEvents", "totalUsers"], "eventCount")
         k["ga4"]["tendance"] = sorted(({"mois": l["yearMonth"], "sessions": l["sessions"], "keyEvents": l["keyEvents"]}
                                        for l in ga_lignes(g.get("tendance"))), key=lambda x: x["mois"])
-        hotes = [l for l in ga_lignes(g.get("hotes")) if l["periode"] == "m"]
+        hotes = [l for l in ga_lignes(g.get("hotes")) if l["periode"] == "m" and l["sessions"]]
         k["ga4"]["hotes"] = [{"hote": l["hostName"], "sessions": l["sessions"]} for l in hotes]
 
         # Configuration et contrôles de la mesure
