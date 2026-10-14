@@ -38,7 +38,7 @@ Pour repartir de zéro : supprimer le dossier `app/data/` (base `db.json` et fic
 app/
 ├── server.js          serveur HTTP sans dépendance : connexion, droits, API, dépôt et téléchargement de fichiers
 ├── public/
-│   ├── core.js        logique métier partagée (modèle de projet, 5 étapes, validations, droits par rôle)
+│   ├── core.js        logique métier partagée (offres en 4 temps O.R.E.M., validations, relances, droits par rôle)
 │   ├── app.js         interface (vue client et vue agence)
 │   ├── styles.css     DA Orem adaptée à une app
 │   └── index.html

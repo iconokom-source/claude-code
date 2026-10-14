@@ -9,6 +9,8 @@
   const addDays = (d, n) => iso(new Date(d).getTime() + n * DAY);
   const rnd = () => { const c = typeof globalThis !== 'undefined' && globalThis.crypto; if (c && c.randomUUID) { try { return c.randomUUID().replace(/-/g, '').slice(0, 16); } catch (e) {} } return Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 10); };
   const uid = (p) => p + '_' + rnd();
+  /* Textes à deux registres : « {vous|te} forme » donne « vous forme » ou « te forme » selon le projet. */
+  const reg = (text, registre) => String(text || '').replace(/\{([^{}|]*)\|([^{}]*)\}/g, (m, v, t) => (registre === 'tu' ? t : v));
   const FILE_CATS = ['Images', 'Vidéos', 'Textes', 'Autres'];
   const AGENCY_CATS = ['Livrable', 'Devis', 'Facture', 'Contrat', 'RIB', 'Bibliothèque'];
 
@@ -22,19 +24,19 @@
         items: [['Proposition commerciale', -7], ['Devis signé', -3], ['Visio de cadrage (1 h)', 2], ['Plan du site (arborescence)', 8, 'plan']] },
       { d: [9, 21], txt: 'On donne une image au site : direction artistique, textes, puis maquettes.',
         items: [['Direction artistique', 14, 'da'], ['Textes du site', 14, 'da'], ['Maquettes du site', 21, 'maquettes']] },
-      { d: [22, 38], txt: 'On construit le site sur Webflow, on le teste ensemble, on le met en ligne et on vous forme.',
+      { d: [22, 38], txt: 'On construit le site sur Webflow, on le teste ensemble, on le met en ligne et on {vous|te} forme.',
         items: [['Création du compte Webflow', 23], ['Construction du site', 31], ['Recette du site', 34, 'site'], ['Mise en ligne et remise des accès', 36, 'pv'], ['Formation Webflow (visio)', 38]] },
       { d: [39, 70], txt: 'On mesure les résultats et on fait évoluer ce qui transforme.',
         items: [['Bilan à 30 jours', 66], ['Proposition d’évolution', 70]] }
     ], validations: [['plan', 'Plan du site', 'Les pages du site et leur organisation', 8], ['da', 'Direction artistique et textes', 'Couleurs, typographies, style et ton', 14], ['maquettes', 'Maquettes du site', 'Le feu vert pour construire le site', 21], ['site', 'Recette du site', 'Le site complet, avant sa mise en ligne', 34], ['pv', 'Réception du site', 'Le site est livré tel que prévu', 36]] },
     da: { label: 'Direction artistique', phases: [
-      { d: [0, 7], txt: 'On comprend votre marque, vos clients et ce qui vous distingue.',
+      { d: [0, 7], txt: 'On comprend {votre|ta} marque, {vos|tes} clients et ce qui {vous|te} distingue.',
         items: [['Devis signé', -3], ['Atelier de marque (1 h 30)', 3], ['Synthèse et plateforme de marque', 7, 'plateforme']] },
-      { d: [8, 20], txt: 'On explore des pistes créatives, puis on affine celle que vous retenez.',
+      { d: [8, 20], txt: 'On explore des pistes créatives, puis on affine celle que {vous retenez|tu retiens}.',
         items: [['Pistes créatives', 14, 'pistes'], ['Direction artistique finale', 20, 'da']] },
-      { d: [21, 32], txt: 'On décline l’identité sur vos supports et on livre la charte.',
+      { d: [21, 32], txt: 'On décline l’identité sur {vos|tes} supports et on livre la charte.',
         items: [['Logo et déclinaisons', 26], ['Charte graphique', 30, 'charte'], ['Livraison des fichiers sources', 32]] },
-      { d: [33, 60], txt: 'On vérifie que l’identité vit bien sur vos supports.',
+      { d: [33, 60], txt: 'On vérifie que l’identité vit bien sur {vos|tes} supports.',
         items: [['Point d’usage à 30 jours', 60]] }
     ], validations: [['plateforme', 'Plateforme de marque', 'Ce que dit la marque, et à qui', 7], ['pistes', 'Choix de la piste créative', 'La direction à développer', 14], ['da', 'Direction artistique finale', 'Logo, couleurs, typographies', 20], ['charte', 'Charte graphique', 'Les règles d’usage de l’identité', 30]] },
     conseil: { label: 'Conseil', phases: [
@@ -68,7 +70,7 @@
       id: uid('p'), client, projet: projet || `${T.label} ${client}`, contactName: contactName || '', offer: of,
       registre: registre === 'tu' ? 'tu' : 'vous', start: s, golive: addDays(s, of === 'site' ? 36 : lastDay), createdAt: iso(Date.now()),
       phase: 1,
-      phases: T.phases.map((p, i) => ({ n: i + 1, letter: OREM[i][0], t: OREM[i][1], from: addDays(s, p.d[0]), to: addDays(s, p.d[1]), txt: p.txt,
+      phases: T.phases.map((p, i) => ({ n: i + 1, letter: OREM[i][0], t: OREM[i][1], from: addDays(s, p.d[0]), to: addDays(s, p.d[1]), txt: p.txt, // « {vous|te} » : résolu à l'affichage selon le registre du projet
         items: p.items.map(([t, d, val]) => ({ id: uid('i'), t, due: addDays(s, d), status: 'wait', val: val || undefined })) })),
       next: { title: '', text: '', go: 'accueil' },
       note: { text: '', by: '', at: null },
@@ -273,8 +275,9 @@
   }
 
   function summary(project) {
-    return { id: project.id, client: project.client, projet: project.projet, phase: project.phase,
-      phaseName: (project.phases[project.phase - 1] || {}).t, golive: project.golive, next: nextStep(project), alerts: alerts(project),
+    const ph = project.phases[project.phase - 1] || {};
+    return { id: project.id, client: project.client, projet: project.projet, phase: project.phase, offer: project.offer, offerLabel: (OFFERS[project.offer] || OFFERS.site).label,
+      phaseName: (ph.letter ? ph.letter + ' · ' : '') + (ph.t || ''), delivered: !!project.deliveredAt, archived: !!project.archivedAt, golive: project.golive, next: nextStep(project), alerts: alerts(project),
       lastActivity: project.activity[0] || null, team: project.team || { lead: null, members: [] } };
   }
 
@@ -293,7 +296,7 @@
   /* ---------- Validation des données entrantes ----------
      Tout ce qui vient du navigateur est borné en taille, et les liens doivent être en https. */
   const SHORT = new Set(['type', 'kind', 'priority', 'title', 't', 'sub', 'label', 'num', 'name', 'client', 'projet', 'contactName', 'status', 'lead', 'iid', 'vid', 'tid', 'mid', 'fid', 'rid', 'aid', 'id', 'go', 'registre', 'quote', 'email', 'duration', 'cat', 'offer', 'level']);
-  const URLS = new Set(['link', 'url', 'figma', 'proto', 'preview', 'site', 'img', 'review', 'video']);
+  const URLS = new Set(['link', 'url', 'figma', 'proto', 'preview', 'site', 'img', 'review', 'video', 'booking', 'training', 'reviewUrl']);
   function safeUrl(v, key) {
     v = String(v || '').trim(); if (!v) return '';
     if (/^https:\/\/[^\s<>"']+$/i.test(v)) return v.slice(0, 1000);
@@ -321,6 +324,8 @@
     if (!project || !canSee(user, project)) return { error: 'Projet introuvable.' };
     if (action.type === 'file.add' && !action.__internal) return { error: 'Action inconnue.' };
     if (user.role !== 'admin' && !CLIENT_ACTIONS.has(action.type) && !(action.type === 'file.add' && action.__internal)) return { error: 'Action réservée à l’agence.' };
+    // Un espace archivé reste consultable, mais plus rien ne s'y écrit (sauf pour le désarchiver).
+    if (project.archivedAt && action.type !== 'project.archive' && !['msg.read', 'seen'].includes(action.type)) return { error: 'Cet espace est archivé : il reste consultable, en lecture seule.' };
     const v = action.vid && project.validations.find((x) => x.id === action.vid);
     const now = iso(Date.now());
     switch (action.type) {
@@ -493,8 +498,12 @@
       case 'review.add': {
         const score = Number(action.score);
         if (!(score >= 1 && score <= 5)) return { error: 'Choisissez une note de 1 à 5.' };
-        project.review = { score, text: String(action.text || '').slice(0, 2000), public: !!action.public, by: user.id, at: now };
+        project.review = { score, text: String(action.text || '').slice(0, 2000), public: !!action.public, by: user.id, at: now, seen: false };
         log(project, user, 'a laissé un avis (' + score + '/5)'); break;
+      }
+      case 'review.seen': if (project.review) project.review.seen = true; break;
+      case 'project.tutorials': {
+        project.tutorials = (Array.isArray(action.tutorials) ? action.tutorials : []).filter((x) => x && x.t).slice(0, 12).map((x) => ({ t: String(x.t).slice(0, 120), d: String(x.d || '').slice(0, 20), url: x.url ? safeUrl(x.url, 'url') : '' })); break;
       }
       case 'project.archive':
         project.archivedAt = action.undo ? null : now; break;
@@ -508,7 +517,7 @@
      et les autres membres de l'équipe. Chacun règle ce qu'il reçoit et à quel rythme. */
   const EVENT = {
     'file.add': 'files', 'msg.post': 'messages', 'val.approve': 'validations', 'val.changes': 'validations',
-    'request.add': 'requests', 'val.request': 'validations', 'user.onboarded': 'activity', 'asset.add': 'files', 'next.set': 'activity', 'note.set': 'activity'
+    'request.add': 'requests', 'review.add': 'messages', 'project.deliver': 'activity', 'val.request': 'validations', 'user.onboarded': 'activity', 'asset.add': 'files', 'next.set': 'activity', 'note.set': 'activity'
   };
   const TAB = { files: 'fichiers', messages: 'messages', validations: 'validations', requests: 'messages', activity: 'activite' };
   const CLIENT_VIEW = { files: 'fichiers', messages: 'messages', validations: 'valider', activity: 'accueil', requests: 'outils' };
@@ -526,7 +535,9 @@
       case 'user.onboarded': return `${who} a découvert son espace`;
       case 'asset.add': return `${who} a ajouté « ${action.title} » à la bibliothèque`;
       case 'next.set': return `${who} a mis à jour la prochaine étape`;
-      case 'note.set': return `${who} a publié le point de la semaine`;
+      case 'review.add': return `${who} a laissé un avis : ${action.score}/5${action.text ? ' « ' + String(action.text).slice(0, 100) + ' »' : ''}`;
+      case 'project.deliver': return action.undo ? `${who} a annulé la mise en ligne` : audience === 'client' ? `${who} a annoncé la mise en ligne : ${project.offer === 'site' ? (project.registre === 'tu' ? 'ton' : 'votre') + ' site est en ligne' : 'le projet est livré'}` : `${who} a mis en ligne le projet ${project.client}`;
+      case 'note.set': return audience === 'client' ? `${who} a publié le point de la semaine : « ${String(action.text || '').slice(0, 160)} »` : `${who} a publié le point de la semaine`;
     }
     return '';
   }
@@ -540,7 +551,7 @@
       // l'équipe voit ce que font les collègues ; le client est prévenu de ce qui le concerne
       const clientTypes = ['files', 'messages', 'validations', 'activity'];
       to = team.filter((id) => id !== user.id).map((id) => ({ id, audience: 'team' }));
-      if (clientTypes.includes(type) && action.type !== 'next.set') to = to.concat(store.users.filter((u) => u.projectId === project.id).map((u) => ({ id: u.id, audience: 'client' })));
+      if (clientTypes.includes(type) && action.type !== 'next.set' && !(action.type === 'project.deliver' && action.undo)) to = to.concat(store.users.filter((u) => u.projectId === project.id).map((u) => ({ id: u.id, audience: 'client' })));
     } else {
       to = team.map((id) => ({ id, audience: 'team' })).concat(store.users.filter((u) => u.projectId === project.id && u.id !== user.id).map((u) => ({ id: u.id, audience: 'client' })));
     }
@@ -549,7 +560,7 @@
     for (const r of to) {
       const u = store.users.find((x) => x.id === r.id); if (!u) continue;
       const text = describe(action, user, project, res, r.audience);
-      const n = { id: uid('n'), userId: u.id, projectId: project.id, client: project.client, type, text, by: user.id, at, read: false, reg: r.audience === 'client' ? project.registre : undefined,
+      const n = { id: uid('n'), userId: u.id, projectId: project.id, client: project.client, type, act: action.type, text, by: user.id, at, read: false, reg: r.audience === 'client' ? project.registre : undefined,
         go: r.audience === 'team' ? { view: 'admin', tab: TAB[type] } : { view: CLIENT_VIEW[type] } };
       store.notifications.unshift(n); out.push(n);
     }
@@ -562,7 +573,8 @@
     for (const n of notices) {
       const u = store.users.find((x) => x.id === n.userId); if (!u) continue;
       if (u.role === 'admin') { const pr = prefsOf(u); if (pr.email !== 'instant' || !pr.events[n.type]) continue; }
-      else if (!(u.prefs ? u.prefs.mail : true) || n.type === 'activity') continue;
+      else if (n.act === 'note.set') { if (u.prefs && u.prefs.weekly === false) continue; }
+      else if (!(u.prefs ? u.prefs.mail : true) || (n.type === 'activity' && n.act !== 'project.deliver')) continue;
       if (!by.has(u.id)) by.set(u.id, { u, items: [] }); by.get(u.id).items.push(n);
     }
     const mails = [];
@@ -632,8 +644,44 @@
     store.settings = next; return { ok: true, settings: next };
   }
 
-  /* Relances automatiques : une validation qui attend depuis plus de 3 jours ouvrés déclenche un rappel au client (une seule fois). Complété au lot 5. */
-  function runReminders(store, now) { return { notices: [] }; }
+  /* Relances automatiques, une seule fois chacune :
+     une validation qui attend depuis plus de 3 jours ouvrés, une facture à régler depuis plus de 10 jours.
+     Le client reçoit un rappel (dans son registre), l'équipe du projet le voit dans sa boîte de réception. */
+  function workDaysBetween(from, to) {
+    let n = 0; const d = new Date(from); d.setHours(12, 0, 0, 0); const end = new Date(to);
+    while (d < end) { d.setDate(d.getDate() + 1); if (d <= end && d.getDay() % 6 !== 0) n++; }
+    return n;
+  }
+  function runReminders(store, now = Date.now()) {
+    const out = [], at = iso(now);
+    for (const p of store.projects || []) {
+      if (p.archivedAt) continue;
+      const tu = p.registre === 'tu', clients = store.users.filter((u) => u.projectId === p.id);
+      const team = (p.team && p.team.members && p.team.members.length) ? p.team.members : store.users.filter((u) => u.role === 'admin').map((u) => u.id);
+      const lead = store.users.find((u) => u.id === (p.team && p.team.lead)) || store.users.find((u) => u.role === 'admin') || { id: 'u_agence', name: 'L’équipe' };
+      const push = (type, clientText, teamText, go) => {
+        for (const u of clients) { const n = { id: uid('n'), userId: u.id, projectId: p.id, client: p.client, type, act: 'reminder', text: clientText, by: lead.id, at, read: false, reg: p.registre, go: { view: go } }; store.notifications.unshift(n); out.push(n); }
+        for (const id of team) { const n = { id: uid('n'), userId: id, projectId: p.id, client: p.client, type: 'activity', act: 'reminder', text: teamText, by: lead.id, at, read: false, go: { view: 'admin', tab: type === 'validations' ? 'validations' : 'factures' } }; store.notifications.unshift(n); out.push(n); }
+      };
+      store.notifications = store.notifications || [];
+      for (const v of p.validations || []) {
+        if (v.status !== 'ready' || !v.readyAt || v.remindedAt) continue;
+        if (workDaysBetween(v.readyAt, now) < 3) continue;
+        v.remindedAt = at;
+        push('validations', `Petit rappel : ${v.t.toLowerCase()} attend ${tu ? 'ton' : 'votre'} feu vert depuis le ${new Date(v.readyAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}.`,
+          `Relance automatique envoyée à ${p.contactName || p.client} : ${v.t.toLowerCase()}`, 'valider');
+        p.activity.unshift({ at, by: lead.id, text: 'a relancé automatiquement : ' + v.t.toLowerCase(), seen: true });
+      }
+      for (const inv of p.invoices || []) {
+        if (inv.status !== 'due' || !inv.date || inv.remindedAt || now - new Date(inv.date).getTime() < 10 * DAY) continue;
+        inv.remindedAt = at;
+        push('files', `Petit rappel : ${inv.label.toLowerCase()}${inv.num ? ' ' + inv.num : ''} reste à régler. ${tu ? 'Tu trouveras' : 'Vous trouverez'} l’IBAN dans Documents.`,
+          `Relance automatique envoyée à ${p.contactName || p.client} : ${inv.label.toLowerCase()}`, 'documents');
+      }
+    }
+    if (store.notifications && store.notifications.length > 2000) store.notifications.length = 2000;
+    return { notices: out };
+  }
 
   function loginMail(user, code, link, registre) {
     const tu = user.role === 'admin' || registre === 'tu', T = (v, t) => (tu ? t : v);
@@ -666,5 +714,5 @@
     return { ok: true, id: p.id };
   }
 
-  return { seed, newProject, OFFERS, OREM, itemState, phaseState, offerOf: (p) => (OFFERS[p.offer] || OFFERS.site).label, apply, addFile, createProject, summary, forUser, nextStep, alerts, canSee, inbox, readNotif, setPrefs, prefsOf, emailsFor, digestFor, loginMail, publicConfig, setSettings, settingsOf, runReminders, FILE_CATS, AGENCY_CATS };
+  return { seed, newProject, OFFERS, OREM, itemState, phaseState, offerOf: (p) => (OFFERS[p.offer] || OFFERS.site).label, apply, addFile, createProject, summary, forUser, nextStep, alerts, canSee, inbox, readNotif, setPrefs, prefsOf, emailsFor, digestFor, loginMail, publicConfig, setSettings, settingsOf, runReminders, FILE_CATS, AGENCY_CATS, HANDOVER, workDaysBetween, reg };
 });

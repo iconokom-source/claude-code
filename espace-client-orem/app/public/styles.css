@@ -562,3 +562,18 @@ input[type=email],input[type=text],input[type=password],input[type=url],input[ty
   .ob-body{padding:24px;padding-bottom:calc(24px + env(safe-area-inset-bottom,0px))}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ---------- Lots 2 et 4 : offres, O.R.E.M., fin de projet ---------- */
+ol.phases,ul.plain{list-style:none;margin:0;padding:0}
+.phase .dot{font-family:var(--serif);font-weight:600}
+.offers{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+.offer{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border:1.5px solid var(--line-2);border-radius:12px;cursor:pointer;font-weight:400}
+.offer:has(input:checked){border-color:var(--hl);background:var(--hl-soft)}
+.offer input{margin-top:3px}
+.offer strong{display:block;font-weight:500}
+.video-card.soon{background:var(--surface-2);color:var(--fg);border:1px dashed var(--line-2)}
+.video-card.soon .play{background:var(--line-2);color:var(--fg)}
+.video-card.soon span span{color:var(--muted)}
+.stars{display:flex;gap:4px}
+.stars label{font-size:30px;line-height:1;cursor:pointer;color:var(--hl);padding:4px;border-radius:8px}
+.stars label:focus-within{outline:2px solid var(--hl);outline-offset:2px}

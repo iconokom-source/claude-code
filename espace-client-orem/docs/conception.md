@@ -30,7 +30,7 @@ Sources : [Noloco](https://noloco.io/blog/client-portal-best-practices) · [Jeta
 | Principe | Comment c'est appliqué |
 |---|---|
 | Une chose à la fois | Un seul grand bloc sombre par écran : **« Prochaine étape »**, avec un seul bouton. Tout le reste est en surfaces neutres. |
-| Savoir où on en est | Barre des 5 étapes Orem (Démarrage, Cadrage et design, Construction et mise en ligne, Formation, Livraison finale) avec dates indicatives et mise en ligne prévue. |
+| Savoir où on en est | Les 4 temps de la méthode O.R.E.M. (Orienter, Représenter, Exécuter, Mesurer), avec un gabarit par offre (Site web, Direction artistique, Conseil, Évolution) choisi à la création de l'espace. Un livrable lié à une validation reste « À valider » tant que le client n'a pas donné son feu vert. |
 | Ce qu'on attend du client | « Vos actions » regroupe automatiquement les validations en attente, les fichiers manquants et les actions ajoutées par l'agence. |
 | Feu vert écrit | « À valider » : « Je valide » ou « Demander des modifications » (commentaire obligatoire). Chaque décision est horodatée, l'agence la voit dans son tableau de bord. |
 | Déposer sans compte Google | Glisser-déposer, jusqu'à 2 Go par fichier, rangement automatique (images, vidéos, textes), et une liste « Ce qu'il nous manque » avec un bouton « Déposer » par élément. |
@@ -109,3 +109,12 @@ MAIL_ENABLED=1 BREVO_API_KEY=… MAIL_FROM=espace@agence-orem.fr BASE_URL=https:
 La clé Brevo est dans le coffre Notion. Le domaine d'envoi doit être authentifié dans Brevo (SPF et DKIM sur agence-orem.fr) pour éviter les spams.
 
 **Tests.** `node tests/equipe.js` rejoue le circuit complet (dépôt client, boîte de réception, vidéo Loom, bibliothèque, équipe, récap) : 14 vérifications.
+
+## 8. Fin de projet (lot 4)
+
+- **Mise en ligne** (onglet « Mise en ligne » de la fiche client) : fixe la date, passe les trois premiers temps en « Terminé », ouvre « Mesurer », bascule l'accueil du client sur le projet livré et lui envoie un e-mail. La validation « Réception du site » sert de procès-verbal ; l'onglet signale si elle manque. Résultats, marque, outils et vidéos de formation s'y renseignent.
+- **Checklist de remise** (accès Webflow, sources Figma, guide, formation, Analytics) visible par le client sur « Mon projet ».
+- **Avis** demandé sur l'accueil du client 7 jours après la mise en ligne ; à partir de 4 sur 5, proposition de le publier sur Google (lien dans Réglages). Le témoignage n'est publiable qu'avec l'accord explicite du client.
+- **Archivage** : l'espace reste consultable en lecture seule. **Export ZIP** (récapitulatif + fichiers) pour le client comme pour l'agence.
+- **Relances automatiques** (une fois chacune) : validation en attente depuis 3 jours ouvrés, facture à régler depuis 10 jours. Le client reçoit un rappel dans son registre, l'équipe le voit dans sa boîte de réception.
+- Le point de la semaine part par e-mail au client qui l'a demandé dans son accueil guidé (la promesse WhatsApp, jamais tenue, est retirée).

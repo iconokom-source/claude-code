@@ -230,6 +230,50 @@ function filePath(f) {
   const abs = path.resolve(DATA, f.path);
   return abs.startsWith(UPLOADS + path.sep) ? abs : null;
 }
+/* ---------- Export ZIP d'un espace (fin de projet) ----------
+   Archive « stockée » (sans compression, les fichiers déposés le sont déjà souvent), écrite en flux :
+   chaque fichier est lu une fois, son CRC est donné après les données (descripteur). Limite : 4 Go au total. */
+const CRC_T = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+const crc32 = zlib.crc32 || ((buf, prev = 0) => { let c = ~prev >>> 0; for (let i = 0; i < buf.length; i++) c = CRC_T[(c ^ buf[i]) & 0xff] ^ (c >>> 8); return ~c >>> 0; });
+async function sendZip(res, name, entries) {
+  // entries : [{ name, data: Buffer } | { name, abs }]
+  res.writeHead(200, { ...SEC_HEADERS, 'Content-Type': 'application/zip', 'Cache-Control': 'no-store', 'Content-Disposition': `attachment; filename*=UTF-8''${encodeURIComponent(name)}` });
+  const central = []; let offset = 0;
+  const write = (b) => new Promise((ok) => { offset += b.length; if (res.write(b)) ok(); else res.once('drain', ok); });
+  const dos = (d) => [((d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1)) & 0xffff, (((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate()) & 0xffff];
+  const [tm, dt] = dos(new Date());
+  const used = new Set();
+  for (const e of entries) {
+    let fname = e.name.split('/').map((seg) => seg.replace(/[\\:*?"<>|\u0000-\u001f]/g, '_').replace(/^\.+$/, '_')).join('/'); const base = fname; let i = 2;
+    while (used.has(fname)) { const dot = base.lastIndexOf('.'); fname = dot > 0 ? `${base.slice(0, dot)} (${i})${base.slice(dot)}` : `${base} (${i})`; i++; }
+    used.add(fname);
+    const nameBuf = Buffer.from(fname, 'utf8'), start = offset;
+    const lh = Buffer.alloc(30); lh.writeUInt32LE(0x04034b50, 0); lh.writeUInt16LE(20, 4); lh.writeUInt16LE(0x0808, 6); lh.writeUInt16LE(0, 8); lh.writeUInt16LE(tm, 10); lh.writeUInt16LE(dt, 12); lh.writeUInt16LE(nameBuf.length, 26);
+    await write(lh); await write(nameBuf);
+    let crc = 0, size = 0;
+    if (e.data) { crc = crc32(e.data); size = e.data.length; await write(e.data); }
+    else await new Promise((ok, ko) => { const st = fs.createReadStream(e.abs); st.on('data', (c) => { crc = crc32(c, crc); size += c.length; offset += c.length; if (!res.write(c)) { st.pause(); res.once('drain', () => st.resume()); } }); st.on('end', ok); st.on('error', ko); });
+    const dd = Buffer.alloc(16); dd.writeUInt32LE(0x08074b50, 0); dd.writeUInt32LE(crc >>> 0, 4); dd.writeUInt32LE(size, 8); dd.writeUInt32LE(size, 12); await write(dd);
+    const ch = Buffer.alloc(46); ch.writeUInt32LE(0x02014b50, 0); ch.writeUInt16LE(20, 4); ch.writeUInt16LE(20, 6); ch.writeUInt16LE(0x0808, 8); ch.writeUInt16LE(0, 10); ch.writeUInt16LE(tm, 12); ch.writeUInt16LE(dt, 14);
+    ch.writeUInt32LE(crc >>> 0, 16); ch.writeUInt32LE(size, 20); ch.writeUInt32LE(size, 24); ch.writeUInt16LE(nameBuf.length, 28); ch.writeUInt32LE(start, 42);
+    central.push(Buffer.concat([ch, nameBuf]));
+  }
+  const cd = Buffer.concat(central), cdStart = offset; await write(cd);
+  const end = Buffer.alloc(22); end.writeUInt32LE(0x06054b50, 0); end.writeUInt16LE(central.length, 8); end.writeUInt16LE(central.length, 10); end.writeUInt32LE(cd.length, 12); end.writeUInt32LE(cdStart, 16);
+  res.end(end);
+}
+function exportEntries(pr, user) {
+  const people = Object.fromEntries(db.users.map((u) => [u.id, u.name]));
+  const lines = [`${pr.client} · ${pr.projet}`, `Offre : ${Core.offerOf(pr)}`, `Export du ${new Date().toLocaleDateString('fr-FR')}`, '',
+    'Étapes', ...pr.phases.map((ph) => `  ${ph.letter} · ${ph.t} (${Core.phaseState(pr, ph) === 'done' ? 'terminé' : Core.phaseState(pr, ph) === 'on' ? 'en cours' : 'à venir'})\n${ph.items.map((it) => `    - ${it.t} : ${{ done: 'fait', review: 'à valider', on: 'en cours', wait: 'prévu' }[Core.itemState(pr, it)]}`).join('\n')}`), '',
+    'Validations', ...pr.validations.map((v) => `  - ${v.t} : ${{ wait: 'pas encore demandée', ready: 'en attente', approved: 'validée', changes: 'modifications demandées' }[v.status]}${v.history.filter((h) => h.action === 'approved').map((h) => ` le ${new Date(h.at).toLocaleString('fr-FR')} par ${people[h.by] || h.by}`).join('')}`), '',
+    'Factures', ...pr.invoices.map((i) => `  - ${i.label} ${i.num || ''} : ${i.ttc} € TTC, ${{ paid: 'payée', due: 'à régler', future: 'à venir' }[i.status] || i.status}`), '',
+    'Messages', ...pr.messages.slice().reverse().map((m) => `  [${new Date(m.at).toLocaleString('fr-FR')}] ${people[m.by] || m.by} : ${m.text}${m.loom ? ' (vidéo : ' + m.loom.url + ')' : ''}`)];
+  const files = Core.forUser(pr, user).files.map((f) => ({ f: pr.files.find((x) => x.id === f.id) })).map(({ f }) => ({ f, abs: filePath(f) }))
+    .filter(({ abs }) => { try { return abs && fs.statSync(abs).isFile(); } catch { return false; } })
+    .map(({ f, abs }) => ({ name: (f.from === 'client' ? 'Fichiers déposés/' : 'Documents de l’agence/') + f.name, abs, size: Number(f.size) || 0 }));
+  return [{ name: 'Récapitulatif du projet.txt', data: Buffer.from('﻿' + lines.join('\n'), 'utf8') }, ...files];
+}
 function projectBytes(pr) { return pr.files.reduce((s, f) => s + (f.path ? Number(f.size) || 0 : 0), 0); }
 
 async function handle(req, res) {
@@ -321,6 +365,17 @@ async function handle(req, res) {
     }
     const { notices, ...pub } = r;
     return send(res, r.error ? 400 : 200, pub);
+  }
+
+  m = p.match(/^\/api\/projects\/([\w-]+)\/export$/);
+  if (m && req.method === 'GET') {
+    const pr = db.projects.find((x) => x.id === m[1]);
+    if (!pr || !Core.canSee(user, pr)) return send(res, 404, { error: 'Projet introuvable.' });
+    if (limited('export:' + user.id, 10, 60 * 60e3)) return send(res, 429, { error: 'Trop d’exports en peu de temps. Réessayez dans un moment.' });
+    const entries = exportEntries(pr, user);
+    if (entries.reduce((s, e) => s + (e.size || 0), 0) > 4e9) return send(res, 413, { error: 'L’espace dépasse 4 Go : téléchargez les fichiers un par un.' });
+    log('project.export', { user: user.id, project: pr.id });
+    return sendZip(res, `Espace ${pr.client}.zip`, entries).catch(() => res.destroy());
   }
 
   m = p.match(/^\/api\/projects\/([\w-]+)\/ask$/);
