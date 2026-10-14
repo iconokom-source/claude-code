@@ -1,6 +1,8 @@
 # Séquence Lemlist : « Site payé au mois, jamais vraiment à vous »
 
-Préparée le 14/10/2026. Campagne Lemlist « FR - Site en location / reprise en main - Côte d'Azur » (`cam_z37C7sANHetY9Bh4J`), **en brouillon**, 7 étapes, aucun lead, en attente de validation par Théophile.
+Préparée le 14/10/2026. Campagne Lemlist « 🔑 FR - Site en location / reprise en main - Multicanal » (`cam_cDpBjZcbFcztRXsk5`), **en brouillon**, 7 leads, en attente de validation par Théophile. Expéditeur (boîte email + compte LinkedIn de Louis) à configurer avant lancement.
+
+L'ancienne version linéaire sans LinkedIn (`cam_z37C7sANHetY9Bh4J`, « … Côte d'Azur ») est toujours en brouillon avec les mêmes 7 leads : à archiver.
 
 ## Cible
 
@@ -13,7 +15,7 @@ Les clients d'une agence web niçoise : les 11 réalisations affichées sur son 
 - On ne prétend pas savoir combien ils paient : on pose la question.
 - Pas de conseil juridique : on propose un état des lieux technique (qui détient le domaine, le site, les accès).
 - Vouvoiement. Signature : Louis.
-- Téléphone en priorité : cette cible décroche plus qu'elle ne répond sur LinkedIn.
+- Téléphone gardé dans les deux branches : cette cible décroche plus qu'elle ne répond sur LinkedIn.
 
 ## Variables par lead
 
@@ -24,17 +26,45 @@ Les clients d'une agence web niçoise : les 11 réalisations affichées sur son 
 | `{{segment}}` | `2023` pour les clients de 2023 (échéance 48 mois en 2027), vide sinon | 2023 |
 | `{{siteObservation}}` | constat factuel sur leur site, facultatif | le formulaire de contact renvoie une erreur |
 
-## Structure (12 jours)
+## Structure (arbre Lemlist, 12 à 15 jours)
 
-| J | Canal | Étape |
-|---|---|---|
-| 0 | Email | Email 1 : qui possède votre site ? (variante 2023 : votre site après 2027 ?) |
-| 1 | Tâche | Visite LinkedIn + vérification du site et du whois |
-| 3 | Email | Email 2 : ce qu'on retrouve le plus souvent, et notre façon de faire |
-| 4 | Appel | Appel (priorité haute) |
-| 7 | Email | Email 3 : checklist en 4 questions |
-| 8 | Tâche | SMS court si mobile |
-| 12 | Email | Email 4 : fin de boucle |
+```
+J0   Email 1
+     ├─ Condition : a une URL LinkedIn ?
+     │   ├─ OUI
+     │   │   J1  Visite du profil LinkedIn
+     │   │   J2  Invitation LinkedIn (avec note)
+     │   │   J3  Email 2
+     │   │   J4  Appel (priorité haute)
+     │   │   ├─ Condition : invitation acceptée sous 3 jours ?
+     │   │   │   ├─ OUI : message LinkedIn
+     │   │   │   └─ NON : rien (la suite par email)
+     │   └─ NON
+     │       J3  Email 2
+     │       J4  Appel (priorité haute)
+     │
++2 j  Email 3 : checklist en 4 questions        ← les deux branches se rejoignent
++1 j  Tâche : SMS court (mobile uniquement)
++4 j  Email 4 : fin de boucle
+```
+
+LinkedIn trouvés via la base de données Lemlist (14/10) : Alexandre Bourion, Florian Monin, Nicolas Charbin, Allan Scheer. Pas de profil pour Francisco Martins, Joëlle Dadoune, Syril Soubilleau (chez DF Clôtures, Lemlist connaît une « Daisy M., chef d'entreprise », non rattachée à Francisco Martins : non utilisée). Aucun des 7 n'existait avant dans les contacts Lemlist.
+
+## Messages LinkedIn
+
+**Invitation (note standard, ≤ 200 caractères)** : Bonjour {{firstName}}, je vous ai écrit au sujet du site de {{companyName}}. J'aide des dirigeants à reprendre la main sur leur site internet. Au plaisir d'échanger ici. Louis
+
+**Invitation (note Premium, ≤ 300 caractères)** : Bonjour {{firstName}}, je vous ai écrit au sujet du site de {{companyName}}. J'aide des dirigeants qui paient leur site au mois sans en être propriétaires à reprendre la main dessus. Au plaisir d'échanger ici. Louis
+
+**Message après acceptation** :
+
+> Merci d'avoir accepté, {{firstName}}.
+>
+> Je vous ai écrit par email au sujet du site de {{companyName}}, je fais court ici : beaucoup de sites vitrines sont payés au mois, sur plusieurs années, sans que le dirigeant soit propriétaire ni du site, ni du nom de domaine.
+>
+> Si c'est votre cas, ou si vous n'êtes pas sûr, je vous propose 15 minutes pour faire le point sur qui détient quoi. Sans engagement, et sans rien vous vendre pendant l'appel.
+>
+> Louis
 
 ---
 
