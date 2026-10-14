@@ -19,7 +19,8 @@ const HTTPS = BASE_URL.startsWith('https://');
 const MAIL_ENABLED = process.env.MAIL_ENABLED === '1' && !!process.env.BREVO_API_KEY;
 const MAIL_FROM = process.env.MAIL_FROM || 'espace@agence-orem.fr';
 // Le code de connexion n'est montré à l'écran qu'en local, sans envoi d'e-mail. Jamais quand le serveur est exposé.
-const SHOW_CODES = LOOPBACK && !MAIL_ENABLED && process.env.DEV_CODES !== '0';
+// Il faut à la fois : écoute locale, adresse publique en http://localhost, aucun envoi d'e-mail. Derrière un proxy HTTPS, jamais.
+const SHOW_CODES = LOOPBACK && !MAIL_ENABLED && /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(BASE_URL) && process.env.DEV_CODES !== '0';
 const DATA = path.resolve(process.env.DATA_DIR || path.join(__dirname, 'data'));
 const DB_FILE = path.join(DATA, 'db.json');
 const UPLOADS = path.join(DATA, 'uploads');
@@ -33,6 +34,7 @@ const COOKIE = HTTPS ? '__Host-sid' : 'sid';
 const AUTH_SCALE = SHOW_CODES ? 10 : 1;
 
 if (!LOOPBACK && !HTTPS) { console.error('Refus de démarrer : un serveur exposé doit avoir BASE_URL en https://'); process.exit(1); }
+if (HTTPS && !MAIL_ENABLED) { console.error('Refus de démarrer : en https, les codes doivent partir par e-mail (MAIL_ENABLED=1 et BREVO_API_KEY).'); process.exit(1); }
 if (!LOOPBACK && !MAIL_ENABLED) { console.error('Refus de démarrer : un serveur exposé doit envoyer les codes par e-mail (MAIL_ENABLED=1 et BREVO_API_KEY).'); process.exit(1); }
 
 fs.mkdirSync(UPLOADS, { recursive: true });
@@ -58,8 +60,9 @@ save();
 for (const sig of ['SIGINT', 'SIGTERM']) process.on(sig, () => { try { flush(); } finally { process.exit(0); } });
 
 /* ---------- E-mails ---------- */
-async function sendMail(m) {
-  const entry = { at: new Date().toISOString(), to: m.to, subject: m.subject, html: m.html, sent: false };
+async function sendMail(m, secret) {
+  // Les e-mails de connexion ne sont jamais gardés en clair : ni l'équipe ni une copie de la base n'y ont accès.
+  const entry = { at: new Date().toISOString(), to: m.to, subject: secret ? 'Code de connexion (contenu masqué)' : m.subject, html: secret ? '<p>Contenu masqué : e-mail de connexion.</p>' : m.html, sent: false };
   db.outbox.unshift(entry); db.outbox.length = Math.min(db.outbox.length, 200); save();
   if (!MAIL_ENABLED) { log('mail.local', { to: m.to, subject: m.subject }); return; }
   try {
@@ -112,7 +115,7 @@ function limited(key, max, windowMs) {
   if (h.reset < now) { h.n = 0; h.reset = now + windowMs; }
   h.n++; hits.set(key, h); return h.n > max;
 }
-const ipOf = (req) => (process.env.TRUST_PROXY === '1' && String(req.headers['x-forwarded-for'] || '').split(',')[0].trim()) || req.socket.remoteAddress || '?';
+const ipOf = (req) => (process.env.TRUST_PROXY === '1' && String(req.headers['x-forwarded-for'] || '').split(',').pop().trim()) || req.socket.remoteAddress || '?';
 
 /* ---------- HTTP ---------- */
 const SEC_HEADERS = {
@@ -129,8 +132,9 @@ function send(res, status, body, headers = {}) {
 class HttpError extends Error { constructor(status, msg) { super(msg); this.status = status; } }
 function readJson(req, max = 256 * 1024) {
   return new Promise((resolve, reject) => {
+    if (Number(req.headers['content-length'] || 0) > max) { req.resume(); req.on('error', () => {}); return reject(new HttpError(413, 'Requête trop lourde.')); }
     let raw = '', over = false;
-    req.on('data', (c) => { if (over) return; raw += c; if (raw.length > max) { over = true; raw = ''; } });
+    req.on('data', (c) => { if (over) return; raw += c; if (raw.length > max) { over = true; raw = ''; reject(new HttpError(413, 'Requête trop lourde.')); setTimeout(() => req.destroy(), 50); } });
     req.on('end', () => {
       if (over) return reject(new HttpError(413, 'Requête trop lourde.'));
       try { const v = raw ? JSON.parse(raw) : {}; if (!v || typeof v !== 'object' || Array.isArray(v)) throw 0; resolve(v); }
@@ -171,30 +175,33 @@ function requestCode(email, ip) {
   if (limited('login-mail:' + email, 5 * AUTH_SCALE, 15 * 60e3)) return { status: 429, error: 'Trop de demandes pour cette adresse. Réessayez dans quelques minutes.' };
   const user = db.users.find((u) => u.email === email);
   if (!user) { log('auth.unknown', { ip }); return { ok: true }; } // même réponse : on ne révèle pas qui a un compte
-  const lock = db.meta['lock:' + email]; if (lock && lock > Date.now()) return { ok: true };
   const code = String(crypto.randomInt(0, 1e6)).padStart(6, '0');
   const token = crypto.randomBytes(24).toString('hex');
   const prev = db.codes[sha(email)];
-  db.codes[sha(email)] = { code: sha(email + ':' + code), token: sha(token), exp: Date.now() + CODE_TTL, tries: prev ? prev.tries : 0 };
+  db.codes[sha(email)] = { code: sha(email + ':' + code), token: sha(token), exp: Date.now() + CODE_TTL, tries: {} };
   save(); log('auth.code', { user: user.id, ip });
   const link = `${BASE_URL}/auth/${token}`;
   if (SHOW_CODES) console.log(`\n✉️  Connexion de ${email}\n   Code : ${code}\n   Lien : ${link}\n`);
-  if (MAIL_ENABLED) sendMail(Core.loginMail(user, code, link, (db.projects.find((p) => p.id === user.projectId) || {}).registre));
+  if (MAIL_ENABLED) sendMail(Core.loginMail(user, code, link, (db.projects.find((p) => p.id === user.projectId) || {}).registre), true);
   return { ok: true, devCode: SHOW_CODES ? code : undefined };
 }
-function failed(email) {
-  const k = 'fail:' + email, now = Date.now(); const f = (db.meta[k] || []).filter((t) => t > now - 864e5); f.push(now); db.meta[k] = f;
-  if (f.length >= 10) { db.meta['lock:' + email] = now + 3600e3; delete db.codes[sha(email)]; log('auth.locked', { email: sha(email).slice(0, 8) }); }
+/* Échecs comptés par adresse ET par appareil : un inconnu peut se bloquer lui-même, jamais le vrai titulaire. */
+function failed(email, ip) {
+  const k = 'fail:' + sha(email + '|' + ip), now = Date.now(); const f = (db.meta[k] || []).filter((t) => t > now - 864e5); f.push(now); db.meta[k] = f;
+  if (f.length >= 10) { db.meta['lock:' + sha(email + '|' + ip)] = now + 3600e3; log('auth.locked', { email: sha(email).slice(0, 8) }); }
   save();
 }
 function verifyCode(email, code, ip) {
   if (limited('verify-ip:' + ip, 30 * AUTH_SCALE, 15 * 60e3)) return { status: 429, error: 'Trop d’essais depuis cet appareil. Réessayez dans quelques minutes.' };
-  const lock = db.meta['lock:' + email]; if (lock && lock > Date.now()) return { error: 'Trop d’essais. Réessayez dans une heure.' };
+  const lock = db.meta['lock:' + sha(email + '|' + ip)]; if (lock && lock > Date.now()) return { error: 'Trop d’essais depuis cet appareil. Réessayez dans une heure.' };
   const c = db.codes[sha(email)];
   if (!c || c.exp < Date.now()) return { error: 'Code incorrect ou expiré. Demandez-en un nouveau.' };
-  if (++c.tries > 5) { delete db.codes[sha(email)]; failed(email); return { error: 'Trop d’essais avec ce code. Demandez-en un nouveau.' }; }
+  if (typeof c.tries !== 'object' || !c.tries) c.tries = {};
+  const mine = (c.tries[ip] = (c.tries[ip] || 0) + 1), total = Object.values(c.tries).reduce((a, b) => a + b, 0);
+  if (mine > 5) { failed(email, ip); return { error: 'Trop d’essais avec ce code depuis cet appareil. Demandez-en un nouveau.' }; }
+  if (total > 50) { delete db.codes[sha(email)]; save(); return { error: 'Code expiré. Demandez-en un nouveau.' }; }
   const given = Buffer.from(sha(email + ':' + String(code).replace(/\D/g, '').padStart(6, '0').slice(0, 6)));
-  if (!crypto.timingSafeEqual(given, Buffer.from(c.code))) { failed(email); save(); return { error: 'Code incorrect. Vérifiez les 6 chiffres reçus par e-mail.' }; }
+  if (!crypto.timingSafeEqual(given, Buffer.from(c.code))) { failed(email, ip); save(); return { error: 'Code incorrect. Vérifiez les 6 chiffres reçus par e-mail.' }; }
   delete db.codes[sha(email)]; save();
   const u = db.users.find((x) => x.email === email);
   return u ? { user: u } : { error: 'Code incorrect ou expiré. Demandez-en un nouveau.' };
@@ -304,6 +311,7 @@ function driveCopy(pr, file) {
     .then((r) => { if (r && r.ok) { file.drive = r.id; save(); log('drive.copy', { project: pr.id, file: file.id }); } })
     .catch((e) => log('drive.error', { project: pr.id, message: e.message }));
 }
+const activeUploads = new Map();
 function projectBytes(pr) { return pr.files.reduce((s, f) => s + (f.path ? Number(f.size) || 0 : 0), 0); }
 
 async function handle(req, res) {
@@ -353,6 +361,7 @@ async function handle(req, res) {
   const user = currentUser(req);
   if (!user) return send(res, 401, { error: 'Connectez-vous pour continuer.' });
   if (mutating && limited('act:' + user.id, 120, 60e3)) return send(res, 429, { error: 'Trop d’actions en peu de temps. Patientez une minute.' });
+  if (mutating && user.role !== 'admin' && limited('actday:' + user.id, 3000, 864e5)) return send(res, 429, { error: 'Beaucoup d’actions aujourd’hui. Réessayez demain ou écrivez à l’équipe.' });
 
   if (p === '/api/me') return send(res, 200, { user: publicUser(user, user), team: team(user), config: { ...Core.publicConfig(db), assistant: Connectors.assistantReady(process.env) } });
   if (p === '/api/logout-all' && req.method === 'POST') { for (const [k, s] of Object.entries(db.sessions)) if (s.uid === user.id) delete db.sessions[k]; save(); clearCookie(res); return send(res, 200, { ok: true }); }
@@ -373,7 +382,7 @@ async function handle(req, res) {
     save(); deliver(r.notices); return send(res, 200, { ok: true, summary: r.summary });
   }
 
-  if (p === '/api/projects' && req.method === 'GET') return send(res, 200, { projects: db.projects.filter((pr) => Core.canSee(user, pr)).map(Core.summary) });
+  if (p === '/api/projects' && req.method === 'GET') return send(res, 200, { projects: db.projects.filter((pr) => Core.canSee(user, pr)).map((x) => Core.summary(x, user)) });
   if (p === '/api/projects' && req.method === 'POST') { const r = Core.createProject(db, user, await readJson(req)); if (r.ok) save(); return send(res, r.error ? 400 : 200, r); }
 
   m = p.match(/^\/api\/projects\/([\w-]+)$/);
@@ -430,13 +439,18 @@ async function handle(req, res) {
     const len = Number(req.headers['content-length'] || 0);
     if (len > MAX_UPLOAD) return send(res, 413, { error: 'Fichier trop lourd (2 Go maximum).' });
     if (projectBytes(pr) + len > PROJECT_QUOTA) return send(res, 413, { error: 'L’espace de ce projet est plein. Écrivez à l’équipe pour faire de la place.' });
+    if ((activeUploads.get(user.id) || 0) >= 3) return send(res, 429, { error: 'Trois envois sont déjà en cours. Attendez qu’ils se terminent.' });
+    activeUploads.set(user.id, (activeUploads.get(user.id) || 0) + 1);
+    const release = () => { const n = (activeUploads.get(user.id) || 1) - 1; if (n > 0) activeUploads.set(user.id, n); else activeUploads.delete(user.id); };
+    res.once('close', release);
+    const base = projectBytes(pr);
     const id = 'f_' + crypto.randomBytes(12).toString('hex');
     const dir = path.join(UPLOADS, pr.id); fs.mkdirSync(dir, { recursive: true });
     const dest = path.join(dir, id);
     let size = 0, done = false;
     const out = fs.createWriteStream(dest);
     const fail = (status, msg) => { if (done) return; done = true; req.unpipe(out); out.destroy(); fs.rm(dest, { force: true }, () => {}); if (!res.headersSent) send(res, status, { error: msg }); };
-    req.on('data', (c) => { size += c.length; if (size > MAX_UPLOAD) fail(413, 'Fichier trop lourd (2 Go maximum).'); });
+    req.on('data', (c) => { size += c.length; if (size > MAX_UPLOAD) fail(413, 'Fichier trop lourd (2 Go maximum).'); else if (base + size > PROJECT_QUOTA) fail(413, 'L’espace de ce projet est plein. Écrivez à l’équipe pour faire de la place.'); });
     req.on('aborted', () => fail(400, 'Envoi interrompu.'));
     req.on('error', () => fail(400, 'Envoi interrompu.'));
     out.on('error', () => fail(500, 'Enregistrement impossible. Réessayez.'));

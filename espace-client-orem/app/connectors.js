@@ -99,7 +99,9 @@ async function abbySync(db, env, projects, ctx) {
       }
       const fname = (d.type === 'quote' ? `Devis ${num} signé` : `Facture ${num}`) + '.pdf';
       if (d.pdfUrl && ctx.saveFile && !p.files.some((f) => f.name === fname)) {
-        const r = await (ctx.fetch || fetch)(d.pdfUrl, { headers: H });
+        // Le jeton Abby ne part que vers Abby, jamais vers une adresse donnée dans la réponse.
+        const sameHost = (() => { try { return new URL(d.pdfUrl).host === new URL(API.abby(env)).host; } catch { return false; } })();
+        const r = await (ctx.fetch || fetch)(d.pdfUrl, sameHost ? { headers: H } : {});
         if (r.ok) { await ctx.saveFile(p.id, fname, Buffer.from(await r.arrayBuffer()), d.type === 'quote' ? 'Devis' : 'Facture'); pdf++; }
       }
     }

@@ -9,4 +9,5 @@ run() { fresh; node "tests/$1.js" "$OUT" > "$OUT/$1.txt" 2>&1; echo "== $1 (sort
 node build-demo.js > /dev/null; run simulation; run equipe; run lots; run a11y; run agence; run waouh; run accueil
 pkill -f "^node server.js" 2>/dev/null; node tests/connecteurs.js > "$OUT/connecteurs.txt" 2>&1; echo "== connecteurs (sortie $?) : $(grep -c "✔" "$OUT/connecteurs.txt") réussies, $(grep -c "✘" "$OUT/connecteurs.txt") échouées"; grep "✘" "$OUT/connecteurs.txt" | head
 pkill -f "^node server.js" 2>/dev/null
+node tests/securite.js > "$OUT/securite.txt" 2>&1; echo "== securite (sortie $?) : $(grep -c "✔" "$OUT/securite.txt") réussies, $(grep -c "✘" "$OUT/securite.txt") échouées"
 node tests/core.js > "$OUT/core.txt" 2>&1; echo "== core (sortie $?) : $(grep -c '✔' "$OUT/core.txt") réussies, $(grep -c '✘' "$OUT/core.txt") échouées"; grep '✘\|Error' "$OUT/core.txt" | head

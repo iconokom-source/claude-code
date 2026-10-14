@@ -296,7 +296,11 @@
     return { title: 'Rien à faire pour l’instant', text: '', go: 'projet' };
   }
 
-  function summary(project) {
+  function summary(project, user) {
+    if (user && user.role !== 'admin') return { id: project.id, client: project.client, projet: project.projet, phase: project.phase, offer: project.offer, golive: project.golive };
+    return summaryFull(project);
+  }
+  function summaryFull(project) {
     const ph = project.phases[project.phase - 1] || {};
     return { id: project.id, client: project.client, projet: project.projet, phase: project.phase, offer: project.offer, offerLabel: (OFFERS[project.offer] || OFFERS.site).label,
       phaseName: (ph.letter ? ph.letter + ' · ' : '') + (ph.t || ''), delivered: !!project.deliveredAt, archived: !!project.archivedAt, draft: !!project.draft, golive: project.golive, next: nextStep(project), alerts: alerts(project),
@@ -334,21 +338,23 @@
     if (typeof v === 'number') return Number.isFinite(v) ? v : 0;
     if (typeof v === 'string') return URLS.has(key) ? safeUrl(v, key) : v.slice(0, SHORT.has(key) ? 200 : 4000);
     if (Array.isArray(v)) return v.slice(0, 50).map((x) => clean(x, key, depth + 1));
-    if (typeof v === 'object') { const o = {}; for (const k of Object.keys(v).slice(0, 40)) o[k] = clean(v[k], k, depth + 1); return o; }
+    if (typeof v === 'object') { const o = {}; for (const k of Object.keys(v).slice(0, 40)) { if (k === '__proto__' || k === 'constructor' || k === 'prototype' || k === '__internal') continue; o[k] = clean(v[k], k, depth + 1); } return o; }
     return undefined;
   }
-  const validDate = (d) => d !== undefined && d !== null && d !== '' && !isNaN(new Date(d).getTime());
+  // Dates entre 2000 et 2100, montants entre 0 et 10 millions : au-delà, c'est une erreur de saisie.
+  const validDate = (d) => { if (d === undefined || d === null || d === '') return false; const t = new Date(d).getTime(); return !isNaN(t) && t >= 946684800000 && t < 4102444800000; };
+  const amount = (x) => Math.min(1e7, Math.max(0, Number(x) || 0));
 
   function log(project, user, text) {
     project.activity.unshift({ at: iso(Date.now()), by: user.id, text, seen: user.role === 'admin' });
     if (project.activity.length > 200) project.activity.length = 200;
   }
 
-  function applyInner(store, projectId, user, action) {
+  function applyInner(store, projectId, user, action, internal) {
     const project = store.projects.find((p) => p.id === projectId);
     if (!project || !canSee(user, project)) return { error: 'Projet introuvable.' };
-    if (action.type === 'file.add' && !action.__internal) return { error: 'Action inconnue.' };
-    if (user.role !== 'admin' && !CLIENT_ACTIONS.has(action.type) && !(action.type === 'file.add' && action.__internal)) return { error: 'Action réservée à l’agence.' };
+    if (action.type === 'file.add' && !internal) return { error: 'Action inconnue.' };
+    if (user.role !== 'admin' && !CLIENT_ACTIONS.has(action.type) && !(action.type === 'file.add' && internal)) return { error: 'Action réservée à l’agence.' };
     // Un espace archivé reste consultable, mais plus rien ne s'y écrit (sauf pour le désarchiver).
     if (project.archivedAt && action.type !== 'project.archive' && !['msg.read', 'seen'].includes(action.type)) return { error: 'Cet espace est archivé : il reste consultable, en lecture seule.' };
     const v = action.vid && project.validations.find((x) => x.id === action.vid);
@@ -422,6 +428,8 @@
         project.missing = project.missing.filter((m) => m.id !== action.mid); break;
       case 'file.add': {
         const fl = action.file; if (!fl || !fl.name) return { error: 'Fichier manquant.' };
+        if (fl.id && !/^f_[a-f0-9]{8,64}$/.test(fl.id)) return { error: 'Fichier invalide.' };
+        if (fl.path && !(String(fl.path).replace(/\\/g, '/').startsWith('uploads/' + project.id + '/') && !String(fl.path).includes('..'))) return { error: 'Fichier invalide.' };
         const cats = user.role === 'admin' ? FILE_CATS.concat(AGENCY_CATS) : FILE_CATS;
         if (project.files.some((f) => f.id === fl.id)) return { error: 'Fichier déjà enregistré.' };
         const rec = { id: fl.id || uid('f'), name: String(fl.name).slice(0, 200), cat: cats.includes(fl.cat) ? fl.cat : (user.role === 'admin' ? 'Livrable' : 'Autres'),
@@ -440,8 +448,9 @@
       case 'seen':
         project.files.forEach((f) => (f.seen = true)); project.activity.forEach((a) => (a.seen = true)); break;
       case 'invoice.add':
-        project.invoices.push({ id: uid('inv'), num: String(action.num || ''), label: String(action.label || 'Facture'), ht: Number(action.ht) || 0,
-          ttc: Number(action.ttc) || Math.round((Number(action.ht) || 0) * 120) / 100, status: action.status || 'due', date: now }); break;
+        if (!['future', 'due', 'paid'].includes(action.status || 'due')) return { error: 'Statut invalide.' };
+        project.invoices.push({ id: uid('inv'), num: String(action.num || ''), label: String(action.label || 'Facture'), ht: amount(action.ht),
+          ttc: action.ttc ? amount(action.ttc) : Math.round(amount(action.ht) * 120) / 100, status: action.status || 'due', date: now }); break;
       case 'invoice.status': {
         const inv = project.invoices.find((i) => i.id === action.iid); if (!inv) return { error: 'Facture introuvable.' };
         if (!['future', 'due', 'paid'].includes(action.status)) return { error: 'Statut invalide.' };
@@ -456,7 +465,7 @@
         if (action.registre !== undefined && !['tu', 'vous'].includes(action.registre)) return { error: 'Registre invalide.' };
         const allowed = ['client', 'projet', 'contactName', 'registre', 'golive'];
         for (const k of allowed) if (action[k] !== undefined) project[k] = k === 'golive' ? iso(action[k]) : String(action[k]);
-        if (action.totalHT !== undefined) { project.billing.totalHT = Number(action.totalHT) || 0; project.billing.totalTTC = Math.round(project.billing.totalHT * 120) / 100; }
+        if (action.totalHT !== undefined) { project.billing.totalHT = amount(action.totalHT); project.billing.totalTTC = Math.round(project.billing.totalHT * 120) / 100; }
         if (action.quote !== undefined) project.billing.quote = String(action.quote); break;
       }
       case 'user.add': {
@@ -488,7 +497,8 @@
       }
       case 'request.status': {
         const r = project.requests.find((x) => x.id === action.rid); if (!r) return { error: 'Demande introuvable.' };
-        r.status = String(action.status); break;
+        if (!['Nouveau', 'Proposé', 'En cours', 'Fait'].includes(action.status)) return { error: 'Statut invalide.' };
+        r.status = action.status; break;
       }
       case 'links.set':
         for (const k of ['figma', 'proto', 'preview', 'site', 'old']) if (action[k] !== undefined) project.links[k] = String(action[k]).trim();
@@ -583,7 +593,7 @@
       }
       case 'proposal.save': {
         // Proposition (avant signature) ou devis d'évolution (depuis une demande du client).
-        const lines = (Array.isArray(action.lines) ? action.lines : []).filter((l) => l && String(l.t || '').trim()).slice(0, 20).map((l) => ({ t: String(l.t).slice(0, 160), ht: Math.max(0, Number(l.ht) || 0) }));
+        const lines = (Array.isArray(action.lines) ? action.lines : []).filter((l) => l && String(l.t || '').trim()).slice(0, 20).map((l) => ({ t: String(l.t).slice(0, 160), ht: amount(l.ht) }));
         if (!String(action.title || '').trim()) return { error: 'Donnez un titre à la proposition.' };
         if (!lines.length) return { error: 'Ajoutez au moins une ligne.' };
         if (action.validUntil && !validDate(action.validUntil)) return { error: 'Date de validité invalide.' };
@@ -750,11 +760,11 @@
     if (!rawAction || typeof rawAction !== 'object' || Array.isArray(rawAction) || typeof rawAction.type !== 'string') return { error: 'Requête invalide.' };
     let action;
     try { action = clean(rawAction); } catch (e) { return { error: e.message === 'LINK' ? 'Lien invalide : utilisez une adresse qui commence par https://' : 'Requête invalide.' }; }
-    if (internal) action.__internal = true; else delete action.__internal;
+    if (typeof action.type !== 'string') return { error: 'Requête invalide.' };
     const project0 = store.projects.find((p) => p.id === projectId);
     const snap = project0 ? JSON.stringify(project0) : null, usersSnap = JSON.stringify(store.users);
     let res;
-    try { res = applyInner(store, projectId, user, action); }
+    try { res = applyInner(store, projectId, user, action, !!internal); }
     catch (e) {
       // Rien ne doit rester à moitié modifié.
       if (project0) Object.assign(project0, JSON.parse(snap));
@@ -763,10 +773,17 @@
     }
     if (res.error) return res;
     const project = store.projects.find((p) => p.id === projectId);
+    if (project) capProject(project);
     res.notices = res.silent ? [] : notifyFor(store, project, user, action, res);
     return res;
   }
 
+  /* La base ne grossit pas sans limite : chaque liste a un plafond (les plus anciens éléments partent). */
+  const CAPS = { messages: 1000, pins: 300, requests: 300, files: 2000, versions: 50, assets: 500, proposals: 50, missing: 100, tasks: 100, invoices: 100 };
+  function capProject(p) {
+    for (const [k, n] of Object.entries(CAPS)) if (Array.isArray(p[k]) && p[k].length > n) p[k] = k === 'pins' ? p[k].slice(-n) : p[k].slice(0, n);
+    (p.validations || []).forEach((v) => { if (v.history.length > 100) v.history = v.history.slice(-100); });
+  }
   /* Dépôt de fichier : seul le serveur (ou la démo) crée l'enregistrement, après avoir écrit le fichier. */
   function addFile(store, projectId, user, meta) {
     return apply(store, projectId, user, { type: 'file.add', file: { id: String(meta.id || ''), name: String(meta.name || 'fichier'), size: Number(meta.size) || 0, cat: meta.cat, path: meta.path } }, true);
