@@ -4,7 +4,10 @@ Source : SDK officiel `@abby-inc/node` 2.5.0 (types générés depuis l'OpenAPI)
 
 - Base : `https://api.abby.fr` (surcharge possible : `ABBY_BASE_URL`)
 - Auth : `Authorization: Bearer $ABBY_API_KEY` (clés `suk_…`)
-- Montants : **en centimes**. Dates : timestamps tels que renvoyés par l'API (le script déduit ms ou s de `emittedAt`).
+- Montants : **en centimes**. Dates : timestamps Unix **en secondes** (vérifié le 14/10/2026).
+- Le `title` du devis n'est **pas imprimé** sur le PDF : le script le recopie en `headerNote` (« Objet : … ») si aucune note d'en-tête n'est fournie.
+- Le PDF reprend automatiquement l'émetteur (ICONOKOM SARL), le RIB Qonto, les pénalités de retard et le bloc « Bon pour accord » : ne pas les répéter dans les notes.
+- SIRET obligatoire pour une organisation française : le chercher avant de créer le client (mentions légales du site, annuaire-entreprises.data.gouv.fr).
 
 ## Endpoints utilisés
 

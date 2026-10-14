@@ -108,8 +108,11 @@ case "$cmd" in
 
     api PATCH "/v2/billing/$id/lines" "$(jq '{lines} + (if .discount then {discount} else {} end)' <<<"$spec")" >/dev/null
 
-    if jq -e '.generalInformations' <<<"$spec" >/dev/null; then
-      api PATCH "/v2/billing/estimate/$id/general-informations" "$(jq '.generalInformations' <<<"$spec")" >/dev/null
+    # Le titre Abby n'est pas imprimé sur le PDF : on le reprend en « Objet : » dans la note d'en-tête.
+    gi=$(jq '(.generalInformations // {})
+      + (if .title and ((.generalInformations.headerNote // "") == "") then {headerNote: ("Objet : " + .title)} else {} end)' <<<"$spec")
+    if [ "$gi" != "{}" ]; then
+      api PATCH "/v2/billing/estimate/$id/general-informations" "$gi" >/dev/null
     fi
 
     if jq -e '.title' <<<"$spec" >/dev/null; then
