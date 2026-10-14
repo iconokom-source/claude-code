@@ -46,7 +46,7 @@ const R = []; const ok = (l, v, extra) => R.push(`${v ? '✔' : '✘'} ${l}${!v 
   ok('Message vide : erreur sous le champ au vouvoiement', /Écrivez votre message/.test(await c.textContent('#msg-t-err').catch(() => '')));
   await c.click('.side [data-go=biblio]').catch(() => {}); await c.click('.side [data-go=maquettes]'); await c.waitForTimeout(150);
   const t0 = Date.now(); await c.evaluate(() => document.querySelector('[data-act=copy], [data-act=copytxt]') || null);
-  await c.click('.side [data-go=documents]'); await c.click('[data-act=copy]'); await c.waitForTimeout(3500);
+  await c.click('.side [data-go=fichiers]'); await c.click('[data-ftab=docs]'); await c.click('[data-act=copy]'); await c.waitForTimeout(3500);
   ok('Toast encore visible après 3,5 s', await c.evaluate(() => document.getElementById('toast').classList.contains('show')));
 
   // Louis : onglets ARIA et dialogue « Ajouter »
@@ -70,7 +70,7 @@ const R = []; const ok = (l, v, extra) => R.push(`${v ? '✔' : '✘'} ${l}${!v 
   // Mobile 320 px : aucun débordement, champs en 16 px
   const m = await login('hugo@huchet-demorge.fr', { width: 320, height: 640 });
   const wide = [];
-  for (const v of ['accueil', 'projet', 'valider', 'maquettes', 'messages', 'fichiers', 'documents', 'outils', 'biblio', 'equipe', 'plus']) {
+  for (const v of ['accueil', 'projet', 'valider', 'maquettes', 'messages', 'fichiers', 'documents', 'outils', 'equipe', 'plus', 'preferences']) {
     await m.evaluate((v) => { const a = document.querySelector(`[data-go="${v}"]`); a && a.click(); }, v); await m.waitForTimeout(120);
     const w = await m.evaluate(() => document.documentElement.scrollWidth); if (w > 320) wide.push(v + ' (' + w + ' px)');
   }

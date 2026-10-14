@@ -316,7 +316,7 @@
   }
 
   /* ---------- Écriture ---------- */
-  const CLIENT_ACTIONS = new Set(['proposal.accept', 'proposal.decline', 'pin.add', 'val.approve', 'val.changes', 'task.toggle', 'missing.done', 'user.onboarded', 'msg.post', 'msg.read', 'request.add', 'review.add']);
+  const CLIENT_ACTIONS = new Set(['user.prefs', 'val.undo', 'file.remove', 'proposal.accept', 'proposal.decline', 'pin.add', 'val.approve', 'val.changes', 'task.toggle', 'missing.done', 'user.onboarded', 'msg.post', 'msg.read', 'request.add', 'review.add']);
 
   /* ---------- Validation des données entrantes ----------
      Tout ce qui vient du navigateur est borné en taille, et les liens doivent être en https. */
@@ -359,6 +359,19 @@
         v.status = 'approved'; v.history.push({ at: now, by: user.id, action: 'approved' });
         if (project.next.go === 'valider') project.next = { title: '', text: '', go: 'accueil' };
         log(project, user, 'a validé : ' + v.t.toLowerCase()); break;
+      case 'val.undo': {
+        // Annulation dans les 10 secondes qui suivent une validation, par la personne qui a validé.
+        const last = v && v.history[v.history.length - 1];
+        if (!v || v.status !== 'approved' || !last || last.action !== 'approved' || last.by !== user.id || Date.now() - new Date(last.at) > 15000) return { error: 'Cette validation ne peut plus être annulée. Écrivez à l’équipe.' };
+        v.status = 'ready'; v.history.pop();
+        store.notifications = (store.notifications || []).filter((n) => !(n.act === 'val.approve' && n.projectId === project.id && n.vid === v.id && Date.now() - new Date(n.at) < 20000));
+        project.activity = project.activity.filter((a) => !(a.by === user.id && a.text === 'a validé : ' + v.t.toLowerCase() && Date.now() - new Date(a.at) < 20000));
+        return { ok: true, silent: true };
+      }
+      case 'user.prefs': {
+        const u = store.users.find((x) => x.id === user.id); if (!u) return { error: 'Utilisateur introuvable.' };
+        u.prefs = { ...(u.prefs || {}), mail: !!action.mail, weekly: !!action.weekly }; return { ok: true, silent: true };
+      }
       case 'val.changes':
         if (!v || v.status !== 'ready') return { error: 'Cette étape n’attend pas de validation.' };
         if (!String(action.comment || '').trim()) return { error: 'Écrivez ce que vous aimeriez changer.' };
@@ -416,7 +429,14 @@
         project.files.unshift(rec);
         log(project, user, 'a déposé « ' + rec.name + ' »'); return { ok: true, file: rec };
       }
-      case 'file.remove': project.files = project.files.filter((f) => f.id !== action.fid); break;
+      case 'file.remove': {
+        const fl = project.files.find((f) => f.id === action.fid); if (!fl) return { error: 'Fichier introuvable.' };
+        // Le client peut retirer ce qu'il a déposé lui-même pendant 24 heures ; ensuite, il demande à l'équipe.
+        if (user.role !== 'admin' && (fl.by !== user.id || Date.now() - new Date(fl.at) > DAY)) return { error: 'Ce fichier ne peut plus être retiré. Écrivez à l’équipe.' };
+        project.files = project.files.filter((f) => f !== fl);
+        if (user.role !== 'admin') { store.notifications = (store.notifications || []).filter((n) => !(n.act === 'file.add' && n.projectId === project.id && n.fid === fl.id)); log(project, user, 'a retiré « ' + fl.name + ' »'); }
+        break;
+      }
       case 'seen':
         project.files.forEach((f) => (f.seen = true)); project.activity.forEach((a) => (a.seen = true)); break;
       case 'invoice.add':
@@ -683,7 +703,7 @@
     for (const r of to) {
       const u = store.users.find((x) => x.id === r.id); if (!u) continue;
       const text = describe(action, user, project, res, r.audience);
-      const n = { id: uid('n'), userId: u.id, projectId: project.id, client: project.client, type, act: action.type, text, by: user.id, at, read: false, reg: r.audience === 'client' ? project.registre : undefined,
+      const n = { id: uid('n'), userId: u.id, projectId: project.id, client: project.client, type, act: action.type, vid: action.vid || undefined, fid: res.file ? res.file.id : undefined, text, by: user.id, at, read: false, reg: r.audience === 'client' ? project.registre : undefined,
         go: r.audience === 'team' ? { view: 'admin', tab: action.type.startsWith('proposal') ? 'factures' : TAB[type] } : { view: CLIENT_VIEW_ACT[action.type] || CLIENT_VIEW[type] } };
       store.notifications.unshift(n); out.push(n);
     }
@@ -743,7 +763,7 @@
     }
     if (res.error) return res;
     const project = store.projects.find((p) => p.id === projectId);
-    res.notices = notifyFor(store, project, user, action, res);
+    res.notices = res.silent ? [] : notifyFor(store, project, user, action, res);
     return res;
   }
 

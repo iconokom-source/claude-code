@@ -2,7 +2,7 @@
 const { chromium } = require('playwright');
 const B = 'http://127.0.0.1:3123', OUT = process.argv[2] || require('os').tmpdir();
 const R = []; const ok = (l, v, extra) => R.push(`${v ? '✔' : '✘'} ${l}${!v && extra ? ' → ' + extra : ''}`);
-const CLIENT_VIEWS = ['accueil', 'projet', 'valider', 'maquettes', 'messages', 'fichiers', 'documents', 'outils', 'biblio', 'equipe'];
+const CLIENT_VIEWS = ['accueil', 'projet', 'valider', 'maquettes', 'messages', 'fichiers', 'documents', 'outils', 'equipe', 'preferences'];
 (async () => {
   const br = await chromium.launch({ ...(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {}) });
   const errs = [];
@@ -15,7 +15,7 @@ const CLIENT_VIEWS = ['accueil', 'projet', 'valider', 'maquettes', 'messages', '
     if (!keepOb && await p.$('.ob')) { await p.keyboard.press('Escape'); await p.waitForTimeout(150); }
     return p;
   }
-  const go = async (p, v) => { await p.evaluate((v) => { const a = document.querySelector(`.side [data-go="${v}"]`) || document.querySelector(`[data-go="${v}"]`); a && a.click(); }, v); await p.waitForTimeout(150); };
+  const go = async (p, v) => { const t = v === 'documents' ? 'fichiers' : v; await p.evaluate((v) => { const a = document.querySelector(`.side [data-go="${v}"]`) || document.querySelector(`[data-go="${v}"]`); a && a.click(); }, t); await p.waitForTimeout(150); if (v === 'documents') { await p.evaluate(() => { const b = document.querySelector('[data-ftab=docs]'); b && b.click(); }); await p.waitForTimeout(150); } };
   const main = (p) => p.locator('#main').innerText();
   // Registre : parcourt toutes les vues et relève les phrases dans le mauvais registre.
   async function registre(p, tu) {

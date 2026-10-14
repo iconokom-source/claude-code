@@ -59,6 +59,8 @@ Remplacer l'espace client actuel (galerie Notion + Google Drive) par **une app w
 | `app/tests/a11y.js` | 24 vérifications du lot 3 (focus, dialogues, onglets, erreurs, 320 px, démo) |
 | `app/tests/core.js` | 29 tests de la logique métier, sans navigateur |
 | `app/tests/agence.js` | 26 vérifications du lot 6 (boîte « À traiter », grille des clients, bandeau d'état, relance, enregistrement automatique) |
+| `app/tests/waouh.js` | 20 vérifications du lot 7 (proposition, devis d'évolution, épingles, compte à rebours, lancement) |
+| `app/tests/accueil.js` | 25 vérifications du lot 8 (accueil sans défilement, navigation, fichiers, cloche, validation annulable, mode sombre) |
 | `app/tests/connecteurs.js` | 28 vérifications du lot 5 contre un faux serveur local (aucun appel aux vrais comptes) |
 | `app/tests/tout.sh` | Rejoue tout, chaque test sur des données neuves |
 | `docs/conception.md` | Choix UX, DA, sécurité, côté équipe, envoi des e-mails |

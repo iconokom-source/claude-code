@@ -74,7 +74,8 @@ function deliver(notices) {
   if (!notices || !notices.length) return;
   for (const n of notices) {
     const list = pending.get(n.userId) || []; list.push(n); pending.set(n.userId, list);
-    if (list.length === 1) setTimeout(() => { const items = pending.get(n.userId) || []; pending.delete(n.userId); Core.emailsFor(db, items, BASE_URL, true).forEach(sendMail); }, Number(process.env.MAIL_BATCH_MS || 120000)).unref();
+    // Une validation annulée ou un fichier retiré entre-temps ne part pas par e-mail.
+    if (list.length === 1) setTimeout(() => { const items = (pending.get(n.userId) || []).filter((x) => db.notifications.some((y) => y.id === x.id)); pending.delete(n.userId); if (items.length) Core.emailsFor(db, items, BASE_URL, true).forEach(sendMail); }, Math.max(Number(process.env.MAIL_BATCH_MS || 120000), n.act === 'val.approve' ? 15000 : 0)).unref();
   }
 }
 function sendDigests(force, onlyUser) {
@@ -117,7 +118,7 @@ const ipOf = (req) => (process.env.TRUST_PROXY === '1' && String(req.headers['x-
 const SEC_HEADERS = {
   'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'X-Frame-Options': 'DENY', 'Cross-Origin-Opener-Policy': 'same-origin',
   'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
-  'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; frame-src https://www.loom.com https://www.figma.com https://embed.figma.com; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'",
+  'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; frame-src 'self' https://www.loom.com https://www.figma.com https://embed.figma.com; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'",
   ...(HTTPS ? { 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains' } : {})
 };
 function send(res, status, body, headers = {}) {
@@ -229,6 +230,7 @@ function serveStatic(req, res, pathname) {
 }
 
 /* ---------- Routes ---------- */
+const VIDT = { '.mp4': 'video/mp4', '.webm': 'video/webm', '.mov': 'video/quicktime' };
 const IMGT = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.gif': 'image/gif' };
 const PDFT = { '.pdf': 'application/pdf' };
 function filePath(f) {
@@ -459,9 +461,16 @@ async function handle(req, res) {
     let st = null; try { st = abs && fs.statSync(abs); } catch {}
     if (!f || !st || !st.isFile()) return send(res, 404, { error: f ? 'Fichier introuvable.' : 'Ce fichier d’exemple n’existe pas sur le disque.' });
     const ext = path.extname(f.name).toLowerCase();
-    const viewType = IMGT[ext] || PDFT[ext];
+    const viewType = IMGT[ext] || PDFT[ext] || VIDT[ext];
     const inline = url.searchParams.get('inline') === '1' && viewType;
-    res.writeHead(200, { ...SEC_HEADERS, 'Content-Type': inline ? viewType : 'application/octet-stream', 'Content-Length': st.size, 'Cache-Control': 'private, max-age=3600',
+    const rg = inline && VIDT[ext] && String(req.headers.range || '').match(/^bytes=(\d*)-(\d*)$/);
+    if (rg) {
+      const start = rg[1] ? Number(rg[1]) : Math.max(0, st.size - Number(rg[2])), end = rg[1] && rg[2] ? Math.min(Number(rg[2]), st.size - 1) : st.size - 1;
+      if (start > end || start >= st.size) { res.writeHead(416, { ...SEC_HEADERS, 'Content-Range': `bytes */${st.size}` }); return res.end(); }
+      res.writeHead(206, { ...SEC_HEADERS, 'Content-Type': viewType, 'Content-Length': end - start + 1, 'Content-Range': `bytes ${start}-${end}/${st.size}`, 'Accept-Ranges': 'bytes', 'Cache-Control': 'private, max-age=3600' });
+      const part = fs.createReadStream(abs, { start, end }); part.on('error', () => res.destroy()); return part.pipe(res);
+    }
+    res.writeHead(200, { ...SEC_HEADERS, 'Content-Type': inline ? viewType : 'application/octet-stream', 'Content-Length': st.size, ...(inline && VIDT[ext] ? { 'Accept-Ranges': 'bytes' } : {}), 'Cache-Control': 'private, max-age=3600',
       'Content-Disposition': `${inline ? 'inline' : 'attachment'}; filename*=UTF-8''${encodeURIComponent(f.name)}`, ...(inline === PDFT['.pdf'] ? { 'Content-Security-Policy': "default-src 'none'; frame-ancestors 'self'" } : {}) });
     const stream = fs.createReadStream(abs); stream.on('error', () => res.destroy()); log('file.download', { user: user.id, file: f.id });
     return stream.pipe(res);

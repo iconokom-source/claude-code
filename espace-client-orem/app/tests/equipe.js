@@ -40,7 +40,7 @@ const ok = (label, v) => R.push(`${v ? '✔' : '✘'} ${label}`);
   // 5. Claire voit la vidéo + le visuel
   await claire.reload(); await claire.waitForSelector('#main'); await claire.waitForTimeout(300);
   ok('Claire voit le bandeau « Clément vous a envoyé une vidéo »', /Clément vous a envoyé une vidéo/.test(await claire.locator('.newmsg').innerText().catch(() => '')));
-  await claire.click('.side [data-go=biblio]'); await claire.waitForTimeout(300);
+  await claire.click('.side [data-go=maquettes]'); await claire.waitForTimeout(300);
   const imgOk = await claire.evaluate(() => { const i = [...document.querySelectorAll('.tile img')].find((x) => x.closest('.tile').innerText.includes('Planche')); return i ? i.naturalWidth > 0 : false; });
   ok('Le visuel ajouté par Clément s’affiche dans la bibliothèque de Claire', imgOk);
   const ob2 = await outbox(clem);

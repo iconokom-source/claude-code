@@ -15,7 +15,7 @@ const errs = [];
     return p;
   }
   const main = (p) => p.locator('#main').innerText();
-  const go = async (p, v) => { await p.click(`.side [data-go="${v}"]`); await p.waitForTimeout(200); };
+  const go = async (p, v) => { if (v === 'documents') { await p.click('.side [data-go=fichiers]'); await p.waitForTimeout(150); await p.click('[data-ftab=docs]'); } else if (v === 'proposition') { await p.click('.side [data-go=valider]'); await p.waitForTimeout(150); await p.click('#main [data-go=proposition]'); } else await p.click(`.side [data-go="${v}"]`); await p.waitForTimeout(200); };
 
   // 1. Inès accepte sa proposition en ligne
   const ines = await login('ines@domaine-des-vergers.fr');
@@ -43,7 +43,7 @@ const errs = [];
   ok('« Proposer un devis » : le formulaire est prérempli depuis la demande', /page Presse/.test(await louis.inputValue('#pp-l')) && /Évolution : contenu/.test(await louis.inputValue('#pp-t')));
   await louis.fill('#pp-l', 'Page Presse (maquette et intégration) | 600'); await louis.click('form[data-form=proposal] button[value=send]'); await louis.waitForTimeout(500);
   await claire.reload(); await claire.waitForSelector('#main'); await claire.waitForTimeout(200);
-  ok('Claire voit « Proposition » dans sa navigation avec un badge', /1/.test(await claire.locator('.side [data-go=proposition]').innerText()));
+  ok('Claire voit la proposition à valider (badge « À valider »)', /\d/.test(await claire.locator('.side [data-go=valider] .badge').innerText()));
   await go(claire, 'proposition');
   ok('Devis d’évolution : 600 € HT, facturé à la livraison, au vouvoiement', /Devis d’évolution/i.test(await main(claire)) && /600\s€/.test(await main(claire)) && /En attente de votre réponse/.test(await main(claire)));
 

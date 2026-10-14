@@ -66,7 +66,7 @@ const text = async (p, t) => (await p.locator('#main').innerText()).includes(t);
     await task(P, p, 'Regarder la vidéo de Clément', async ({ click }) => { await click('.newmsg'); }, () => visible(p, '.video-card, .video'));
     await axe(p, 'Messages');
     await goHome(p);
-    await task(P, p, 'Valider le plan du site', async ({ click }) => { await click('.next .btn'); await click('[data-act=approve]'); }, () => text(p, 'Validé'));
+    await task(P, p, 'Valider le plan du site', async ({ click }) => { await click('.next .btn'); await click('[data-act=approve]'); await click('[data-act=approve-ok]'); }, () => text(p, 'Validé'));
     await axe(p, 'À valider');
     await goHome(p);
     await task(P, p, 'Voir les maquettes', async ({ click }) => { await click('.side [data-go=maquettes]'); }, () => visible(p, 'iframe, .shot, a[href*="figma"]'));
@@ -113,9 +113,9 @@ const text = async (p, t) => (await p.locator('#main').innerText()).includes(t);
     const p = await login(br, 'nina@huchet-demorge.fr', { width: 1440, height: 900 });
     P.notes.push('Accueil guidé proposé à Nina : ' + (await visible(p, '.ob')));
     if (await p.$('.ob')) { P.notes.push('Écran 3 de l’accueil (projet livré) : « ' + (await (async () => { for (let i = 0; i < 2; i++) await p.click('[data-act=ob-next]'); return p.locator('.ob-body h3').innerText(); })()) + ' »'); await p.click('[data-act=ob-skip]').catch(() => p.keyboard.press('Escape')); }
-    await task(P, p, 'Trouver les couleurs de la marque', async ({ click }) => { await click('.side [data-go=biblio]'); }, () => visible(p, '.sw'));
+    await task(P, p, 'Trouver les couleurs de la marque', async ({ click }) => { await click('.side [data-go=maquettes]'); }, () => visible(p, '.sw'));
     await task(P, p, 'Préparer une fiche boulangerie', async ({ click }) => { await click('.side [data-go=outils]'); await click('[data-tool=teaser]'); await p.selectOption('#tz-type', 'Boulangerie'); }, async () => (await p.locator('#teaser-p').innerText()).toLowerCase().includes('boulangerie à vendre'));
-    await task(P, p, 'Retrouver la dernière facture', async ({ click }) => { await click('.side [data-go=documents]'); }, () => text(p, 'F-2026-0112'));
+    await task(P, p, 'Retrouver la dernière facture', async ({ click }) => { await click('.side [data-go=fichiers]'); await click('[data-ftab=docs]'); }, () => text(p, 'F-2026-0112'));
     P.errs = p.errs;
   }
 

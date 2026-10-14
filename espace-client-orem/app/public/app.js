@@ -122,6 +122,15 @@
     sp.textContent = msg; el.setAttribute('aria-invalid', 'true');
     el.setAttribute('aria-describedby', ((el.getAttribute('aria-describedby') || '').replace(eid, '').trim() + ' ' + eid).trim()); el.focus();
   }
+  /* Après une validation : 10 secondes pour changer d'avis. */
+  function undoBar(vid) {
+    const old = $('#undo'); if (old) old.remove();
+    const d = document.createElement('div'); d.id = 'undo'; d.className = 'undo'; d.setAttribute('role', 'status');
+    d.innerHTML = `<span>Validation enregistrée. L’équipe est prévenue.</span><button class="btn btn-sm" data-act="val-undo" data-id="${vid}">Annuler <span class="num" id="undo-n">10</span> s</button>`;
+    document.body.appendChild(d); let n = 10;
+    const tick = () => { n--; const c = $('#undo-n'); if (c) c.textContent = n; if (n <= 0) { d.remove(); return; } undoBar.t = setTimeout(tick, 1000); };
+    clearTimeout(undoBar.t); undoBar.t = setTimeout(tick, 1000);
+  }
   /* Enregistrement automatique (pilotage) : à chaque champ quitté, sans bouton ni rechargement de la page. */
   async function autosave(f) {
     const v = (id) => ($('#' + id) ? $('#' + id).value.trim() : ''), st = f.querySelector('.save-st');
@@ -150,17 +159,16 @@
   function shell(content) {
     const p = S.project;
     const admin = !clientMode();
-    const link = ([id, l, i]) => `<a href="#${id}" data-go="${id}" ${S.view === id || (id === 'clients' && S.view === 'admin') ? 'aria-current="page"' : ''}>${ic(i)}<span>${l}</span>${id === 'valider' && pending() ? `<span class="badge" aria-label="${pending()} à valider">${pending()}</span>` : ''}${id === 'proposition' && propsSent() ? `<span class="badge" aria-label="${propsSent()} à lire">${propsSent()}</span>` : ''}${id === 'messages' && unread() ? `<span class="badge" aria-label="${unread()} non lus">${unread()}</span>` : ''}${id === 'inbox' && todoInbox() ? `<span class="badge" aria-label="${todoInbox()} à traiter">${todoInbox()}</span>` : ''}</a>`;
+    const link = ([id, l, i]) => `<a href="#${id}" data-go="${id}" ${S.view === id || (id === 'clients' && S.view === 'admin') ? 'aria-current="page"' : ''}>${ic(i)}<span>${l}</span>${id === 'valider' && pending() + propsSent() ? `<span class="badge" aria-label="${pending() + propsSent()} à valider">${pending() + propsSent()}</span>` : ''}${id === 'messages' && unread() ? `<span class="badge" aria-label="${unread()} non lus">${unread()}</span>` : ''}${id === 'inbox' && todoInbox() ? `<span class="badge" aria-label="${todoInbox()} à traiter">${todoInbox()}</span>` : ''}</a>`;
     const groups = admin
       ? [['Au quotidien', [['inbox', 'Boîte de réception', 'mail'], ['clients', 'Clients', 'team']]], ['Gérer', [['nouveau', 'Nouvel espace client', 'plus'], ['reglages', 'Réglages', 'gear']]]]
-      : [['Mon projet', [['accueil', 'Accueil', 'home'], ...(p && (p.proposals || []).length ? [['proposition', (p.proposals || []).some((x) => x.status === 'sent') ? 'Proposition' : 'Propositions', 'doc']] : []), ['projet', 'Étapes', 'map'], ['valider', 'À valider', 'ok'], ['maquettes', 'Maquettes', 'figma']]],
-         ['Échanges', [['messages', 'Messages', 'chat'], ['fichiers', 'Fichiers', 'folder'], ['documents', 'Documents', 'doc']]],
-         ['Outils', [['outils', 'Boîte à outils', 'plus'], ['biblio', 'Bibliothèque', 'eye']]],
-         ['Aide', [['equipe', 'Équipe et aide', 'team']]]];
+      : [['Mon projet', [['accueil', 'Accueil', 'home'], ['projet', 'Étapes', 'map'], ['valider', 'À valider', 'ok'], ['maquettes', 'Maquettes et visuels', 'figma']]],
+         ['Échanges', [['messages', 'Messages', 'chat'], ['fichiers', 'Fichiers et factures', 'folder']]],
+         ...((p && (p.tools || []).length) ? [['Outils', [['outils', 'Boîte à outils', 'plus']]]] : [])];
     const navHtml = groups.map(([t, items]) => `<div class="sec">${t}</div>${items.map(link).join('')}`).join('');
     const tabs = admin ? [['inbox', 'Réception', 'mail'], ['clients', 'Clients', 'team'], ['compose', 'Ajouter', 'plus'], ['reglages', 'Réglages', 'gear']] : [['accueil', 'Accueil', 'home'], ['projet', 'Étapes', 'map'], ['messages', 'Messages', 'chat'], ['fichiers', 'Fichiers', 'folder'], ['plus', 'Plus', 'team']];
-    const tabHtml = tabs.map(([id, l, i]) => { const cur = id === 'plus' ? ['plus', 'proposition', 'valider', 'maquettes', 'documents', 'outils', 'biblio', 'equipe'].includes(S.view) : S.view === id || (id === 'clients' && S.view === 'admin');
-      return `<a href="#${id}" data-go="${id}" ${cur ? 'aria-current="page"' : ''}>${ic(i)}<span>${l}</span>${id === 'inbox' && todoInbox() ? `<span class="badge">${todoInbox()}<span class="sr"> à traiter</span></span>` : ''}${id === 'messages' && unread() ? `<span class="badge">${unread()}</span>` : ''}${id === 'plus' && pending() ? `<span class="badge">${pending()}</span>` : ''}</a>`; }).join('');
+    const tabHtml = tabs.map(([id, l, i]) => { const cur = id === 'plus' ? ['plus', 'proposition', 'valider', 'maquettes', 'documents', 'outils', 'biblio', 'equipe', 'preferences'].includes(S.view) : S.view === id || (id === 'clients' && S.view === 'admin');
+      return `<a href="#${id}" data-go="${id}" ${cur ? 'aria-current="page"' : ''}>${ic(i)}<span>${l}</span>${id === 'inbox' && todoInbox() ? `<span class="badge">${todoInbox()}<span class="sr"> à traiter</span></span>` : ''}${id === 'messages' && unread() ? `<span class="badge">${unread()}</span>` : ''}${id === 'plus' && pending() + propsSent() ? `<span class="badge">${pending() + propsSent()}<span class="sr"> à valider</span></span>` : ''}</a>`; }).join('');
     let card;
     if (admin) {
       const waiting = S.projects.filter((x) => x.alerts.newFiles || x.alerts.changes || x.alerts.newMessages || x.alerts.requests).length;
@@ -179,15 +187,17 @@
         ${admin ? `<button class="add-btn" data-act="compose">${ic('plus')}Ajouter pour un client</button>` : ''}
         <nav class="nav">${navHtml}</nav>
         ${API.demo && !S.preview ? `<label class="demo-sel"><span>${ic('eye')}Démo : voir l\u2019espace de</span><select data-demo aria-label="Changer d\u2019espace de démo">${[['claire@maisonlumen.fr', 'Claire · Maison Lumen (en cours)'], ['julie@cabinet-varenne.fr', 'Julie · Cabinet Varenne (démarrage)'], ['ines@domaine-des-vergers.fr', 'Inès · Domaine des Vergers (proposition)'], ['hugo@huchet-demorge.fr', 'Hugo · Huchet-Demorge (livré)'], ['louis@agence-orem.fr', 'Louis · agence'], ['theophile@agence-orem.fr', 'Théophile · agence'], ['clement@agence-orem.fr', 'Clément · agence']].map(([e, l]) => `<option value="${e}" ${S.me.email === e ? 'selected' : ''}>${l}</option>`).join('')}</select></label>` : ''}
+        ${!admin ? `<a class="help-link" href="#equipe" data-go="equipe" ${S.view === 'equipe' ? 'aria-current="page"' : ''}>${ic('team')}<span>Équipe et aide</span></a>` : ''}
         <div class="side-foot">
           <div class="me-av">${meImg}</div>
           <div class="me-txt"><strong>${esc(S.preview ? p.contactName || p.client : S.me.name)}</strong><span class="role">${admin ? 'Agence' : 'Client'}</span></div>
+          ${!admin && !S.preview ? bell() : ''}
           <button class="icon-btn" data-act="theme" aria-label="Changer de thème" title="Changer de thème">${ic('moon')}</button>
           ${S.preview ? '' : `<button class="icon-btn" data-act="logout" aria-label="Se déconnecter" title="Se déconnecter">${ic('out')}</button>`}
         </div>
       </aside>
       <div class="stage">
-        <header class="topbar"><div class="brand"><img class="logo" src="${IMG.logo}" alt=""><b>Orem</b></div>${API.demo && !S.preview ? `<label class="demo-sel top"><span>${ic('eye')}Démo : voir l\u2019espace de</span><select data-demo aria-label="Changer d\u2019espace de démo">${[['claire@maisonlumen.fr', 'Claire · Maison Lumen (en cours)'], ['julie@cabinet-varenne.fr', 'Julie · Cabinet Varenne (démarrage)'], ['ines@domaine-des-vergers.fr', 'Inès · Domaine des Vergers (proposition)'], ['hugo@huchet-demorge.fr', 'Hugo · Huchet-Demorge (livré)'], ['louis@agence-orem.fr', 'Louis · agence'], ['theophile@agence-orem.fr', 'Théophile · agence'], ['clement@agence-orem.fr', 'Clément · agence']].map(([e, l]) => `<option value="${e}" ${S.me.email === e ? 'selected' : ''}>${l}</option>`).join('')}</select></label>` : ''}${API.demo && !S.preview ? '' : `<span class="small">${admin ? 'Espace agence' : esc(p.client)}</span>`}</header>
+        <header class="topbar">${!admin && !S.preview ? `<span class="top-bell">${bell()}</span>` : ''}<div class="brand"><img class="logo" src="${IMG.logo}" alt=""><b>Orem</b></div>${API.demo && !S.preview ? `<label class="demo-sel top"><span>${ic('eye')}Démo : voir l\u2019espace de</span><select data-demo aria-label="Changer d\u2019espace de démo">${[['claire@maisonlumen.fr', 'Claire · Maison Lumen (en cours)'], ['julie@cabinet-varenne.fr', 'Julie · Cabinet Varenne (démarrage)'], ['ines@domaine-des-vergers.fr', 'Inès · Domaine des Vergers (proposition)'], ['hugo@huchet-demorge.fr', 'Hugo · Huchet-Demorge (livré)'], ['louis@agence-orem.fr', 'Louis · agence'], ['theophile@agence-orem.fr', 'Théophile · agence'], ['clement@agence-orem.fr', 'Clément · agence']].map(([e, l]) => `<option value="${e}" ${S.me.email === e ? 'selected' : ''}>${l}</option>`).join('')}</select></label>` : ''}${API.demo && !S.preview ? '' : `<span class="small">${admin ? 'Espace agence' : esc(p.client)}</span>`}</header>
         <div class="sheet"><main class="main" id="main" tabindex="-1"><div class="wrap">${wrapHtml(content)}</div></main></div>
       </div>
       <nav class="tabbar" aria-label="Navigation principale" style="grid-template-columns:repeat(${tabs.length},minmax(0,1fr))">${tabHtml}</nav>
@@ -209,61 +219,70 @@
 
   function vAccueil() {
     const p = S.project, nx = Core.nextStep(p), ph = p.phases[p.phase - 1];
-    const cta = CTA[nx.go];
+    const cta = CTA[nx.go], j = daysTo(p.golive);
     const ctaHtml = nx.go === 'cal' ? `<a class="btn" href="${CALF()}" target="_blank" rel="noopener">Choisir un créneau ${ic('arrow')}</a>` : cta ? `<a class="btn" href="#${cta[1]}" data-go="${cta[1]}">${cta[0]} ${ic('arrow')}</a>` : '';
     const ready = p.validations.filter((v) => v.status === 'ready');
+    // « À faire » : tout ce qui attend le client, sans répéter la prochaine étape affichée au-dessus.
+    const same = (t) => String(t).toLowerCase().replace(/^valider : /, '') === String(nx.title).toLowerCase().replace(/^valider : /, '') || (nx.go === 'valider' && /^valider/i.test(t) && ready.length === 1) || (nx.go === 'cal' && /visio de cadrage/i.test(t)) || (nx.go === 'proposition' && /proposition/i.test(t));
     const actions = [
-      ...ready.map((v) => ({ t: 'Valider : ' + v.t.toLowerCase(), sub: R('Prêt depuis le ', 'Prêt depuis le ') + fmt(v.readyAt), go: 'valider' })),
+      ...ready.map((v) => ({ t: 'Valider : ' + v.t.toLowerCase(), sub: 'Prêt depuis le ' + fmt(v.readyAt), go: 'valider' })),
       ...p.missing.map((m) => ({ t: 'Déposer : ' + m.t.toLowerCase(), sub: m.sub, go: 'fichiers' })),
-      ...p.tasks.map((t) => ({ t: t.t, done: t.done, tid: t.id, go: t.go, auto: t.auto }))
-    ];
-    const doneN = actions.filter((a) => a.done).length;
+      ...p.tasks.filter((t) => !t.done).map((t) => ({ t: t.t, tid: t.id, go: t.go, auto: t.auto }))
+    ].filter((a) => !same(a.t));
+    const doneN = p.tasks.filter((t) => t.done).length;
     let rk = 0;
-    const note = p.note && p.note.text;
-    const author = S.team.find((u) => u.id === p.note.by);
-    const delivs = p.files.filter((f) => f.from === 'agence' && f.cat === 'Livrable').slice(0, 3);
+    const note = p.note && p.note.text, author = S.team.find((u) => u.id === p.note.by);
+    const meta = [p.offer === 'site' && j >= 0 ? `J-${j} avant la mise en ligne` : p.offer !== 'site' && j >= 0 ? `Livraison dans ${j} jour${j > 1 ? 's' : ''}` : '', phName(ph)].filter(Boolean).join(' · ');
     return `
     <div class="head"><div><h1 class="brandish">Bonjour ${esc(p.contactName || S.me.name)}</h1><p class="lead">${esc(cap(fmtLong(Date.now())))} · ${esc(p.projet)}</p></div></div>
-    <section class="next" aria-labelledby="nx"><div><div class="k">Prochaine étape</div><h2 id="nx">${esc(nx.title)}</h2>${nx.text ? `<p>${esc(nx.text)}</p>` : ''}<div class="meta">${esc(phName(ph))} · étape ${p.phase} sur ${p.phases.length}</div></div>${ctaHtml}</section>
-    ${unreadBanner()}
+    <section class="next" aria-labelledby="nx"><div><div class="k">Prochaine étape</div><h2 id="nx">${esc(nx.title)}</h2>${nx.text ? `<p>${esc(nx.text)}</p>` : ''}<div class="meta">${esc(meta)}</div></div>${ctaHtml}</section>
     ${countdown()}
-    ${kpisClient()}
-    <section class="panel" aria-labelledby="av">
-      <div class="panel-head"><h2 id="av">${ic('map')}Où en est le projet</h2><a href="#projet" data-go="projet">Voir le détail</a></div>
-      <div class="steps" role="list">${p.phases.map((x, i) => `<div role="listitem" class="step ${phS(x) === 'on' ? 'on' : ''}"><div class="bar" role="img" aria-label="${{ done: 'Terminé', on: 'En cours, ' + phaseProgress(x, i) + ' %', wait: 'À venir' }[phS(x)]}"><i style="width:${phaseProgress(x, i)}%"></i></div><div class="t">${esc(phName(x))}</div><div class="d">${fmt(x.from)} au ${fmt(x.to)}</div></div>`).join('')}</div>
-      <p class="steps-foot">${p.offer === 'site' ? 'Mise en ligne prévue vers le' : 'Livraison prévue vers le'} ${fmt(p.golive, { day: 'numeric', month: 'long' })}. Dates indicatives, ajustées ensemble à chaque étape.</p>
-    </section>
+    ${unreadBanner()}
     <div class="grid2">
       <section class="panel" aria-labelledby="td">
-        <div class="panel-head"><h2 id="td">${ic('ok')}${R('Vos actions', 'Tes actions')}</h2>${actions.length ? `<span class="small muted num">${doneN} sur ${actions.length}</span>` : ''}</div>
-        <div class="list">${actions.map((a) => a.auto
-          ? `<div class="row ${a.done ? 'done' : ''}"><span class="check ${a.done ? 'done' : ''}" role="img" aria-label="${a.done ? 'Fait' : 'À faire'}">${a.done ? ic('check') : ''}</span><div class="grow"><div class="title">${esc(a.t)}</div><div class="sub">${a.done ? 'Paiement reçu, merci.' : 'Se coche tout seul à réception du virement.'}</div></div>${!a.done && a.go ? `<a class="btn btn-line btn-sm" href="#${a.go}" data-go="${a.go}">Ouvrir</a>` : ''}</div>`
+        <div class="panel-head"><h2 id="td">${ic('ok')}À faire</h2>${doneN ? `<span class="small muted num">${doneN} déjà fait${doneN > 1 ? 's' : ''}</span>` : ''}</div>
+        <ul class="list plain">${actions.map((a) => a.auto
+          ? `<li class="row"><span class="check" role="img" aria-label="À faire"></span><div class="grow"><div class="title">${esc(a.t)}</div><div class="sub">Se coche tout seul à réception du virement.</div></div>${a.go ? `<a class="btn btn-line btn-sm" href="#${a.go}" data-go="${a.go}">Ouvrir</a>` : ''}</li>`
           : a.tid
-          ? `<div class="row ${a.done ? 'done' : ''}"><button class="check ${a.done ? 'done' : ''}" data-act="task" data-id="${a.tid}" aria-label="${a.done ? 'Décocher' : 'Cocher'} : ${esc(a.t)}" aria-pressed="${!!a.done}">${a.done ? ic('check') : ''}</button><div class="grow"><div class="title">${esc(a.t)}</div></div>${!a.done && a.go ? (a.go === 'cal' ? `<a class="btn btn-line btn-sm" href="${CALF()}" target="_blank" rel="noopener">Réserver</a>` : `<a class="btn btn-line btn-sm" href="#${a.go}" data-go="${a.go}">Ouvrir</a>`) : ''}</div>`
-          : `<div class="row"><span class="rank">${String(++rk).padStart(2, '0')}</span><div class="grow"><div class="title">${esc(a.t)}</div>${a.sub ? `<div class="sub">${esc(a.sub)}</div>` : ''}</div><a class="btn btn-line btn-sm" href="#${a.go}" data-go="${a.go}">Ouvrir</a></div>`).join('') || `<p class="muted">${R('Rien à faire de votre côté pour le moment.', 'Rien à faire de ton côté pour le moment.')}</p>`}</div>
+          ? `<li class="row"><button class="check" data-act="task" data-id="${a.tid}" aria-label="Cocher : ${esc(a.t)}" aria-pressed="false"></button><div class="grow"><div class="title">${esc(a.t)}</div></div>${a.go ? (a.go === 'cal' ? `<a class="btn btn-line btn-sm" href="${CALF()}" target="_blank" rel="noopener">Réserver</a>` : `<a class="btn btn-line btn-sm" href="#${a.go}" data-go="${a.go}">Ouvrir</a>`) : ''}</li>`
+          : `<li class="row"><span class="rank">${String(++rk).padStart(2, '0')}</span><div class="grow"><div class="title">${esc(a.t)}</div>${a.sub ? `<div class="sub">${esc(a.sub)}</div>` : ''}</div><a class="btn btn-line btn-sm" href="#${a.go}" data-go="${a.go}">Ouvrir</a></li>`).join('') || `<li class="muted">${R('Rien d’autre à faire de votre côté pour le moment.', 'Rien d’autre à faire de ton côté pour le moment.')}</li>`}</ul>
       </section>
       <section class="panel" aria-labelledby="sm">
-        <div class="panel-head"><h2 id="sm">${ic('cal')}Cette semaine</h2>${p.note.at ? `<span class="small muted">Mis à jour le ${fmt(p.note.at, { day: 'numeric', month: 'long' })}</span>` : ''}</div>
-        ${note ? `<div class="note">${author && IMG[author.photo] ? `<img class="avatar" src="${IMG[author.photo]}" alt="">` : ''}<div><blockquote>${esc(note)}</blockquote><div class="who">${esc(author ? author.name.split(' ')[0] + ', ' + (author.title || '').toLowerCase() : '')}</div></div></div>` : `<p class="muted">Le point de la semaine arrive bientôt.</p>`}
+        <div class="panel-head"><h2 id="sm">${ic('cal')}Cette semaine</h2>${p.note.at ? `<span class="small muted">Le ${fmt(p.note.at, { day: 'numeric', month: 'long' })}</span>` : ''}</div>
+        ${note ? `<div class="note">${author && IMG[author.photo] ? `<img class="avatar" src="${IMG[author.photo]}" alt="">` : ''}<div><blockquote>${esc(note)}</blockquote><div class="who">${esc(author ? author.name.split(' ')[0] + ', ' + (author.title || '').toLowerCase() : '')}</div></div></div>` : `<p class="muted">Le premier point de la semaine arrive ${p.meeting && p.meeting.when ? 'après le rendez-vous' : 'bientôt'}.</p>`}
         ${p.meeting && p.meeting.when ? `<div class="meet"><span class="ico">${ic('cal')}</span><div class="grow"><div class="title">${esc(p.meeting.title || 'Rendez-vous')}</div><div class="sub">${esc(cap(fmtTime(p.meeting.when)))}</div></div></div>` : ''}
       </section>
     </div>
-    ${qaPanel()}
-    ${delivs.length ? `<section class="panel" aria-labelledby="dl"><div class="panel-head"><h2 id="dl">${ic('figma')}Derniers ajouts de l’agence</h2><a href="#fichiers" data-go="fichiers">Tous les fichiers</a></div><div class="list">${delivs.map(fileRow).join('')}</div></section>` : ''}`;
+    ${qaPanel()}`;
   }
   // Compte à rebours : les trois dernières semaines avant la mise en ligne.
   function countdown() {
     const p = S.project, j = daysTo(p.golive);
     if (p.deliveredAt || p.offer !== 'site' || j < 0 || j > 21 || p.phase < 3) return '';
     const h = Math.max(0, Math.round((new Date(p.golive) - Date.now()) / 36e5));
-    return `<section class="countdown" aria-label="Compte à rebours"><div class="cd-n num">${j}<small>${j > 1 ? 'jours' : 'jour'}</small></div><div><div class="k">Mise en ligne</div><strong>${esc(cap(fmtLong(p.golive)))}</strong><span class="small">${j ? `Encore ${h} heures. ` : 'C’est aujourd’hui. '}${R('Votre', 'Ton')} site arrive.</span></div></section>`;
+    return `<section class="countdown" aria-label="Compte à rebours de la mise en ligne"><div class="cd-n num">${j}<small>${j > 1 ? 'jours' : 'jour'}</small></div><div><div class="k">Mise en ligne</div><strong>${esc(cap(fmtLong(p.golive)))}</strong><span class="small">${j ? `Encore ${h} heures. ` : 'C’est aujourd’hui. '}${R('Votre', 'Ton')} site arrive.</span></div></section>`;
   }
   const cap = (s) => (s ? s[0].toUpperCase() + s.slice(1) : s);
 
+  const kindOf = (f) => { const n = f.name.toLowerCase(); return /\.(png|jpe?g|webp|gif|svg)$/.test(n) ? 'image' : /\.(mp4|mov|webm)$/.test(n) ? 'video' : /\.pdf$/.test(n) ? 'pdf' : /\.(zip|rar|7z)$/.test(n) ? 'zip' : /figma/i.test(n) || f.url ? 'link' : 'doc'; };
+  const KIND_ICO = { image: 'eye', video: 'play', pdf: 'doc', zip: 'folder', link: 'figma', doc: 'doc' };
+  const canPreview = (f) => !!API.fileUrl(f) && ['image', 'video', 'pdf'].includes(kindOf(f)) && !/\.svg$/i.test(f.name);
   function fileRow(f) {
-    const url = API.fileUrl(f);
+    const url = API.fileUrl(f), k = kindOf(f);
     const agency = f.from === 'agence';
-    return `<div class="row"><span class="ico ${agency ? 'hl' : ''}">${ic(/figma/i.test(f.name) ? 'figma' : 'doc')}</span><div class="grow"><div class="title" style="overflow-wrap:anywhere">${esc(f.name)}</div><div class="sub num">${esc(f.cat)}${f.size ? ' · ' + size(f.size) : ''} · ${fmt(f.at)}${!agency && isAdmin() && !S.preview ? ' · ' + esc(who(f.by)) : ''}</div></div>${f.fresh ? '<span class="chip ok">Envoyé</span>' : ''}${isAdmin() && !S.preview && f.seen === false ? '<span class="chip warn">Nouveau</span>' : ''}${url ? `<a class="btn btn-line btn-sm" href="${url}">${ic('down')}<span class="sr">Télécharger ${esc(f.name)}</span></a>` : `<button class="btn btn-line btn-sm" data-act="toast" data-msg="Fichier d’exemple : rien à télécharger.">${ic('down')}<span class="sr">Télécharger ${esc(f.name)}</span></button>`}${isAdmin() && !S.preview ? `<button class="x" data-act="file-remove" data-id="${f.id}" aria-label="Retirer ${esc(f.name)}">×</button>` : ''}</div>`;
+    const mine = !isAdmin() && !S.preview && f.by === S.me.id && Date.now() - new Date(f.at) < 864e5;
+    const thumb = url && k === 'image' && !/\.svg$/i.test(f.name) ? `<img class="thumb" src="${url}?inline=1" alt="" loading="lazy">` : `<span class="ico ${agency ? 'hl' : ''}">${ic(KIND_ICO[k])}</span>`;
+    return `<div class="row">${thumb}<div class="grow"><div class="title" style="overflow-wrap:anywhere">${esc(f.name)}</div><div class="sub num">${esc(f.cat)}${f.size ? ' · ' + size(f.size) : ''} · ${fmt(f.at)}${!agency && isAdmin() && !S.preview ? ' · ' + esc(who(f.by)) : ''}</div></div>${f.fresh ? '<span class="chip ok">Envoyé</span>' : ''}${isAdmin() && !S.preview && f.seen === false ? '<span class="chip warn">Nouveau</span>' : ''}
+      ${canPreview(f) ? `<button class="btn btn-line btn-sm" data-act="fview" data-id="${f.id}">${ic('eye')}<span class="sr">Aperçu de ${esc(f.name)}</span></button>` : ''}
+      ${f.url && !url ? `<a class="btn btn-line btn-sm" href="${esc(f.url)}" target="_blank" rel="noopener">Ouvrir<span class="sr"> ${esc(f.name)}</span></a>` : url ? `<a class="btn btn-line btn-sm" href="${url}">${ic('down')}<span class="sr">Télécharger ${esc(f.name)}</span></a>` : `<button class="btn btn-line btn-sm" data-act="toast" data-msg="Fichier d’exemple : rien à télécharger.">${ic('down')}<span class="sr">Télécharger ${esc(f.name)}</span></button>`}
+      ${isAdmin() && !S.preview ? `<button class="x" data-act="file-remove" data-id="${f.id}" aria-label="Retirer ${esc(f.name)}">×</button>` : mine ? `<button class="x" data-act="file-remove-own" data-id="${f.id}" aria-label="Retirer ${esc(f.name)} (possible pendant 24 h)" title="Retirer (possible pendant 24 h)">×</button>` : ''}</div>`;
+  }
+  function filePreview() {
+    const f = S.fview && S.project && S.project.files.find((x) => x.id === S.fview); if (!f) return '';
+    const u = API.fileUrl(f) + '?inline=1', k = kindOf(f);
+    return `<div class="lb" role="dialog" aria-modal="true" aria-label="Aperçu : ${esc(f.name)}" data-act="fview-close"><figure class="fview">
+      ${k === 'image' ? `<img src="${u}" alt="${esc(f.name)}">` : k === 'video' ? `<video src="${u}" controls preload="metadata"></video>` : `<iframe src="${u}" title="${esc(f.name)}"></iframe>`}
+      <figcaption>${esc(f.name)} · <a href="${API.fileUrl(f)}">Télécharger</a></figcaption></figure><button class="lb-x" data-act="fview-close" aria-label="Fermer">×</button></div>`;
   }
 
   function vProjet() {
@@ -312,7 +331,8 @@
     const card = (v) => {
       const form = S.valForm === v.id
         ? `<form class="field" data-form="changes" data-id="${v.id}"><label for="chg-${v.id}">Qu’${R('aimeriez-vous', 'aimerais-tu')} changer ?</label><textarea id="chg-${v.id}" required placeholder="Par exemple : regrouper deux pages, ajouter une page Presse…"></textarea><span class="small muted">L’équipe ${R('vous', 'te')} répond sous 24 h ouvrées.</span><div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-primary" type="submit">Envoyer mes remarques</button><button class="btn btn-line" type="button" data-act="valcancel">Annuler</button></div></form>`
-        : `<div class="acts"><button class="btn btn-primary" data-act="approve" data-id="${v.id}">${ic('check')}${R('Je valide', 'Je valide')}</button><button class="btn btn-line" data-act="changes" data-id="${v.id}">Demander des modifications</button></div>
+        : S.valConfirm === v.id ? `<div class="confirm" role="group" aria-label="Confirmer la validation"><p><strong>${R('Vous donnez votre', 'Tu donnes ton')} feu vert pour « ${esc(v.t)} » ?</strong> L’équipe passe à la suite.</p><div class="acts"><button class="btn btn-primary" data-act="approve-ok" data-id="${v.id}">${ic('check')}Oui, je valide</button><button class="btn btn-line" data-act="approve-cancel">Pas encore</button></div></div>`
+           : `<div class="acts"><button class="btn btn-primary" data-act="approve" data-id="${v.id}">${ic('check')}Je valide</button><button class="btn btn-line" data-act="changes" data-id="${v.id}">Demander des modifications</button></div>
            <p class="small muted">Valider, c’est donner ${R('votre', 'ton')} feu vert écrit pour passer à la suite. Il est enregistré avec la date et l’heure.</p>`;
       return `<section class="panel valcard"><div><span class="chip warn">En attente de ${R('votre', 'ta')} validation</span></div>
         <h2>${esc(v.t)}</h2><p class="muted">${esc(Core.reg(v.sub, S.project.registre))}. Prêt depuis le ${fmt(v.readyAt, { day: 'numeric', month: 'long' })}.</p>
@@ -321,9 +341,10 @@
     };
     return `
     <div class="head"><div><h1>À valider</h1><p class="lead">On avance avec ${R('votre', 'ton')} feu vert</p></div></div>
-    ${ready.map(card).join('') || `<div class="empty">Rien à valider pour l’instant. On ${R('vous', 'te')} prévient dès que la prochaine étape est prête.</div>`}
+    ${propsSent() ? `<section class="panel"><div class="panel-head"><h2>${ic('doc')}${propsSent() > 1 ? 'Propositions' : 'Proposition'} à lire</h2></div><ul class="list plain">${p.proposals.filter((x) => x.status === 'sent').map((x) => `<li class="row"><div class="grow"><div class="title">${esc(x.title)}</div><div class="sub">${money(x.lines.reduce((t, l) => t + l.ht, 0))} HT · valable jusqu’au ${fmt(x.validUntil, { day: 'numeric', month: 'long' })}</div></div><a class="btn btn-primary btn-sm" href="#proposition" data-go="proposition">Lire et répondre</a></li>`).join('')}</ul></section>` : ''}
+    ${ready.map(card).join('') || propsSent() ? ready.map(card).join('') : `<div class="empty">Rien à valider pour l’instant. On ${R('vous', 'te')} prévient dès que la prochaine étape est prête.</div>`}
     ${done.length ? `<section class="panel"><div class="panel-head"><h2>${ic('ok')}Déjà ${R('traité', 'traité')}</h2></div><div class="list">${done.map((v) => { const h = v.history[v.history.length - 1] || {};
-      return `<div class="row"><span class="ico ${v.status === 'approved' ? 'ok' : ''}">${ic(v.status === 'approved' ? 'ok' : 'chat')}</span><div class="grow"><div class="title">${esc(v.t)}</div><div class="sub">${v.status === 'approved' ? 'Validé le ' + fmt(h.at, { day: 'numeric', month: 'long' }) : 'Remarques envoyées le ' + fmt(h.at, { day: 'numeric', month: 'long' }) + (h.comment ? ' : « ' + esc(h.comment) + ' »' : '')}</div></div>${v.status === 'approved' ? '<span class="chip ok">Validé</span>' : '<span class="chip hl">En cours de reprise</span>'}</div>`; }).join('')}</div></section>` : ''}
+      return `<div class="row"><span class="ico ${v.status === 'approved' ? 'ok' : ''}">${ic(v.status === 'approved' ? 'ok' : 'chat')}</span><div class="grow"><div class="title">${esc(v.t)}</div><div class="sub">${v.status === 'approved' ? `Validé par ${esc(h.by === S.me.id ? S.me.name : who(h.by))} le ${fmt(h.at, { day: '2-digit', month: '2-digit' })} à ${fmt(h.at, { hour: '2-digit', minute: '2-digit' }).replace(':', ' h ')}` : 'Remarques envoyées le ' + fmt(h.at, { day: 'numeric', month: 'long' }) + (h.comment ? ' : « ' + esc(h.comment) + ' »' : '')}</div></div>${v.status === 'approved' ? '<span class="chip ok">Validé</span>' : '<span class="chip hl">En cours de reprise</span>'}</div>`; }).join('')}</div></section>` : ''}
     ${later.length ? `<section class="panel"><div class="panel-head"><h2>${ic('lock')}Les prochaines validations</h2></div><div class="list">${later.map((v) => `<div class="row"><span class="ico">${ic('lock')}</span><div class="grow"><div class="title">${esc(v.t)}</div><div class="sub">${esc(Core.reg(v.sub, S.project.registre))}</div></div><span class="small muted num" style="text-align:right">Vers le ${fmt(v.due)}</span></div>`).join('')}</div></section>` : ''}`;
   }
 
@@ -331,11 +352,15 @@
     const p = S.project;
     const mine = p.files.filter((f) => f.from === 'client');
     const cats = ['Tous', ...Core.FILE_CATS];
-    const shown = S.cat === 'Tous' ? mine : mine.filter((f) => f.cat === S.cat);
+    const q = (S.fq || '').toLowerCase();
+    const shown = (S.cat === 'Tous' ? mine : mine.filter((f) => f.cat === S.cat)).filter((f) => !q || f.name.toLowerCase().includes(q));
+    const tab = S.ftab === 'docs' ? 'docs' : 'mine';
+    const tabs = `<div class="tabs" role="tablist" aria-label="Fichiers">${[['mine', 'Fichiers'], ['docs', 'Factures et documents']].map(([k, l]) => `<button role="tab" id="ft-${k}" aria-controls="ft-panel" aria-selected="${tab === k}" tabindex="${tab === k ? 0 : -1}" data-ftab="${k}">${l}${k === 'docs' && p.invoices.some((x) => x.status === 'due') ? '<span class="badge">1<span class="sr"> à régler</span></span>' : ''}</button>`).join('')}</div>`;
+    if (tab === 'docs') return `<div class="head"><div><h1>Fichiers et factures</h1><p class="lead">Devis, factures et paiement</p></div>${zipBtn()}</div>${tabs}<div role="tabpanel" id="ft-panel" aria-labelledby="ft-docs" class="tabpanel">${docsBody()}</div>`;
     const count = (c) => (c === 'Tous' ? mine.length : mine.filter((f) => f.cat === c).length);
     const delivs = p.files.filter((f) => f.from === 'agence' && f.cat === 'Livrable');
     return `
-    <div class="head"><div><h1>Fichiers</h1><p class="lead">Pas besoin de compte Google</p></div>${zipBtn()}</div>
+    <div class="head"><div><h1>Fichiers et factures</h1><p class="lead">Pas besoin de compte Google</p></div>${zipBtn()}</div>${tabs}<div role="tabpanel" id="ft-panel" aria-labelledby="ft-mine" class="tabpanel">
     <label class="drop" id="drop" for="file-in">
       <span class="ico hl">${ic('up')}</span>
       <strong>${R('Glissez vos fichiers ici, ou cliquez pour choisir', 'Glisse tes fichiers ici, ou clique pour choisir')}</strong>
@@ -348,13 +373,16 @@
     <section class="panel" aria-labelledby="mf">
       <div class="panel-head"><h2 id="mf">${ic('up')}${R('Vos envois', 'Tes envois')}</h2><span class="small muted num">${mine.length} fichier${mine.length > 1 ? 's' : ''}</span></div>
       <div class="cats" role="group" aria-label="Filtrer par type" style="grid-template-columns:repeat(auto-fit,minmax(110px,1fr))">${cats.map((c) => `<button class="cat" data-cat="${c}" aria-pressed="${S.cat === c}"><strong>${c}</strong><span class="small muted num">${count(c)}</span></button>`).join('')}</div>
-      <div class="list" style="margin-top:18px">${shown.map(fileRow).join('') || '<p class="muted">Aucun fichier ici pour l’instant.</p>'}</div>
+      ${mine.length > 3 ? `<div class="field" style="margin-top:14px"><label class="sr" for="f-q">Rechercher un fichier</label><input id="f-q" type="search" placeholder="Rechercher un fichier" value="${esc(S.fq || '')}" data-fsearch="1"></div>` : ''}
+      <div class="list" style="margin-top:18px">${shown.map(fileRow).join('') || `<p class="muted">${q ? 'Aucun fichier ne correspond à « ' + esc(S.fq) + ' ».' : 'Aucun fichier ici pour l’instant.'}</p>`}</div>
+      ${mine.some((f) => f.by === S.me.id && Date.now() - new Date(f.at) < 864e5) ? `<p class="hint">${R('Vous pouvez', 'Tu peux')} retirer un fichier déposé par erreur pendant 24 heures (bouton ×).</p>` : ''}
     </section>
     <section class="panel" aria-labelledby="lv"><div class="panel-head"><h2 id="lv">${ic('figma')}Livrables de l’agence</h2></div>
-      <div class="list">${delivs.map(fileRow).join('') || '<p class="muted">Les maquettes et documents de l’agence apparaîtront ici.</p>'}</div></section>`;
+      <div class="list">${delivs.map(fileRow).join('') || '<p class="muted">Les maquettes et documents de l’agence apparaîtront ici.</p>'}</div></section></div>`;
   }
 
-  function vDocuments() {
+  function vDocuments() { S.ftab = 'docs'; return vFichiers(); }
+  function docsBody() {
     const p = S.project, b = p.billing;
     const paid = p.invoices.filter((i) => i.status === 'paid').reduce((s, i) => s + i.ttc, 0);
     const pdfOf = (i) => i.num && p.files.find((f) => f.from === 'agence' && f.cat === 'Facture' && f.name.includes(i.num));
@@ -363,7 +391,6 @@
     const pdfBtn = (f) => { const url = f && API.fileUrl(f); return !f ? '' : url ? `<a class="btn btn-line btn-sm" href="${url}">${ic('down')}PDF<span class="sr"> ${esc(f.name)}</span></a>` : `<button class="btn btn-line btn-sm" data-act="toast" data-msg="Fichier d’exemple : rien à télécharger.">${ic('down')}PDF<span class="sr"> ${esc(f.name)}</span></button>`; };
     const st = { paid: '<span class="chip ok">Payée</span>', due: '<span class="chip warn">À régler</span>', future: '<span class="chip idle">À venir</span>' };
     return `
-    <div class="head"><div><h1>Documents</h1><p class="lead">Devis, factures et paiement</p></div></div>
     <div class="grid2">
       <section class="panel"><div class="small muted">Montant du projet</div><div class="money num" style="margin-top:6px">${money(b.totalHT)} HT</div><div class="small muted num">${money(b.totalTTC)} TTC${b.quote ? ' · devis ' + esc(b.quote) : ''}${b.signedAt ? ' signé le ' + fmt(b.signedAt) : ''}</div></section>
       <section class="panel"><div class="small muted">Déjà réglé</div><div class="money num" style="margin-top:6px">${money(paid)} TTC</div><div class="small muted num">Reste ${money(Math.max(0, b.totalTTC - paid))} TTC</div></section>
@@ -524,12 +551,14 @@
   }
 
   /* ---------- Maquettes ---------- */
-  function vMaquettes() {
+  function vMaquettes() { return maquettesBody() + `<div id="biblio">${biblioBody()}</div>`; }
+  function maquettesBody() {
     const p = S.project, L = p.links || {};
+    const rep = p.phases.find((x) => x.letter === 'R');
     const shots = (p.assets || []).filter((a) => a.img && (a.kind === 'Maquettes' || a.kind === 'Réalisation')).slice(0, 4);
-    if (!L.figma && !L.proto) return `<div class="head"><div><h1>Maquettes</h1><p class="lead">Les écrans du site, en direct depuis Figma</p></div></div>
-      <div class="empty big">${ic('figma')}<strong>Les maquettes arrivent avec le temps « Représenter »</strong><span>Dès que Clément commence le design, ${R('vous les verrez', 'tu les verras')} ici en direct, sans compte Figma.</span></div>`;
-    return `<div class="head"><div><h1>Maquettes</h1><p class="lead">En direct depuis Figma, toujours la dernière version</p></div>
+    if (!L.figma && !L.proto) return `<div class="head"><div><h1>Maquettes et visuels</h1><p class="lead">Les écrans du site, en direct depuis Figma</p></div></div>
+      <div class="empty big">${ic('figma')}<strong>Les maquettes arrivent avec le temps « Représenter »${rep ? ', vers le ' + fmt(rep.from, { day: 'numeric', month: 'long' }) : ''}</strong><span>Dès que Clément commence le design, ${R('vous les verrez', 'tu les verras')} ici en direct, sans compte Figma.</span></div>`;
+    return `<div class="head"><div><h1>Maquettes et visuels</h1><p class="lead">En direct depuis Figma, toujours la dernière version</p></div>
       <div class="head-actions">${L.proto ? `<a class="btn btn-primary" href="${esc(L.proto)}" target="_blank" rel="noopener">${ic('play')}Tester le prototype</a>` : ''}${L.figma ? `<a class="btn btn-line" href="${esc(L.figma)}" target="_blank" rel="noopener">${ic('figma')}Ouvrir dans Figma</a>` : ''}</div></div>
       ${!API.demo && (L.proto || L.figma) ? `<section class="panel flush"><div class="figma-frame"><iframe src="${figmaEmbed(L.proto || L.figma)}" title="Maquettes Figma" allowfullscreen loading="lazy"></iframe></div></section>` : ''}
       ${API.demo || shots.length ? `<section class="panel"><div class="panel-head"><h2>${ic('eye')}${API.demo ? 'Aperçu des écrans' : 'Commenter un écran'}</h2><span class="aside">Le prototype s’ouvre dans un nouvel onglet, sans compte Figma</span></div>
@@ -545,8 +574,8 @@
     const p = S.project;
     const list = (p.messages || []).slice().sort((a, b) => new Date(a.at) - new Date(b.at));
     const videos = list.filter((m) => m.loom).reverse();
-    return `<div class="head"><div><h1>Messages</h1><p class="lead">Les vidéos et les messages de l’équipe, au même endroit</p></div></div>
-      ${videos.length ? `<section class="panel"><div class="panel-head"><h2>${ic('play')}Vidéos de l’équipe</h2><span class="aside">${videos.length} vidéo${videos.length > 1 ? 's' : ''}</span></div><div class="videos">${videos.map((m) => `<div class="vitem">${videoCard(m)}<span class="small muted">${esc(person(m.by).name.split(' ')[0])} · ${fmt(m.at)}</span></div>`).join('')}</div></section>` : ''}
+    return `<div class="head"><div><h1>Messages</h1><p class="lead">Les messages et les vidéos de l’équipe, au même endroit</p></div></div>
+      ${videos.length > 1 ? `<p class="small muted">${videos.length} vidéos de l’équipe dans la conversation, la plus récente en bas.</p>` : ''}
       <section class="panel"><div class="panel-head"><h2>${ic('chat')}Conversation</h2><span class="aside">Réponse sous 24 h ouvrées</span></div>
         <div class="thread" tabindex="0" role="log" aria-label="Conversation">${list.map(msgBubble).join('') || '<p class="muted">Aucun message pour l’instant.</p>'}</div>
         <form class="compose" data-form="msg"><label class="sr" for="msg-t">${R('Votre', 'Ton')} message</label><textarea id="msg-t" placeholder="${R('Écrivez votre message', 'Écris ton message')}…" rows="2"></textarea><button class="btn btn-primary" type="submit">Envoyer</button></form>
@@ -554,16 +583,18 @@
   }
 
   /* ---------- Bibliothèque ---------- */
-  function vBiblio() {
+  function vBiblio() { S.toBiblio = true; return vMaquettes(); }
+  function biblioBody() {
     const p = S.project, A = p.assets || [];
     const kinds = ['Tout', ...new Set(A.map((a) => a.kind))];
     const k = S.bk && kinds.includes(S.bk) ? S.bk : 'Tout';
     const shown = k === 'Tout' ? A : A.filter((a) => a.kind === k);
-    return `<div class="head"><div><h1>Bibliothèque</h1><p class="lead">Les visuels, maquettes et cas d’étude du projet, prêts à réutiliser</p></div></div>
-      ${A.length ? `<div class="cats" role="group" aria-label="Filtrer">${kinds.map((x) => `<button class="cat" data-bk="${esc(x)}" aria-pressed="${k === x}"><strong>${esc(x)}</strong><span class="num">${x === 'Tout' ? A.length : A.filter((a) => a.kind === x).length}</span></button>`).join('')}</div>
+    if (!A.length && !(p.brand && p.brand.colors.length)) return '';
+    return `<section class="panel" aria-labelledby="bib-h"><div class="panel-head"><h2 id="bib-h">${ic('folder')}Bibliothèque</h2><span class="aside">Visuels et cas d’étude, prêts à réutiliser</span></div>
+      ${A.length ? `<div class="cats" role="group" aria-label="Filtrer la bibliothèque">${kinds.map((x) => `<button class="cat" data-bk="${esc(x)}" aria-pressed="${k === x}"><strong>${esc(x)}</strong><span class="num">${x === 'Tout' ? A.length : A.filter((a) => a.kind === x).length}</span></button>`).join('')}</div>
       <div class="gallery">${shown.map((a) => `<article class="tile">${a.img ? `<button class="tile-img" data-act="zoom" data-src="${esc(a.img)}" data-title="${esc(a.title)}" aria-label="Agrandir : ${esc(a.title)}"><img src="${esc(asset(a.img))}" alt="" loading="lazy"></button>` : ''}
         <div class="tile-b"><span class="chip idle">${esc(a.kind)}</span><strong>${esc(a.title)}</strong><div class="tile-a">${a.url ? `<a class="btn btn-line btn-sm" href="${esc(a.url)}" target="_blank" rel="noopener">Ouvrir</a>` : ''}${a.img && !API.demo ? `<a class="btn btn-line btn-sm" href="${esc(a.img)}" download>${ic('down')}Télécharger</a>` : ''}</div></div></article>`).join('')}</div>`
-      : `<div class="empty big">${ic('folder')}<strong>La bibliothèque se remplit au fil du projet</strong><span>Maquettes, visuels et cas d’étude apparaîtront ici dès qu’ils sont prêts.</span></div>`}
+      : ''}</section>
       ${p.brand && p.brand.colors.length ? `<section class="panel"><div class="panel-head"><h2>${ic('eye')}Couleurs de la marque</h2><span class="aside">${R('Cliquez', 'Clique')} pour copier</span></div><div class="swatches">${p.brand.colors.map(([n, h]) => `<button class="sw" data-act="copytxt" data-txt="${h}"><i style="background:${h}"></i><strong>${esc(n)}</strong><span class="num">${h}</span></button>`).join('')}</div></section>` : ''}`;
   }
 
@@ -651,8 +682,8 @@
 
   /* ---------- Plus (mobile) ---------- */
   function vPlus() {
-    const items = [...((S.project.proposals || []).length ? [['proposition', 'Proposition', 'doc']] : []), ['valider', 'À valider', 'ok'], ['maquettes', 'Maquettes', 'figma'], ['documents', 'Documents', 'doc'], ['outils', 'Boîte à outils', 'plus'], ['biblio', 'Bibliothèque', 'folder'], ['equipe', 'Équipe et aide', 'team']];
-    return `<div class="head"><div><h1>Tout ${R('votre', 'ton')} espace</h1></div></div><section class="panel"><div class="list">${items.map(([id, l, i]) => `<a class="row linkrow" href="#${id}" data-go="${id}"><span class="ico">${ic(i)}</span><div class="grow"><div class="title">${l}</div></div>${id === 'valider' && pending() ? `<span class="badge">${pending()}</span>` : ''}${ic('arrow', 'width:18px;height:18px;color:var(--muted)')}</a>`).join('')}</div></section>`;
+    const items = [['valider', 'À valider', 'ok'], ['maquettes', 'Maquettes et visuels', 'figma'], ['documents', 'Factures et documents', 'doc'], ...((S.project.tools || []).length ? [['outils', 'Boîte à outils', 'plus']] : []), ['equipe', 'Équipe et aide', 'team'], ['preferences', 'Mes notifications', 'mail']];
+    return `<div class="head"><div><h1>Tout ${R('votre', 'ton')} espace</h1></div></div><section class="panel"><div class="list">${items.map(([id, l, i]) => `<a class="row linkrow" href="#${id}" data-go="${id}"><span class="ico">${ic(i)}</span><div class="grow"><div class="title">${l}</div></div>${id === 'valider' && pending() + propsSent() ? `<span class="badge">${pending() + propsSent()}</span>` : ''}${ic('arrow', 'width:18px;height:18px;color:var(--muted)')}</a>`).join('')}</div></section>`;
   }
 
   /* ---------- Accueil d'un projet livré ---------- */
@@ -695,6 +726,28 @@
       ${p.links.old ? `<div class="ba"><a class="ba-c" href="${esc(p.links.old)}" target="_blank" rel="noopener"><span class="k">Avant</span><strong>L’ancien site</strong><span class="small muted">${esc(p.links.old.replace(/^https?:\/\//, ''))}</span></a><a class="ba-c now" href="${esc(p.links.site)}" target="_blank" rel="noopener"><span class="k">Après</span><strong>${esc(site)}</strong><span class="small">En ligne depuis le ${fmt(p.deliveredAt, { day: 'numeric', month: 'long' })}</span></a></div>` : ''}
       <div class="field"><label for="lk-post">Post LinkedIn, prêt à copier</label><textarea id="lk-post" rows="5" data-post="1">${esc(post)}</textarea></div>
       <div class="inline"><button class="btn btn-primary btn-sm" data-act="copypost">${ic('copy')}Copier le post</button><a class="btn btn-line btn-sm" href="#biblio" data-go="biblio">${ic('eye')}Visuels du site</a>${(p.tools || []).includes('signature') ? `<button class="btn btn-line btn-sm" data-tool="signature">${ic('mail')}Signature e-mail</button>` : ''}</div></section>`;
+  }
+
+  /* ---------- Cloche de notifications (client) ---------- */
+  function bell() {
+    const n = unreadInbox();
+    return `<button class="icon-btn bell" data-act="bell" aria-expanded="${!!S.bellOpen}" aria-controls="bell-pop" aria-label="Notifications${n ? ', ' + n + ' non lue' + (n > 1 ? 's' : '') : ''}" title="Notifications">${ic('bell')}${n ? `<span class="badge" aria-hidden="true">${n}</span>` : ''}</button>`;
+  }
+  function bellPop() {
+    if (!S.bellOpen || isAdmin()) return '';
+    const L = (S.inbox || []).slice(0, 8);
+    return `<div class="bell-pop" id="bell-pop" role="region" aria-label="Notifications"><div class="bell-h"><strong>Notifications</strong>${unreadInbox() ? '<button class="ghost" data-act="bell-read">Tout marquer comme lu</button>' : ''}</div>
+      <ul class="list plain">${L.map((n) => `<li><button class="row inbox-row ${n.read ? '' : 'unread'}" data-cnotif="${n.id}"><span class="grow"><span class="title">${esc(n.text)}</span><span class="sub">${ago(n.at)}</span></span>${n.read ? '' : '<span class="dot-new" aria-hidden="true"></span><span class="sr">Non lu</span>'}</button></li>`).join('') || `<li class="muted" style="padding:12px">Rien de nouveau. On ${R('vous', 'te')} prévient ici et par e-mail.</li>`}</ul>
+      <div class="bell-f"><a href="#preferences" data-go="preferences">Régler mes notifications</a></div></div>`;
+  }
+  function vPreferences() {
+    const pr = S.me.prefs || { mail: true, weekly: true };
+    return `<div class="head"><div><h1>Mes notifications</h1><p class="lead">${esc(S.me.email)}</p></div></div>
+      <form class="panel form" data-form="cprefs"><fieldset class="field" style="border:0;padding:0;margin:0"><legend class="small" style="font-weight:500;margin-bottom:10px">Par e-mail</legend>
+        <div class="ob-pref"><label><input type="checkbox" id="cp-mail" ${pr.mail !== false ? 'checked' : ''}> Quand on a besoin de ${R('vous', 'toi')} : validation, nouveau livrable, message, rappel</label>
+        <label><input type="checkbox" id="cp-week" ${pr.weekly !== false ? 'checked' : ''}> Le point de la semaine, dès que l’équipe le publie</label></div></fieldset>
+        <p class="hint">Dans l’espace, la cloche montre toujours tout.</p>
+        <div><button class="btn btn-primary btn-sm" type="submit">Enregistrer</button></div></form>`;
   }
 
   /* ---------- Fin de projet : remise, avis ---------- */
@@ -1202,8 +1255,8 @@
     if (f) return `[data-form="${CSS.escape(f.dataset.form)}"]${f.dataset.id ? `[data-id="${CSS.escape(f.dataset.id)}"]` : ''} ${el.tagName.toLowerCase()}${el.type ? `[type="${CSS.escape(el.type)}"]` : ''}`;
     return null;
   }
-  const dialogOpen = () => !!(S.ob || S.zoom || S.compose || S.mailView);
-  const TITLES = { proposition: 'Proposition', accueil: 'Accueil', projet: 'Étapes', valider: 'À valider', maquettes: 'Maquettes', messages: 'Messages', fichiers: 'Fichiers', documents: 'Documents', outils: 'Boîte à outils', biblio: 'Bibliothèque', equipe: 'Équipe et aide', plus: 'Plus', inbox: 'Boîte de réception', reglages: 'Réglages', clients: 'Clients', nouveau: 'Nouvel espace client' };
+  const dialogOpen = () => !!(S.ob || S.zoom || S.compose || S.mailView || S.fview);
+  const TITLES = { preferences: 'Mes notifications', proposition: 'Proposition', accueil: 'Accueil', projet: 'Étapes', valider: 'À valider', maquettes: 'Maquettes', messages: 'Messages', fichiers: 'Fichiers', documents: 'Documents', outils: 'Boîte à outils', biblio: 'Bibliothèque', equipe: 'Équipe et aide', plus: 'Plus', inbox: 'Boîte de réception', reglages: 'Réglages', clients: 'Clients', nouveau: 'Nouvel espace client' };
   let wasDialog = false;
   /* onlyMain : seule la zone principale change (filtre, question rapide) ; la barre latérale et le reste ne sont pas reconstruits. */
   function render(focus, onlyMain) {
@@ -1214,9 +1267,9 @@
     if (!S.me) { root.innerHTML = vConnexion(); }
     else if (clientMode()) {
       if (!S.project) { root.innerHTML = shell('<div class="empty">Votre espace est en cours de préparation.</div>'); return; }
-      const V = { accueil: () => (S.project.deliveredAt ? vAccueilLivre() : vAccueil()), proposition: vProposition, projet: vProjet, valider: vValider, maquettes: vMaquettes, messages: vMessages, fichiers: vFichiers, documents: vDocuments, outils: vOutils, biblio: vBiblio, equipe: vEquipe, plus: vPlus };
+      const V = { accueil: () => (S.project.deliveredAt ? vAccueilLivre() : vAccueil()), proposition: vProposition, preferences: vPreferences, projet: vProjet, valider: vValider, maquettes: vMaquettes, messages: vMessages, fichiers: vFichiers, documents: vDocuments, outils: vOutils, biblio: vBiblio, equipe: vEquipe, plus: vPlus };
       if (!V[S.view]) S.view = 'accueil';
-      if (wrap) wrap.innerHTML = wrapHtml(V[S.view]()); else root.innerHTML = shell(V[S.view]()) + (S.ob ? onboarding() : '') + lightbox();
+      if (wrap) wrap.innerHTML = wrapHtml(V[S.view]()); else root.innerHTML = shell(V[S.view]()) + bellPop() + (S.ob ? onboarding() : '') + lightbox() + filePreview();
     } else {
       const V = { inbox: vInbox, reglages: vReglages, clients: vClients, nouveau: vNouveau, admin: vAdmin };
       if (!V[S.view] || (S.view === 'admin' && !S.project)) S.view = 'inbox';
@@ -1245,6 +1298,9 @@
   }
   async function go(v) {
     if (v === 'deconnexion') return logout();
+    // Rubriques regroupées : Documents est un onglet de Fichiers, la Bibliothèque une section de Maquettes.
+    if (!isAdmin() || S.preview) { if (v === 'documents') { S.ftab = 'docs'; v = 'fichiers'; } else if (v === 'fichiers') S.ftab = S.ftab === 'docs' && S.view === 'fichiers' ? 'docs' : 'mine'; if (v === 'biblio') { S.toBiblio = true; v = 'maquettes'; } }
+    S.bellOpen = false;
     if (v === 'compose') return openCompose();
     if (v === 'inbox' && isAdmin()) { await loadInbox(); await loadProjects(); }
     if (v === 'reglages' && isAdmin()) { try { S.outbox = await API.outbox(); } catch { S.outbox = null; } try { S.connectors = (await API.connectors()).connectors; } catch { S.connectors = []; } }
@@ -1252,12 +1308,13 @@
     // Côté client, chaque changement de vue reprend les dernières données (une étape publiée par l'équipe apparaît tout de suite).
     if (!isAdmin() && S.project && !S.preview) { try { const r = await API.project(S.project.id); S.project = r.project; S.people = r.people || S.people; } catch {} }
     S.view = v; S.valForm = null; S.tool = v === 'outils' ? S.tool : null; render(true);
+    if (S.toBiblio) { S.toBiblio = false; const b = document.getElementById('biblio'); if (b) { b.scrollIntoView({ block: 'start' }); const h = b.querySelector('h2'); if (h) { h.setAttribute('tabindex', '-1'); h.focus({ preventScroll: true }); } } }
     if (v === 'messages' && S.project && (isAdmin() ? false : unread()) && !S.preview) { try { await API.action(S.project.id, { type: 'msg.read' }); await loadProject(S.project.id); } catch {} }
   }
   async function enter() {
     const r = await API.me(); S.me = r.user; S.team = r.team || []; S.config = r.config || {};
     if (S.me.role === 'admin') { await loadProjects(); await loadInbox(); S.view = 'inbox'; S.project = null; try { S.connectors = (await API.connectors()).connectors; } catch { S.connectors = []; } }
-    else { await loadProjects(); if (S.projects[0]) { const d = await API.project(S.projects[0].id); S.project = d.project; S.people = d.people || {}; } S.view = 'accueil'; if (S.project && !S.me.onboardedAt) S.ob = { step: 0 }; orderTeam(); }
+    else { await loadInbox(); await loadProjects(); if (S.projects[0]) { const d = await API.project(S.projects[0].id); S.project = d.project; S.people = d.people || {}; } S.view = 'accueil'; if (S.project && !S.me.onboardedAt) S.ob = { step: 0 }; orderTeam(); }
     S.loading = false; render(); window.scrollTo(0, 0);
     // Mise en ligne récente : une célébration, une seule fois par appareil.
     const P = S.project;
@@ -1327,6 +1384,9 @@
   document.addEventListener('click', async (e) => {
     const g = e.target.closest('[data-go]'); if (g) { e.preventDefault(); return go(g.dataset.go); }
     const o = e.target.closest('[data-open]'); if (o) return openProject(o.dataset.open);
+    const cn = e.target.closest('[data-cnotif]'); if (cn) { const n = (S.inbox || []).find((x) => x.id === cn.dataset.cnotif); try { await API.readNotif(n.id); } catch {} n.read = true; S.bellOpen = false; return go((n.go && n.go.view) || 'accueil'); }
+    const ft = e.target.closest('[data-ftab]'); if (ft) { S.ftab = ft.dataset.ftab; return render(false, true); }
+    if (S.bellOpen && !e.target.closest('#bell-pop, [data-act=bell]')) { S.bellOpen = false; render(); }
     const nt = e.target.closest('[data-notif]'); if (nt) { const n = S.inbox.find((x) => x.id === nt.dataset.notif); try { await API.readNotif(n.id); } catch {} n.read = true; await openProject(n.projectId); S.tab = (n.go && n.go.tab) || 'pilotage'; render(true); if (S.tab === 'messages') markAgencyRead(); return; }
     const ib = e.target.closest('[data-inbox]'); if (ib) { S.inboxFilter = ib.dataset.inbox; return render(false, true); }
     const mn = e.target.closest('[data-mine]'); if (mn) { S.mine = mn.dataset.mine === '1'; return render(false, true); }
@@ -1342,7 +1402,15 @@
       case 'toast': e.preventDefault(); toast(a.dataset.msg); break;
       case 'theme': { const r = document.documentElement; const dark = r.dataset.theme ? r.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches; r.dataset.theme = dark ? 'light' : 'dark'; try { localStorage.setItem('orem-theme', r.dataset.theme); } catch {} break; }
       case 'logout': logout(); break;
-      case 'approve': if (S.preview) return toast('Aperçu : les actions sont désactivées.'); if (await act({ type: 'val.approve', vid: id }, 'Validation enregistrée. L’équipe est prévenue.')) { S.view = 'valider'; render(); celebrate(); } break;
+      case 'approve': if (S.preview) return toast('Aperçu : les actions sont désactivées.'); S.valConfirm = id; render(); { const b = document.querySelector('[data-act=approve-ok]'); b && b.focus(); } break;
+      case 'approve-cancel': S.valConfirm = null; render(); break;
+      case 'approve-ok': { S.valConfirm = null; if (await act({ type: 'val.approve', vid: id })) { S.view = 'valider'; render(); celebrate(); undoBar(id); } break; }
+      case 'val-undo': { clearTimeout(undoBar.t); $('#undo') && $('#undo').remove(); if (await act({ type: 'val.undo', vid: id }, 'Validation annulée. Rien n’a été envoyé à l’équipe.')) render(); break; }
+      case 'fview': S.fview = id; render(); break;
+      case 'fview-close': if (e.target.closest('video, iframe, img, a')) return; S.fview = null; render(); break;
+      case 'file-remove-own': if (await act({ type: 'file.remove', fid: id }, 'Fichier retiré.')) render(); break;
+      case 'bell': S.bellOpen = !S.bellOpen; render(); if (S.bellOpen) { const f = document.querySelector('#bell-pop button, #bell-pop a'); f && f.focus(); } break;
+      case 'bell-read': try { await API.readNotif(); } catch {} await loadInbox(); render(); break;
       case 'changes': if (S.preview) return toast('Aperçu : les actions sont désactivées.'); S.valForm = id; render(); { const t = $('#chg-' + id); t && t.focus(); } break;
       case 'valcancel': S.valForm = null; render(); break;
       case 'task': if (S.preview) return toast('Aperçu : les actions sont désactivées.'); act({ type: 'task.toggle', tid: id }); break;
@@ -1480,6 +1548,7 @@
       case 'ask': { const q = v('ask-q'); if (!q) return fieldError('ask-q', R('Écrivez votre question.', 'Écris ta question.')); S.askQ = q; S.askA = '…'; render(false, true);
         try { const r = await API.ask(S.project.id, q); S.askA = r.answer || R('Je ne trouve pas la réponse dans le projet. Écrivez à l’équipe depuis Messages, elle répond sous 24 h ouvrées.', 'Je ne trouve pas la réponse dans le projet. Écris à l’équipe depuis Messages, elle répond sous 24 h ouvrées.'); } catch (err) { S.askA = err.message; }
         render(false, true); break; }
+      case 'cprefs': if (await act({ type: 'user.prefs', mail: $('#cp-mail').checked, weekly: $('#cp-week').checked }, 'Préférences enregistrées.')) { S.me.prefs = { mail: $('#cp-mail') ? $('#cp-mail').checked : true, weekly: $('#cp-week') ? $('#cp-week').checked : true }; } break;
       case 'settings': try { const r = await API.settings({ booking: v('st-b'), training: v('st-t'), reviewUrl: v('st-r'), holder: v('st-h'), bank: v('st-k'), address: v('st-a'), iban: v('st-i'), bic: v('st-c') }); S.config = r.settings; render(); toast('Réglages de l’agence enregistrés.'); } catch (err) { toast(err.message); } break;
       case 'infos': act({ type: 'project.update', client: v('p-c'), projet: v('p-p'), contactName: v('p-ct'), golive: v('p-g') || undefined, registre: (f.querySelector('[name=p-r]:checked') || {}).value }, 'Infos enregistrées.'); break;
     }
@@ -1487,6 +1556,7 @@
   document.addEventListener('input', (e) => {
     const t = e.target;
     if (t.dataset && t.dataset.post) { S.post = t.value; return; }
+    if (t.dataset && t.dataset.fsearch) { S.fq = t.value; render(false, true); return; }
     if (t.dataset && t.dataset.clsearch) { S.cq = t.value; render(false, true); return; }
     if (t.dataset && t.dataset.draft && S.project) { (S.drafts[S.project.id] = S.drafts[S.project.id] || {})[t.dataset.draft] = t.value; }
     if (t.getAttribute && t.getAttribute('aria-invalid') === 'true') { t.removeAttribute('aria-invalid'); const sp = document.getElementById((t.id || t.name) + '-err'); if (sp) sp.remove(); }
@@ -1506,7 +1576,8 @@
       e.preventDefault(); tabs[n].focus(); tabs[n].click(); return;
     }
     if (e.key === 'Escape' && S.ob) { const sk = document.querySelector('[data-act=ob-skip]'); if (sk) { sk.click(); return; } S.ob = null; if (!S.preview && !S.me.onboardedAt) { S.me.onboardedAt = new Date().toISOString(); API.action(S.project.id, { type: 'user.onboarded' }).catch(() => {}); } render(); return; }
-    if (e.key === 'Escape' && (S.zoom || S.compose || S.mailView)) { S.zoom = null; S.compose = null; S.mailView = null; render(); return; }
+    if (e.key === 'Escape' && (S.zoom || S.compose || S.mailView || S.fview)) { S.zoom = null; S.compose = null; S.mailView = null; S.fview = null; render(); return; }
+    if (e.key === 'Escape' && S.bellOpen) { S.bellOpen = false; render(); const b = document.querySelector('[data-act=bell]'); b && b.focus(); return; }
     if (e.target.closest && e.target.closest('.otp') && e.key === 'Backspace' && !e.target.value && e.target.previousElementSibling) e.target.previousElementSibling.focus();
   });
 
