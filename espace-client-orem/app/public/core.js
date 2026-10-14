@@ -7,7 +7,8 @@
   const DAY = 864e5;
   const iso = (d) => new Date(d).toISOString();
   const addDays = (d, n) => iso(new Date(d).getTime() + n * DAY);
-  const uid = (p) => p + '_' + Math.random().toString(36).slice(2, 10);
+  const rnd = () => { const c = typeof globalThis !== 'undefined' && globalThis.crypto; if (c && c.randomUUID) { try { return c.randomUUID().replace(/-/g, '').slice(0, 16); } catch (e) {} } return Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 10); };
+  const uid = (p) => p + '_' + rnd();
 
   /* Les 5 étapes Orem. `at` = jours après le démarrage (dates indicatives). */
   const PHASES = [
@@ -234,7 +235,28 @@
   }
 
   /* ---------- Écriture ---------- */
-  const CLIENT_ACTIONS = new Set(['val.approve', 'val.changes', 'task.toggle', 'missing.done', 'file.add', 'user.onboarded', 'msg.post', 'msg.read', 'request.add']);
+  const CLIENT_ACTIONS = new Set(['val.approve', 'val.changes', 'task.toggle', 'missing.done', 'user.onboarded', 'msg.post', 'msg.read', 'request.add']);
+
+  /* ---------- Validation des données entrantes ----------
+     Tout ce qui vient du navigateur est borné en taille, et les liens doivent être en https. */
+  const SHORT = new Set(['type', 'kind', 'priority', 'title', 't', 'sub', 'label', 'num', 'name', 'client', 'projet', 'contactName', 'status', 'lead', 'iid', 'vid', 'tid', 'mid', 'fid', 'rid', 'aid', 'id', 'go', 'registre', 'quote', 'email', 'duration', 'cat', 'offer', 'level']);
+  const URLS = new Set(['link', 'url', 'figma', 'proto', 'preview', 'site', 'img', 'review', 'video']);
+  function safeUrl(v, key) {
+    v = String(v || '').trim(); if (!v) return '';
+    if (/^https:\/\/[^\s<>"']+$/i.test(v)) return v.slice(0, 1000);
+    if (key === 'img' && (/^\/api\/files\/[\w-]+(\?inline=1)?$/.test(v) || /^(blob:|assets\/)/.test(v))) return v;
+    throw new Error('LINK');
+  }
+  function clean(v, key, depth = 0) {
+    if (depth > 4) return undefined;
+    if (v === null || v === undefined || typeof v === 'boolean') return v;
+    if (typeof v === 'number') return Number.isFinite(v) ? v : 0;
+    if (typeof v === 'string') return URLS.has(key) ? safeUrl(v, key) : v.slice(0, SHORT.has(key) ? 200 : 4000);
+    if (Array.isArray(v)) return v.slice(0, 50).map((x) => clean(x, key, depth + 1));
+    if (typeof v === 'object') { const o = {}; for (const k of Object.keys(v).slice(0, 40)) o[k] = clean(v[k], k, depth + 1); return o; }
+    return undefined;
+  }
+  const validDate = (d) => d !== undefined && d !== null && d !== '' && !isNaN(new Date(d).getTime());
 
   function log(project, user, text) {
     project.activity.unshift({ at: iso(Date.now()), by: user.id, text, seen: user.role === 'admin' });
@@ -244,7 +266,8 @@
   function applyInner(store, projectId, user, action) {
     const project = store.projects.find((p) => p.id === projectId);
     if (!project || !canSee(user, project)) return { error: 'Projet introuvable.' };
-    if (user.role !== 'admin' && !CLIENT_ACTIONS.has(action.type)) return { error: 'Action réservée à l’agence.' };
+    if (action.type === 'file.add' && !action.__internal) return { error: 'Action inconnue.' };
+    if (user.role !== 'admin' && !CLIENT_ACTIONS.has(action.type) && !(action.type === 'file.add' && action.__internal)) return { error: 'Action réservée à l’agence.' };
     const v = action.vid && project.validations.find((x) => x.id === action.vid);
     const now = iso(Date.now());
     switch (action.type) {
@@ -279,11 +302,13 @@
         const ph = project.phases.find((p) => p.items.some((i) => i.id === action.iid));
         const it = ph && ph.items.find((i) => i.id === action.iid);
         if (!it || !['wait', 'on', 'done'].includes(action.status)) return { error: 'Livrable introuvable.' };
+        if (action.due && !validDate(action.due)) return { error: 'Date invalide.' };
         it.status = action.status; if (action.due) it.due = iso(action.due); break;
       }
       case 'note.set':
         project.note = { text: String(action.text || ''), by: user.id, at: now }; break;
       case 'meeting.set':
+        if (action.when && !validDate(action.when)) return { error: 'Date invalide.' };
         project.meeting = { title: String(action.title || ''), when: action.when ? iso(action.when) : null }; break;
       case 'task.add':
         if (!String(action.t || '').trim()) return { error: 'Écrivez l’action.' };
@@ -301,8 +326,9 @@
       case 'file.add': {
         const fl = action.file; if (!fl || !fl.name) return { error: 'Fichier manquant.' };
         const cats = user.role === 'admin' ? FILE_CATS.concat(AGENCY_CATS) : FILE_CATS;
+        if (project.files.some((f) => f.id === fl.id)) return { error: 'Fichier déjà enregistré.' };
         const rec = { id: fl.id || uid('f'), name: String(fl.name).slice(0, 200), cat: cats.includes(fl.cat) ? fl.cat : (user.role === 'admin' ? 'Livrable' : 'Autres'),
-          from: user.role === 'admin' ? 'agence' : 'client', by: user.id, at: now, size: Number(fl.size) || 0, seen: user.role === 'admin', path: fl.path, url: fl.url || '' };
+          from: user.role === 'admin' ? 'agence' : 'client', by: user.id, at: now, size: Number(fl.size) || 0, seen: user.role === 'admin', path: fl.path || undefined };
         project.files.unshift(rec);
         log(project, user, 'a déposé « ' + rec.name + ' »'); return { ok: true, file: rec };
       }
@@ -314,9 +340,12 @@
           ttc: Number(action.ttc) || Math.round((Number(action.ht) || 0) * 120) / 100, status: action.status || 'due', date: now }); break;
       case 'invoice.status': {
         const inv = project.invoices.find((i) => i.id === action.iid); if (!inv) return { error: 'Facture introuvable.' };
+        if (!['future', 'due', 'paid'].includes(action.status)) return { error: 'Statut invalide.' };
         inv.status = action.status; if (action.status === 'paid') inv.paidAt = now; break;
       }
       case 'project.update': {
+        if (action.golive !== undefined && !validDate(action.golive)) return { error: 'Date de mise en ligne invalide.' };
+        if (action.registre !== undefined && !['tu', 'vous'].includes(action.registre)) return { error: 'Registre invalide.' };
         const allowed = ['client', 'projet', 'contactName', 'registre', 'golive'];
         for (const k of allowed) if (action[k] !== undefined) project[k] = k === 'golive' ? iso(action[k]) : String(action[k]);
         if (action.totalHT !== undefined) { project.billing.totalHT = Number(action.totalHT) || 0; project.billing.totalTTC = Math.round(project.billing.totalHT * 120) / 100; }
@@ -363,7 +392,7 @@
       }
       case 'team.set': {
         const admins = new Set(store.users.filter((u) => u.role === 'admin').map((u) => u.id));
-        const members = (action.members || []).filter((id) => admins.has(id));
+        const members = (Array.isArray(action.members) ? action.members : []).filter((id) => admins.has(id));
         const lead = admins.has(action.lead) ? action.lead : members[0] || null;
         if (lead && !members.includes(lead)) members.unshift(lead);
         project.team = { lead, members }; break;
@@ -433,14 +462,16 @@
     return out;
   }
   /* E-mails à envoyer tout de suite (préférence « instantané » et type coché). */
-  function emailsFor(store, notices, baseUrl) {
-    const mails = [];
+  function emailsFor(store, notices, baseUrl, grouped) {
+    const by = new Map();
     for (const n of notices) {
       const u = store.users.find((x) => x.id === n.userId); if (!u) continue;
       if (u.role === 'admin') { const pr = prefsOf(u); if (pr.email !== 'instant' || !pr.events[n.type]) continue; }
       else if (!(u.prefs ? u.prefs.mail : true) || n.type === 'activity') continue;
-      mails.push(mailFor(u, [n], baseUrl));
+      if (!by.has(u.id)) by.set(u.id, { u, items: [] }); by.get(u.id).items.push(n);
     }
+    const mails = [];
+    for (const { u, items } of by.values()) { if (grouped) mails.push(mailFor(u, items, baseUrl)); else items.forEach((n) => mails.push(mailFor(u, [n], baseUrl))); }
     return mails;
   }
   function digestFor(store, user, since, baseUrl) {
@@ -463,17 +494,59 @@
   }
   const esc = (x) => String(x ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
-  function apply(store, projectId, user, action) {
-    const res = applyInner(store, projectId, user, action);
+  function apply(store, projectId, user, rawAction, internal) {
+    if (!rawAction || typeof rawAction !== 'object' || Array.isArray(rawAction) || typeof rawAction.type !== 'string') return { error: 'Requête invalide.' };
+    let action;
+    try { action = clean(rawAction); } catch (e) { return { error: e.message === 'LINK' ? 'Lien invalide : utilisez une adresse qui commence par https://' : 'Requête invalide.' }; }
+    if (internal) action.__internal = true; else delete action.__internal;
+    const project0 = store.projects.find((p) => p.id === projectId);
+    const snap = project0 ? JSON.stringify(project0) : null, usersSnap = JSON.stringify(store.users);
+    let res;
+    try { res = applyInner(store, projectId, user, action); }
+    catch (e) {
+      // Rien ne doit rester à moitié modifié.
+      if (project0) Object.assign(project0, JSON.parse(snap));
+      store.users.splice(0, store.users.length, ...JSON.parse(usersSnap));
+      return { error: 'Requête invalide.' };
+    }
     if (res.error) return res;
     const project = store.projects.find((p) => p.id === projectId);
     res.notices = notifyFor(store, project, user, action, res);
     return res;
   }
 
+  /* Dépôt de fichier : seul le serveur (ou la démo) crée l'enregistrement, après avoir écrit le fichier. */
+  function addFile(store, projectId, user, meta) {
+    return apply(store, projectId, user, { type: 'file.add', file: { id: String(meta.id || ''), name: String(meta.name || 'fichier'), size: Number(meta.size) || 0, cat: meta.cat, path: meta.path } }, true);
+  }
+
+  /* Réglages de l'agence (coordonnées bancaires, liens de réservation…) : plus rien d'écrit en dur dans l'interface. */
+  const DEFAULT_SETTINGS = {
+    holder: 'ICONOKOM', address: '34 place du Général de Gaulle, Bureau 3, 59000 Lille', iban: 'FR76 1695 8000 0188 1420 4296 259', bic: 'QNTOFRP1XXX', bank: 'Qonto',
+    booking: 'https://app.iclosed.io/e/Orem/rdv-30min', training: 'https://app.iclosed.io/e/Orem/rdv-30min', reviewUrl: '', site: 'https://www.agence-orem.fr'
+  };
+  const settingsOf = (store) => ({ ...DEFAULT_SETTINGS, ...(store.settings || {}) });
+  function publicConfig(store) { return settingsOf(store); }
+  function setSettings(store, user, body) {
+    if (!user || user.role !== 'admin') return { error: 'Réglage réservé à l\u2019équipe.' };
+    let b; try { b = clean(body || {}); } catch (e) { return { error: 'Lien invalide : utilisez une adresse qui commence par https://' }; }
+    const next = settingsOf(store);
+    for (const k of Object.keys(DEFAULT_SETTINGS)) if (typeof b[k] === 'string') next[k] = b[k];
+    store.settings = next; return { ok: true, settings: next };
+  }
+
+  /* Relances automatiques : une validation qui attend depuis plus de 3 jours ouvrés déclenche un rappel au client (une seule fois). Complété au lot 5. */
+  function runReminders(store, now) { return { notices: [] }; }
+
+  function loginMail(user, code, link) {
+    const first = esc(String(user.name || '').split(' ')[0]);
+    return { to: user.email, name: user.name, subject: `Votre code de connexion : ${code}`, text: `Code : ${code}\nLien : ${link}\nValable 15 minutes.`,
+      html: `<div style="background:#f3f2ef;padding:32px 16px;font-family:Arial,Helvetica,sans-serif"><table width="100%" style="max-width:520px;margin:0 auto;background:#ffffff;border-radius:16px;padding:28px" cellpadding="0" cellspacing="0"><tr><td style="font-family:Georgia,serif;font-size:22px;color:#000012;padding-bottom:16px">Orem</td></tr><tr><td style="font-size:15px;color:#0b0b12">Bonjour ${first},</td></tr><tr><td style="font-size:15px;color:#2f2f3a;padding:8px 0 16px">Votre code de connexion à l\u2019espace Orem :</td></tr><tr><td style="font-size:30px;letter-spacing:.2em;font-weight:bold;color:#000012">${esc(code)}</td></tr><tr><td style="padding-top:20px"><a href="${esc(link)}" style="display:inline-block;background:#092482;color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:10px;font-size:15px">Se connecter</a></td></tr><tr><td style="font-size:12px;color:#585865;padding-top:16px">Valable 15 minutes. Si vous n\u2019avez rien demandé, ignorez cet e-mail.</td></tr></table></div>` };
+  }
+
   /* Boîte de réception et préférences (par personne). */
   function inbox(store, user) { return (store.notifications || []).filter((n) => n.userId === user.id).slice(0, 200); }
-  function readNotif(store, user, id) { (store.notifications || []).forEach((n) => { if (n.userId === user.id && (!id || n.id === id)) n.read = true; }); return { ok: true }; }
+  function readNotif(store, user, id, ids) { const set = Array.isArray(ids) ? new Set(ids.map(String)) : null; (store.notifications || []).forEach((n) => { if (n.userId === user.id && (set ? set.has(n.id) : (!id || n.id === id))) n.read = true; }); return { ok: true }; }
   function setPrefs(store, user, prefs) {
     const u = store.users.find((x) => x.id === user.id); if (!u || u.role !== 'admin') return { error: 'Réglage réservé à l\u2019équipe.' };
     const email = ['instant', 'digest', 'off'].includes(prefs.email) ? prefs.email : 'instant';
@@ -495,5 +568,5 @@
     return { ok: true, id: p.id };
   }
 
-  return { seed, newProject, apply, createProject, summary, forUser, nextStep, alerts, canSee, inbox, readNotif, setPrefs, prefsOf, emailsFor, digestFor, FILE_CATS, AGENCY_CATS };
+  return { seed, newProject, apply, addFile, createProject, summary, forUser, nextStep, alerts, canSee, inbox, readNotif, setPrefs, prefsOf, emailsFor, digestFor, loginMail, publicConfig, setSettings, settingsOf, runReminders, FILE_CATS, AGENCY_CATS };
 });

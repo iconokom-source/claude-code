@@ -6,7 +6,7 @@ const AXE = fs.readFileSync(require.resolve('axe-core/axe.min.js'), 'utf8');
 const out = { personas: [], axe: {}, security: [] };
 
 async function login(br, email, vp, opts = {}) {
-  const ctx = await br.newContext({ viewport: vp, reducedMotion: 'reduce', colorScheme: opts.dark ? 'dark' : 'light', isMobile: vp.width < 500, hasTouch: vp.width < 500 });
+  const ctx = await br.newContext({ bypassCSP: true, viewport: vp, reducedMotion: 'reduce', colorScheme: opts.dark ? 'dark' : 'light', isMobile: vp.width < 500, hasTouch: vp.width < 500 });
   const p = await ctx.newPage();
   p.errs = []; p.on('pageerror', (e) => p.errs.push(e.message));
   await p.goto(B + '/'); await p.fill('#em', email); await p.click('form[data-form=login] button[type=submit]');
@@ -49,7 +49,7 @@ const text = async (p, t) => (await p.locator('#main').innerText()).includes(t);
     await goHome(p);
     await task(P, p, 'Déposer son logo', async ({ click }) => { await click('.tabbar [data-go=fichiers]'); await p.setInputFiles('#file-in', { name: 'logo-varenne.png', mimeType: 'image/png', buffer: Buffer.alloc(5000, 1) }); await p.waitForTimeout(400); }, () => text(p, 'logo-varenne.png'));
     await goHome(p);
-    await task(P, p, 'Réserver la visio de cadrage', async () => {}, () => visible(p, '.next a[href*="cal.com"]'));
+    await task(P, p, 'Réserver la visio de cadrage', async () => {}, () => visible(p, '.next a[target=_blank]'));
     await task(P, p, 'Voir la vidéo de bienvenue de Louis', async ({ click }) => { await goHome(p); await click('.newmsg'); }, () => visible(p, '.video-card, .video'));
     await task(P, p, 'Voir les maquettes (pas encore prêtes)', async ({ click }) => { await click('.tabbar [data-go=plus]'); await click('#main [data-go=maquettes]'); }, () => text(p, 'arrivent'));
     P.sw = await p.evaluate(() => document.documentElement.scrollWidth);

@@ -120,9 +120,10 @@ function send(res, status, body, headers = {}) {
 class HttpError extends Error { constructor(status, msg) { super(msg); this.status = status; } }
 function readJson(req, max = 256 * 1024) {
   return new Promise((resolve, reject) => {
-    let raw = '';
-    req.on('data', (c) => { raw += c; if (raw.length > max) { reject(new HttpError(413, 'Requête trop lourde.')); req.destroy(); } });
+    let raw = '', over = false;
+    req.on('data', (c) => { if (over) return; raw += c; if (raw.length > max) { over = true; raw = ''; } });
     req.on('end', () => {
+      if (over) return reject(new HttpError(413, 'Requête trop lourde.'));
       try { const v = raw ? JSON.parse(raw) : {}; if (!v || typeof v !== 'object' || Array.isArray(v)) throw 0; resolve(v); }
       catch { reject(new HttpError(400, 'Requête invalide.')); }
     });

@@ -2,7 +2,8 @@
    window.DEMO = true → tout tourne dans le navigateur avec des données d'exemple (aucun serveur). */
 (function () {
   const IMG = window.IMG || { logo: 'assets/logo-black.png', louis: 'assets/louis.jpg', theophile: 'assets/theophile.jpg', clement: 'assets/clement.jpg' };
-  const CAL = 'https://cal.com/iconokom/rendez-vous-de-30-min';
+  const cfg = () => (S && S.config) || {};
+  const CALF = () => cfg().booking || 'https://app.iclosed.io/e/Orem/rdv-30min';
   const $ = (s) => document.querySelector(s);
   const ic = (id, st) => `<svg aria-hidden="true"${st ? ` style="${st}"` : ''}><use href="#i-${id}"/></svg>`;
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -42,6 +43,7 @@
         x.send(file);
       }),
       fileUrl: (f) => (f.demo ? null : '/api/files/' + f.id),
+      linkAuth: (token) => j('/api/auth/link', { method: 'POST', body: JSON.stringify({ token }) }),
       inbox: () => j('/api/inbox'),
       readNotif: (id) => j('/api/inbox/read', { method: 'POST', body: JSON.stringify({ id }) }),
       setPrefs: (p) => j('/api/me/prefs', { method: 'POST', body: JSON.stringify(p) }),
@@ -61,7 +63,7 @@
     return {
       demo: true,
       as: (email) => { me = store.users.find((u) => u.email === email); },
-      me: () => (me ? wait({ user: { ...me, notify: me.role === 'admin' ? Core.prefsOf(me) : undefined }, team: team() }) : fail('Connectez-vous.')),
+      me: () => (me ? wait({ user: { ...me, notify: me.role === 'admin' ? Core.prefsOf(me) : undefined }, team: team(), config: Core.publicConfig(store) }) : fail('Connectez-vous.')),
       login: (email) => { const u = store.users.find((x) => x.email === email); return wait(u ? { ok: true, devCode: '482917' } : { ok: true }); },
       verify: (email, code) => { const u = store.users.find((x) => x.email === email); if (!u || code !== '482917') return fail('Code incorrect ou expiré. Demandez-en un nouveau.'); me = u; return wait({ ok: true, user: u }); },
       logout: () => { me = null; return wait({ ok: true }); },
@@ -71,7 +73,7 @@
           people: Object.fromEntries(store.users.map((u) => [u.id, u.name])) }); },
       create: (data) => { const r = Core.createProject(store, me, data); return r.error ? fail(r.error) : wait(r); },
       action: (id, a) => { const r = Core.apply(store, id, me, a); mail(r); return r.error ? fail(r.error) : wait(r); },
-      upload: (id, file, cat, onp) => { onp && onp(1); const r = Core.apply(store, id, me, { type: 'file.add', file: { name: file.name, size: file.size, cat } });
+      upload: (id, file, cat, onp) => { onp && onp(1); const r = Core.addFile(store, id, me, { name: file.name, size: file.size, cat });
         mail(r); if (r.file) r.file.demo = true; return r.error ? fail(r.error) : wait(r); },
       fileUrl: () => null,
       inbox: () => wait({ items: Core.inbox(store, me) }),
@@ -166,7 +168,7 @@
   function vAccueil() {
     const p = S.project, nx = Core.nextStep(p), ph = p.phases[p.phase - 1];
     const cta = CTA[nx.go];
-    const ctaHtml = nx.go === 'cal' ? `<a class="btn" href="${CAL}" target="_blank" rel="noopener">Choisir un créneau ${ic('arrow')}</a>` : cta ? `<a class="btn" href="#${cta[1]}" data-go="${cta[1]}">${cta[0]} ${ic('arrow')}</a>` : '';
+    const ctaHtml = nx.go === 'cal' ? `<a class="btn" href="${CALF()}" target="_blank" rel="noopener">Choisir un créneau ${ic('arrow')}</a>` : cta ? `<a class="btn" href="#${cta[1]}" data-go="${cta[1]}">${cta[0]} ${ic('arrow')}</a>` : '';
     const ready = p.validations.filter((v) => v.status === 'ready');
     const actions = [
       ...ready.map((v) => ({ t: 'Valider : ' + v.t.toLowerCase(), sub: R('Prêt depuis le ', 'Prêt depuis le ') + fmt(v.readyAt), go: 'valider' })),
@@ -192,7 +194,7 @@
       <section class="panel" aria-labelledby="td">
         <div class="panel-head"><h2 id="td">${ic('ok')}${R('Vos actions', 'Tes actions')}</h2>${actions.length ? `<span class="small muted num">${doneN} sur ${actions.length}</span>` : ''}</div>
         <div class="list">${actions.map((a) => a.tid
-          ? `<div class="row ${a.done ? 'done' : ''}"><button class="check ${a.done ? 'done' : ''}" data-act="task" data-id="${a.tid}" aria-label="${a.done ? 'Décocher' : 'Cocher'} : ${esc(a.t)}" aria-pressed="${!!a.done}">${a.done ? ic('check') : ''}</button><div class="grow"><div class="title">${esc(a.t)}</div></div>${!a.done && a.go ? (a.go === 'cal' ? `<a class="btn btn-line btn-sm" href="${CAL}" target="_blank" rel="noopener">Réserver</a>` : `<a class="btn btn-line btn-sm" href="#${a.go}" data-go="${a.go}">Ouvrir</a>`) : ''}</div>`
+          ? `<div class="row ${a.done ? 'done' : ''}"><button class="check ${a.done ? 'done' : ''}" data-act="task" data-id="${a.tid}" aria-label="${a.done ? 'Décocher' : 'Cocher'} : ${esc(a.t)}" aria-pressed="${!!a.done}">${a.done ? ic('check') : ''}</button><div class="grow"><div class="title">${esc(a.t)}</div></div>${!a.done && a.go ? (a.go === 'cal' ? `<a class="btn btn-line btn-sm" href="${CALF()}" target="_blank" rel="noopener">Réserver</a>` : `<a class="btn btn-line btn-sm" href="#${a.go}" data-go="${a.go}">Ouvrir</a>`) : ''}</div>`
           : `<div class="row"><span class="rank">${String(++rk).padStart(2, '0')}</span><div class="grow"><div class="title">${esc(a.t)}</div>${a.sub ? `<div class="sub">${esc(a.sub)}</div>` : ''}</div><a class="btn btn-line btn-sm" href="#${a.go}" data-go="${a.go}">Ouvrir</a></div>`).join('') || `<p class="muted">${R('Rien à faire de votre côté pour le moment.', 'Rien à faire de ton côté pour le moment.')}</p>`}</div>
       </section>
       <section class="panel" aria-labelledby="sm">
@@ -290,8 +292,8 @@
     </div>
     <section class="panel"><div class="panel-head"><h2>${ic('doc')}Factures</h2></div><div class="list">${p.invoices.map((i) => `<div class="row"><span class="ico ${i.status === 'paid' ? 'ok' : ''}">${ic('doc')}</span><div class="grow"><div class="title">${esc(i.label)}${i.num ? ' ' + esc(i.num) : ''}</div><div class="sub num">${money(i.ht)} HT · ${money(i.ttc)} TTC${i.status === 'paid' && i.paidAt ? ' · réglée le ' + fmt(i.paidAt) : i.status === 'future' ? ' · envoyée à la livraison' : ''}</div></div>${st[i.status] || ''}</div>`).join('') || '<p class="muted">Aucune facture pour le moment.</p>'}</div></section>
     <section class="panel"><div class="panel-head"><h2>${ic('down')}PDF à télécharger</h2></div><div class="list">${docs.map(fileRow).join('') || '<p class="muted">Les devis et factures en PDF apparaîtront ici.</p>'}</div></section>
-    <section class="panel"><div class="panel-head"><h2>${ic('copy')}Coordonnées bancaires</h2><span class="small muted">Banque Qonto</span></div>
-      <dl class="kv"><dt>Titulaire</dt><dd>ICONOKOM, 34 place du Général de Gaulle, Bureau 3, 59000 Lille</dd><dt>IBAN</dt><dd id="iban">FR76 1695 8000 0188 1420 4296 259</dd><dt>BIC</dt><dd>QNTOFRP1XXX</dd></dl>
+    <section class="panel"><div class="panel-head"><h2>${ic('copy')}Coordonnées bancaires</h2><span class="small muted">Banque ${esc(cfg().bank)}</span></div>
+      <dl class="kv"><dt>Titulaire</dt><dd>${esc(cfg().holder)}, ${esc(cfg().address)}</dd><dt>IBAN</dt><dd id="iban">${esc(cfg().iban)}</dd><dt>BIC</dt><dd>${esc(cfg().bic)}</dd></dl>
       <div class="copy" style="margin-top:16px"><button class="btn btn-line btn-sm" data-act="copy">${ic('copy')}Copier l’IBAN</button></div></section>`;
   }
 
@@ -301,7 +303,7 @@
     <div class="team">${S.team.map((u) => `<section class="panel person">${IMG[u.photo] ? `<img src="${IMG[u.photo]}" alt="">` : ''}<div><h3>${esc(u.name)}</h3><div class="role-t">${esc(u.title || '')}</div>${u.phone ? `<div class="small muted num" style="margin-top:4px">${esc(u.phone)}</div>` : ''}</div>${u.wa ? `<a class="btn btn-line btn-sm" href="${u.wa}" target="_blank" rel="noopener">${ic('chat')}WhatsApp</a>` : '<span class="small muted">Joignable via Louis</span>'}</section>`).join('')}</div>
     <section class="panel" style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between">
       <div style="min-width:0;flex:1 1 280px"><h2>Besoin d’en parler de vive voix ?</h2><p class="muted" style="margin-top:6px">${R('Réservez', 'Réserve')} une visio de 30 minutes quand ${R('vous voulez', 'tu veux')}.</p></div>
-      <a class="btn btn-primary" href="${CAL}" target="_blank" rel="noopener">${ic('cal')}Réserver une visio</a></section>
+      <a class="btn btn-primary" href="${CALF()}" target="_blank" rel="noopener">${ic('cal')}Réserver une visio</a></section>
     ${qaPanel()}
     <section class="panel"><div class="panel-head"><h2>${ic('chat')}Questions fréquentes</h2></div>
       <details><summary>Que se passe-t-il quand je valide une étape ?</summary><p>La validation est enregistrée avec la date et l’heure, l’équipe est prévenue et l’étape suivante démarre.</p></details>
@@ -349,7 +351,7 @@
       case 'ou': return `Le projet est à l’étape ${p.phase} sur 5 : <strong>${esc(ph.t)}</strong>. ${done} livrable${done > 1 ? 's' : ''} sur ${ph.items.length} ${done > 1 ? 'sont faits' : 'est fait'} sur cette étape. Mise en ligne prévue vers le <strong>${fmt(p.golive, { day: 'numeric', month: 'long' })}</strong>, dans ${Math.max(0, daysTo(p.golive))} jours. <a href="#projet" data-go="projet">Voir les étapes</a>`;
       case 'moi': { const list = [...p.validations.filter((v) => v.status === 'ready').map((v) => 'valider ' + v.t.toLowerCase()), ...p.missing.map((m) => 'déposer ' + m.t.toLowerCase())];
         return list.length ? `${list.length} chose${list.length > 1 ? 's' : ''} ${R('vous attendent', 't’attendent')} : ${list.map(esc).join(', ')}. <a href="#${pending() ? 'valider' : 'fichiers'}" data-go="${pending() ? 'valider' : 'fichiers'}">Commencer</a>` : `Rien pour le moment. On ${R('vous', 'te')} prévient dès qu’on a besoin de ${R('vous', 'toi')}.`; }
-      case 'rdv': return p.meeting && p.meeting.when ? `<strong>${esc(p.meeting.title)}</strong>, ${esc(fmtTime(p.meeting.when))}. Besoin d’un autre créneau ? <a href="${CAL}" target="_blank" rel="noopener">Réserver une visio</a>` : `Aucun rendez-vous fixé. <a href="${CAL}" target="_blank" rel="noopener">Réserver une visio de 30 minutes</a>`;
+      case 'rdv': return p.meeting && p.meeting.when ? `<strong>${esc(p.meeting.title)}</strong>, ${esc(fmtTime(p.meeting.when))}. Besoin d’un autre créneau ? <a href="${CALF()}" target="_blank" rel="noopener">Réserver une visio</a>` : `Aucun rendez-vous fixé. <a href="${CALF()}" target="_blank" rel="noopener">Réserver une visio de 30 minutes</a>`;
       case 'payer': { const paid = p.invoices.filter((i) => i.status === 'paid').reduce((s, i) => s + i.ttc, 0); const next = p.invoices.find((i) => i.status !== 'paid');
         return `Déjà réglé : <strong>${money(paid)} TTC</strong> sur ${money(p.billing.totalTTC)} TTC. Reste <strong>${money(Math.max(0, p.billing.totalTTC - paid))} TTC</strong>${next ? (next.status === 'due' ? ', à régler maintenant' : ', facturés à la livraison') : ''}. <a href="#documents" data-go="documents">Voir les factures</a>`; }
       case 'qui': return `${esc(lead.name || 'Louis')}, ${esc((lead.title || 'chef de projet').toLowerCase())}, est ${R('votre', 'ton')} interlocuteur principal${lead.phone ? ` : <strong class="num">${esc(lead.phone)}</strong>` : ''}. ${lead.wa ? `<a href="${lead.wa}" target="_blank" rel="noopener">Écrire sur WhatsApp</a>` : ''}`;
@@ -658,7 +660,7 @@
   }
   function mailPreview() {
     if (!S.mailView) return '';
-    return `<div class="lb" role="dialog" aria-modal="true" aria-label="Aperçu de l’e-mail"><div class="mailbox"><div class="mail-h"><div><strong>${esc(S.mailView.subject)}</strong><span>À ${esc(S.mailView.to)}</span></div><button class="x" data-act="mail-close" aria-label="Fermer">×</button></div><div class="mail-b">${S.mailView.html}</div></div></div>`;
+    return `<div class="lb" role="dialog" aria-modal="true" aria-label="Aperçu de l’e-mail"><div class="mailbox"><div class="mail-h"><div><strong>${esc(S.mailView.subject)}</strong><span>À ${esc(S.mailView.to)}</span></div><button class="x" data-act="mail-close" aria-label="Fermer">×</button></div><iframe class="mail-b" sandbox title="Contenu de l\u2019e-mail" srcdoc="${esc(S.mailView.html)}"></iframe></div></div>`;
   }
 
   /* ---------- Équipe : ajouter n'importe quoi, depuis n'importe où ---------- */
@@ -879,6 +881,8 @@
   /* ---------- Connexion ---------- */
   function vConnexion() {
     const L = S.login;
+    if (S.linkToken) return `<div class="login"><section class="login-art"><div class="brand" style="padding:0"><img class="logo" src="${IMG.logo}" alt=""><b>Orem</b></div><div style="margin-block:40px"><div class="k">Espace client</div><h1>Tout votre projet, au même endroit.</h1></div><p class="small art-foot" style="color:var(--night-muted)">Orem, marque d\u2019ICONOKOM · agence-orem.fr</p></section>
+      <section class="login-form"><form data-form="linkauth" novalidate><div><h1 style="font-size:26px">Confirmer la connexion</h1><p class="muted" style="margin-top:8px">Vous avez cliqué sur le lien reçu par e-mail. Confirmez pour ouvrir votre espace sur cet appareil.</p></div><button class="btn btn-primary" type="submit">Ouvrir mon espace</button><button class="ghost" type="button" data-act="link-cancel" style="justify-content:center">Utiliser un code à la place</button></form></section></div>`;
     const demo = API.demo ? `<div class="or">ou, pour la démo</div><div class="demo-pick"><button class="btn btn-line" type="button" data-act="demo-as" data-email="claire@maisonlumen.fr">Entrer comme cliente (Claire, Maison Lumen)</button><button class="btn btn-line" type="button" data-act="demo-as" data-email="louis@agence-orem.fr">Entrer comme agence (Louis)</button></div>` : '';
     const expired = /lien=expire/.test(location.search) ? '<div class="alert">' + ic('alert') + '<div>Ce lien de connexion a expiré ou a déjà servi. Demandez-en un nouveau.</div></div>' : '';
     const form = L.step === 'email'
@@ -937,7 +941,7 @@
     if (v === 'messages' && S.project && (isAdmin() ? false : unread()) && !S.preview) { try { await API.action(S.project.id, { type: 'msg.read' }); await loadProject(S.project.id); } catch {} }
   }
   async function enter() {
-    const r = await API.me(); S.me = r.user; S.team = r.team || [];
+    const r = await API.me(); S.me = r.user; S.team = r.team || []; S.config = r.config || {};
     if (S.me.role === 'admin') { await loadProjects(); await loadInbox(); S.view = 'inbox'; S.project = null; }
     else { await loadProjects(); if (S.projects[0]) { const d = await API.project(S.projects[0].id); S.project = d.project; S.people = d.people || {}; } S.view = 'accueil'; if (S.project && !S.me.onboardedAt) S.ob = { step: 0 }; orderTeam(); }
     S.loading = false; render(true);
@@ -1024,6 +1028,7 @@
       case 'valreset': act({ type: 'val.reset', vid: id }, 'Validation remise en attente.'); break;
       case 'preview': S.preview = true; S.view = 'accueil'; render(true); break;
       case 'endpreview': S.preview = false; S.ob = null; S.view = 'admin'; render(true); break;
+      case 'link-cancel': S.linkToken = null; render(); break;
       case 'login-back': S.login.step = 'email'; render(); break;
       case 'demo-as': API.as(a.dataset.email); enter(); break;
       case 'skip': e.preventDefault(); { const m = $('#main'); m.focus(); const f = m.querySelector('a,button,input,select,textarea'); if (f) f.focus(); } break;
@@ -1058,6 +1063,7 @@
     e.preventDefault();
     const v = (id) => ($('#' + id) ? $('#' + id).value.trim() : '');
     switch (f.dataset.form) {
+      case 'linkauth': { try { await API.linkAuth(S.linkToken); S.linkToken = null; await enter(); } catch (err) { S.linkToken = null; render(); toast(err.message); } break; }
       case 'login': {
         const email = v('em').toLowerCase();
         if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return toast('Saisissez une adresse e-mail valide, par exemple vous@entreprise.fr.');
@@ -1116,5 +1122,6 @@
 
   try { const th = localStorage.getItem('orem-theme'); if (th) document.documentElement.dataset.theme = th; } catch {}
   if (API.demo) { API.as('claire@maisonlumen.fr'); enter(); }
+  else if (location.pathname.startsWith('/auth/')) { S.loading = false; S.linkToken = location.pathname.slice(6); history.replaceState(null, '', '/'); render(); }
   else enter().catch(() => { S.loading = false; render(); });
 })();
