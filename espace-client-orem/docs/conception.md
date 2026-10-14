@@ -1,0 +1,80 @@
+# Conception de l'espace client Orem
+
+## 1. Le problème avec l'espace actuel
+
+L'espace actuel (galerie Notion « Espace client ‹Client› » + dossier Google Drive partagé) fonctionne pour l'agence, beaucoup moins pour le client :
+
+- **Trois outils à apprendre** : Notion, Google Drive, puis WhatsApp et cal.com. Une partie des clients ne maîtrise pas Notion.
+- **Des comptes imposés** : Drive marche mal sans compte Google, Notion demande une invitation et un compte.
+- **Rien n'est à nous** : l'adresse est notion.so ou drive.google.com, avec les interfaces de ces outils.
+- **Beaucoup de maintenance manuelle** : chaque espace est rempli à la main (le skill `espace-client` applique une vingtaine de corrections au template à chaque création).
+- **Des validations fragiles** : une case cochée dans Notion vaut feu vert, mais rien ne prévient l'équipe et rien ne garde la trace des remarques.
+
+## 2. Ce que recommandent les spécialistes des portails clients
+
+Synthèse des bonnes pratiques publiées par les éditeurs de portails clients (Noloco, Copilot/Assembly, Moxo, Softr, SuiteDash, Jetadmin), recoupées entre elles. Ce sont surtout des contenus d'éditeurs, donc à lire comme des pratiques du marché plutôt que comme des études indépendantes.
+
+1. **Un seul endroit**, à la marque de l'agence, sur son propre domaine, avec des e-mails envoyés depuis ce domaine.
+2. **Un point de départ clair** : le client arrive et voit tout de suite ce qu'on attend de lui.
+3. **Peu de rubriques, des mots simples** : « Fichiers », « À valider », pas de jargon interne.
+4. **Connexion sans mot de passe** (lien magique, code par e-mail) pour les clients peu à l'aise avec les outils. C'est le standard des portails clients d'agence.
+5. **Validations explicites** : un bouton « Je valide » et un bouton « Demander des modifications », avec trace écrite.
+6. **Mobile d'abord** pour les actions fréquentes (déposer une photo, valider).
+7. **Chacun ne voit que ses données**, rôles séparés client / agence.
+8. **Ne pas lancer avec trop de fonctions** : fichiers, étapes, validations, factures, contact. Le reste après.
+
+Sources : [Noloco](https://noloco.io/blog/client-portal-best-practices) · [Jetadmin](https://www.jetadmin.io/blog/client-portal-design-how-to-build-a-secure-intuitive-portal-in-2026/) · [Softr](https://softr.io/blog/best-white-label-client-portals) · [Assembly](https://assembly.com/blog/white-label-portal) · [Moxo](https://moxo.com/blog/customize-white-label-client-portal) · [Copilot, liens magiques](https://copilot.app/guide/magic-links) · [SuiteDash, liens magiques](https://help.suitedash.com/article/359-magic-link-login)
+
+## 3. Les choix UX
+
+| Principe | Comment c'est appliqué |
+|---|---|
+| Une chose à la fois | Un seul grand bloc sombre par écran : **« Prochaine étape »**, avec un seul bouton. Tout le reste est en surfaces neutres. |
+| Savoir où on en est | Barre des 5 étapes Orem (Démarrage, Cadrage et design, Construction et mise en ligne, Formation, Livraison finale) avec dates indicatives et mise en ligne prévue. |
+| Ce qu'on attend du client | « Vos actions » regroupe automatiquement les validations en attente, les fichiers manquants et les actions ajoutées par l'agence. |
+| Feu vert écrit | « À valider » : « Je valide » ou « Demander des modifications » (commentaire obligatoire). Chaque décision est horodatée, l'agence la voit dans son tableau de bord. |
+| Déposer sans compte Google | Glisser-déposer, jusqu'à 2 Go par fichier, rangement automatique (images, vidéos, textes), et une liste « Ce qu'il nous manque » avec un bouton « Déposer » par élément. |
+| Argent clair | Montant HT et TTC, déjà réglé, reste à payer, statut de chaque facture, IBAN copiable. |
+| Humain | Photos de l'équipe, WhatsApp, réservation de visio, note « Cette semaine » signée par le chef de projet. |
+| Tu ou vous | Réglé par client à la création de l'espace (jamais deviné). |
+| Mobile | Barre d'onglets en bas (5 entrées), cibles tactiles de 44 px minimum, aucun défilement horizontal. |
+| Accessibilité | Contrastes AA, focus visible, libellés sur tous les champs, navigation clavier, mouvement réduit respecté. |
+
+Côté agence, la liste des clients affiche d'abord ce qui attend une action (« 2 nouveaux fichiers », « Modifications demandées »). Le bouton **« Voir comme le client »** affiche exactement son espace, actions désactivées.
+
+## 4. La DA : Orem, adaptée à une app
+
+La DA des documents Orem (slides 1920×1080, titres à 64 px) ne se transpose pas telle quelle dans une app qu'on consulte tous les jours. Ce qui est gardé et ce qui change :
+
+**Gardé**
+- Trykker (serif) pour les titres et les montants, Lexend Deca pour tout le reste. Les deux sont servies en local.
+- Encre `#000012`, fond `#f8f8f7` légèrement réchauffé, filets fins.
+- La **règle des deux accents** : bleu `#092482` sur fond clair, orange `#ff6200` sur fond sombre. Elle sert aussi au **mode sombre** de l'app : l'accent passe tout seul du bleu à l'orange.
+- Le dégradé nuit vers ciel, réservé à un seul objet : la carte « Prochaine étape » et l'écran de connexion.
+- Le logo Orem et la signature « Orem, marque d'ICONOKOM ».
+
+**Adapté pour l'app**
+- Une échelle de texte d'interface (15 px pour le texte courant, 13 px pour les légendes, 21 à 34 px pour les titres) au lieu de l'échelle des slides.
+- **Couleurs d'état** (vert « fait / payé », ambre « à valider / nouveau »), indispensables dans une app et absentes de la palette des documents. Elles ne servent qu'aux pastilles d'état, jamais comme accent.
+- Coins arrondis et pastilles, absents des slides, pour rendre les zones cliquables évidentes.
+- Un mode sombre complet.
+
+## 5. Sécurité, version locale
+
+- Connexion par code à 6 chiffres ou lien, valable 15 minutes, 5 essais maximum, 5 demandes par adresse et par quart d'heure. La réponse est identique qu'un compte existe ou non.
+- Session dans un cookie `HttpOnly`, `SameSite=Lax` (et `Secure` en production), valable 30 jours.
+- Toute écriture exige un en-tête propre à l'app (protection contre les requêtes d'un autre site).
+- Droits vérifiés côté serveur pour chaque action : un client ne voit que son projet et ne peut que valider, demander des modifications, cocher ses actions et déposer des fichiers. Tout le reste est réservé à l'agence.
+- Fichiers stockés hors du dossier public, renommés par un identifiant aléatoire, téléchargés seulement après contrôle des droits.
+- Le serveur n'écoute que sur `127.0.0.1` par défaut.
+
+## 6. Ce qui manque avant une mise en ligne (à valider ensemble)
+
+Rien de tout cela n'est fait, volontairement : on valide d'abord l'usage en local.
+
+1. **Envoi réel des e-mails** de connexion et des notifications (nouveau fichier, validation, remarque) depuis une adresse `@agence-orem.fr` (Brevo, déjà utilisé).
+2. **Hébergement et sous-domaine**, par exemple `espace.agence-orem.fr`, avec HTTPS. Une fois validé seulement.
+3. **Base de données et stockage durables** : remplacer `db.json` par une vraie base (Postgres) et les fichiers par un stockage objet, avec sauvegardes. Option : continuer à copier les fichiers reçus dans le dossier Drive du client pour que l'équipe garde ses habitudes.
+4. **Connexions aux outils** : factures depuis Abby, paiements détectés dans Qonto, étape du deal Pipedrive, création automatique de l'espace à la signature.
+5. **Reprise des clients en cours** depuis la galerie Notion.
+6. Tests utilisateurs avec 2 ou 3 clients avant de généraliser.
