@@ -1,74 +1,65 @@
 # Séquence Lemlist : « Site payé au mois, jamais vraiment à vous »
 
-Préparée le 14/10/2026. Statut : brouillon, rien créé dans Lemlist, aucun lead importé.
+Préparée le 14/10/2026. Campagne Lemlist « FR - Site en location / reprise en main - Côte d'Azur » (`cam_z37C7sANHetY9Bh4J`), **en brouillon**, 7 étapes, aucun lead, en attente de validation par Théophile.
 
 ## Cible
 
-Les clients affichés en référence par une agence web niçoise (11 réalisations publiques, 7 avis Google datés de juin à novembre 2023). C'est le même schéma que Maison & Cinéma et CineDesign : site vendu sous forme de location financière (organisme de financement tiers, loyers mensuels sur plusieurs années), prestations facturées mais non livrées, modifications impossibles, noms de domaine non maîtrisés, plus de 10 000 € payés au total.
+Les clients d'une agence web niçoise : les 11 réalisations affichées sur son site et les entreprises identifiables parmi ses 65 avis Google (voir `avis-google.md`). Le schéma visé : site vendu en location financière (organisme de financement tiers, 48 mensualités), modifications impossibles, noms de domaine non maîtrisés, prestations prévues mais non livrées.
 
-La liste des prospects (site, décideur, contacts) est dans `prospects.md`.
+## Règles de rédaction
 
-## Règles de rédaction (à respecter)
-
-- **Ne jamais nommer l'agence ni l'organisme de financement**, et ne pas parler d'« arnaque » ou d'« escroquerie ». En B2B, citer un concurrent nommément en le dénigrant, c'est du dénigrement fautif (art. 1240 du Code civil). Et ces prospects ont laissé un avis positif en 2023 : les attaquer sur leur propre choix les braque. On parle d'un **schéma** (location, abonnement, dépendance), pas d'une entreprise.
-- On ne prétend pas savoir combien ils ont payé : on pose la question.
-- Maison & Cinéma et CineDesign sont cités **anonymement** tant que Fabrice et Olivier n'ont pas donné leur accord par écrit pour être cités.
-- Pas de conseil juridique : on renvoie vers leur avocat, on propose seulement un état des lieux technique (qui détient le domaine, le site, les accès).
-- Vouvoiement (artisans, restaurateurs, professions libérales de la Côte d'Azur).
-- Téléphone en priorité : la cible décroche plus vite qu'elle ne répond sur LinkedIn.
+- **Ne jamais nommer l'agence ni l'organisme de financement**, ne pas parler d'« arnaque ». Citer nommément un concurrent pour le dénigrer, c'est du dénigrement fautif (art. 1240 du Code civil). Et ces prospects ont souvent laissé un avis positif : attaquer leur choix les braque. On parle d'un **schéma** (location, dépendance), pas d'une entreprise.
+- **Aucune référence à Fabrice (Maison & Cinéma) ni à Olivier (CineDesign)**, même anonymisée : ils ne sont pas au courant.
+- On ne prétend pas savoir combien ils paient : on pose la question.
+- Pas de conseil juridique : on propose un état des lieux technique (qui détient le domaine, le site, les accès).
+- Vouvoiement. Signature : Louis.
+- Téléphone en priorité : cette cible décroche plus qu'elle ne répond sur LinkedIn.
 
 ## Variables par lead
 
-| Variable | Exemple |
-|---|---|
-| `{{firstName}}` | Jean-Marc |
-| `{{companyName}}` | JM Paysage |
-| `{{metier}}` | paysagiste |
-| `{{siteObservation}}` | le formulaire de contact renvoie une erreur / le site n'a pas bougé depuis 2023 / la page Réalisations est vide |
+| Variable | Rôle | Exemple |
+|---|---|---|
+| `{{firstName}}` | prénom | Jean-Marc |
+| `{{companyName}}` | entreprise | JM Paysage |
+| `{{segment}}` | `2023` pour les clients de 2023 (échéance 48 mois en 2027), vide sinon | 2023 |
+| `{{siteObservation}}` | constat factuel sur leur site, facultatif | le formulaire de contact renvoie une erreur |
 
 ## Structure (12 jours)
 
 | J | Canal | Étape |
 |---|---|---|
-| 0 | Email | Email 1 : la question qui fâche (qui possède votre site ?) |
-| 1 | LinkedIn | Visite de profil (si URL) |
-| 3 | Email | Email 2 : le cas anonymisé de deux dirigeants qu'on accompagne |
-| 4 | Téléphone | Appel (tâche manuelle, priorité haute) |
-| 7 | Email | Email 3 : la checklist en 4 questions |
-| 8 | SMS / tâche | Message court si numéro mobile et pas de réponse |
+| 0 | Email | Email 1 : qui possède votre site ? (variante 2023 : votre site après 2027 ?) |
+| 1 | Tâche | Visite LinkedIn + vérification du site et du whois |
+| 3 | Email | Email 2 : ce qu'on retrouve le plus souvent, et notre façon de faire |
+| 4 | Appel | Appel (priorité haute) |
+| 7 | Email | Email 3 : checklist en 4 questions |
+| 8 | Tâche | SMS court si mobile |
 | 12 | Email | Email 4 : fin de boucle |
 
 ---
 
 ## Email 1 (J0)
 
-**Objet A :** {{companyName}} : votre site vous appartient-il vraiment ?
-**Objet B :** une question sur le site de {{companyName}}
+**Objet :** {{companyName}} : votre site vous appartient-il vraiment ?
+**Objet (segment 2023) :** {{companyName}} : votre site après 2027 ?
 
 Bonjour {{firstName}},
 
-Je vous écris pour une raison précise : on accompagne en ce moment deux dirigeants de la région qui payaient leur site internet tous les mois depuis des années, sous forme de location, sans jamais en être propriétaires.
+*[Par défaut]* On reprend en ce moment les sites de dirigeants qui payaient leur site tous les mois, sous forme de location, sans jamais en être propriétaires. Parfois plus de 10 000 € au total, pour un site qu'ils ne pouvaient pas modifier eux-mêmes et des noms de domaine qui n'étaient pas à leur nom.
 
-Au total, plus de 10 000 € chacun. Pour un site qu'ils ne pouvaient pas modifier eux-mêmes (même pas changer un logo), des prestations prévues au contrat jamais livrées, et des noms de domaine qui n'étaient pas à leur nom.
+*[Segment 2023]* Beaucoup de sites vitrines ont été vendus en 2023 sous forme de location sur 48 mois. Si c'est votre cas, votre engagement se termine courant 2027, et c'est maintenant qu'il faut préparer la suite : selon les contrats, il peut être reconduit tacitement, ou le site peut disparaître le jour où les loyers s'arrêtent.
 
-En regardant {{companyName}}, j'ai remarqué que {{siteObservation}}. Ce n'est peut-être pas votre situation, mais la question vaut d'être posée :
+*[Si `siteObservation`]* En regardant le site de {{companyName}}, j'ai remarqué que {{siteObservation}}.
 
+Ce n'est peut-être pas votre situation, mais trois questions valent d'être posées :
 - Combien payez-vous chaque mois pour votre site, et jusqu'à quand ?
 - Le nom de domaine est-il à votre nom ?
 - Pouvez-vous modifier un texte ou une photo sans passer par quelqu'un ?
 
-Si une de ces réponses vous gêne, je vous propose un état des lieux gratuit de 15 minutes. On regarde ensemble qui détient quoi (domaine, hébergement, accès), sans rien vous vendre pendant l'appel.
+Si une de ces réponses vous gêne, je vous propose un état des lieux gratuit de 15 minutes : on regarde ensemble qui détient quoi (domaine, hébergement, accès), sans rien vous vendre pendant l'appel.
 
-Théophile
+Louis
 Orem
-
-### Variante pour les clients de 2023 (variable `{{segment}}` = `2023`)
-
-Les contrats de ce type durent souvent 48 mois : signé en 2023, il arrive à échéance en 2027. On remplace le premier paragraphe par :
-
-> Beaucoup de sites vitrines de la région ont été vendus en 2023 sous forme de location sur 48 mois. Si c'est votre cas, votre engagement se termine courant 2027, et c'est maintenant qu'il faut préparer la suite : selon les contrats, il peut être reconduit tacitement, ou le site peut disparaître le jour où les loyers s'arrêtent.
-
-Objet : **{{companyName}} : votre site après 2027 ?**
 
 ---
 
@@ -76,36 +67,32 @@ Objet : **{{companyName}} : votre site après 2027 ?**
 
 Bonjour {{firstName}},
 
-Pour vous donner une idée concrète de ce que je voyais derrière ma question.
+Pour être plus concret, voici ce qu'on retrouve le plus souvent quand un dirigeant nous montre le site qu'il paie au mois :
+- plusieurs sites ou noms de domaine qui se concurrencent sur Google ;
+- un formulaire de contact dont les demandes finissent en spam, voire n'arrivent jamais ;
+- des prestations prévues au contrat (réseaux sociaux, traduction, avis Google…) jamais livrées ;
+- aucune possibilité de changer soi-même un texte ou une photo.
 
-L'un des deux dirigeants dont je vous parlais conçoit des salles de cinéma privées haut de gamme. Il payait environ 600 € par mois. Résultat après un an : trois sites différents qui se concurrençaient sur Google, 15 visiteurs par mois à eux trois, et zéro demande de contact depuis le site.
-
-Ce qu'on a fait avec lui :
-- un seul site, à son nom, avec ses vrais chantiers mis en avant ;
-- un prix fixe, payé en plusieurs fois **selon les étapes du projet** (maquette validée, mise en ligne, 30 jours après), pas un loyer sans fin ;
-- une formation pour qu'il modifie lui-même ses textes et ses photos ;
-- ses anciens noms de domaine récupérés et redirigés.
-
-Son ami, dans la même situation, a pu se faire rembourser avec l'aide de son avocat. On n'est pas juristes, mais on peut vous aider à y voir clair sur la partie technique.
+Notre façon de faire est l'inverse :
+- un seul site, à votre nom, domaine compris ;
+- un prix fixe annoncé dès le départ, payé en plusieurs fois selon les étapes du projet, pas un loyer ;
+- une formation pour que vous soyez autonome ;
+- vos anciens noms de domaine récupérés et redirigés quand c'est possible.
 
 Ça vaut 15 minutes ?
 
-Théophile
+Louis
 
 ---
 
-## Appel (J4) : tâche manuelle, priorité haute
+## Appel (J4) : priorité haute
 
-**Titre :** Appel {{companyName}} : site en location ?
-
-Script :
-
-> Bonjour {{firstName}}, Théophile de l'agence Orem. Je vous ai écrit cette semaine au sujet de votre site. Je vous appelle parce qu'on aide en ce moment des chefs d'entreprise qui payaient leur site au mois, sans en être propriétaires. Une question simple : aujourd'hui, vous payez quelque chose tous les mois pour votre site ?
+> Bonjour {{firstName}}, Louis de l'agence Orem. Je vous ai écrit cette semaine au sujet de votre site. On aide en ce moment des chefs d'entreprise qui payaient leur site au mois sans en être propriétaires. Une question simple : aujourd'hui, vous payez quelque chose tous les mois pour votre site ?
 >
 > **Si oui :** Vous savez jusqu'à quand, et si le nom de domaine est à votre nom ? → proposer l'état des lieux de 15 minutes, caler le créneau.
-> **Si non / satisfait :** Parfait, c'est la bonne situation. Si un jour vous voulez refaire le site, je vous laisse mon contact. → noter dans Pipedrive, sortir le lead de la séquence.
+> **Si non / satisfait :** Parfait, c'est la bonne situation. Je vous laisse mon contact si un jour vous voulez refaire le site. → noter dans Pipedrive, sortir le lead de la séquence.
 
-À noter dans Pipedrive : mensualité, durée restante, propriétaire du domaine, niveau de satisfaction.
+À noter dans Pipedrive : mensualité, durée restante, propriétaire du domaine, satisfaction.
 
 ---
 
@@ -116,19 +103,19 @@ Bonjour {{firstName}},
 Je vous laisse une checklist rapide, à garder même si on ne se parle pas :
 
 1. **Votre contrat** : est-ce un contrat de location avec un organisme de financement, distinct de l'agence ? Si oui, les loyers peuvent continuer même si l'agence ne fait plus rien.
-2. **Votre nom de domaine** : tapez-le sur un site « whois ». Le titulaire doit être {{companyName}}, pas l'agence.
+2. **Votre nom de domaine** : tapez-le sur un site « whois ». Le titulaire doit être {{companyName}}, pas un prestataire.
 3. **Vos accès** : avez-vous l'identifiant et le mot de passe de l'administration du site ?
 4. **Votre formulaire de contact** : envoyez-vous une demande test. Arrive-t-elle bien dans votre boîte mail (et pas en spam) ?
 
 Si une seule de ces vérifications coince, répondez « état des lieux » et on regarde ça ensemble.
 
-Théophile
+Louis
 
 ---
 
-## SMS (J8) : tâche manuelle, seulement sur un mobile
+## SMS (J8) : tâche, seulement sur un mobile
 
-Bonjour {{firstName}}, Théophile de l'agence Orem. Je vous ai écrit au sujet du site de {{companyName}} : si vous le payez encore au mois, je vous offre 15 min pour vérifier qui en est vraiment propriétaire. Bonne journée.
+Bonjour {{firstName}}, Louis de l'agence Orem. Je vous ai écrit au sujet du site de {{companyName}} : si vous le payez encore au mois, je vous offre 15 min pour vérifier qui en est vraiment propriétaire. Bonne journée.
 
 ---
 
@@ -138,7 +125,7 @@ Bonjour {{firstName}}, Théophile de l'agence Orem. Je vous ai écrit au sujet d
 
 Bonjour {{firstName}},
 
-Je n'insiste pas davantage. Si votre site vous appartient et vous donne satisfaction, tant mieux, c'est exactement ce qu'on souhaite à tout le monde.
+Je n'insiste pas davantage. Si votre site vous appartient et vous donne satisfaction, tant mieux, c'est ce qu'on souhaite à tout le monde.
 
 Et si un jour vous voulez sortir d'un abonnement ou reprendre la main sur votre site, voici ce qu'on propose :
 - un site livré en 30 jours, à votre nom, prix fixe annoncé dès le départ ;
@@ -147,14 +134,14 @@ Et si un jour vous voulez sortir d'un abonnement ou reprendre la main sur votre 
 
 Il suffit de répondre à ce message.
 
-Théophile
+Louis
 Orem
 
 ---
 
-## À valider avant de lancer
+## Avant de lancer
 
-1. **Accord de Fabrice et d'Olivier** pour l'Email 2, même anonymisé : les détails (salles de cinéma, 600 €/mois, remboursement) les rendent reconnaissables auprès de leur ancienne agence. Sans accord, remplacer par « un artisan haut de gamme » et retirer le remboursement.
-2. **Expéditeur** : signé Théophile (il a suivi Fabrice), à basculer sur Louis si la boîte d'envoi est la sienne.
-3. **Volume** : 11 entreprises et 7 auteurs d'avis, donc une campagne à traiter presque à la main. Remplir `{{siteObservation}}` lead par lead, ne pas l'envoyer en masse.
-4. **RGPD** : prospection B2B sur adresses professionnelles, avec lien de désinscription et mention de la source des données, ça passe. Pas d'adresses perso (gmail) sans contact préalable.
+1. Validation de Théophile.
+2. Remplir `{{segment}}` et `{{siteObservation}}` lead par lead. La campagne est petite (30 à 40 entreprises) : pas d'envoi en masse.
+3. Ne pas importer Emeline Russier (litige en cours) ni Delphine Belleville (activité fermée).
+4. RGPD : adresses professionnelles uniquement, lien de désinscription actif.
