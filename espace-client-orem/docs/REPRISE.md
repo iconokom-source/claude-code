@@ -196,3 +196,25 @@ Failles vérifiées (fichier:ligne dans la version actuelle) :
 2. Créer `app/connectors.js` avec des versions minimales.
 3. Copier le brouillon sur `app/server.js`, adapter `app.js` (écran de confirmation du lien, `/api/verify` ne renvoie plus `user`).
 4. Rejouer les deux tests + les tests de sécurité de l'audit (faux `file.add`, `Host` piégé, cookie mal formé, champs de 1 Mo, date invalide).
+
+## Point d'arrêt (lots 2 et 4 commencés)
+
+Fait dans `core.js` :
+- gabarits par offre `OFFERS` (site, da, conseil, evolution) en 4 temps O.R.E.M. (`OREM`) ;
+- `newProject` avec `offer`, `handover`, `tutorials`, `review`, `archivedAt` ;
+- seed refait (dates Huchet réelles, vidéo de bienvenue de Théophile pour Varenne, acompte en `auto`) ;
+- `itemState` et `phaseState` (exportés, pas encore utilisés par `app.js`) ;
+- nouvelles actions `project.deliver`, `project.results`, `project.brand`, `project.tools`, `handover.toggle`, `review.add` (client), `project.archive` ;
+- acompte payé, donc action client cochée automatiquement ;
+- registre tu/vous dans les notifications, les e-mails et l'e-mail de connexion ;
+- `app.js` : nombre d'étapes dynamique (plus de « sur 5 » en dur).
+
+Reste à faire pour ces lots dans `app.js` :
+- afficher la lettre O/R/E/M et utiliser `itemState`/`phaseState` partout ;
+- choisir l'offre à la création ;
+- panneau « Mettre en ligne » (`project.deliver`), checklist de remise, avis client ;
+- retirer la case WhatsApp de l'accueil guidé ;
+- tutoriels lus dans `p.tutorials` ;
+- `runReminders` réel.
+
+Ensuite : lots 3, 5, 6, 7, 8 (voir §5).

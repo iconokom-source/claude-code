@@ -170,7 +170,7 @@ function requestCode(email, ip) {
   save(); log('auth.code', { user: user.id, ip });
   const link = `${BASE_URL}/auth/${token}`;
   if (SHOW_CODES) console.log(`\n✉️  Connexion de ${email}\n   Code : ${code}\n   Lien : ${link}\n`);
-  if (MAIL_ENABLED) sendMail(Core.loginMail(user, code, link));
+  if (MAIL_ENABLED) sendMail(Core.loginMail(user, code, link, (db.projects.find((p) => p.id === user.projectId) || {}).registre));
   return { ok: true, devCode: SHOW_CODES ? code : undefined };
 }
 function failed(email) {

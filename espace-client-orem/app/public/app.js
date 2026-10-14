@@ -126,7 +126,7 @@
       card = `<div class="pcard"><strong>${S.projects.length} espace${S.projects.length > 1 ? 's' : ''} client${S.projects.length > 1 ? 's' : ''}</strong><span class="small">${waiting ? waiting + ' attend' + (waiting > 1 ? 'ent' : '') + ' une action de l’agence' : 'Rien en attente côté agence'}</span></div>`;
     } else {
       const dots = p.phases.map((x) => `<i class="${p.deliveredAt || x.n < p.phase ? 'done' : x.n === p.phase ? 'on' : ''}"></i>`).join('');
-      card = `<div class="pcard"><strong>${esc(p.client)}</strong><span class="small">${p.deliveredAt ? 'Site en ligne · projet livré' : `Étape ${p.phase} · ${esc(p.phases[p.phase - 1].t)}`}</span><div class="pdots">${dots}<span>${p.deliveredAt ? '5/5' : p.phase + '/5'}</span></div></div>`;
+      card = `<div class="pcard"><strong>${esc(p.client)}</strong><span class="small">${p.deliveredAt ? 'Site en ligne · projet livré' : `Étape ${p.phase} · ${esc(p.phases[p.phase - 1].t)}`}</span><div class="pdots">${dots}<span>${p.deliveredAt ? p.phases.length + '/' + p.phases.length : p.phase + '/' + p.phases.length}</span></div></div>`;
     }
     const meImg = S.me.photo && IMG[S.me.photo] && !S.preview ? `<img src="${IMG[S.me.photo]}" alt="">` : esc(((S.preview ? p.contactName : S.me.name) || '?')[0]);
     return `${S.preview ? `<div class="preview-bar">${ic('eye', 'width:18px;height:18px')}<span>Aperçu de l’espace de ${esc(p.client)}, tel que le client le voit</span><button data-act="endpreview">Revenir à l’administration</button></div>` : ''}
@@ -182,7 +182,7 @@
     const delivs = p.files.filter((f) => f.from === 'agence' && f.cat === 'Livrable').slice(0, 3);
     return `
     <div class="head"><div><h1 class="brandish">Bonjour ${esc(p.contactName || S.me.name)}</h1><p class="lead">${esc(cap(fmtLong(Date.now())))} · ${esc(p.projet)}</p></div></div>
-    <section class="next" aria-labelledby="nx"><div><div class="k">Prochaine étape</div><h2 id="nx">${esc(nx.title)}</h2>${nx.text ? `<p>${esc(nx.text)}</p>` : ''}<div class="meta">Étape ${p.phase} sur 5 · ${esc(ph.t)}</div></div>${ctaHtml}</section>
+    <section class="next" aria-labelledby="nx"><div><div class="k">Prochaine étape</div><h2 id="nx">${esc(nx.title)}</h2>${nx.text ? `<p>${esc(nx.text)}</p>` : ''}<div class="meta">Étape ${p.phase} sur ${p.phases.length} · ${esc(ph.t)}</div></div>${ctaHtml}</section>
     ${unreadBanner()}
     ${kpisClient()}
     <section class="panel" aria-labelledby="av">
@@ -217,11 +217,11 @@
   function vProjet() {
     const p = S.project;
     return `
-    <div class="head"><div><h1>${R('Votre projet', 'Ton projet')}</h1><p class="lead">${esc(p.projet)}</p></div><span class="chip hl">Étape ${p.phase} sur 5</span></div>
+    <div class="head"><div><h1>${R('Votre projet', 'Ton projet')}</h1><p class="lead">${esc(p.projet)}</p></div><span class="chip hl">Étape ${p.phase} sur ${p.phases.length}</span></div>
     <p class="muted" style="max-width:62ch;margin-top:-12px">Cinq étapes, de la première visio à la livraison. On ne passe à l’étape suivante qu’avec ${R('votre', 'ton')} feu vert. Les dates sont indicatives et ajustées ensemble.</p>
     <section class="panel">
     ${p.phases.map((ph, i) => { const st = ph.n < p.phase ? 'done' : ph.n === p.phase ? 'on' : 'wait';
-      return `<div class="phase"><div class="rail"><span class="dot ${st}">${st === 'done' ? ic('check') : ph.n}</span>${i < 4 ? '<span class="line"></span>' : ''}</div>
+      return `<div class="phase"><div class="rail"><span class="dot ${st}">${st === 'done' ? ic('check') : ph.n}</span>${i < p.phases.length - 1 ? '<span class="line"></span>' : ''}</div>
       <div class="phase-body"><div class="phase-top"><h2 style="font-size:19px">${esc(ph.t)}</h2>${st === 'done' ? '<span class="chip ok">Terminé</span>' : st === 'on' ? '<span class="chip hl">En cours</span>' : '<span class="chip idle">À venir</span>'}<span class="small muted num">${fmt(ph.from)} au ${fmt(ph.to)}</span></div>
       <p>${esc(ph.txt)}</p>
       ${ph.items.length ? `<div class="deliv">${ph.items.map((it) => `<div class="row"><div class="grow"><div class="title" style="font-weight:400">${esc(it.t)}</div><div class="sub">${it.status === 'done' ? 'Fait' : 'Prévu vers le ' + fmt(it.due, { day: 'numeric', month: 'long' })}</div></div>${it.status === 'done' ? '<span class="chip ok">Fait</span>' : it.status === 'on' ? '<span class="chip hl">En cours</span>' : '<span class="chip idle">Prévu</span>'}</div>`).join('')}</div>` : ''}
@@ -328,7 +328,7 @@
     const k = (v, l, go) => `<a class="kpi" href="#${go}" data-go="${go}"><span class="v num">${v}</span><span class="l">${l}</span></a>`;
     return `<div class="kpis">
       ${k(j > 0 ? `J-${j}` : 'En ligne', j > 0 ? 'avant la mise en ligne' : R('Votre', 'Ton') + ' site est publié', 'projet')}
-      ${k(`${p.phase}<small>/5</small>`, esc(p.phases[p.phase - 1].t), 'projet')}
+      ${k(`${p.phase}<small>/${p.phases.length}</small>`, esc(p.phases[p.phase - 1].t), 'projet')}
       ${k(pending(), pending() > 1 ? 'éléments à valider' : 'élément à valider', 'valider')}
       ${k(`${sent}`, sent > 1 ? 'fichiers envoyés' : 'fichier envoyé', 'fichiers')}
     </div>`;
@@ -348,7 +348,7 @@
     const lead = S.team[0] || {};
     switch (id) {
       case 'ou': if (p.deliveredAt) return `${R('Votre', 'Ton')} site est en ligne depuis le <strong>${fmt(p.deliveredAt, { day: 'numeric', month: 'long', year: 'numeric' })}</strong>. ${p.results ? esc(p.results.stats[0][0]) + ' ' + esc(p.results.stats[0][1]) + '. ' : ''}Pour aller plus loin, on peut le faire évoluer chaque mois. <a href="#outils" data-go="outils">Voir les options</a>`;
-      case 'ou': return `Le projet est à l’étape ${p.phase} sur 5 : <strong>${esc(ph.t)}</strong>. ${done} livrable${done > 1 ? 's' : ''} sur ${ph.items.length} ${done > 1 ? 'sont faits' : 'est fait'} sur cette étape. Mise en ligne prévue vers le <strong>${fmt(p.golive, { day: 'numeric', month: 'long' })}</strong>, dans ${Math.max(0, daysTo(p.golive))} jours. <a href="#projet" data-go="projet">Voir les étapes</a>`;
+      case 'ou': return `Le projet est à l’étape ${p.phase} sur ${p.phases.length} : <strong>${esc(ph.t)}</strong>. ${done} livrable${done > 1 ? 's' : ''} sur ${ph.items.length} ${done > 1 ? 'sont faits' : 'est fait'} sur cette étape. Mise en ligne prévue vers le <strong>${fmt(p.golive, { day: 'numeric', month: 'long' })}</strong>, dans ${Math.max(0, daysTo(p.golive))} jours. <a href="#projet" data-go="projet">Voir les étapes</a>`;
       case 'moi': { const list = [...p.validations.filter((v) => v.status === 'ready').map((v) => 'valider ' + v.t.toLowerCase()), ...p.missing.map((m) => 'déposer ' + m.t.toLowerCase())];
         return list.length ? `${list.length} chose${list.length > 1 ? 's' : ''} ${R('vous attendent', 't’attendent')} : ${list.map(esc).join(', ')}. <a href="#${pending() ? 'valider' : 'fichiers'}" data-go="${pending() ? 'valider' : 'fichiers'}">Commencer</a>` : `Rien pour le moment. On ${R('vous', 'te')} prévient dès qu’on a besoin de ${R('vous', 'toi')}.`; }
       case 'rdv': return p.meeting && p.meeting.when ? `<strong>${esc(p.meeting.title)}</strong>, ${esc(fmtTime(p.meeting.when))}. Besoin d’un autre créneau ? <a href="${CALF()}" target="_blank" rel="noopener">Réserver une visio</a>` : `Aucun rendez-vous fixé. <a href="${CALF()}" target="_blank" rel="noopener">Réserver une visio de 30 minutes</a>`;
@@ -787,7 +787,7 @@
     const body = { pilotage: tPilotage, messages: tMessages, liens: tLiens, validations: tValidations, fichiers: tFichiers, factures: tFactures, acces: tAcces, activite: tActivite }[S.tab]();
     return `
     <div><button class="ghost" data-go="clients" style="padding-left:0">${ic('back')}Tous les clients</button></div>
-    <div class="head"><div><h1>${esc(p.client)}</h1><p class="lead">${esc(p.projet)} · Étape ${p.phase} sur 5</p></div><div class="head-actions"><button class="btn btn-primary" data-act="compose">${ic('plus')}Ajouter</button><button class="btn btn-line" data-act="obpreview">${ic('play')}Accueil du client</button><button class="btn btn-line" data-act="preview">${ic('eye')}Voir comme le client</button></div></div>
+    <div class="head"><div><h1>${esc(p.client)}</h1><p class="lead">${esc(p.projet)} · Étape ${p.phase} sur ${p.phases.length}</p></div><div class="head-actions"><button class="btn btn-primary" data-act="compose">${ic('plus')}Ajouter</button><button class="btn btn-line" data-act="obpreview">${ic('play')}Accueil du client</button><button class="btn btn-line" data-act="preview">${ic('eye')}Voir comme le client</button></div></div>
     <div class="tabs" role="tablist">${TABS.map(([id, l]) => `<button role="tab" aria-selected="${S.tab === id}" data-tab="${id}">${l}${tabCount[id] ? `<span class="badge">${tabCount[id]}</span>` : ''}</button>`).join('')}</div>
     ${body}`;
   }
