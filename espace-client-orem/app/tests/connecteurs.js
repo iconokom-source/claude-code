@@ -20,11 +20,14 @@ const mock = http.createServer((req, res) => {
     const json = (o, st = 200) => { res.writeHead(st, { 'content-type': 'application/json' }); res.end(JSON.stringify(o)); };
     if (req.url.startsWith('/pipedrive/deals/501') && req.method === 'PUT') { dealWon = JSON.parse(body).status; return json({ success: true }); }
     if (req.url.startsWith('/pipedrive/persons/77')) return req.headers['x-api-token'] === 'test-pipedrive' ? json({ data: { name: 'Marie Martin', first_name: 'Marie', email: [{ value: 'marie@boulangerie-martin.fr', primary: true }] } }) : json({}, 401);
-    if (req.url.startsWith('/abby/v2/customers/C-42/documents')) return json({ documents: [
-      { type: 'quote', number: 'D-2026-0151', status: 'signed', signedAt: '2026-10-11T15:00:00.000Z', amountHT: 7600, amountTTC: 9120, pdfUrl: `http://127.0.0.1:${MOCK}/abby/pdf/D-2026-0151` },
-      { type: 'invoice', number: 'F-2026-0199', label: 'Facture d’acompte (50 %)', status: 'sent', amountHT: 3800, amountTTC: 4560, date: '2026-10-13T09:00:00.000Z', pdfUrl: `http://127.0.0.1:${MOCK}/abby/pdf/F-2026-0199` },
-      { type: 'invoice', number: 'F-2026-0204', label: 'Facture de solde (50 %)', status: 'draft', amountHT: 3800, amountTTC: 4560 }] });
-    if (req.url.startsWith('/abby/pdf/')) { res.writeHead(200, { 'content-type': 'application/pdf' }); return res.end('%PDF-1.4 test'); }
+    if (req.url.startsWith('/abby/v2/billings?customerId=C-42')) return json({ docs: [
+      { id: 'b1', type: 'estimate', number: 'D-2026-0151', state: 'signed', signedAt: 1791730800000, totalAmountWithoutTaxAfterDiscount: 760000, totalAmountWithTaxAfterDiscount: 912000 },
+      { id: 'b0', type: 'estimate', number: 'D-2026-0150', state: 'refused', totalAmountWithoutTaxAfterDiscount: 100 },
+      { id: 'b2', type: 'advance', number: 'F-2026-0199', title: 'Facture d’acompte (50 %)', state: 'finalized', totalAmountWithoutTaxAfterDiscount: 380000, totalAmountWithTaxAfterDiscount: 456000, emittedAt: 1791882000 },
+      { id: 'b3', type: 'invoice', number: 'F-2026-0204', title: 'Facture de solde (50 %)', state: 'draft', totalAmountWithoutTaxAfterDiscount: 380000, totalAmountWithTaxAfterDiscount: 456000 },
+      { id: 'b5', type: 'invoice', number: 'F-2026-0210', title: 'Option maintenance', state: 'paid', paidAt: 1791900000, totalAmountWithoutTaxAfterDiscount: 50000, totalAmountWithTaxAfterDiscount: 60000, emittedAt: 1791800000 },
+      { id: 'b4', type: 'invoice', number: 'F-2026-0100', state: 'paid', archivedAt: 1, totalAmountWithoutTaxAfterDiscount: 1 }], hasNextPage: false });
+    if (/^\/abby\/v2\/billing\/b\d\/download/.test(req.url)) { res.writeHead(200, { 'content-type': 'application/pdf' }); return res.end('%PDF-1.4 test'); }
     if (req.url.startsWith('/qonto/')) {
       if (qontoDown) return json({ error: 'down' }, 500);
       if (req.headers.authorization !== 'test-login:test-secret') return json({}, 401);
@@ -120,6 +123,10 @@ const mock = http.createServer((req, res) => {
     const v1 = await louis.project('p_varenne');
     ok('Abby : synchronisation faite', ab.status === 200 && /PDF/.test(ab.body.summary), JSON.stringify(ab.body));
     ok('Abby : facture de solde ajoutée (F-2026-0204, à venir)', v1.invoices.some((i) => i.num === 'F-2026-0204' && i.status === 'future'));
+    ok('Abby : montants convertis des centimes en euros (devis 7 600 € HT, acompte 4 560 € TTC)', v1.billing.totalHT === 7600 && v1.invoices.some((i) => i.num === 'F-2026-0199' && i.ttc === 4560 && i.status === 'due'), JSON.stringify(v1.billing));
+    ok('Abby : facture payée ajoutée avec son PDF', v1.invoices.some((i) => i.num === 'F-2026-0210' && i.status === 'paid' && i.ttc === 600) && v1.files.some((f) => f.name === 'Facture F-2026-0210.pdf'));
+    ok('Abby : documents archivés et devis refusés ignorés', !v1.invoices.some((i) => i.num === 'F-2026-0100') && v1.billing.quote === 'D-2026-0151');
+    ok('Abby : PDF téléchargés par l’API Abby, avec la clé, pas pour les brouillons', calls.some((c) => c.url.startsWith('/abby/v2/billing/b5/download') && c.headers.authorization === 'Bearer test-abby') && !calls.some((c) => c.url.startsWith('/abby/v2/billing/b3/download')));
     ok('Abby : PDF du devis importé dans Documents', v1.files.some((f) => f.name === 'Devis D-2026-0151 signé.pdf' && f.cat === 'Devis' && f.from === 'agence'));
     await louis.call('/api/connectors/abby/sync', { method: 'POST', body: JSON.stringify({ projectId: 'p_varenne' }) });
     ok('Abby : une 2e synchronisation ne crée pas de doublon', (await louis.project('p_varenne')).files.filter((f) => /D-2026-0151 signé/.test(f.name)).length === 1);

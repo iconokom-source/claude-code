@@ -1,5 +1,7 @@
 /* Crée le serveur de la VERSION DE TEST chez Hetzner Cloud, sans terminal : tout s'installe au premier démarrage (cloud-init).
-   Usage : HCLOUD_TOKEN=… GITHUB_TOKEN=… SECRETS_FILE=fichier.env node deploy/hetzner-creer.js [--dry]
+   Usage : HCLOUD_TOKEN=… GITHUB_TOKEN=… SECRETS_FILE=fichier.env node deploy/hetzner-creer.js [--dry] [--remplacer]
+   --remplacer : recrée le serveur existant (nouvelles clés) en gardant son adresse IPv4, donc sans toucher au DNS.
+   Les données de test (comptes, dépôts) repartent de zéro.
    SECRETS_FILE : lignes CLE=valeur (BREVO_API_KEY, PIPEDRIVE_API_KEY, ABBY_API_KEY, FIGMA_TOKEN, ANTHROPIC_API_KEY…), jamais dans git.
    Le serveur :
    - installe Node.js 22, Caddy (HTTPS automatique), l'application (branche de travail, dossier espace-client-orem/app) ;
@@ -10,7 +12,7 @@ const fs = require('fs'), crypto = require('crypto');
 const NAME = process.env.NAME || 'espace-orem-test', TYPE = process.env.TYPE || 'cx23', LOC = process.env.LOCATION || 'nbg1';
 const DOMAIN = process.env.DOMAIN || 'espace.agence-orem.fr', BRANCH = process.env.BRANCH || 'claude/blissful-pasteur-u33w5x';
 const REPO = 'github.com/iconokom-source/claude-code', PORT = 3100;
-const dry = process.argv.includes('--dry');
+const dry = process.argv.includes('--dry'), replace = process.argv.includes('--remplacer');
 const need = (k) => { if (!process.env[k]) { console.error(`Il manque ${k}.`); process.exit(1); } return process.env[k]; };
 const HC = dry ? '' : need('HCLOUD_TOKEN'), GH = need('GITHUB_TOKEN');
 const secrets = fs.readFileSync(need('SECRETS_FILE'), 'utf8').split('\n').map((l) => l.trim()).filter((l) => /^[A-Z_][A-Z0-9_]*=/.test(l));
@@ -127,10 +129,18 @@ const api = async (method, path, body) => {
 };
 (async () => {
   const existing = (await api('GET', '/servers?name=' + NAME)).servers;
-  if (existing.length) { console.log(`Le serveur ${NAME} existe déjà : ${existing[0].public_net.ipv4.ip}`); return; }
+  let keepIp = null;
+  if (existing.length && !replace) { console.log(`Le serveur ${NAME} existe déjà : ${existing[0].public_net.ipv4.ip} (--remplacer pour le recréer)`); return; }
+  if (existing.length) {
+    const old = existing[0]; keepIp = old.public_net.ipv4.id;
+    await api('PUT', '/primary_ips/' + keepIp, { auto_delete: false });
+    await api('DELETE', '/servers/' + old.id);
+    console.log(`Ancien serveur supprimé, adresse ${old.public_net.ipv4.ip} conservée.`);
+    for (let i = 0; i < 60; i++) { const ip = (await api('GET', '/primary_ips/' + keepIp)).primary_ip; if (!ip.assignee_id) break; await new Promise((r) => setTimeout(r, 3000)); }
+  }
   let fw = (await api('GET', '/firewalls?name=espace-orem-web')).firewalls[0];
   if (!fw) fw = (await api('POST', '/firewalls', { name: 'espace-orem-web', rules: [80, 443].map((p) => ({ direction: 'in', protocol: 'tcp', port: String(p), source_ips: ['0.0.0.0/0', '::/0'] })) })).firewall;
-  const r = await api('POST', '/servers', { name: NAME, server_type: TYPE, location: LOC, image: 'ubuntu-24.04', user_data: userData, firewalls: [{ firewall: fw.id }], labels: { app: 'espace-orem', env: 'test' }, public_net: { enable_ipv4: true, enable_ipv6: true } });
+  const r = await api('POST', '/servers', { name: NAME, server_type: TYPE, location: LOC, image: 'ubuntu-24.04', user_data: userData, firewalls: [{ firewall: fw.id }], labels: { app: 'espace-orem', env: 'test' }, public_net: keepIp ? { ipv4: keepIp, enable_ipv4: true, enable_ipv6: true } : { enable_ipv4: true, enable_ipv6: true } });
   console.log(`Serveur ${NAME} créé (${TYPE}, ${LOC}) : IPv4 ${r.server.public_net.ipv4.ip}`);
   console.log('Installation automatique en cours (5 à 10 minutes).');
 })().catch((e) => { console.error('Échec : ' + e.message); process.exit(1); });

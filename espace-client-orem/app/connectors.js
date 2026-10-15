@@ -18,7 +18,6 @@ const configured = (name, env) => CONNECTORS[name].env.every((k) => !!env[k]);
 const url = (env, key, def) => String(env[key] || def).replace(/\/$/, '');
 const API = {
   pipedrive: (env) => url(env, 'PIPEDRIVE_API_URL', 'https://api.pipedrive.com/v1'),
-  // Abby : chemins à confirmer avec la documentation de l'API Abby avant le premier branchement réel (avec l'accord de Louis).
   abby: (env) => url(env, 'ABBY_API_URL', 'https://api.app-abby.com'),
   qonto: (env) => url(env, 'QONTO_API_URL', 'https://thirdparty.qonto.com/v2'),
   googleToken: (env) => url(env, 'GOOGLE_TOKEN_URL', 'https://oauth2.googleapis.com/token'),
@@ -80,31 +79,40 @@ async function webhook(source, body, headers, db, env, ctx = {}) {
 }
 
 /* ---------- Abby : devis signé et factures ----------
-   Le projet porte l'identifiant du client Abby (onglet « Accès et infos »). Réponse attendue, normalisée ici :
-   { documents: [{ type: 'quote'|'invoice', number, label, amountHT, amountTTC, status, date, signedAt, pdfUrl }] } */
+   Le projet porte l'identifiant du client Abby (onglet « Accès et infos »). API publique documentée
+   (https://api.app-abby.com/api-docs-json) : GET /v2/billings?customerId=… (montants en centimes, dates en
+   horodatage), PDF par GET /v2/billing/{id}/download. Lecture seule : rien n'est créé ni modifié chez Abby. */
+const abbyDate = (t) => { const n = Number(t); return n > 0 ? new Date(n < 1e12 ? n * 1000 : n).toISOString() : null; };
+const euros = (c) => Math.round(Number(c || 0)) / 100;
 async function abbySync(db, env, projects, ctx) {
   const H = { authorization: 'Bearer ' + env.ABBY_API_KEY };
   let n = 0, pdf = 0; const notices = [];
   for (const p of projects) {
     const cid = p.ext && p.ext.abby; if (!cid) continue;
-    const res = await getJson(ctx, `${API.abby(env)}/v2/customers/${encodeURIComponent(cid)}/documents`, H);
-    for (const d of res.documents || res.data || []) {
-      const num = String(d.number || d.reference || '').slice(0, 40); if (!num) continue;
-      const ht = Number(d.amountHT ?? d.totalExclTax ?? 0), ttc = Number(d.amountTTC ?? d.totalInclTax ?? Math.round(ht * 120) / 100);
-      if (d.type === 'quote') {
-        if (d.signedAt || /sign|accept/i.test(d.status || '')) { p.billing.quote = num; p.billing.signedAt = d.signedAt || d.date || p.billing.signedAt; if (ht) { p.billing.totalHT = ht; p.billing.totalTTC = ttc; } n++; }
+    const docs = [];
+    for (let page = 1; page <= 10; page++) {
+      const res = await getJson(ctx, `${API.abby(env)}/v2/billings?customerId=${encodeURIComponent(cid)}&page=${page}&limit=50`, H);
+      docs.push(...(res.docs || [])); if (!res.hasNextPage) break;
+    }
+    for (const d of docs) {
+      if (d.archivedAt || d.canceledAt || !['estimate', 'invoice', 'advance'].includes(d.type)) continue;
+      const num = String(d.number || '').slice(0, 40); if (!num && d.state !== 'draft') continue;
+      const ht = euros(d.totalAmountWithoutTaxAfterDiscount), ttc = euros(d.totalAmountWithTaxAfterDiscount) || Math.round(ht * 120) / 100;
+      if (d.type === 'estimate') {
+        if (d.state === 'signed' || d.signedAt) { if (p.billing.quote !== num) n++; p.billing.quote = num; p.billing.signedAt = abbyDate(d.signedAt) || p.billing.signedAt; if (ht) { p.billing.totalHT = ht; p.billing.totalTTC = ttc; } }
+        else continue;
       } else {
-        const status = /paid|pay[ée]e?/i.test(d.status || '') ? 'paid' : /draft|brouillon/i.test(d.status || '') ? 'future' : 'due';
-        let inv = p.invoices.find((i) => i.num === num) || p.invoices.find((i) => !i.num && norm(i.label) === norm(d.label));
-        if (!inv) { inv = { id: 'inv_' + crypto.randomBytes(6).toString('hex'), num, label: String(d.label || 'Facture').slice(0, 120), ht, ttc, status, date: d.date || new Date().toISOString() }; p.invoices.push(inv); n++; }
-        else if (inv.num !== num || inv.status !== status) { inv.num = num; if (status === 'paid' && inv.status !== 'paid') inv.paidAt = d.paidAt || new Date().toISOString(); inv.status = status; inv.ht = ht || inv.ht; inv.ttc = ttc || inv.ttc; n++; }
+        if (!num) continue;
+        const status = d.state === 'paid' || d.paidAt ? 'paid' : d.state === 'draft' ? 'future' : 'due';
+        const label = String(d.title || (d.type === 'advance' ? 'Facture d’acompte' : 'Facture')).slice(0, 120);
+        let inv = p.invoices.find((i) => i.num === num) || p.invoices.find((i) => !i.num && norm(i.label) === norm(label));
+        if (!inv) { inv = { id: 'inv_' + crypto.randomBytes(6).toString('hex'), num, label, ht, ttc, status, date: abbyDate(d.emittedAt) || new Date().toISOString() }; if (status === 'paid') inv.paidAt = abbyDate(d.paidAt) || inv.date; p.invoices.push(inv); n++; }
+        else if (inv.num !== num || inv.status !== status) { inv.num = num; if (status === 'paid' && inv.status !== 'paid') inv.paidAt = abbyDate(d.paidAt) || new Date().toISOString(); inv.status = status; inv.ht = ht || inv.ht; inv.ttc = ttc || inv.ttc; n++; }
       }
-      const fname = (d.type === 'quote' ? `Devis ${num} signé` : `Facture ${num}`) + '.pdf';
-      if (d.pdfUrl && ctx.saveFile && !p.files.some((f) => f.name === fname)) {
-        // Le jeton Abby ne part que vers Abby, jamais vers une adresse donnée dans la réponse.
-        const sameHost = (() => { try { return new URL(d.pdfUrl).host === new URL(API.abby(env)).host; } catch { return false; } })();
-        const r = await (ctx.fetch || fetch)(d.pdfUrl, sameHost ? { headers: H } : {});
-        if (r.ok) { await ctx.saveFile(p.id, fname, Buffer.from(await r.arrayBuffer()), d.type === 'quote' ? 'Devis' : 'Facture'); pdf++; }
+      const fname = (d.type === 'estimate' ? `Devis ${num} signé` : `Facture ${num}`) + '.pdf';
+      if (d.state !== 'draft' && d.id && ctx.saveFile && !p.files.some((f) => f.name === fname)) {
+        const r = await (ctx.fetch || fetch)(`${API.abby(env)}/v2/billing/${encodeURIComponent(d.id)}/download`, { headers: { ...H, accept: 'application/pdf' } });
+        if (r.ok) { await ctx.saveFile(p.id, fname, Buffer.from(await r.arrayBuffer()), d.type === 'estimate' ? 'Devis' : 'Facture'); pdf++; }
       }
     }
   }
