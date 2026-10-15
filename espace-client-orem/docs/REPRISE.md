@@ -222,7 +222,7 @@ Démo privée à jour jusqu'au lot 8 : https://claude.ai/artifact/BVAN9vWbkvpfS6
 
 **Tests** : `cd app && NODE_PATH=$(npm root -g):<dossier axe-core>:<dossier @anthropic-ai/sdk facultatif> CHROMIUM=/opt/pw-browsers/chromium-1194/chrome-linux/chrome ./tests/tout.sh /tmp/orem-tests` rejoue 11 suites, chacune sur des données neuves (simulation 25, equipe 14, lots 24, a11y 24, agence 26, waouh 20, accueil 25, connecteurs 38, securite 13, core 39). Dernier passage complet à 100 % avant le dernier commit.
 
-**Réaudit (notes reçues)** : sécurité 6/10 (toutes les failles corrigées, commit `20c0350`) ; produit 6,5 à 7,5/10 (corrigé : invitation, signature puis démarrage, mode prospect, PV bloquant, recalage, fichiers attendus, Évolution mensuelle, propositions dans la grille ; commit `cd89c17`) ; UX 7/10 client, 6/10 agence ; accessibilité : rapport pas encore reçu au moment de la pause (relancer un relecteur accessibilité et mobile).
+**Réaudit (notes reçues)** : sécurité 6/10 (toutes les failles corrigées, commit `20c0350`) ; produit 6,5 à 7,5/10 (corrigé : invitation, signature puis démarrage, mode prospect, PV bloquant, recalage, fichiers attendus, Évolution mensuelle, propositions dans la grille ; commit `cd89c17`) ; UX 7/10 client, 6/10 agence ; accessibilité 7,5/10 et mobile 7/10 (rapport reçu le 15/10, à corriger, voir la liste « Correctifs accessibilité » ci-dessous).
 
 **Dernier commit (« en cours, tests non rejoués »)** : correctifs de l'audit UX dans `core.js` et `app.js` : catégorie « Documents », date de livraison des offres hors site, « À venir » avant signature, retards affichés, proposition en prochaine étape et dans la cloche de Hugo, enregistrement automatique sur toute la fiche client (formulaires `data-autosave="submit"`, boutons à masquer), compteurs unifiés au périmètre « mes clients », « Tout marquer comme traité », pilotage avec l'état calculé, « 1er » du mois, textes par offre, « À valider » dans la barre du bas mobile (icône `menu` à ajouter au sprite de `index.html`), un nom par page (« Étapes »), répétitions retirées, outils vides masqués, carte « À régler » en tête des factures, accueil guidé selon le stade, onglet Mise en ligne à partir du temps E, textes de démo retirés.
 
@@ -235,3 +235,16 @@ Démo privée à jour jusqu'au lot 8 : https://claude.ai/artifact/BVAN9vWbkvpfS6
 6. Relancer l'audit accessibilité et un audit final des 4 angles, viser 10/10.
 
 **À valider par Louis** : formules et prix de l'offre Évolution ; nom de famille de Clément (laissé « Clément ») ; lien de réservation d'une formation (vide, le bouton est masqué) ; lien des conditions générales et vidéo d'accueil (Réglages) ; branchement réel des connecteurs (clés dans le coffre Notion).
+
+**Correctifs accessibilité et mobile à faire** (audit du 15/10 : axe-core passé sur 492 écrans, 2 règles seulement en échec) :
+1. Défilement horizontal à 320 px : `.tabs{position:relative}` (le `.sr` d'un badge d'onglet s'échappe), `.sr{width:1px!important;height:1px!important}` (l'input fichier `#a-up` fait 308 px).
+2. Focus caché sous la barre du bas : `scroll-padding-bottom` et `scroll-padding-top` égaux aux barres fixes sous 860 px.
+3. Focus rendu au mauvais ouvreur (visionneuse, bibliothèque, « Ajouter » de la fiche) : mémoriser l'élément ouvreur lui-même ; après « Annuler », « Pas encore » et « Oui, je valide », rendre le focus au bon bouton (ou à `#undo`).
+4. Anneau de focus orange sous 3:1 sur `.next .btn`, `.newmsg`, `.video-card` : double anneau (orange plus blanc).
+5. Aperçu d'e-mail : Échap inopérant quand le focus est dans l'iframe (`tabindex=-1` sur l'iframe).
+6. « Choisissez le client » dans « Ajouter » : `fieldError('c-p', …)`.
+7. Cloche : Tab sort du panneau ; l'insérer après le bouton ou la fermer en sortie de focus.
+8. Épingle placée seulement au centre au clavier : flèches ou grille de 9 zones.
+9. Accueil guidé : annoncer le changement d'étape (focus sur le titre ou région live).
+10. Mobile client : déconnexion et thème dans Plus ou Préférences ; barre du haut non collante si la hauteur est inférieure à 500 px.
+11. Mineurs : `ul > p` dans l'onglet Factures, alt redondant des captures, état lu deux fois dans Étapes (et `aria-current="step"`), compteur de `#undo` hors de la région live, région live permanente pour les réponses rapides, nav de la barre latérale à nommer, bouton de thème avec son état, champs de la grille Clients en pleine largeur sous 420 px, cases `flex:none`, boucle du focus dans les dialogues.
