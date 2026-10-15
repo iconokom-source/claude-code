@@ -351,7 +351,7 @@ async function check(name, env, ctx = {}) {
   if (name === 'figma') { const r = await tryJson(`${API.figma(env)}/me`, { 'X-Figma-Token': env.FIGMA_TOKEN }); return r.e ? { ok: false, message: 'Figma refuse le jeton (' + r.e + ').' } : { ok: true, message: `Figma : connecté en tant que ${r.d.handle || r.d.email || 'utilisateur'}` }; }
   if (name === 'claude') { const r = await tryJson('https://api.anthropic.com/v1/models?limit=1', { 'x-api-key': env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' }); return r.e ? { ok: false, message: 'L’API Claude refuse la clé (' + r.e + ').' } : { ok: true, message: 'Assistant : clé API Claude valide' }; }
   if (name === 'abby') { const r = await tryJson(`${API.abby(env)}/company`, { Authorization: `Bearer ${env.ABBY_API_KEY}` }); return r.e ? { ok: false, message: 'Abby refuse la clé (' + r.e + ').' } : { ok: true, message: `Abby : connecté au compte ${r.d.commercialName || r.d.name || 'de l’agence'}` }; }
-  if (name === 'google') return { ok: !!env.GOOGLE_SERVICE_ACCOUNT_JSON, message: 'Google : compte de service présent (vérifié à la première copie dans le Drive).' };
+  if (name === 'google') { try { const sa = JSON.parse(env.GOOGLE_SERVICE_ACCOUNT_JSON); await googleToken(env, ctx, 'drive'); return { ok: true, message: `Google : compte de service ${sa.client_email} accepté. Partagez le dossier Drive de chaque client avec cette adresse (Éditeur).` }; } catch (e) { return { ok: false, message: /^Google/.test(e.message) ? e.message + '.' : 'Compte de service Google illisible (' + e.message + ').' }; } }
   return { ok: true, message: 'Configuré.' };
 }
 module.exports = { check, figmaKey, CONNECTORS, status, webhook, sync, ask, copyToDrive, configured, assistantReady, onAccept };
