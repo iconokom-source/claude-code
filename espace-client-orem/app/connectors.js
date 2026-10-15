@@ -333,4 +333,17 @@ async function onAccept(project, proposalId, env, ctx = {}) {
   return { ok: true };
 }
 const db0 = (ctx) => ctx.db || { meta: {} };
-module.exports = { figmaKey, CONNECTORS, status, webhook, sync, ask, copyToDrive, configured, assistantReady, onAccept };
+/* Test de connexion, en lecture seule : on demande au service qui l'on est, rien n'est créé ni modifié. */
+async function check(name, env, ctx = {}) {
+  if (!CONNECTORS[name]) return { ok: false, message: 'Connecteur inconnu.' };
+  if (!configured(name, env)) return { ok: false, message: `Non configuré : il manque ${CONNECTORS[name].env.filter((k) => !env[k]).join(', ')}.` };
+  const tryJson = async (u, h) => { try { return { d: await getJson(ctx, u, h) }; } catch (e) { return { e: e.message }; } };
+  if (name === 'pipedrive') { const r = await tryJson(`${API.pipedrive(env)}/users/me?api_token=${encodeURIComponent(env.PIPEDRIVE_API_KEY)}`); return r.e ? { ok: false, message: 'Pipedrive refuse la clé (' + r.e + ').' } : { ok: true, message: `Pipedrive : connecté en tant que ${(r.d.data && r.d.data.name) || 'utilisateur'}` }; }
+  if (name === 'qonto') { const r = await tryJson(`${API.qonto(env)}/organization`, { Authorization: `${env.QONTO_LOGIN}:${env.QONTO_SECRET_KEY}` }); return r.e ? { ok: false, message: 'Qonto refuse les identifiants (' + r.e + ').' } : { ok: true, message: `Qonto : ${(r.d.organization && (r.d.organization.legal_name || r.d.organization.slug)) || 'organisation'} (lecture seule)` }; }
+  if (name === 'figma') { const r = await tryJson(`${API.figma(env)}/me`, { 'X-Figma-Token': env.FIGMA_TOKEN }); return r.e ? { ok: false, message: 'Figma refuse le jeton (' + r.e + ').' } : { ok: true, message: `Figma : connecté en tant que ${r.d.handle || r.d.email || 'utilisateur'}` }; }
+  if (name === 'claude') { const r = await tryJson('https://api.anthropic.com/v1/models?limit=1', { 'x-api-key': env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' }); return r.e ? { ok: false, message: 'L’API Claude refuse la clé (' + r.e + ').' } : { ok: true, message: 'Assistant : clé API Claude valide' }; }
+  if (name === 'abby') { const r = await tryJson(`${API.abby(env)}/me`, { Authorization: `Bearer ${env.ABBY_API_KEY}` }); return r.e ? { ok: false, message: `Abby n’a pas répondu comme prévu (${r.e}) : les adresses de l’API Abby restent à confirmer avec sa documentation.` } : { ok: true, message: 'Abby : clé acceptée' }; }
+  if (name === 'google') return { ok: !!env.GOOGLE_SERVICE_ACCOUNT_JSON, message: 'Google : compte de service présent (vérifié à la première copie dans le Drive).' };
+  return { ok: true, message: 'Configuré.' };
+}
+module.exports = { check, figmaKey, CONNECTORS, status, webhook, sync, ask, copyToDrive, configured, assistantReady, onAccept };

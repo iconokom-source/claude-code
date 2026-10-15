@@ -32,6 +32,10 @@ En local, aucun e-mail n'est envoyé : le code de connexion s'affiche dans le te
 
 Pour repartir de zéro : supprimer le dossier `app/data/` (base `db.json` et fichiers déposés).
 
+## Version de test en ligne
+
+Guide pas à pas : [`docs/MISE-EN-LIGNE-TEST.md`](docs/MISE-EN-LIGNE-TEST.md) (DNS, e-mails Brevo ou Google Workspace, installation en une commande sur le VPS avec `app/deploy/installer.sh`, tests à faire). En version de test, un bandeau reste affiché et les e-mails ne partent qu'aux adresses @agence-orem.fr.
+
 ## Organisation
 
 ```

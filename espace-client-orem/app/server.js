@@ -9,6 +9,8 @@ const crypto = require('node:crypto');
 const zlib = require('node:zlib');
 const Core = require('./public/core.js');
 const Connectors = require('./connectors.js');
+const Mail = require('./mail.js');
+const esc = (x) => String(x ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 /* ---------- Configuration ---------- */
 const PORT = Number(process.env.PORT) || 3000;
@@ -16,8 +18,9 @@ const HOST = process.env.HOST || '127.0.0.1';
 const LOOPBACK = ['127.0.0.1', 'localhost', '::1'].includes(HOST);
 const BASE_URL = (process.env.BASE_URL || `http://localhost:${PORT}`).replace(/\/$/, '');
 const HTTPS = BASE_URL.startsWith('https://');
-const MAIL_ENABLED = process.env.MAIL_ENABLED === '1' && !!process.env.BREVO_API_KEY;
-const MAIL_FROM = process.env.MAIL_FROM || 'espace@agence-orem.fr';
+// E-mails : Brevo ou SMTP (voir mail.js). Version de test : TEST_MODE=1, envois limités aux adresses de MAIL_ALLOW.
+const MAIL_ENABLED = Mail.config(process.env).enabled;
+const TEST_MODE = process.env.TEST_MODE === '1';
 // Le code de connexion n'est montré à l'écran qu'en local, sans envoi d'e-mail. Jamais quand le serveur est exposé.
 // Il faut à la fois : écoute locale, adresse publique en http://localhost, aucun envoi d'e-mail. Derrière un proxy HTTPS, jamais.
 const SHOW_CODES = LOOPBACK && !MAIL_ENABLED && /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(BASE_URL) && process.env.DEV_CODES !== '0';
@@ -41,8 +44,8 @@ const COOKIE = HTTPS ? '__Host-sid' : 'sid';
 const AUTH_SCALE = SHOW_CODES ? 10 : 1;
 
 if (!LOOPBACK && !HTTPS) { console.error('Refus de démarrer : un serveur exposé doit avoir BASE_URL en https://'); process.exit(1); }
-if (HTTPS && !MAIL_ENABLED) { console.error('Refus de démarrer : en https, les codes doivent partir par e-mail (MAIL_ENABLED=1 et BREVO_API_KEY).'); process.exit(1); }
-if (!LOOPBACK && !MAIL_ENABLED) { console.error('Refus de démarrer : un serveur exposé doit envoyer les codes par e-mail (MAIL_ENABLED=1 et BREVO_API_KEY).'); process.exit(1); }
+if (HTTPS && !MAIL_ENABLED) { console.error('Refus de démarrer : en https, les codes doivent partir par e-mail (MAIL_ENABLED=1, avec BREVO_API_KEY ou SMTP_HOST, SMTP_USER et SMTP_PASSWORD).'); process.exit(1); }
+if (!LOOPBACK && !MAIL_ENABLED) { console.error('Refus de démarrer : un serveur exposé doit envoyer les codes par e-mail (MAIL_ENABLED=1, avec BREVO_API_KEY ou SMTP_HOST, SMTP_USER et SMTP_PASSWORD).'); process.exit(1); }
 
 fs.mkdirSync(UPLOADS, { recursive: true });
 
@@ -94,12 +97,18 @@ async function sendMail(m, secret) {
   // Les e-mails de connexion ne sont jamais gardés en clair : ni l'équipe ni une copie de la base n'y ont accès.
   const entry = { at: new Date().toISOString(), to: m.to, subject: secret ? 'Code de connexion (contenu masqué)' : m.subject, html: secret ? '<p>Contenu masqué : e-mail de connexion.</p>' : m.html, sent: false };
   db.outbox.unshift(entry); db.outbox.length = Math.min(db.outbox.length, 200); save();
-  if (!MAIL_ENABLED) { log('mail.local', { to: m.to, subject: m.subject }); return; }
-  try {
-    const r = await fetch('https://api.brevo.com/v3/smtp/email', { method: 'POST', headers: { 'api-key': process.env.BREVO_API_KEY, 'Content-Type': 'application/json', accept: 'application/json' },
-      body: JSON.stringify({ sender: { name: 'Orem', email: MAIL_FROM }, to: [{ email: m.to, name: m.name }], subject: m.subject, htmlContent: m.html, textContent: m.text }) });
-    entry.sent = r.ok; if (!r.ok) log('mail.refused', { status: r.status }); save();
-  } catch (e) { log('mail.error', { message: e.message }); }
+  entry.from = Mail.sender(Mail.config(process.env), m.from).email;
+  if (!MAIL_ENABLED) { log('mail.local', { to: m.to, subject: m.subject }); return { sent: false, local: true, from: entry.from }; }
+  const r = await Mail.send(process.env, m);
+  entry.sent = r.sent; entry.from = r.from.email; if (!r.sent) entry.note = r.error;
+  log(r.sent ? 'mail.sent' : r.blocked ? 'mail.blocked' : 'mail.error', { to: m.to, from: r.from.email, error: r.sent ? undefined : r.error }); save();
+  return r;
+}
+/* L'e-mail part de l'adresse du membre de l'équipe qui a agi, quand il s'adresse à un client. */
+function fromTeam(m) {
+  const u = m.by && db.users.find((x) => x.id === m.by);
+  if (u && u.role === 'admin' && m.toClient) m.from = { email: u.email, name: `${u.name} · Orem` };
+  return m;
 }
 /* Les e-mails « instantanés » sont regroupés par destinataire pendant 2 minutes : pas de rafale. */
 const pending = new Map();
@@ -108,7 +117,7 @@ function deliver(notices) {
   for (const n of notices) {
     const list = pending.get(n.userId) || []; list.push(n); pending.set(n.userId, list);
     // Une validation annulée ou un fichier retiré entre-temps ne part pas par e-mail.
-    if (list.length === 1) setTimeout(() => { const items = (pending.get(n.userId) || []).filter((x) => db.notifications.some((y) => y.id === x.id)); pending.delete(n.userId); if (items.length) Core.emailsFor(db, items, BASE_URL, true).forEach(sendMail); }, Math.max(Number(process.env.MAIL_BATCH_MS || 120000), n.act === 'val.approve' ? 15000 : 0)).unref();
+    if (list.length === 1) setTimeout(() => { const items = (pending.get(n.userId) || []).filter((x) => db.notifications.some((y) => y.id === x.id)); pending.delete(n.userId); if (items.length) Core.emailsFor(db, items, BASE_URL, true).forEach((m) => sendMail(fromTeam(m))); }, Math.max(Number(process.env.MAIL_BATCH_MS || 120000), n.act === 'val.approve' ? 15000 : 0)).unref();
   }
 }
 function sendDigests(force, onlyUser) {
@@ -297,7 +306,7 @@ function filePath(f) {
 /* ---------- Export ZIP d'un espace (fin de projet) ----------
    Archive « stockée » (sans compression, les fichiers déposés le sont déjà souvent), écrite en flux :
    chaque fichier est lu une fois, son CRC est donné après les données (descripteur).
-   Format ZIP64 : aucune limite de taille (dossiers de plusieurs dizaines de Go). */
+   Aucune limite de taille : au-delà de 4 Go, l'archive passe en ZIP64 (dossiers de plusieurs dizaines de Go). */
 const CRC_T = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
 const crc32 = zlib.crc32 || ((buf, prev = 0) => { let c = ~prev >>> 0; for (let i = 0; i < buf.length; i++) c = CRC_T[(c ^ buf[i]) & 0xff] ^ (c >>> 8); return ~c >>> 0; });
 const u64 = (b, v, at) => b.writeBigUInt64LE(BigInt(v), at);
@@ -309,31 +318,42 @@ async function sendZip(res, name, entries) {
   const dos = (d) => [((d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1)) & 0xffff, (((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate()) & 0xffff];
   const [tm, dt] = dos(new Date());
   const used = new Set();
+  const BIG = 0xffffffff, ZIP64_AT = BIG;   // valeur réservée des en-têtes ; seuil de passage en ZIP64
   for (const e of entries) {
     let fname = e.name.split('/').map((seg) => seg.replace(/[\\:*?"<>|\u0000-\u001f]/g, '_').replace(/^\.+$/, '_')).join('/'); const base = fname; let i = 2;
     while (used.has(fname)) { const dot = base.lastIndexOf('.'); fname = dot > 0 ? `${base.slice(0, dot)} (${i})${base.slice(dot)}` : `${base} (${i})`; i++; }
     used.add(fname);
     const nameBuf = Buffer.from(fname, 'utf8'), start = offset;
-    // En-tête local : tailles inconnues (0xFFFFFFFF) et champ ZIP64 ; les vraies valeurs suivent les données.
-    const lh = Buffer.alloc(30); lh.writeUInt32LE(0x04034b50, 0); lh.writeUInt16LE(45, 4); lh.writeUInt16LE(0x0808, 6); lh.writeUInt16LE(0, 8); lh.writeUInt16LE(tm, 10); lh.writeUInt16LE(dt, 12);
-    lh.writeUInt32LE(0xffffffff, 18); lh.writeUInt32LE(0xffffffff, 22); lh.writeUInt16LE(nameBuf.length, 26); lh.writeUInt16LE(20, 28);
-    const lx = Buffer.alloc(20); lx.writeUInt16LE(0x0001, 0); lx.writeUInt16LE(16, 2);
-    await write(lh); await write(nameBuf); await write(lx);
+    // ZIP64 seulement quand il le faut (fichier ou position au-delà de 4 Go) : les petites archives restent au format classique, lisible partout.
+    let known = e.data ? e.data.length : 0; if (!e.data) { try { known = fs.statSync(e.abs).size; } catch {} }
+    const z = known >= ZIP64_AT || start >= ZIP64_AT;
+    const lh = Buffer.alloc(30); lh.writeUInt32LE(0x04034b50, 0); lh.writeUInt16LE(z ? 45 : 20, 4); lh.writeUInt16LE(0x0808, 6); lh.writeUInt16LE(0, 8); lh.writeUInt16LE(tm, 10); lh.writeUInt16LE(dt, 12);
+    lh.writeUInt16LE(nameBuf.length, 26);
+    if (z) { lh.writeUInt32LE(BIG, 18); lh.writeUInt32LE(BIG, 22); lh.writeUInt16LE(20, 28); }
+    await write(lh); await write(nameBuf);
+    if (z) { const lx = Buffer.alloc(20); lx.writeUInt16LE(0x0001, 0); lx.writeUInt16LE(16, 2); await write(lx); }
     let crc = 0, size = 0;
     if (e.data) { crc = crc32(e.data); size = e.data.length; await write(e.data); }
     else await new Promise((ok, ko) => { const st = fs.createReadStream(e.abs); st.on('data', (c) => { crc = crc32(c, crc); size += c.length; offset += c.length; if (!res.write(c)) { st.pause(); res.once('drain', () => st.resume()); } }); st.on('end', ok); st.on('error', ko); });
-    const dd = Buffer.alloc(24); dd.writeUInt32LE(0x08074b50, 0); dd.writeUInt32LE(crc >>> 0, 4); u64(dd, size, 8); u64(dd, size, 16); await write(dd);
-    const ch = Buffer.alloc(46); ch.writeUInt32LE(0x02014b50, 0); ch.writeUInt16LE(45, 4); ch.writeUInt16LE(45, 6); ch.writeUInt16LE(0x0808, 8); ch.writeUInt16LE(0, 10); ch.writeUInt16LE(tm, 12); ch.writeUInt16LE(dt, 14);
-    ch.writeUInt32LE(crc >>> 0, 16); ch.writeUInt32LE(0xffffffff, 20); ch.writeUInt32LE(0xffffffff, 24); ch.writeUInt16LE(nameBuf.length, 28); ch.writeUInt16LE(28, 30); ch.writeUInt32LE(0xffffffff, 42);
-    const cx = Buffer.alloc(28); cx.writeUInt16LE(0x0001, 0); cx.writeUInt16LE(24, 2); u64(cx, size, 4); u64(cx, size, 12); u64(cx, start, 20);
-    central.push(Buffer.concat([ch, nameBuf, cx]));
+    if (z) { const dd = Buffer.alloc(24); dd.writeUInt32LE(0x08074b50, 0); dd.writeUInt32LE(crc >>> 0, 4); u64(dd, size, 8); u64(dd, size, 16); await write(dd); }
+    else { const dd = Buffer.alloc(16); dd.writeUInt32LE(0x08074b50, 0); dd.writeUInt32LE(crc >>> 0, 4); dd.writeUInt32LE(size, 8); dd.writeUInt32LE(size, 12); await write(dd); }
+    const ch = Buffer.alloc(46); ch.writeUInt32LE(0x02014b50, 0); ch.writeUInt16LE(z ? 45 : 20, 4); ch.writeUInt16LE(z ? 45 : 20, 6); ch.writeUInt16LE(0x0808, 8); ch.writeUInt16LE(0, 10); ch.writeUInt16LE(tm, 12); ch.writeUInt16LE(dt, 14);
+    ch.writeUInt32LE(crc >>> 0, 16); ch.writeUInt16LE(nameBuf.length, 28);
+    if (z) {
+      ch.writeUInt32LE(BIG, 20); ch.writeUInt32LE(BIG, 24); ch.writeUInt16LE(28, 30); ch.writeUInt32LE(BIG, 42);
+      const cx = Buffer.alloc(28); cx.writeUInt16LE(0x0001, 0); cx.writeUInt16LE(24, 2); u64(cx, size, 4); u64(cx, size, 12); u64(cx, start, 20);
+      central.push(Buffer.concat([ch, nameBuf, cx]));
+    } else { ch.writeUInt32LE(size, 20); ch.writeUInt32LE(size, 24); ch.writeUInt32LE(start, 42); central.push(Buffer.concat([ch, nameBuf])); }
   }
   const cd = Buffer.concat(central), cdStart = offset; await write(cd);
-  const z64 = offset;
-  const ze = Buffer.alloc(56); ze.writeUInt32LE(0x06064b50, 0); u64(ze, 44, 4); ze.writeUInt16LE(45, 12); ze.writeUInt16LE(45, 14); u64(ze, central.length, 24); u64(ze, central.length, 32); u64(ze, cd.length, 40); u64(ze, cdStart, 48);
-  const zl = Buffer.alloc(20); zl.writeUInt32LE(0x07064b50, 0); u64(zl, z64, 8); zl.writeUInt32LE(1, 16);
-  await write(ze); await write(zl);
-  const end = Buffer.alloc(22); end.writeUInt32LE(0x06054b50, 0); end.writeUInt16LE(0xffff, 8); end.writeUInt16LE(0xffff, 10); end.writeUInt32LE(0xffffffff, 12); end.writeUInt32LE(0xffffffff, 16);
+  const end = Buffer.alloc(22); end.writeUInt32LE(0x06054b50, 0);
+  if (cdStart >= ZIP64_AT || cd.length >= ZIP64_AT || central.length >= 0xffff) {
+    const z64 = offset;
+    const ze = Buffer.alloc(56); ze.writeUInt32LE(0x06064b50, 0); u64(ze, 44, 4); ze.writeUInt16LE(45, 12); ze.writeUInt16LE(45, 14); u64(ze, central.length, 24); u64(ze, central.length, 32); u64(ze, cd.length, 40); u64(ze, cdStart, 48);
+    const zl = Buffer.alloc(20); zl.writeUInt32LE(0x07064b50, 0); u64(zl, z64, 8); zl.writeUInt32LE(1, 16);
+    await write(ze); await write(zl);
+    end.writeUInt16LE(0xffff, 8); end.writeUInt16LE(0xffff, 10); end.writeUInt32LE(BIG, 12); end.writeUInt32LE(BIG, 16);
+  } else { end.writeUInt16LE(central.length, 8); end.writeUInt16LE(central.length, 10); end.writeUInt32LE(cd.length, 12); end.writeUInt32LE(cdStart, 16); }
   res.end(end);
 }
 function exportEntries(pr, user) {
@@ -381,7 +401,8 @@ function invite(projectId, userId) {
   // Lien d'invitation personnel : un clic suffit pour entrer (valable 7 jours, une seule fois). Ensuite, connexion par code ou lien.
   const token = crypto.randomBytes(24).toString('hex');
   db.invites ||= {}; db.invites[sha(token)] = { userId: u.id, exp: Date.now() + 7 * 864e5 }; save();
-  sendMail(Core.inviteMail(u, pr, lead, BASE_URL, `${BASE_URL}/auth/${token}`)); log('invite', { project: pr.id, user: u.id });
+  const im = Core.inviteMail(u, pr, lead, BASE_URL, `${BASE_URL}/auth/${token}`); if (lead) im.from = { email: lead.email, name: `${lead.name} · Orem` };
+  sendMail(im); log('invite', { project: pr.id, user: u.id });
 }
 function projectBytes(pr) { return pr.files.reduce((s, f) => s + (f.path ? Number(f.size) || 0 : 0), 0); }
 
@@ -392,6 +413,8 @@ async function handle(req, res) {
   // Protection CSRF : toute écriture doit venir de notre propre interface (en-tête personnalisé, impossible depuis un autre site).
   if (p.startsWith('/api/') && mutating && req.headers['x-orem'] !== '1' && !p.startsWith('/api/hooks/')) return send(res, 403, { error: 'Requête refusée.' });
 
+  // Santé du service (sans connexion) : utilisé par le script d'installation et la surveillance.
+  if (p === '/api/health' && req.method === 'GET') return send(res, 200, { ok: true, test: TEST_MODE, mail: MAIL_ENABLED });
   /* Webhooks entrants (Pipedrive…) : signés par un secret partagé, sans session. */
   let m = p.match(/^\/api\/hooks\/([a-z]+)$/);
   if (m && req.method === 'POST') {
@@ -434,7 +457,7 @@ async function handle(req, res) {
   if (mutating && limited('act:' + user.id, 120, 60e3)) return send(res, 429, { error: 'Trop d’actions en peu de temps. Patientez une minute.' });
   if (mutating && user.role !== 'admin' && limited('actday:' + user.id, 3000, 864e5)) return send(res, 429, { error: 'Beaucoup d’actions aujourd’hui. Réessayez demain ou écrivez à l’équipe.' });
 
-  if (p === '/api/me') return send(res, 200, { user: publicUser(user, user), team: team(user), config: { ...Core.publicConfig(db), assistant: Connectors.assistantReady(process.env) } });
+  if (p === '/api/me') return send(res, 200, { user: publicUser(user, user), team: team(user), config: { ...Core.publicConfig(db), assistant: Connectors.assistantReady(process.env), test: TEST_MODE, mail: user.role === 'admin' ? Mail.describe(process.env) : undefined } });
   if (p === '/api/logout-all' && req.method === 'POST') { for (const [k, s] of Object.entries(db.sessions)) if (s.uid === user.id) delete db.sessions[k]; save(); clearCookie(res); return send(res, 200, { ok: true }); }
   if (p === '/api/inbox' && req.method === 'GET') return send(res, 200, { items: Core.inbox(db, user) });
   if (p === '/api/inbox/done' && req.method === 'POST') { if (user.role !== 'admin') return send(res, 403, { error: 'Réservé à l’équipe.' }); const b = await readJson(req); const r = Core.doneNotif(db, user, String(b.id || ''), !!b.undo); if (r.ok) save(); return send(res, r.error ? 400 : 200, r); }
@@ -443,6 +466,25 @@ async function handle(req, res) {
   if (p === '/api/outbox' && req.method === 'GET') { if (user.role !== 'admin') return send(res, 403, { error: 'Réservé à l’équipe.' }); return send(res, 200, { enabled: MAIL_ENABLED, items: db.outbox.filter((x) => x.to === user.email || db.users.some((u) => u.email === x.to && u.role !== 'admin')).slice(0, 50) }); }
   if (p === '/api/digest' && req.method === 'POST') { if (user.role !== 'admin') return send(res, 403, { error: 'Réservé à l’équipe.' }); return send(res, 200, { ok: true, sent: sendDigests(true, user) }); }
   if (p === '/api/settings' && req.method === 'POST') { const r = Core.setSettings(db, user, await readJson(req)); if (r.ok) save(); return send(res, r.error ? 400 : 200, r); }
+  // Tests de la version en ligne : e-mail d'essai à soi-même, et test de connexion de chaque outil (lecture seule).
+  if (p === '/api/test/mail' && req.method === 'POST') {
+    if (user.role !== 'admin') return send(res, 403, { error: 'Réservé à l’équipe.' });
+    if (limited('testmail:' + user.id, 10, 15 * 60e3)) return send(res, 429, { error: 'Dix e-mails de test par quart d’heure, c’est le maximum.' });
+    const b = await readJson(req), personal = b.kind === 'personal';
+    const first = esc(user.name.split(' ')[0]);
+    const r = await sendMail({ to: user.email, name: user.name, from: personal ? { email: user.email, name: `${user.name} · Orem` } : undefined,
+      subject: personal ? 'Test : un e-mail envoyé en ton nom' : 'Test : un e-mail générique de l’espace client',
+      html: `<div style="font-family:Arial,sans-serif;font-size:15px;color:#0b0b12;padding:24px"><p>Bonjour ${first},</p><p>${personal ? 'Cet e-mail part de <strong>ton adresse</strong>, comme une invitation, un message ou une validation demandée à un client. Si le client répond, la réponse t’arrive directement.' : 'Cet e-mail part de l’<strong>adresse générique</strong> de l’agence, comme un code de connexion, un récap ou une relance.'}</p><p>Envoyé depuis ${esc(BASE_URL)}${TEST_MODE ? ' (version de test)' : ''}.</p></div>`,
+      text: personal ? 'Test : e-mail envoyé en ton nom.' : 'Test : e-mail générique.' });
+    return send(res, 200, { sent: !!(r && r.sent), local: !!(r && r.local), from: r && r.from && r.from.email, error: r && !r.sent ? r.error || (r.local ? 'Envoi désactivé : le serveur tourne en local, sans service d’envoi.' : '') : undefined });
+  }
+  m = p.match(/^\/api\/connectors\/(\w+)\/check$/);
+  if (m && req.method === 'POST') {
+    if (user.role !== 'admin') return send(res, 403, { error: 'Réservé à l’équipe.' });
+    if (limited('check:' + user.id, 30, 15 * 60e3)) return send(res, 429, { error: 'Trop de tests en peu de temps. Patientez quelques minutes.' });
+    const r = m[1] === 'mail' ? await Mail.check(process.env) : await Connectors.check(m[1], process.env);
+    log('connector.check', { name: m[1], ok: r.ok }); return send(res, 200, r);
+  }
   if (p === '/api/connectors' && req.method === 'GET') { if (user.role !== 'admin') return send(res, 403, { error: 'Réservé à l’équipe.' }); return send(res, 200, Connectors.status(process.env, db)); }
   m = p.match(/^\/api\/connectors\/([a-z]+)\/sync$/);
   if (m && req.method === 'POST') {

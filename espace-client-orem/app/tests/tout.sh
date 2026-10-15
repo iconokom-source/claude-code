@@ -11,3 +11,4 @@ pkill -f "^node server.js" 2>/dev/null; node tests/connecteurs.js > "$OUT/connec
 pkill -f "^node server.js" 2>/dev/null
 node tests/securite.js > "$OUT/securite.txt" 2>&1; echo "== securite (sortie $?) : $(grep -c "✔" "$OUT/securite.txt") réussies, $(grep -c "✘" "$OUT/securite.txt") échouées"
 node tests/core.js > "$OUT/core.txt" 2>&1; echo "== core (sortie $?) : $(grep -c '✔' "$OUT/core.txt") réussies, $(grep -c '✘' "$OUT/core.txt") échouées"; grep '✘\|Error' "$OUT/core.txt" | head
+node tests/version-test.js "$OUT" > "$OUT/version-test.txt" 2>&1; echo "== version-test (sortie $?) : $(grep -c '✔' "$OUT/version-test.txt") réussies, $(grep -c '✘' "$OUT/version-test.txt") échouées"; grep '✘\|Error' "$OUT/version-test.txt" | head

@@ -87,6 +87,8 @@
       digest: () => j('/api/digest', { method: 'POST' }),
       settings: (b) => j('/api/settings', { method: 'POST', body: JSON.stringify(b) }),
       connectors: () => j('/api/connectors'),
+      testMail: (kind) => j('/api/test/mail', { method: 'POST', body: JSON.stringify({ kind }) }),
+      check: (name) => j('/api/connectors/' + name + '/check', { method: 'POST', body: '{}' }),
       ask: (id, question) => j('/api/projects/' + id + '/ask', { method: 'POST', body: JSON.stringify({ question }) }),
       sync: (name, projectId) => j('/api/connectors/' + name + '/sync', { method: 'POST', body: JSON.stringify({ projectId }) }),
       vaultPut: (id, b) => j('/api/projects/' + id + '/vault', { method: 'POST', body: JSON.stringify(b) }),
@@ -136,6 +138,8 @@
       setPrefs: (p) => { const r = Core.setPrefs(store, me, p); if (r.ok) me.notify = r.notify; return r.error ? fail(r.error) : wait(r); },
       outbox: () => wait({ enabled: false, items: store.outbox }),
       settings: (b) => { const r = Core.setSettings(store, me, b); return r.error ? fail(r.error) : wait(r); },
+      testMail: () => wait({ sent: false, error: 'démo : rien n’est envoyé' }),
+      check: () => wait({ ok: false, message: 'Démo : aucun outil n’est branché.' }),
       connectors: () => wait({ connectors: [['pipedrive', 'Pipedrive'], ['abby', 'Abby'], ['qonto', 'Qonto'], ['google', 'Google Drive'], ['figma', 'Figma'], ['claude', 'Assistant (API Claude)']].map(([id, label]) => ({ id, label, configured: false, missing: [], does: 'Non connecté dans la démo' })) }),
       sync: () => fail('Dans la démo, aucun outil n’est connecté.'),
       ask: () => wait({ answer: null, fallback: true }),
@@ -228,6 +232,7 @@
     const meImg = S.me.photo && IMG[S.me.photo] && !S.preview ? `<img src="${IMG[S.me.photo]}" alt="">` : esc(((S.preview ? p.contactName : S.me.name) || '?')[0]);
     return `${S.preview ? `<div class="preview-bar">${ic('eye', 'width:18px;height:18px')}<span>Aperçu de l’espace de ${esc(p.client)}, tel que le client le voit</span><button data-act="endpreview">Quitter l’aperçu</button></div>` : ''}
     <a class="skip" href="#main" data-act="skip">Aller au contenu</a>
+    ${cfg().test ? `<div class="testbar" role="note"><strong>Version de test</strong>${admin && cfg().mail ? `<span>Les e-mails ne partent qu’aux adresses ${esc((cfg().mail.allow || []).map((a) => (a.includes('@') ? a : '@' + a)).join(', ') || 'autorisées')}. Tout le reste est réel : connecteurs, fichiers, connexions.</span>` : '<span>Cet espace sert aux essais de l’agence.</span>'}</div>` : ''}
     <div class="app">
       <aside class="side" aria-label="Navigation">
         <div class="brand"><img class="logo" src="${IMG.logo}" alt=""><b>Orem</b><span class="tag">${admin ? 'Agence' : 'Client'}</span></div>
@@ -1190,10 +1195,25 @@
         <div class="line"><div class="field"><label for="st-i">IBAN</label><input id="st-i" type="text" value="${esc(cfg().iban)}"></div><div class="field"><label for="st-c">BIC</label><input id="st-c" type="text" value="${esc(cfg().bic)}"></div></div>
         <div><button class="btn btn-primary btn-sm" type="submit">Enregistrer</button></div></form>
       <section class="panel"><div class="panel-head"><h2>${ic('globe')}Outils connectés</h2><span class="aside">Clés dans le coffre Notion, fournies au lancement du serveur</span></div>
-        <div class="list">${(S.connectors || []).map((c) => `<div class="row"><span class="ico ${c.configured ? 'ok' : ''}">${ic(c.configured ? 'ok' : 'lock')}</span><div class="grow"><div class="title">${esc(c.label)}</div><div class="sub">${esc(c.does)}${c.last ? ` · dernière synchronisation ${ago(c.last.at)} : ${esc(c.last.summary)}` : ''}${!c.configured && (c.missing || []).length && /_/.test(c.missing[0]) ? `<br>Clé à fournir : ${esc(c.missing.join(', '))}` : ''}</div></div>${c.configured ? '<span class="chip ok">Connecté</span>' : '<span class="chip idle">Non connecté</span>'}${c.configured && ['abby', 'qonto', 'google'].includes(c.id) ? `<button class="btn btn-line btn-sm" data-act="sync" data-id="${esc(c.id)}">Synchroniser</button>` : ''}</div>`).join('') || '<p class="muted">Aucun connecteur.</p>'}</div>
+        <div class="list">${(S.connectors || []).map((c) => `<div class="row"><span class="ico ${c.configured ? 'ok' : ''}">${ic(c.configured ? 'ok' : 'lock')}</span><div class="grow"><div class="title">${esc(c.label)}</div><div class="sub">${esc(c.does)}${c.last ? ` · dernière synchronisation ${ago(c.last.at)} : ${esc(c.last.summary)}` : ''}${!c.configured && (c.missing || []).length && /_/.test(c.missing[0]) ? `<br>Clé à fournir : ${esc(c.missing.join(', '))}` : ''}</div></div>${c.configured ? '<span class="chip ok">Connecté</span>' : '<span class="chip idle">Non connecté</span>'}${c.configured ? `<button class="btn btn-line btn-sm" data-act="ccheck" data-id="${esc(c.id)}">Tester<span class="sr"> la connexion à ${esc(c.label)}</span></button>` : ''}${c.configured && ['abby', 'qonto', 'google'].includes(c.id) ? `<button class="btn btn-line btn-sm" data-act="sync" data-id="${esc(c.id)}">Synchroniser</button>` : ''}</div>`).join('') || '<p class="muted">Aucun connecteur.</p>'}</div>
         <p class="hint">Rien n’est appelé tant qu’une clé n’est pas fournie. Pipedrive prépare l’espace dès qu’une affaire est gagnée ; l’équipe choisit ensuite l’offre et le tutoiement ou le vouvoiement.</p></section>
+      ${testPanel()}
       <section class="panel"><div class="panel-head"><h2>${ic('mail')}E-mails envoyés</h2><span class="aside">${ob.enabled ? 'Envoi réel activé' : 'Envoi réel désactivé : les e-mails restent ici tant que l’espace n’est pas en ligne'}</span></div>
-        <div class="list">${(ob.items || []).slice(0, 15).map((m, i) => `<button class="row inbox-row" data-mail="${esc(i)}"><span class="ico">${ic('mail')}</span><span class="grow"><span class="title">${esc(m.subject)}</span><span class="sub">À ${esc(m.to)} · ${ago(m.at)}</span></span>${ic('eye', 'width:18px;height:18px;color:var(--muted);flex:none')}</button>`).join('') || '<p class="muted">Aucun e-mail pour l’instant. Déposez un fichier côté client pour voir ce que reçoit l’équipe.</p>'}</div></section>`;
+        <div class="list">${(ob.items || []).slice(0, 15).map((m, i) => `<button class="row inbox-row" data-mail="${esc(i)}"><span class="ico">${ic('mail')}</span><span class="grow"><span class="title">${esc(m.subject)}</span><span class="sub">${m.from ? 'De ' + esc(m.from) + ' · ' : ''}À ${esc(m.to)} · ${ago(m.at)}${m.note ? ' · ' + esc(m.note) : m.sent ? ' · envoyé' : ''}</span></span>${ic('eye', 'width:18px;height:18px;color:var(--muted);flex:none')}</button>`).join('') || '<p class="muted">Aucun e-mail pour l’instant. Déposez un fichier côté client pour voir ce que reçoit l’équipe.</p>'}</div></section>`;
+  }
+  /* Réglages › Tester la version en ligne : les e-mails (générique et en son nom) et la connexion de chaque outil, en un clic. */
+  function testPanel() {
+    const M = cfg().mail; if (!M) return '';
+    const line = (ok, t, d) => `<div class="row"><span class="ico ${ok ? 'ok' : ''}">${ic(ok ? 'ok' : 'alert')}</span><div class="grow"><div class="title">${t}</div>${d ? `<div class="sub">${d}</div>` : ''}</div></div>`;
+    return `<section class="panel" aria-labelledby="tst-h"><div class="panel-head"><h2 id="tst-h">${ic('check')}Tester la version en ligne</h2><span class="aside">${cfg().test ? 'Version de test' : 'Version en ligne'}</span></div>
+      <div class="list">
+        ${line(M.enabled, M.enabled ? `Envoi des e-mails activé (${M.provider === 'smtp' ? 'SMTP' : 'Brevo'})` : 'Envoi des e-mails désactivé', M.enabled ? '' : 'En local, les e-mails restent dans « E-mails envoyés ». En ligne, il faut la clé Brevo ou les accès SMTP (voir le guide de mise en ligne).')}
+        ${line(true, `Adresse générique : ${esc(M.from)}`, 'Codes de connexion, récaps de 18 h, relances automatiques.')}
+        ${line(M.personal, M.personal ? `En votre nom : ${esc(S.me.email)}` : 'Envois en nom propre désactivés', 'Invitation d’un client, messages, vidéos et validations demandées : le client vous répond directement.')}
+        ${M.test ? line(true, 'Version de test : envois limités', `Les e-mails ne partent qu’à ${esc((M.allow || []).map((a) => (a.includes('@') ? a : 'toute adresse @' + a)).join(', '))}. Les autres restent ici, marqués « non envoyé ».`) : ''}
+      </div>
+      <div class="inline" style="margin-top:12px"><button class="btn btn-primary btn-sm" data-act="testmail" data-id="generic">${ic('mail')}M’envoyer un e-mail générique</button><button class="btn btn-line btn-sm" data-act="testmail" data-id="personal">${ic('mail')}M’envoyer un e-mail en mon nom</button><button class="btn btn-line btn-sm" data-act="ccheck" data-id="mail">Tester le compte d’envoi</button></div>
+      <p class="hint">Pour tester un parcours client complet : « Nouvel espace client » avec une de vos adresses (ou une adresse autorisée), puis ouvrez l’invitation reçue.</p></section>`;
   }
   function mailPreview() {
     if (!S.mailView) return '';
@@ -1789,6 +1809,8 @@
       case 'fview': S.fview = id; render(); break;
       case 'fview-close': if (e.target.closest('video, iframe, img, a')) return; S.fview = null; S.docView = null; render(); break;
       case 'doc-view': S.docView = { src: a.dataset.src, title: a.dataset.title }; render(); break;
+      case 'testmail': { a.disabled = true; try { const r = await API.testMail(id); toast(r.sent ? `E-mail envoyé depuis ${r.from} à ${S.me.email}. Regardez votre boîte de réception.` : `Non envoyé : ${r.error || 'envoi désactivé'}`); } catch (err) { toast(err.message); } a.disabled = false; try { S.outbox = await API.outbox(); render(false, true); } catch {} break; }
+      case 'ccheck': { a.disabled = true; const old = a.textContent; a.textContent = 'Test…'; try { const r = await API.check(id); toast((r.ok ? 'Connexion réussie. ' : 'Échec. ') + r.message); } catch (err) { toast(err.message); } a.disabled = false; a.textContent = old; break; }
       case 'file-remove-own': if (await act({ type: 'file.remove', fid: id }, 'Fichier retiré.')) render(); break;
       case 'bell': S.bellOpen = !S.bellOpen; render(); if (S.bellOpen) { const f = document.querySelector('#bell-pop button, #bell-pop a'); f && f.focus(); } break;
       case 'bell-read': try { await API.readNotif(); } catch {} await loadInbox(); render(); break;

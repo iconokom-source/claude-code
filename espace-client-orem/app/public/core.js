@@ -1006,7 +1006,8 @@
       <tr><td style="padding-top:20px"><a href="${baseUrl}/" style="display:inline-block;background:#000012;color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:10px;font-size:15px">Ouvrir l\u2019espace</a></td></tr>
       <tr><td style="font-size:12px;color:#585865;padding-top:20px">${T('Vous recevez', 'Tu reçois')} cet e-mail car ${T('vous êtes', 'tu es')} ${u.role === 'admin' ? 'dans l\u2019équipe du projet' : 'dans cet espace client'}. ${T('Réglez vos', 'Règle tes')} notifications depuis l\u2019espace.</td></tr>
     </table></div>`;
-    return { to: u.email, name: u.name, subject, html, text: items.map((n) => `${n.client} : ${n.text}`).join('\n') + `\n\n${baseUrl}/` };
+    // by : l'auteur commun des nouveautés (l'e-mail part alors de son adresse si c'est un membre de l'équipe et que le destinataire est un client)
+    return { to: u.email, name: u.name, subject, html, text: items.map((n) => `${n.client} : ${n.text}`).join('\n') + `\n\n${baseUrl}/`, by: items.every((n) => n.by === items[0].by) ? items[0].by : null, toClient: u.role !== 'admin' };
   }
   const esc = (x) => String(x ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 

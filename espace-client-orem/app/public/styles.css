@@ -864,3 +864,6 @@ fieldset.field legend{font-weight:500;margin-bottom:6px;padding:0}
 .up-name{font-size:var(--t-sm);font-weight:500;overflow-wrap:anywhere}
 .fold{display:inline-flex;align-items:center;gap:4px}
 .fold svg{width:14px;height:14px}
+/* Version de test : un bandeau discret mais impossible à rater */
+.testbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:4px 12px;padding:6px 16px;background:#ff6200;color:#0b0b12;font-size:var(--t-xs);text-align:center}
+.testbar strong{text-transform:uppercase;letter-spacing:.06em}
