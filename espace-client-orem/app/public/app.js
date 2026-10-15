@@ -138,9 +138,8 @@
   /* Après une validation : 10 secondes pour changer d'avis. */
   function undoBar(vid) {
     const old = $('#undo'); if (old) old.remove();
-    const d = document.createElement('div'); d.id = 'undo'; d.className = 'undo'; d.setAttribute('role', 'status');
-    d.innerHTML = `<span>Validation enregistrée. L’équipe est prévenue.</span><button class="btn btn-sm" data-act="val-undo" data-id="${vid}">Annuler <span class="num" id="undo-n">10</span> s</button>`;
-    document.body.appendChild(d); let n = 10;
+    const d = document.createElement('div'); d.id = 'undo'; d.className = 'undo'; d.innerHTML = `<span role="status">Validation enregistrée. L’équipe est prévenue.</span><button class="btn btn-sm" data-act="val-undo" data-id="${vid}">Annuler <span class="num" id="undo-n" aria-hidden="true">10</span><span aria-hidden="true"> s</span><span class="sr">ma validation</span></button>`;
+    document.body.appendChild(d); { const b = d.querySelector('button'); b && b.focus(); } let n = 10;
     const tick = () => { n--; const c = $('#undo-n'); if (c) c.textContent = n; if (n <= 0) { d.remove(); return; } undoBar.t = setTimeout(tick, 1000); };
     clearTimeout(undoBar.t); undoBar.t = setTimeout(tick, 1000);
   }
@@ -201,14 +200,14 @@
         <div class="brand"><img class="logo" src="${IMG.logo}" alt=""><b>Orem</b><span class="tag">${admin ? 'Agence' : 'Client'}</span></div>
         ${card}
         ${admin ? `<button class="add-btn" data-act="compose">${ic('plus')}Ajouter pour un client</button>` : ''}
-        <nav class="nav">${navHtml}</nav>
+        <nav class="nav" aria-label="Rubriques">${navHtml}</nav>
         ${API.demo && !S.preview ? `<label class="demo-sel"><span>${ic('eye')}Démo : voir l\u2019espace de</span><select data-demo aria-label="Changer d\u2019espace de démo">${[['claire@maisonlumen.fr', 'Claire · Maison Lumen (en cours)'], ['julie@cabinet-varenne.fr', 'Julie · Cabinet Varenne (démarrage)'], ['ines@domaine-des-vergers.fr', 'Inès · Domaine des Vergers (proposition)'], ['hugo@huchet-demorge.fr', 'Hugo · Huchet-Demorge (livré)'], ['louis@agence-orem.fr', 'Louis · agence'], ['theophile@agence-orem.fr', 'Théophile · agence'], ['clement@agence-orem.fr', 'Clément · agence']].map(([e, l]) => `<option value="${e}" ${S.me.email === e ? 'selected' : ''}>${l}</option>`).join('')}</select></label>` : ''}
         ${!admin ? `<a class="help-link" href="#equipe" data-go="equipe" ${S.view === 'equipe' ? 'aria-current="page"' : ''}>${ic('team')}<span>Équipe et aide</span></a>` : ''}
         <div class="side-foot">
           <div class="me-av">${meImg}</div>
           <div class="me-txt"><strong>${esc(S.preview ? p.contactName || p.client : S.me.name)}</strong><span class="role">${admin ? 'Agence' : 'Client'}</span></div>
           ${!admin && !S.preview ? bell() : ''}
-          <button class="icon-btn" data-act="theme" aria-label="Changer de thème" title="Changer de thème">${ic('moon')}</button>
+          <button class="icon-btn" data-act="theme" aria-label="Mode sombre" aria-pressed="${isDark() ? 'true' : 'false'}" title="Mode sombre">${ic('moon')}</button>
           ${S.preview ? '' : `<button class="icon-btn" data-act="logout" aria-label="Se déconnecter" title="Se déconnecter">${ic('out')}</button>`}
         </div>
       </aside>
@@ -473,8 +472,8 @@
     const later = p.validations.filter((v) => v.status === 'wait');
     const card = (v) => {
       const form = S.valForm === v.id
-        ? `<form class="field" data-form="changes" data-id="${esc(v.id)}"><label for="chg-${v.id}">Qu’${R('aimeriez-vous', 'aimerais-tu')} changer ?</label><textarea id="chg-${v.id}" required placeholder="Par exemple : regrouper deux pages, ajouter une page Presse…"></textarea><span class="small muted">L’équipe ${R('vous', 'te')} répond sous 24 h ouvrées.</span><div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-primary" type="submit">Envoyer mes remarques</button><button class="btn btn-line" type="button" data-act="valcancel">Annuler</button></div></form>`
-        : S.valConfirm === v.id ? `<div class="confirm" role="group" aria-label="Confirmer la validation"><p><strong>${R('Vous donnez votre', 'Tu donnes ton')} feu vert pour « ${esc(v.t)} » ?</strong> L’équipe passe à la suite.</p><div class="acts"><button class="btn btn-primary" data-act="approve-ok" data-id="${esc(v.id)}">${ic('check')}Oui, je valide</button><button class="btn btn-line" data-act="approve-cancel">Pas encore</button></div></div>`
+        ? `<form class="field" data-form="changes" data-id="${esc(v.id)}"><label for="chg-${v.id}">Qu’${R('aimeriez-vous', 'aimerais-tu')} changer ?</label><textarea id="chg-${v.id}" required placeholder="Par exemple : regrouper deux pages, ajouter une page Presse…"></textarea><span class="small muted">L’équipe ${R('vous', 'te')} répond sous 24 h ouvrées.</span><div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-primary" type="submit">Envoyer mes remarques</button><button class="btn btn-line" type="button" data-act="valcancel" data-id="${esc(v.id)}">Annuler</button></div></form>`
+        : S.valConfirm === v.id ? `<div class="confirm" role="group" aria-label="Confirmer la validation"><p><strong>${R('Vous donnez votre', 'Tu donnes ton')} feu vert pour « ${esc(v.t)} » ?</strong> L’équipe passe à la suite.</p><div class="acts"><button class="btn btn-primary" data-act="approve-ok" data-id="${esc(v.id)}">${ic('check')}Oui, je valide</button><button class="btn btn-line" data-act="approve-cancel" data-id="${esc(v.id)}">Pas encore</button></div></div>`
            : `<div class="acts"><button class="btn btn-primary" data-act="approve" data-id="${esc(v.id)}">${ic('check')}Je valide</button><button class="btn btn-line" data-act="changes" data-id="${esc(v.id)}">Demander des modifications</button></div>
            <p class="small muted">Valider, c’est donner ${R('votre', 'ton')} feu vert écrit pour passer à la suite. Il est enregistré avec la date et l’heure.</p>`;
       return `<section class="panel valcard"><div><span class="chip warn">En attente de ${R('votre', 'ta')} validation</span></div>
@@ -653,11 +652,11 @@
       notifBody
     ];
     return `<div class="ob" role="dialog" aria-modal="true" aria-labelledby="ob-t"><div class="ob-card">
-      <div class="ob-art">${clientLogo(p, 'dark', 'ob-logo')}<div><div class="k">${arts[st][0]} · ${st + 1} sur 4</div><h2 id="ob-t">${arts[st][1]}</h2></div><div class="faces">${faces}</div></div>
+      <div class="ob-art">${clientLogo(p, 'dark', 'ob-logo')}<div><div class="k" id="ob-k">${arts[st][0]} · ${st + 1} sur 4</div><h2 id="ob-t" tabindex="-1">${arts[st][1]}</h2></div><div class="faces">${faces}</div></div>
       <div class="ob-body"><div class="ob-steps" aria-hidden="true">${[0, 1, 2, 3].map((i) => `<i class="${i <= st ? 'on' : ''}"></i>`).join('')}</div>
         ${bodies[st]}
         <div class="ob-foot">${st ? `<button class="ghost" data-act="ob-prev">${ic('back')}Retour</button>` : '<button class="ghost" data-act="ob-skip">Passer</button>'}
-          <button class="btn btn-primary" data-act="${st < 3 ? 'ob-next' : 'ob-done'}">${st < 3 ? 'Continuer' : 'Découvrir mon espace'} ${ic('arrow')}</button></div>
+          <button class="btn btn-primary" data-act="${st < 3 ? 'ob-next' : 'ob-done'}" aria-describedby="ob-k ob-t">${st < 3 ? 'Continuer' : 'Découvrir mon espace'} ${ic('arrow')}</button></div>
       </div></div></div>`;
   }
   function celebrate() {
@@ -827,7 +826,8 @@
   /* ---------- Plus (mobile) ---------- */
   function vPlus() {
     const items = [...(evoOpen(S.project) ? [['evolution', 'Évolution', 'arrow']] : []), ['projet', 'Étapes', 'map'], ['maquettes', 'Maquettes et visuels', 'figma'], ['documents', 'Factures et documents', 'doc'], ...(visibleTools(S.project).length ? [['outils', 'Boîte à outils', 'plus']] : []), ['equipe', 'Équipe et aide', 'team'], ['preferences', 'Mes notifications', 'mail']];
-    return `<div class="head"><div><h1>Tout ${R('votre', 'ton')} espace</h1></div></div><section class="panel"><div class="list">${items.map(([id, l, i]) => `<a class="row linkrow" href="#${id}" data-go="${id}"><span class="ico">${ic(i)}</span><div class="grow"><div class="title">${l}</div></div>${id === 'valider' && pending() + propsSent() ? `<span class="badge">${pending() + propsSent()}</span>` : ''}${ic('arrow', 'width:18px;height:18px;color:var(--muted)')}</a>`).join('')}</div></section>`;
+    return `<div class="head"><div><h1>Tout ${R('votre', 'ton')} espace</h1></div></div><section class="panel"><div class="list">${items.map(([id, l, i]) => `<a class="row linkrow" href="#${id}" data-go="${id}"><span class="ico">${ic(i)}</span><div class="grow"><div class="title">${l}</div></div>${id === 'valider' && pending() + propsSent() ? `<span class="badge">${pending() + propsSent()}</span>` : ''}${ic('arrow', 'width:18px;height:18px;color:var(--muted)')}</a>`).join('')}</div></section>
+      <section class="panel"><div class="list"><button class="row linkrow" data-act="theme" aria-pressed="${isDark() ? 'true' : 'false'}"><span class="ico">${ic('moon')}</span><div class="grow"><div class="title">Mode sombre</div></div></button><button class="row linkrow" data-act="logout"><span class="ico">${ic('back')}</span><div class="grow"><div class="title">Se déconnecter</div></div></button></div></section>`;
   }
 
   /* ---------- Évolution : l'étape supérieure ----------
@@ -1039,7 +1039,7 @@
     const Z = S.zoom, pins = Z.pin ? (S.project.pins || []).filter((x) => x.img === Z.key) : [];
     const v = (S.project.versions || [])[0];
     return `<div class="lb" role="dialog" aria-modal="true" aria-label="${esc(Z.title)}" data-act="unzoom"><figure>
-      <div class="pin-wrap">${Z.pin ? `<button class="pin-area" data-act="pin-here" aria-label="Commenter cet endroit de l’écran : ${esc(Z.title)}"><img src="${esc(Z.src)}" alt="${esc(Z.title)}"></button>` : `<img src="${esc(Z.src)}" alt="${esc(Z.title)}">`}
+      <div class="pin-wrap">${Z.pin ? `<button class="pin-area" data-act="pin-here" aria-label="Commenter un endroit de l’écran : ${esc(Z.title)}. Flèches pour choisir l’endroit, Entrée pour commenter." aria-describedby="pin-pos"><img src="${esc(Z.src)}" alt="">${Z.kb ? `<span class="pin-kb" style="left:${Z.kb.x}%;top:${Z.kb.y}%"></span>` : ''}</button><span class="sr" id="pin-pos" aria-live="polite">${Z.kb ? `Repère à ${Math.round(Z.kb.x)} % de la largeur et ${Math.round(Z.kb.y)} % de la hauteur` : ''}</span>` : `<img src="${esc(Z.src)}" alt="${esc(Z.title)}">`}
         ${pins.map((x, i) => `<span class="pin ${x.status}" style="left:${x.x}%;top:${x.y}%" title="${esc(x.text)}">${i + 1}</span>`).join('')}
         ${Z.at ? `<form class="pin-form" data-form="pin" style="left:${Math.min(Z.at.x, 70)}%;top:${Math.min(Z.at.y, 80)}%"><label class="sr" for="pin-t">${R('Votre', 'Ton')} commentaire</label><textarea id="pin-t" rows="2" placeholder="${R('Votre', 'Ton')} commentaire à cet endroit"></textarea><div class="inline"><button class="btn btn-primary btn-sm" type="submit">Épingler</button><button class="ghost" type="button" data-act="pin-cancel">Annuler</button></div></form>` : ''}</div>
       <figcaption>${esc(Z.title)}${Z.pin ? ` · ${pins.length} commentaire${pins.length > 1 ? 's' : ''}${v ? ' · ' + esc(v.label) : ''}` : ''}</figcaption>
@@ -1149,7 +1149,7 @@
   }
   function mailPreview() {
     if (!S.mailView) return '';
-    return `<div class="lb" role="dialog" aria-modal="true" aria-label="Aperçu de l’e-mail"><div class="mailbox"><div class="mail-h"><div><strong>${esc(S.mailView.subject)}</strong><span>À ${esc(S.mailView.to)}</span></div><button class="x" data-act="mail-close" aria-label="Fermer">×</button></div><iframe class="mail-b" sandbox title="Contenu de l\u2019e-mail" srcdoc="${esc(S.mailView.html)}"></iframe></div></div>`;
+    return `<div class="lb" role="dialog" aria-modal="true" aria-label="Aperçu de l’e-mail"><div class="mailbox"><div class="mail-h"><div><strong>${esc(S.mailView.subject)}</strong><span>À ${esc(S.mailView.to)}</span></div><button class="x" data-act="mail-close" aria-label="Fermer">×</button></div><iframe class="mail-b" sandbox tabindex="-1" title="Contenu de l\u2019e-mail" srcdoc="${esc(S.mailView.html)}"></iframe></div></div>`;
   }
 
   /* ---------- Équipe : ajouter n'importe quoi, depuis n'importe où ---------- */
@@ -1199,7 +1199,7 @@
     toast(msg);
   }
   async function composeSubmit() {
-    const C = S.compose, pid = C.projectId; if (!pid) return toast('Choisissez le client.');
+    const C = S.compose, pid = C.projectId; if (!pid) return fieldError('c-p', 'Choisissez le client.');
     const v = (id) => ($('#' + id) ? $('#' + id).value.trim() : '');
     const run = async (a) => { await API.action(pid, a); };
     try {
@@ -1217,7 +1217,7 @@
     } catch (e) { toast(e.message); }
   }
   async function composeFiles(files) {
-    const pid = S.compose.projectId; if (!pid) return toast('Choisissez le client.');
+    const pid = S.compose.projectId; if (!pid) return fieldError('c-p', 'Choisissez le client.');
     const cat = $('#c-cat').value; let n = 0;
     for (const f of files) { S.uploading = { name: f.name, p: 0 }; render(); try { await API.upload(pid, f, cat, (x) => { S.uploading.p = x; const b = document.querySelector('.compose-card .progress i'); if (b) b.style.width = Math.round(x * 100) + '%'; }); n++; } catch (e) { toast(e.message); } }
     S.uploading = null; if (n) composeDone(`${n} fichier${n > 1 ? 's' : ''} partagé${n > 1 ? 's' : ''}.${cat === 'Livrable' ? ' Le client est prévenu.' : ''}`); else render();
@@ -1541,7 +1541,7 @@
   /* onlyMain : seule la zone principale change (filtre, question rapide) ; la barre latérale et le reste ne sont pas reconstruits. */
   function render(focus, onlyMain) {
     const active = document.activeElement, prevKey = keyOf(active), hadDialog = wasDialog;
-    if (dialogOpen() && !hadDialog) S.opener = prevKey;
+    if (dialogOpen() && !hadDialog) { S.opener = prevKey; S.openerIdx = prevKey ? [...root.querySelectorAll(prevKey)].indexOf(active) : -1; }
     if (S.loading) { root.innerHTML = ''; return; }
     const wrap = onlyMain && !dialogOpen() && !hadDialog && S.me && root.querySelector('#main .wrap');
     if (!S.me) { root.innerHTML = vConnexion(); }
@@ -1569,7 +1569,7 @@
       if (!(prevKey && dlg.querySelector(prevKey) && back(prevKey))) { const f = dlg.querySelector('.ob .btn-primary, textarea, input:not([type=file]):not([type=hidden]), select, button, [href]'); if (f) f.focus({ preventScroll: true }); }
       return;
     }
-    if (hadDialog && S.opener) { const k = S.opener; S.opener = null; if (back(k)) return; }
+    if (hadDialog && S.opener) { const k = S.opener, i = S.openerIdx; S.opener = null; S.openerIdx = -1; const el = i > 0 && root.querySelectorAll(k)[i]; if (el && !el.closest('[inert]')) { el.focus({ preventScroll: true }); return; } if (back(k)) return; }
     if (focus) {
       const h = root.querySelector('#main h1') || root.querySelector('h1');
       if (h) { h.setAttribute('tabindex', '-1'); h.focus({ preventScroll: true }); } else { const m = $('#main'); if (m) m.focus({ preventScroll: true }); }
@@ -1691,10 +1691,10 @@
     const id = a.dataset.id;
     switch (a.dataset.act) {
       case 'toast': e.preventDefault(); toast(a.dataset.msg); break;
-      case 'theme': { const r = document.documentElement; const dark = r.dataset.theme ? r.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches; r.dataset.theme = dark ? 'light' : 'dark'; try { localStorage.setItem('orem-theme', r.dataset.theme); } catch {} break; }
+      case 'theme': { const r = document.documentElement; const dark = r.dataset.theme ? r.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches; r.dataset.theme = dark ? 'light' : 'dark'; try { localStorage.setItem('orem-theme', r.dataset.theme); } catch {} document.querySelectorAll('[data-act=theme]').forEach((b) => b.setAttribute('aria-pressed', String(!dark))); break; }
       case 'logout': logout(); break;
       case 'approve': if (S.preview) return toast('Aperçu : les actions sont désactivées.'); S.valConfirm = id; render(); { const b = document.querySelector('[data-act=approve-ok]'); b && b.focus(); } break;
-      case 'approve-cancel': S.valConfirm = null; render(); break;
+      case 'approve-cancel': S.valConfirm = null; render(); { const b = document.querySelector(`[data-act=approve][data-id="${CSS.escape(id)}"]`); b && b.focus(); } break;
       case 'approve-ok': { S.valConfirm = null; if (await act({ type: 'val.approve', vid: id })) { S.view = 'valider'; render(); celebrate(); undoBar(id); } break; }
       case 'val-undo': { clearTimeout(undoBar.t); $('#undo') && $('#undo').remove(); if (await act({ type: 'val.undo', vid: id }, 'Validation annulée. Rien n’a été envoyé à l’équipe.')) render(); break; }
       case 'fview': S.fview = id; render(); break;
@@ -1703,7 +1703,7 @@
       case 'bell': S.bellOpen = !S.bellOpen; render(); if (S.bellOpen) { const f = document.querySelector('#bell-pop button, #bell-pop a'); f && f.focus(); } break;
       case 'bell-read': try { await API.readNotif(); } catch {} await loadInbox(); render(); break;
       case 'changes': if (S.preview) return toast('Aperçu : les actions sont désactivées.'); S.valForm = id; render(); { const t = $('#chg-' + id); t && t.focus(); } break;
-      case 'valcancel': S.valForm = null; render(); break;
+      case 'valcancel': S.valForm = null; render(); { const b = document.querySelector(`[data-act=changes][data-id="${CSS.escape(id)}"]`); b && b.focus(); } break;
       case 'task': if (S.preview) return toast('Aperçu : les actions sont désactivées.'); act({ type: 'task.toggle', tid: id }); break;
       case 'task-remove': act({ type: 'task.remove', tid: id }); break;
       case 'missing-remove': act({ type: 'missing.remove', mid: id }); break;
@@ -1735,7 +1735,7 @@
       case 'digest': try { const r = await API.digest(); S.outbox = await API.outbox(); render(); toast(r.sent ? 'Récap envoyé. Il apparaît dans « E-mails envoyés ».' : 'Rien de nouveau à récapituler.'); } catch (err) { toast(err.message); } break;
       case 'qa': S.qa = S.qa === id ? null : id; render(false, true); break;
       case 'zoom': S.zoom = { src: asset(a.dataset.src), key: a.dataset.src, title: a.dataset.title, pin: !!a.dataset.pin && !isAdmin() }; render(); break;
-      case 'pin-here': { e.stopPropagation(); const im = a.querySelector('img').getBoundingClientRect(); const x = e.clientX ? ((e.clientX - im.left) / im.width) * 100 : 50, y = e.clientY ? ((e.clientY - im.top) / im.height) * 100 : 50;
+      case 'pin-here': { e.stopPropagation(); const im = a.querySelector('img').getBoundingClientRect(); const kb = S.zoom.kb || { x: 50, y: 50 }, x = e.clientX ? ((e.clientX - im.left) / im.width) * 100 : kb.x, y = e.clientY ? ((e.clientY - im.top) / im.height) * 100 : kb.y; S.zoom.kb = null;
         S.zoom.at = { x: Math.max(0, Math.min(100, Math.round(x * 10) / 10)), y: Math.max(0, Math.min(100, Math.round(y * 10) / 10)) }; render(); const t = $('#pin-t'); t && t.focus(); break; }
       case 'pin-cancel': S.zoom.at = null; render(); break;
       case 'pin-resolve': act({ type: 'pin.resolve', id }, 'Commentaire mis à jour.'); break;
@@ -1904,7 +1904,17 @@
       t.value = digits; if (digits && t.nextElementSibling) t.nextElementSibling.focus();
     }
   });
+  const isDark = () => { const r = document.documentElement; return r.dataset.theme ? r.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches; };
+  document.addEventListener('focusout', (e) => {
+    if (!S.bellOpen || !e.target.closest || !e.target.closest('#bell-pop, [data-act=bell]')) return;
+    setTimeout(() => { const a = document.activeElement; if (S.bellOpen && a && a !== document.body && !a.closest('#bell-pop, [data-act=bell]')) { S.bellOpen = false; render(); } }, 0);
+  });
   document.addEventListener('keydown', (e) => {
+    if (S.zoom && e.target.closest && e.target.closest('.pin-area') && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
+      e.preventDefault(); const k = S.zoom.kb || { x: 50, y: 50 }, d = e.shiftKey ? 2 : 10;
+      if (e.key === 'ArrowLeft') k.x -= d; if (e.key === 'ArrowRight') k.x += d; if (e.key === 'ArrowUp') k.y -= d; if (e.key === 'ArrowDown') k.y += d;
+      S.zoom.kb = { x: Math.max(0, Math.min(100, k.x)), y: Math.max(0, Math.min(100, k.y)) }; render(); return;
+    }
     const tl = e.target.closest && e.target.closest('[role=tablist]');
     if (tl && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(e.key)) {
       const tabs = [...tl.querySelectorAll('[role=tab]')], i = tabs.indexOf(e.target); if (i < 0) return;

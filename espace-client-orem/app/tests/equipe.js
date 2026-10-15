@@ -35,7 +35,7 @@ const ok = (label, v) => R.push(`${v ? '✔' : '✘'} ${label}`);
   await clem.click('.compose-card button[type=submit]'); await clem.waitForTimeout(400);
   // 4. Clément ajoute un visuel à la bibliothèque
   await clem.click('.side [data-act=compose]'); await clem.selectOption('#c-p', 'p_lumen'); await clem.waitForTimeout(200); await clem.click('[data-ckind=asset]');
-  await clem.fill('#c-at', 'Planche de tendances'); await clem.setInputFiles('#c-ai', { name: 'planche.png', mimeType: 'image/png', buffer: require('fs').readFileSync('/home/user/claude-code/espace-client-orem/app/public/assets/logo-black.png') });
+  await clem.fill('#c-at', 'Planche de tendances'); await clem.selectOption('#c-ak', 'Visuels'); await clem.setInputFiles('#c-ai', { name: 'planche.png', mimeType: 'image/png', buffer: require('fs').readFileSync('/home/user/claude-code/espace-client-orem/app/public/assets/logo-black.png') });
   await clem.click('.compose-card button[type=submit]'); await clem.waitForTimeout(500);
   // 5. Claire voit la vidéo + le visuel
   await claire.reload(); await claire.waitForSelector('#main'); await claire.waitForTimeout(300);
