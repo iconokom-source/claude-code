@@ -4,6 +4,23 @@ Document de passation pour reprendre **exactement là où on s'est arrêtés** (
 
 ---
 
+## 0. Journal de reprise (à lire en premier, mis à jour à chaque étape)
+
+**Règle de synergie** : une seule session travaille sur la branche à la fois. Avant de commencer : `git pull`, lire ce journal. Après chaque étape terminée : mettre à jour ce journal (fait, en cours, reste), commit, push. Avant de pousser : `git pull --no-rebase` pour intégrer le travail d'une autre session.
+
+**Session active** : session de Louis (15/10, matin). La session de Théophile est arrêtée (crédits épuisés).
+
+**Fait le 15/10 (session de Louis)** :
+- `tests/tout.sh` rejoué : 100 % sauf `equipe` (2 vérifications), corrigé (catégorie « Visuels » dans le test ; le message de Julie passe au rejeu).
+- Correctifs accessibilité et mobile de l'audit du 15/10 (liste plus bas) : 320 px, focus rendu au bon ouvreur (position mémorisée), double anneau de focus sur fond sombre, Échap dans l'aperçu d'e-mail, erreur sur le champ client d'« Ajouter », cloche fermée quand le focus sort, épingle au clavier (flèches, Entrée), « Continuer » de l'accueil guidé décrit par l'étape et son titre, barre latérale nommée, bouton de thème avec son état, mode sombre et déconnexion dans « Plus », barre du haut non collante sous 500 px de hauteur, focus rendu après « Annuler » et « Pas encore », focus sur « Annuler ma validation » après « Oui, je valide ».
+- Audit UX : cloche ouverte à côté de la barre latérale (ne recouvre plus Évolution), puces, numéros et dates sur une ligne, lignes de liste qui passent à la ligne sous 420 px.
+
+**En cours** : relecture copywriting de tous les textes (rapport attendu dans le dossier de travail de la session, puis réécritures P1 et P2 appliquées dans `app.js` et `core.js`).
+
+**Reste** : rejouer `tests/tout.sh` après le copywriting, regénérer la démo et la republier, restes de l'audit UX (regroupement des 10 onglets de la fiche, « Aperçu des écrans » réservé aux vraies maquettes) et de l'audit produit (point 5 du point d'arrêt du 14/10), puis audit final des 4 angles.
+
+---
+
 ## 1. Message à coller dans la nouvelle session Claude
 
 > Tu reprends le chantier « Espace client Orem » de l'agence Orem (ICONOKOM). Dépôt `iconokom-source/claude-code`, branche `claude/blissful-pasteur-u33w5x`, PR #12 (brouillon). Lis d'abord en entier `espace-client-orem/docs/REPRISE.md` (surtout la section « Point d'arrêt » à la fin), puis `docs/conception.md` et `docs/simulation-parcours.md`.

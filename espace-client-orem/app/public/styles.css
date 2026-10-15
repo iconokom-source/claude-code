@@ -846,3 +846,8 @@ fieldset.field legend{font-weight:500;margin-bottom:6px;padding:0}
 @media (max-width:420px){ .cgrid input,.cgrid select,.filters input,.filters select{width:100%} }
 .pin-area{position:relative}
 .pin-kb{position:absolute;width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:50%;border:3px solid #ffffff;background:var(--hl);box-shadow:0 0 0 2px #000012;pointer-events:none}
+/* Audit UX : la cloche s'ouvre à côté de la barre latérale, sans recouvrir le bloc Évolution ; numéros et dates sur une ligne */
+.bell-pop{left:284px;bottom:24px}
+.chip,span.num,.sub .num{white-space:nowrap}
+@media (max-width:860px){ .bell-pop{left:auto} }
+@media (max-width:420px){ .panel .list .row{flex-wrap:wrap} .panel .list .row .grow{flex-basis:calc(100% - 60px)} }
