@@ -1746,7 +1746,7 @@
       case 'prop-edit': S.propDraft = { pid: S.project.id, prid: id }; render(); { const t = $('#pp-t'); t && t.focus(); } break;
       case 'prop-cancel': S.propDraft = null; render(); break;
       case 'prop-send': act({ type: 'proposal.send', prid: id }, 'Proposition envoyée. Le client est prévenu.'); break;
-      case 'prop-from': { const rq = S.project.requests.find((r) => r.id === id); S.propDraft = { pid: S.project.id, rid: id, title: 'Évolution : ' + rq.type.toLowerCase(), intro: (S.project.registre === 'tu' ? 'Suite à ta demande : ' : 'Suite à votre demande : ') + rq.text, lines: [{ t: rq.text.slice(0, 120), ht: 0 }], depositPct: 0 }; S.tab = 'factures'; render(); { const t = $('#pp-l'); t && t.focus(); } break; }
+      case 'prop-from': { const rq = S.project.requests.find((r) => r.id === id); S.propDraft = { pid: S.project.id, rid: id, title: 'Demande : ' + rq.type.toLowerCase(), intro: (S.project.registre === 'tu' ? 'Suite à ta demande : ' : 'Suite à votre demande : ') + rq.text, lines: [{ t: rq.text.slice(0, 120), ht: 0 }], depositPct: 0 }; S.tab = 'factures'; render(); { const t = $('#pp-l'); t && t.focus(); } break; }
       case 'copypost': copyText($('#lk-post').value, R('Post copié. Collez-le sur LinkedIn.', 'Post copié. Colle-le sur LinkedIn.')); break;
       case 'copytxt': copyText(a.dataset.txt, a.dataset.txt + ' copié.'); break;
       case 'vault-erase': if (!confirm('Effacer les identifiants du coffre ?')) break; try { await API.vaultErase(S.project.id); await loadProject(S.project.id); toast('Identifiants effacés du coffre.'); } catch (err) { toast(err.message); } break;

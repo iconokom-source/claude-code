@@ -17,7 +17,10 @@ Document de passation pour reprendre **exactement là où on s'est arrêtés** (
 
 - Relecture copywriting (rapport complet : `docs/audit-copywriting.md`, clarté notée 6,5/10 client et 6/10 agence) : les 133 réécritures P1 et P2 sont appliquées dans `app.js` et `core.js` (lexique : « étape » pour les 4 temps O.R.E.M., « prochaine action », « Devis et factures », « faire une demande », « maquette cliquable », « Tests du site » au lieu de « Recette du site », délai unique « sous 24 h ouvrées », erreurs neutres en registre qui disent quoi faire, mot « suivi » retiré). Maquettes : le placeholder nomme bien le designer (`/design|création/`).
 
-**En cours** : rejeu de `tests/tout.sh` après le copywriting (des tests citent d'anciens textes, à adapter).
+- `tests/tout.sh` rejoué après le copywriting : **11 suites à 100 %** (simulation 25, equipe 14, lots 24, a11y 24, agence 26, waouh 20, accueil 25, connecteurs 40, securite 13, core 61). Tests adaptés aux nouveaux textes (« Mise en ligne dans N jours », « Devis », « Demande : … »). Titre d'un devis tiré d'une demande : « Demande : … » au lieu de « Évolution : … ».
+- Démo regénérée et republiée (version 5) : https://claude.ai/artifact/WBnaucQmcvNXdBjr4YECBT (compte de Louis, privée). Limite connue : dans le lecteur d'artifact, les boutons « Télécharger » de la démo ne font rien (le lecteur bloque les téléchargements) ; dans l'app locale, ils fonctionnent.
+
+**En cours** : rien. Prochaine étape : les restes listés ci-dessous.
 
 **Reste aussi du copywriting** : les 52 propositions P3 du rapport ; statut de demande « Proposé » affiché « Devis envoyé » (sans changer la valeur stockée) ; signature de l'e-mail d'invitation selon l'équipe du projet (`core.js`, test `core.js:84`) ; décision à prendre par Louis : l'interface agence vouvoie alors que les e-mails internes tutoient.
 

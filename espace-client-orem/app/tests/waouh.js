@@ -40,12 +40,12 @@ const errs = [];
   const louis = await login('louis@agence-orem.fr');
   await go(louis, 'clients'); await louis.click('.cat[data-mine="0"]'); await louis.click('[data-open=p_lumen]'); await louis.click('#tab-demandes'); await louis.waitForTimeout(150);
   await louis.locator('.row', { hasText: 'page Presse' }).locator('[data-act=prop-from]').click(); await louis.waitForTimeout(200);
-  ok('« Proposer un devis » : le formulaire est prérempli depuis la demande', /page Presse/.test(await louis.inputValue('#pp-l')) && /Évolution : contenu/.test(await louis.inputValue('#pp-t')));
+  ok('« Proposer un devis » : le formulaire est prérempli depuis la demande', /page Presse/.test(await louis.inputValue('#pp-l')) && /Demande : contenu/.test(await louis.inputValue('#pp-t')));
   await louis.fill('#pp-l', 'Page Presse (maquette et intégration) | 600'); await louis.click('form[data-form=proposal] button[value=send]'); await louis.waitForTimeout(500);
   await claire.reload(); await claire.waitForSelector('#main'); await claire.waitForTimeout(200);
   ok('Claire voit la proposition à valider (badge « À valider »)', /\d/.test(await claire.locator('.side [data-go=valider] .badge').innerText()));
   await go(claire, 'proposition');
-  ok('Devis d’évolution : 600 € HT, facturé à la livraison, au vouvoiement', /Devis d’évolution/i.test(await main(claire)) && /600\s€/.test(await main(claire)) && /En attente de votre réponse/.test(await main(claire)));
+  ok('Devis : 600 € HT, facturé à la livraison, au vouvoiement', /Devis/i.test(await main(claire)) && /600\s€/.test(await main(claire)) && /En attente de votre réponse/.test(await main(claire)));
 
   // 3. Hugo : versions et commentaires épinglés
   const hugo = await login('hugo@huchet-demorge.fr');

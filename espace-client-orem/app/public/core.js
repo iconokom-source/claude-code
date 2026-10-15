@@ -307,10 +307,10 @@
     d.activity = [{ at: at(-1, 17), by: 'u_theo', text: 'a envoyé la proposition', seen: true }];
     d.team = { lead: 'u_theo', members: TEAM3 };
     // Huchet : devis d'un clic depuis la demande d'évolution (montant fictif)
-    b.proposals = [{ id: 'pr_hd1', status: 'sent', title: 'Évolution : l’annonce dans chaque e-mail de contact', quote: 'D-2026-0161', sentAt: at(-3, 10), validUntil: at(27), from: 'hr1',
+    b.proposals = [{ id: 'pr_hd1', status: 'sent', title: 'Demande : l’annonce dans chaque e-mail de contact', quote: 'D-2026-0161', sentAt: at(-3, 10), validUntil: at(27), from: 'hr1',
       intro: 'Suite à ta demande : chaque e-mail de contact indiquera l’annonce concernée (intitulé et lien).', lines: [{ t: 'Champ caché « annonce » sur les formulaires et modèle d’e-mail', ht: 450 }], depositPct: 0, example: true }];
     b.requests[0].status = 'Proposé';
-    const hugoNotice = { id: uid('n'), userId: 'u_hugo', projectId: 'p_huchet', client: 'Huchet-Demorge', type: 'validations', act: 'proposal.send', text: 'Louis t’a envoyé une proposition : Évolution : l’annonce dans chaque e-mail de contact', by: 'u_louis', at: at(-3, 10), read: false, reg: 'tu', go: { view: 'proposition' } };
+    const hugoNotice = { id: uid('n'), userId: 'u_hugo', projectId: 'p_huchet', client: 'Huchet-Demorge', type: 'validations', act: 'proposal.send', text: 'Louis t’a envoyé une proposition : Demande : l’annonce dans chaque e-mail de contact', by: 'u_louis', at: at(-3, 10), read: false, reg: 'tu', go: { view: 'proposition' } };
     a.versions = [{ id: 've1', label: 'V1', t: 'Plan du site', url: 'https://www.figma.com/proto/exemple-maison-lumen-plan', at: at(-2, 11) }];
     b.versions = [{ id: 'hv2', label: 'V2', t: 'Maquettes finales', url: b.links.proto, at: '2026-03-13T10:00:00.000Z' }, { id: 'hv1', label: 'V1', t: 'Maquettes desktop', url: b.links.proto, at: '2026-02-20T10:00:00.000Z' }];
     for (const [x, f] of [[a, 'lumen'], [b, 'huchet'], [c, 'varenne'], [d, 'vergers']]) x.brand.logo = 'assets/logos/' + f + '.svg';

@@ -22,7 +22,7 @@ const errs = [];
   ok('Plus de chiffres clés ni de frise répétée sur l’accueil', (await claire.locator('#main .kpis, #main .steps').count()) === 0);
   const todo = await claire.locator('#td').locator('xpath=../..').innerText();
   ok('« À faire » ne répète pas la prochaine étape', !/Valider : plan du site/.test(todo), todo.replace(/\n/g, ' '));
-  ok('La prochaine étape porte le J-x et le temps O.R.E.M.', /J-\d+ avant la mise en ligne · O · Orienter/.test(await claire.locator('.next .meta').innerText()));
+  ok('La prochaine action porte le compte à rebours et l’étape O.R.E.M.', /Mise en ligne dans \d+ jours? · O · Orienter/.test(await claire.locator('.next .meta').innerText()));
   await claire.screenshot({ path: OUT + '/accueil-1-claire.png' });
   // Navigation
   ok('Navigation client : 7 entrées au plus', (await claire.locator('.side .nav a').count()) <= 7, String(await claire.locator('.side .nav a').count()));
