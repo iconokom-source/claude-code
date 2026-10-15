@@ -25,8 +25,15 @@ const DATA = path.resolve(process.env.DATA_DIR || path.join(__dirname, 'data'));
 const DB_FILE = path.join(DATA, 'db.json');
 const UPLOADS = path.join(DATA, 'uploads');
 const PUBLIC = path.join(__dirname, 'public');
-const MAX_UPLOAD = 2 * 1024 ** 3;            // 2 Go par fichier
-const PROJECT_QUOTA = 20 * 1024 ** 3;        // 20 Go par projet
+// Aucune limite de taille par défaut : un client peut déposer des dossiers de plusieurs dizaines de Go.
+// Limites facultatives (en Go) : MAX_UPLOAD_GB par fichier, PROJECT_QUOTA_GB par projet. Le serveur garde toujours 2 Go libres sur son disque.
+const GB = 1024 ** 3;
+const MAX_UPLOAD = Number(process.env.MAX_UPLOAD_GB) > 0 ? Number(process.env.MAX_UPLOAD_GB) * GB : Infinity;
+const PROJECT_QUOTA = Number(process.env.PROJECT_QUOTA_GB) > 0 ? Number(process.env.PROJECT_QUOTA_GB) * GB : Infinity;
+const DISK_RESERVE = 2 * GB;
+const CHUNK_MAX = 64 * 1024 ** 2;            // un morceau d'envoi : 64 Mo au plus
+const tooBig = () => `Fichier trop lourd (${Math.round(MAX_UPLOAD / GB)} Go maximum).`;
+function diskFree() { try { const s = fs.statfsSync(DATA); return s.bavail * s.bsize; } catch { return Infinity; } }
 const CODE_TTL = 15 * 60 * 1000;
 const SESSION_TTL = 30 * 24 * 3600 * 1000;
 const COOKIE = HTTPS ? '__Host-sid' : 'sid';
@@ -129,6 +136,8 @@ function background() {
   for (const [k, s] of Object.entries(db.sessions)) if (s.exp < now) { delete db.sessions[k]; changed = true; }
   for (const [k, c] of Object.entries(db.codes)) if (c.exp < now) { delete db.codes[k]; changed = true; }
   for (const [k, c] of Object.entries(db.invites || {})) if (c.exp < now) { delete db.invites[k]; changed = true; }
+  // Envois abandonnés depuis plus de 7 jours : on libère la place.
+  for (const [k, u] of Object.entries(db.uploads || {})) if (u.at < now - 7 * 864e5) { delete db.uploads[k]; fs.rm(path.join(UPLOADS, u.pid, k + '.part'), { force: true }, () => {}); changed = true; }
   for (const [k, v] of hits) if (v.reset < now) hits.delete(k);
   if (changed) save();
 }
@@ -287,9 +296,11 @@ function filePath(f) {
 }
 /* ---------- Export ZIP d'un espace (fin de projet) ----------
    Archive « stockée » (sans compression, les fichiers déposés le sont déjà souvent), écrite en flux :
-   chaque fichier est lu une fois, son CRC est donné après les données (descripteur). Limite : 4 Go au total. */
+   chaque fichier est lu une fois, son CRC est donné après les données (descripteur).
+   Format ZIP64 : aucune limite de taille (dossiers de plusieurs dizaines de Go). */
 const CRC_T = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
 const crc32 = zlib.crc32 || ((buf, prev = 0) => { let c = ~prev >>> 0; for (let i = 0; i < buf.length; i++) c = CRC_T[(c ^ buf[i]) & 0xff] ^ (c >>> 8); return ~c >>> 0; });
+const u64 = (b, v, at) => b.writeBigUInt64LE(BigInt(v), at);
 async function sendZip(res, name, entries) {
   // entries : [{ name, data: Buffer } | { name, abs }]
   res.writeHead(200, { ...SEC_HEADERS, 'Content-Type': 'application/zip', 'Cache-Control': 'no-store', 'Content-Disposition': `attachment; filename*=UTF-8''${encodeURIComponent(name)}` });
@@ -303,18 +314,26 @@ async function sendZip(res, name, entries) {
     while (used.has(fname)) { const dot = base.lastIndexOf('.'); fname = dot > 0 ? `${base.slice(0, dot)} (${i})${base.slice(dot)}` : `${base} (${i})`; i++; }
     used.add(fname);
     const nameBuf = Buffer.from(fname, 'utf8'), start = offset;
-    const lh = Buffer.alloc(30); lh.writeUInt32LE(0x04034b50, 0); lh.writeUInt16LE(20, 4); lh.writeUInt16LE(0x0808, 6); lh.writeUInt16LE(0, 8); lh.writeUInt16LE(tm, 10); lh.writeUInt16LE(dt, 12); lh.writeUInt16LE(nameBuf.length, 26);
-    await write(lh); await write(nameBuf);
+    // En-tête local : tailles inconnues (0xFFFFFFFF) et champ ZIP64 ; les vraies valeurs suivent les données.
+    const lh = Buffer.alloc(30); lh.writeUInt32LE(0x04034b50, 0); lh.writeUInt16LE(45, 4); lh.writeUInt16LE(0x0808, 6); lh.writeUInt16LE(0, 8); lh.writeUInt16LE(tm, 10); lh.writeUInt16LE(dt, 12);
+    lh.writeUInt32LE(0xffffffff, 18); lh.writeUInt32LE(0xffffffff, 22); lh.writeUInt16LE(nameBuf.length, 26); lh.writeUInt16LE(20, 28);
+    const lx = Buffer.alloc(20); lx.writeUInt16LE(0x0001, 0); lx.writeUInt16LE(16, 2);
+    await write(lh); await write(nameBuf); await write(lx);
     let crc = 0, size = 0;
     if (e.data) { crc = crc32(e.data); size = e.data.length; await write(e.data); }
     else await new Promise((ok, ko) => { const st = fs.createReadStream(e.abs); st.on('data', (c) => { crc = crc32(c, crc); size += c.length; offset += c.length; if (!res.write(c)) { st.pause(); res.once('drain', () => st.resume()); } }); st.on('end', ok); st.on('error', ko); });
-    const dd = Buffer.alloc(16); dd.writeUInt32LE(0x08074b50, 0); dd.writeUInt32LE(crc >>> 0, 4); dd.writeUInt32LE(size, 8); dd.writeUInt32LE(size, 12); await write(dd);
-    const ch = Buffer.alloc(46); ch.writeUInt32LE(0x02014b50, 0); ch.writeUInt16LE(20, 4); ch.writeUInt16LE(20, 6); ch.writeUInt16LE(0x0808, 8); ch.writeUInt16LE(0, 10); ch.writeUInt16LE(tm, 12); ch.writeUInt16LE(dt, 14);
-    ch.writeUInt32LE(crc >>> 0, 16); ch.writeUInt32LE(size, 20); ch.writeUInt32LE(size, 24); ch.writeUInt16LE(nameBuf.length, 28); ch.writeUInt32LE(start, 42);
-    central.push(Buffer.concat([ch, nameBuf]));
+    const dd = Buffer.alloc(24); dd.writeUInt32LE(0x08074b50, 0); dd.writeUInt32LE(crc >>> 0, 4); u64(dd, size, 8); u64(dd, size, 16); await write(dd);
+    const ch = Buffer.alloc(46); ch.writeUInt32LE(0x02014b50, 0); ch.writeUInt16LE(45, 4); ch.writeUInt16LE(45, 6); ch.writeUInt16LE(0x0808, 8); ch.writeUInt16LE(0, 10); ch.writeUInt16LE(tm, 12); ch.writeUInt16LE(dt, 14);
+    ch.writeUInt32LE(crc >>> 0, 16); ch.writeUInt32LE(0xffffffff, 20); ch.writeUInt32LE(0xffffffff, 24); ch.writeUInt16LE(nameBuf.length, 28); ch.writeUInt16LE(28, 30); ch.writeUInt32LE(0xffffffff, 42);
+    const cx = Buffer.alloc(28); cx.writeUInt16LE(0x0001, 0); cx.writeUInt16LE(24, 2); u64(cx, size, 4); u64(cx, size, 12); u64(cx, start, 20);
+    central.push(Buffer.concat([ch, nameBuf, cx]));
   }
   const cd = Buffer.concat(central), cdStart = offset; await write(cd);
-  const end = Buffer.alloc(22); end.writeUInt32LE(0x06054b50, 0); end.writeUInt16LE(central.length, 8); end.writeUInt16LE(central.length, 10); end.writeUInt32LE(cd.length, 12); end.writeUInt32LE(cdStart, 16);
+  const z64 = offset;
+  const ze = Buffer.alloc(56); ze.writeUInt32LE(0x06064b50, 0); u64(ze, 44, 4); ze.writeUInt16LE(45, 12); ze.writeUInt16LE(45, 14); u64(ze, central.length, 24); u64(ze, central.length, 32); u64(ze, cd.length, 40); u64(ze, cdStart, 48);
+  const zl = Buffer.alloc(20); zl.writeUInt32LE(0x07064b50, 0); u64(zl, z64, 8); zl.writeUInt32LE(1, 16);
+  await write(ze); await write(zl);
+  const end = Buffer.alloc(22); end.writeUInt32LE(0x06054b50, 0); end.writeUInt16LE(0xffff, 8); end.writeUInt16LE(0xffff, 10); end.writeUInt32LE(0xffffffff, 12); end.writeUInt32LE(0xffffffff, 16);
   res.end(end);
 }
 function exportEntries(pr, user) {
@@ -326,7 +345,7 @@ function exportEntries(pr, user) {
     'Messages', ...pr.messages.slice().reverse().map((m) => `  [${new Date(m.at).toLocaleString('fr-FR')}] ${people[m.by] || (m.by === 'team' ? 'L’équipe Orem' : m.by)} : ${m.text}${m.loom ? ' (vidéo : ' + m.loom.url + ')' : ''}`)];
   const files = Core.forUser(pr, user).files.map((f) => ({ f: pr.files.find((x) => x.id === f.id) })).map(({ f }) => ({ f, abs: filePath(f) }))
     .filter(({ abs }) => { try { return abs && fs.statSync(abs).isFile(); } catch { return false; } })
-    .map(({ f, abs }) => ({ name: (f.from === 'client' ? 'Fichiers déposés/' : f.cat === 'Bibliothèque' ? 'Bibliothèque/' : 'Documents de l’agence/') + f.name, abs, size: Number(f.size) || 0 }));
+    .map(({ f, abs }) => ({ name: (f.from === 'client' ? 'Fichiers déposés/' : f.cat === 'Bibliothèque' ? 'Bibliothèque/' : 'Documents de l’agence/') + (f.folder ? f.folder + '/' : '') + f.name, abs, size: Number(f.size) || 0 }));
   return [{ name: 'Récapitulatif du projet.txt', data: Buffer.from('﻿' + lines.join('\n'), 'utf8') }, ...files];
 }
 /* Contexte donné aux connecteurs : enregistrer un PDF importé (Abby) comme un fichier déposé par l'agence. */
@@ -548,6 +567,82 @@ ${sg.sig ? `<dt>Signature tracée</dt><dd class="sig"><img src="${sg.sig}" alt="
     return send(res, 200, r);
   }
 
+  /* Envoi par morceaux, reprenable : pour les gros fichiers et les dossiers entiers, sans limite de taille.
+     1. POST /api/projects/<id>/uploads { name, size, cat, folder, missing, batch } → { id, received }
+     2. PUT  /api/uploads/<id>?offset=<octets déjà reçus>, corps : le morceau suivant (64 Mo au plus) → { received }
+        Si la connexion coupe, GET /api/uploads/<id> donne ce qui est déjà arrivé, et l'envoi reprend de là.
+     3. Le dernier morceau enregistre le fichier dans l'espace (une seule notification par dossier, via /uploads-done). */
+  m = p.match(/^\/api\/projects\/([\w-]+)\/uploads$/);
+  if (m && req.method === 'POST') {
+    const pr = db.projects.find((x) => x.id === m[1]);
+    if (!pr || !Core.canSee(user, pr)) return send(res, 404, { error: 'Projet introuvable.' });
+    if (limited('upstart:' + user.id, 2000, 60 * 60e3)) return send(res, 429, { error: 'Trop d’envois en peu de temps. Patientez quelques minutes.' });
+    const b = await readJson(req);
+    const size = Math.floor(Number(b.size));
+    if (!(size >= 0) || !isFinite(size)) return send(res, 400, { error: 'Taille du fichier inconnue.' });
+    if (size > MAX_UPLOAD) return send(res, 413, { error: tooBig() });
+    const pending = Object.values(db.uploads || {}).reduce((t, u) => t + (u.size - u.received), 0);
+    if (size + pending > diskFree() - DISK_RESERVE) { log('disk.full', { project: pr.id, size }); return send(res, 507, { error: 'Le serveur manque de place pour ce fichier. L’équipe est prévenue.' }); }
+    if (projectBytes(pr) + size > PROJECT_QUOTA) return send(res, 413, { error: 'L’espace de ce projet est plein. Écrivez à l’équipe pour faire de la place.' });
+    const id = 'f_' + crypto.randomBytes(12).toString('hex');
+    const dir = path.join(UPLOADS, pr.id); fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, id + '.part'), '');
+    db.uploads ||= {};
+    db.uploads[id] = { id, pid: pr.id, uid: user.id, name: path.basename(String(b.name || 'fichier')).replace(/[\u0000-\u001f<>"\\]/g, '').slice(0, 200) || 'fichier',
+      size, received: 0, cat: String(b.cat || '').slice(0, 40), folder: String(b.folder || '').slice(0, 300), missing: b.missing ? String(b.missing).slice(0, 60) : '', batch: !!b.batch, at: Date.now() };
+    save(); return send(res, 200, { id, received: 0, chunk: CHUNK_MAX });
+  }
+  m = p.match(/^\/api\/uploads\/(f_[a-f0-9]{24})$/);
+  if (m) {
+    const up = (db.uploads || {})[m[1]];
+    if (!up || up.uid !== user.id) return send(res, 404, { error: 'Envoi introuvable : il faut relancer le fichier.' });
+    const pr = db.projects.find((x) => x.id === up.pid);
+    if (!pr || !Core.canSee(user, pr)) return send(res, 404, { error: 'Projet introuvable.' });
+    const part = path.join(UPLOADS, pr.id, up.id + '.part');
+    if (req.method === 'GET') return send(res, 200, { received: up.received, size: up.size });
+    if (req.method === 'DELETE') { delete db.uploads[up.id]; save(); fs.rm(part, { force: true }, () => {}); return send(res, 200, { ok: true }); }
+    if (req.method !== 'PUT') return send(res, 405, { error: 'Méthode non prise en charge.' });
+    const offset = Number(url.searchParams.get('offset'));
+    const len = Number(req.headers['content-length'] || 0);
+    if (offset !== up.received) { req.resume(); return send(res, 409, { error: 'Reprise de l’envoi.', received: up.received }); }
+    if (!len || len > CHUNK_MAX || up.received + len > up.size) { req.resume(); return send(res, 400, { error: 'Morceau invalide.', received: up.received }); }
+    if (up.busy) { req.resume(); return send(res, 409, { error: 'Envoi déjà en cours.', received: up.received }); }
+    up.busy = true;
+    let got = 0, failed = false;
+    const out = fs.createWriteStream(part, { flags: 'r+', start: offset });
+    const stop = () => { if (failed) return; failed = true; up.busy = false; out.destroy(); if (!res.headersSent) send(res, 400, { error: 'Morceau interrompu.', received: up.received }); };
+    req.on('data', (c) => { got += c.length; if (got > len) stop(); });
+    req.on('aborted', stop); req.on('error', stop); out.on('error', () => { if (!failed) { failed = true; up.busy = false; send(res, 500, { error: 'Enregistrement impossible. Réessayez.', received: up.received }); } });
+    req.pipe(out);
+    out.on('finish', () => {
+      if (failed) return; up.busy = false;
+      if (got !== len) return send(res, 400, { error: 'Morceau incomplet.', received: up.received });
+      up.received += got; up.at = Date.now();
+      if (up.received < up.size) { save(); return send(res, 200, { received: up.received }); }
+      // Dernier morceau : le fichier rejoint l'espace du client.
+      const dest = path.join(UPLOADS, pr.id, up.id);
+      try { fs.renameSync(part, dest); } catch (e) { log('error', { message: e.message }); return send(res, 500, { error: 'Enregistrement impossible. Réessayez.' }); }
+      delete db.uploads[up.id];
+      const r = Core.addFile(db, pr.id, user, { id: up.id, name: up.name, size: up.size, cat: up.cat, folder: up.folder, quiet: up.batch, path: path.relative(DATA, dest) });
+      if (r.error) { fs.rm(dest, { force: true }, () => {}); save(); return send(res, 400, { error: r.error }); }
+      if (up.missing) Core.apply(db, pr.id, user, { type: 'missing.done', mid: up.missing }, true);
+      save(); deliver(r.notices);
+      if (user.role !== 'admin') driveCopy(pr, pr.files.find((x) => x.id === up.id));
+      send(res, 200, { received: up.received, done: true, file: Core.forUser({ files: [r.file], activity: [], invoices: [] }, user).files[0] });
+    });
+    return;
+  }
+  // Fin d'un dépôt groupé : une seule notification pour tout le dossier.
+  m = p.match(/^\/api\/projects\/([\w-]+)\/uploads-done$/);
+  if (m && req.method === 'POST') {
+    const pr = db.projects.find((x) => x.id === m[1]);
+    if (!pr || !Core.canSee(user, pr)) return send(res, 404, { error: 'Projet introuvable.' });
+    const b = await readJson(req);
+    const r = Core.filesBatch(db, pr.id, user, { folder: b.folder, count: b.count, size: b.size, cat: b.cat });
+    if (r.error) return send(res, 400, { error: r.error });
+    save(); deliver(r.notices); return send(res, 200, { ok: true });
+  }
+
   // Dépôt de fichier : corps brut, nom et catégorie en paramètres. L'enregistrement est créé par le serveur, jamais par le navigateur.
   m = p.match(/^\/api\/projects\/([\w-]+)\/files$/);
   if (m && req.method === 'POST') {
@@ -556,7 +651,8 @@ ${sg.sig ? `<dt>Signature tracée</dt><dd class="sig"><img src="${sg.sig}" alt="
     if (limited('up:' + user.id, 60, 60e3)) return send(res, 429, { error: 'Trop d’envois en peu de temps. Patientez une minute.' });
     const name = path.basename(String(url.searchParams.get('name') || 'fichier')).replace(/[\u0000-\u001f<>"\\]/g, '').slice(0, 200) || 'fichier';
     const len = Number(req.headers['content-length'] || 0);
-    if (len > MAX_UPLOAD) return send(res, 413, { error: 'Fichier trop lourd (2 Go maximum).' });
+    if (len > MAX_UPLOAD) return send(res, 413, { error: tooBig() });
+    if (len > diskFree() - DISK_RESERVE) return send(res, 507, { error: 'Le serveur manque de place pour ce fichier. L’équipe est prévenue.' });
     if (projectBytes(pr) + len > PROJECT_QUOTA) return send(res, 413, { error: 'L’espace de ce projet est plein. Écrivez à l’équipe pour faire de la place.' });
     if ((activeUploads.get(user.id) || 0) >= 3) return send(res, 429, { error: 'Trois envois sont déjà en cours. Attendez qu’ils se terminent.' });
     activeUploads.set(user.id, (activeUploads.get(user.id) || 0) + 1);
@@ -569,7 +665,7 @@ ${sg.sig ? `<dt>Signature tracée</dt><dd class="sig"><img src="${sg.sig}" alt="
     let size = 0, done = false;
     const out = fs.createWriteStream(dest);
     const fail = (status, msg) => { if (done) return; done = true; req.unpipe(out); out.destroy(); fs.rm(dest, { force: true }, () => {}); if (!res.headersSent) send(res, status, { error: msg }); };
-    req.on('data', (c) => { size += c.length; if (size > MAX_UPLOAD) fail(413, 'Fichier trop lourd (2 Go maximum).'); else if (base + size > PROJECT_QUOTA) fail(413, 'L’espace de ce projet est plein. Écrivez à l’équipe pour faire de la place.'); });
+    req.on('data', (c) => { size += c.length; if (size > MAX_UPLOAD) fail(413, tooBig()); else if (base + size > PROJECT_QUOTA) fail(413, 'L’espace de ce projet est plein. Écrivez à l’équipe pour faire de la place.'); });
     req.on('aborted', () => fail(400, 'Envoi interrompu.'));
     req.on('error', () => fail(400, 'Envoi interrompu.'));
     out.on('error', () => fail(500, 'Enregistrement impossible. Réessayez.'));
@@ -577,7 +673,7 @@ ${sg.sig ? `<dt>Signature tracée</dt><dd class="sig"><img src="${sg.sig}" alt="
     out.on('finish', () => { try { finishUpload(); } catch (e) { log('error', { message: e.message }); fs.rm(dest, { force: true }, () => {}); if (!res.headersSent) send(res, 500, { error: 'Enregistrement impossible. Réessayez.' }); } });
     const finishUpload = () => {
       if (done) return; done = true;
-      const r = Core.addFile(db, pr.id, user, { id, name, size, cat: url.searchParams.get('cat'), path: path.relative(DATA, dest) });
+      const r = Core.addFile(db, pr.id, user, { id, name, size, cat: url.searchParams.get('cat'), folder: url.searchParams.get('folder') || '', quiet: url.searchParams.get('batch') === '1', path: path.relative(DATA, dest) });
       if (r.error) { fs.rm(dest, { force: true }, () => {}); return send(res, 400, { error: r.error }); }
       // Un dépôt fait depuis « Ce qu'il nous manque » retire l'élément attendu.
       const mid = url.searchParams.get('missing'); if (mid) Core.apply(db, pr.id, user, { type: 'missing.done', mid: String(mid).slice(0, 60) }, true);

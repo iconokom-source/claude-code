@@ -858,3 +858,9 @@ fieldset.field legend{font-weight:500;margin-bottom:6px;padding:0}
 .rp-row .rp-h{flex:1;min-width:0}
 .rp-a{display:flex;gap:8px;flex:none}
 @media (max-width:560px){ .rp-row{flex-wrap:wrap;padding:0 0 14px} .rp-a{padding-left:16px} }
+/* Dépôt de dossiers et gros envois */
+.drop-more{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:-4px 0 16px}
+.up-state{display:flex;flex-direction:column;gap:6px;width:100%;max-width:420px;text-align:left}
+.up-name{font-size:var(--t-sm);font-weight:500;overflow-wrap:anywhere}
+.fold{display:inline-flex;align-items:center;gap:4px}
+.fold svg{width:14px;height:14px}

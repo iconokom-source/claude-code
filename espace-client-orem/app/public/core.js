@@ -447,7 +447,7 @@
     const project = store.projects.find((p) => p.id === projectId);
     if (!project || !canSee(user, project)) return { error: 'Projet introuvable, ou accès retiré. Se reconnecter ; si le problème continue, écrire à l’équipe.' };
     if (action.type === 'file.add' && !internal) return { error: 'Action impossible. Recharger la page puis réessayer.' };
-    if (user.role !== 'admin' && !CLIENT_ACTIONS.has(action.type) && !(internal && ['file.add', 'missing.done', 'file.sign'].includes(action.type))) return { error: 'Action réservée à l’agence.' };
+    if (user.role !== 'admin' && !CLIENT_ACTIONS.has(action.type) && !(internal && ['file.add', 'files.batch', 'missing.done', 'file.sign'].includes(action.type))) return { error: 'Action réservée à l’agence.' };
     // Un espace archivé reste consultable, mais plus rien ne s'y écrit (sauf pour le désarchiver).
     if (project.archivedAt && action.type !== 'project.archive' && !['msg.read', 'seen'].includes(action.type)) return { error: 'Cet espace est archivé : il reste consultable, en lecture seule.' };
     const v = action.vid && project.validations.find((x) => x.id === action.vid);
@@ -607,7 +607,12 @@
         if (project.files.some((f) => f.id === fl.id)) return { error: 'Fichier déjà enregistré.' };
         const rec = { id: fl.id || uid('f'), name: String(fl.name).slice(0, 200), cat: cats.includes(fl.cat) ? fl.cat : (user.role === 'admin' ? 'Livrable' : 'Autres'),
           from: user.role === 'admin' ? 'agence' : 'client', by: user.id, at: now, size: Number(fl.size) || 0, seen: user.role === 'admin', path: fl.path || undefined };
+        // Dépôt d'un dossier : on garde le chemin des sous-dossiers (« Photos/Atelier »).
+        const folder = String(fl.folder || '').replace(/\\/g, '/').split('/').map((x) => x.trim()).filter((x) => x && x !== '.' && x !== '..').join('/').slice(0, 300);
+        if (folder) rec.folder = folder;
         project.files.unshift(rec);
+        // Un dossier entier : un seul mot dans l'activité et une seule notification, envoyés à la fin (« files.batch »).
+        if (fl.quiet && internal) return { ok: true, file: rec, silent: true };
         log(project, user, 'a déposé « ' + rec.name + ' »'); return { ok: true, file: rec };
       }
       case 'file.remove': {
@@ -886,6 +891,12 @@
       }
       case 'project.archive':
         project.archivedAt = action.undo ? null : now; break;
+      case 'files.batch': {
+        if (!internal) return { error: 'Action impossible. Recharger la page puis réessayer.' };
+        const n = Math.max(0, Math.floor(Number(action.count) || 0)); if (!n) return { ok: true, silent: true };
+        log(project, user, `a déposé ${action.folder ? 'le dossier « ' + action.folder + ' »' : n + ' fichiers'} (${n} fichier${n > 1 ? 's' : ''})`);
+        return { ok: true, file: { name: action.folder ? 'le dossier « ' + action.folder + ' »' : n + ' fichiers', cat: action.cat } };
+      }
       default: return { error: 'Action impossible. Recharger la page puis réessayer.' };
     }
     return { ok: true };
@@ -896,7 +907,7 @@
      et les autres membres de l'équipe. Chacun règle ce qu'il reçoit et à quel rythme. */
   const EVENT = {
     'file.add': 'files', 'msg.post': 'messages', 'val.approve': 'validations', 'val.changes': 'validations',
-    'request.add': 'requests', 'review.add': 'messages', 'setup.webflow': 'files', 'evo.reschedule': 'messages', 'file.signreq': 'validations', 'file.sign': 'validations', 'evo.report': 'files', 'evo.set': 'activity', 'setup.domain': 'files', 'setup.check': 'activity', 'client.remind': 'validations',
+    'files.batch': 'files', 'request.add': 'requests', 'review.add': 'messages', 'setup.webflow': 'files', 'evo.reschedule': 'messages', 'file.signreq': 'validations', 'file.sign': 'validations', 'evo.report': 'files', 'evo.set': 'activity', 'setup.domain': 'files', 'setup.check': 'activity', 'client.remind': 'validations',
     'proposal.send': 'validations', 'proposal.accept': 'validations', 'proposal.decline': 'messages', 'pin.add': 'messages', 'version.add': 'files', 'project.deliver': 'activity', 'val.request': 'validations', 'user.onboarded': 'activity', 'asset.add': 'files', 'next.set': 'activity', 'note.set': 'activity'
   };
   const TAB = { files: 'fichiers', messages: 'messages', validations: 'validations', requests: 'demandes', activity: 'activite' };
@@ -908,6 +919,7 @@
     const who = user.name.split(' ')[0];
     switch (action.type) {
       case 'file.add': return `${who} a déposé « ${res.file ? res.file.name : 'un fichier'} »`;
+      case 'files.batch': { const n = Number(action.count) || 0, go = Number(action.size) || 0, sz = go >= 1e9 ? (go / 1e9).toLocaleString('fr-FR', { maximumFractionDigits: 1 }) + ' Go' : go >= 1e6 ? Math.round(go / 1e6) + ' Mo' : Math.max(1, Math.round(go / 1e3)) + ' Ko'; return `${who} a déposé ${action.folder ? 'le dossier « ' + action.folder + ' »' : n + ' fichiers'} (${n} fichier${n > 1 ? 's' : ''}, ${sz})`; }
       case 'msg.post': return action.loom && action.loom.url ? `${who} a envoyé une vidéo : ${action.loom.title || 'vidéo'}` : `${who} : « ${String(action.text).slice(0, 120)} »`;
       case 'val.approve': { const v = project.validations.find((x) => x.id === action.vid); return `${who} a validé : ${v ? v.t.toLowerCase() : 'une étape'}`; }
       case 'val.changes': { const v = project.validations.find((x) => x.id === action.vid); return `${who} demande des modifications : ${v ? v.t.toLowerCase() : ''} « ${String(action.comment).slice(0, 100)} »`; }
@@ -938,7 +950,7 @@
   }
   function notifyFor(store, project, user, action, res) {
     const type = EVENT[action.type]; if (!type) return [];
-    if (action.type === 'file.add' && user.role === 'admin' && res.file && res.file.cat !== 'Livrable') return [];
+    if ((action.type === 'file.add' || action.type === 'files.batch') && user.role === 'admin' && res.file && res.file.cat !== 'Livrable') return [];
     store.notifications = store.notifications || [];
     const team = (project.team && project.team.members && project.team.members.length) ? project.team.members : store.users.filter((u) => u.role === 'admin').map((u) => u.id);
     let to;
@@ -1028,7 +1040,11 @@
   }
   /* Dépôt de fichier : seul le serveur (ou la démo) crée l'enregistrement, après avoir écrit le fichier. */
   function addFile(store, projectId, user, meta) {
-    return apply(store, projectId, user, { type: 'file.add', file: { id: String(meta.id || ''), name: String(meta.name || 'fichier'), size: Number(meta.size) || 0, cat: meta.cat, path: meta.path } }, true);
+    return apply(store, projectId, user, { type: 'file.add', file: { id: String(meta.id || ''), name: String(meta.name || 'fichier'), size: Number(meta.size) || 0, cat: meta.cat, path: meta.path, folder: meta.folder || '', quiet: !!meta.quiet } }, true);
+  }
+  /* Fin d'un dépôt groupé (dossier ou sélection de nombreux fichiers) : un seul message pour l'équipe ou le client. */
+  function filesBatch(store, projectId, user, meta) {
+    return apply(store, projectId, user, { type: 'files.batch', folder: String(meta.folder || '').slice(0, 200), count: Number(meta.count) || 0, size: Number(meta.size) || 0, cat: meta.cat }, true);
   }
 
   /* Réglages de l'agence (coordonnées bancaires, liens de réservation…) : plus rien d'écrit en dur dans l'interface. */
@@ -1170,5 +1186,5 @@
     return { ok: true, id: p.id, invite };
   }
 
-  return { seed, newProject, OFFERS, OREM, ROLES, REVIEW_AXES, itemWho, itemGo, itemState, phaseState, lateDays, offerOf: (p) => (OFFERS[p.offer] || OFFERS.site).label, apply, addFile, createProject, summary, forUser, nextStep, alerts, canSee, inbox, readNotif, doneNotif, setPrefs, prefsOf, emailsFor, digestFor, loginMail, inviteMail, publicConfig, setSettings, settingsOf, runReminders, FILE_CATS, AGENCY_CATS, HANDOVER, workDaysBetween, reg, replan };
+  return { filesBatch, seed, newProject, OFFERS, OREM, ROLES, REVIEW_AXES, itemWho, itemGo, itemState, phaseState, lateDays, offerOf: (p) => (OFFERS[p.offer] || OFFERS.site).label, apply, addFile, createProject, summary, forUser, nextStep, alerts, canSee, inbox, readNotif, doneNotif, setPrefs, prefsOf, emailsFor, digestFor, loginMail, inviteMail, publicConfig, setSettings, settingsOf, runReminders, FILE_CATS, AGENCY_CATS, HANDOVER, workDaysBetween, reg, replan };
 });

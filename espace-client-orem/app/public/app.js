@@ -18,6 +18,25 @@
   const dtKey = (d) => { if (!d) return ''; const x = new Date(d); x.setMinutes(x.getMinutes() - x.getTimezoneOffset()); return x.toISOString().slice(0, 16); };
 
   /* ---------- Accès aux données : serveur local ou démo en mémoire ---------- */
+  /* Petit fichier : un seul envoi. */
+  const smallUpload = (id, file, cat, onp, missing, extra = {}) => new Promise((ok, ko) => {
+        const x = new XMLHttpRequest();
+        x.open('POST', `/api/projects/${id}/files?name=${encodeURIComponent(file.name)}&cat=${encodeURIComponent(cat || '')}${missing ? '&missing=' + encodeURIComponent(missing) : ''}${extra.folder ? '&folder=' + encodeURIComponent(extra.folder) : ''}${extra.batch ? '&batch=1' : ''}`);
+        x.setRequestHeader('X-Orem', '1');
+        x.upload.onprogress = (e) => e.lengthComputable && onp && onp(e.loaded / e.total);
+        x.onload = () => { let d = {}; try { d = JSON.parse(x.responseText); } catch {} x.status < 300 ? ok(d) : ko(new Error(d.error || R('Envoi impossible. Réessayez dans un instant ; si cela continue, écrivez à l’équipe dans Messages.', 'Envoi impossible. Réessaie dans un instant ; si cela continue, écris à l’équipe dans Messages.'))); };
+        x.onerror = () => ko(new Error(R('Connexion perdue pendant l’envoi. Vérifiez votre connexion internet, puis renvoyez le fichier.', 'Connexion perdue pendant l’envoi. Vérifie ta connexion internet, puis renvoie le fichier.')));
+        x.send(file);
+  });
+  /* Un morceau d'un gros fichier, avec sa progression. */
+  const putChunk = (uid, offset, blob, onp) => new Promise((ok, ko) => {
+    const x = new XMLHttpRequest();
+    x.open('PUT', `/api/uploads/${uid}?offset=${offset}`); x.setRequestHeader('X-Orem', '1');
+    x.upload.onprogress = (e) => e.lengthComputable && onp && onp(e.loaded);
+    x.onload = () => { let d = {}; try { d = JSON.parse(x.responseText); } catch {} if (x.status < 300) return ok(d); const e = new Error(d.error || 'Envoi interrompu.'); e.status = x.status; e.received = d.received; ko(e); };
+    x.onerror = () => { const e = new Error('Connexion perdue.'); e.status = 0; ko(e); };
+    x.send(blob);
+  });
   function httpApi() {
     const j = async (url, opts = {}) => {
       const r = await fetch(url, { credentials: 'same-origin', ...opts, headers: { 'Content-Type': 'application/json', 'X-Orem': '1', ...(opts.headers || {}) } });
@@ -35,15 +54,28 @@
       project: (id) => j('/api/projects/' + id),
       create: (data) => j('/api/projects', { method: 'POST', body: JSON.stringify(data) }),
       action: (id, a) => j('/api/projects/' + id + '/action', { method: 'POST', body: JSON.stringify(a) }),
-      upload: (id, file, cat, onp, missing) => new Promise((ok, ko) => {
-        const x = new XMLHttpRequest();
-        x.open('POST', `/api/projects/${id}/files?name=${encodeURIComponent(file.name)}&cat=${encodeURIComponent(cat || '')}${missing ? '&missing=' + encodeURIComponent(missing) : ''}`);
-        x.setRequestHeader('X-Orem', '1');
-        x.upload.onprogress = (e) => e.lengthComputable && onp && onp(e.loaded / e.total);
-        x.onload = () => { let d = {}; try { d = JSON.parse(x.responseText); } catch {} x.status < 300 ? ok(d) : ko(new Error(d.error || R('Envoi impossible. Réessayez dans un instant ; si cela continue, écrivez à l’équipe dans Messages.', 'Envoi impossible. Réessaie dans un instant ; si cela continue, écris à l’équipe dans Messages.'))); };
-        x.onerror = () => ko(new Error(R('Connexion perdue pendant l’envoi. Vérifiez votre connexion internet, puis renvoyez le fichier.', 'Connexion perdue pendant l’envoi. Vérifie ta connexion internet, puis renvoie le fichier.')));
-        x.send(file);
-      }),
+      // Gros fichier (plus de 32 Mo) : envoi par morceaux, qui reprend tout seul après une coupure. Aucune limite de taille.
+      upload: async (id, file, cat, onp, missing, extra = {}) => {
+        if (file.size <= 32 * 1024 ** 2) return smallUpload(id, file, cat, onp, missing, extra);
+        const st = await j(`/api/projects/${id}/uploads`, { method: 'POST', body: JSON.stringify({ name: file.name, size: file.size, cat, missing, folder: extra.folder || '', batch: !!extra.batch }) });
+        const CH = Math.min(st.chunk || 64 * 1024 ** 2, 32 * 1024 ** 2), pause = (ms) => new Promise((r) => setTimeout(r, ms));
+        let off = st.received || 0, tries = 0;
+        for (;;) {
+          const end = Math.min(file.size, off + CH);
+          try {
+            const r = await putChunk(st.id, off, file.slice(off, end), (n) => onp && onp((off + n) / file.size));
+            tries = 0; off = r.received; if (r.done) return r;
+          } catch (e) {
+            if (e.status === 409 && typeof e.received === 'number') { off = e.received; continue; }
+            if (e.status && e.status !== 429 && e.status < 500 && e.status !== 400) throw e;
+            if (++tries > 10) throw new Error(R('Connexion perdue pendant l’envoi. Vérifiez votre connexion internet, puis renvoyez le fichier.', 'Connexion perdue pendant l’envoi. Vérifie ta connexion internet, puis renvoie le fichier.'));
+            if (onp) onp(off / file.size, true);
+            await pause(Math.min(30000, 1000 * 2 ** tries));
+            try { off = (await j('/api/uploads/' + st.id)).received; } catch (e2) { if (e2.status === 404) throw e2; }
+          }
+        }
+      },
+      batchDone: (id, meta) => j(`/api/projects/${id}/uploads-done`, { method: 'POST', body: JSON.stringify(meta) }),
       fileUrl: (f) => (f.demo ? null : '/api/files/' + encodeURIComponent(f.id)),
       exportUrl: (id, part) => '/api/projects/' + id + '/export' + (part ? '?part=' + part : ''),
       linkAuth: (token) => j('/api/auth/link', { method: 'POST', body: JSON.stringify({ token }) }),
@@ -93,7 +125,8 @@
       proofUrl: () => null,
       create: (data) => { const r = Core.createProject(store, me, data); return r.error ? fail(r.error) : wait(r); },
       action: (id, a) => { const r = Core.apply(store, id, me, a); mail(r); return r.error ? fail(r.error) : wait(r); },
-      upload: (id, file, cat, onp, missing) => { onp && onp(1); const r = Core.addFile(store, id, me, { name: file.name, size: file.size, cat }); if (!r.error && missing) Core.apply(store, id, me, { type: 'missing.done', mid: missing }, true);
+      batchDone: (id, meta) => { const r = Core.filesBatch(store, id, me, meta); mail(r); return r.error ? fail(r.error) : wait(r); },
+      upload: (id, file, cat, onp, missing, extra = {}) => { onp && onp(1); const r = Core.addFile(store, id, me, { name: file.name, size: file.size, cat, folder: extra.folder, quiet: extra.batch }); if (!r.error && missing) Core.apply(store, id, me, { type: 'missing.done', mid: missing }, true);
         mail(r); if (r.file) r.file.demo = true; return r.error ? fail(r.error) : wait(r); },
       fileUrl: () => null,
       exportUrl: () => null,
@@ -367,7 +400,7 @@
     const agency = f.from === 'agence';
     const mine = !isAdmin() && !S.preview && f.by === S.me.id && Date.now() - new Date(f.at) < 864e5;
     const thumb = fileThumb(f);
-    return `<div class="row">${thumb}<div class="grow"><div class="title" style="overflow-wrap:anywhere">${esc(f.name)}</div><div class="sub num">${esc(f.cat)}${f.size ? ' · ' + size(f.size) : ''} · ${fmt(f.at)}${!agency && isAdmin() && !S.preview ? ' · ' + esc(who(f.by)) : ''}</div></div>${f.fresh ? '<span class="chip ok">Envoyé</span>' : ''}${isAdmin() && !S.preview && f.seen === false ? '<span class="chip warn">Nouveau</span>' : ''}
+    return `<div class="row">${thumb}<div class="grow"><div class="title" style="overflow-wrap:anywhere">${esc(f.name)}</div><div class="sub num">${f.folder ? `<span class="fold">${ic('folder')}${esc(f.folder.replace(/\//g, ' › '))}</span> · ` : ''}${esc(f.cat)}${f.size ? ' · ' + size(f.size) : ''} · ${fmt(f.at)}${!agency && isAdmin() && !S.preview ? ' · ' + esc(who(f.by)) : ''}</div></div>${f.fresh ? '<span class="chip ok">Envoyé</span>' : ''}${isAdmin() && !S.preview && f.seen === false ? '<span class="chip warn">Nouveau</span>' : ''}
       ${f.sign && f.sign.status === 'signed' ? (API.proofUrl(S.project.id, f.id) ? `<a class="chip ok" href="${API.proofUrl(S.project.id, f.id)}" target="_blank" rel="noopener" title="Voir le certificat de signature">Signé le ${fmt(f.sign.signedAt, { day: 'numeric', month: 'short' })}</a>` : `<span class="chip ok">Signé le ${fmt(f.sign.signedAt, { day: 'numeric', month: 'short' })}</span>`) : f.sign ? `<span class="chip warn">À signer</span>` : ''}
       ${isAdmin() && !S.preview && agency && !(f.sign && f.sign.status === 'signed') ? (f.sign ? `<button class="btn btn-line btn-sm" data-act="sign-cancel" data-id="${esc(f.id)}">Retirer la demande<span class="sr"> de signature : ${esc(f.name)}</span></button>` : `<button class="btn btn-line btn-sm" data-act="sign-req" data-id="${esc(f.id)}">Faire signer<span class="sr"> : ${esc(f.name)}</span></button>`) : ''}
       ${canPreview(f) ? `<button class="btn btn-line btn-sm" data-act="fview" data-id="${esc(f.id)}">${ic('eye')}<span class="sr">Aperçu de ${esc(f.name)}</span></button>` : ''}
@@ -513,10 +546,11 @@
     <label class="drop" id="drop" for="file-in">
       <span class="ico hl">${ic('up')}</span>
       <strong>${R('Glissez vos fichiers ici, ou cliquez pour choisir', 'Glisse tes fichiers ici, ou clique pour choisir')}</strong>
-      <span class="small muted">Photos, vidéos, textes, logos. Jusqu’à 2 Go par fichier. On les range pour ${R('vous', 'toi')}.</span>
-      ${S.uploading ? `<span class="small" style="width:100%;max-width:320px">${esc(S.uploading.name)}<span class="progress"><i style="width:${Math.round(S.uploading.p * 100)}%"></i></span></span>` : ''}
+      <span class="small muted">Photos, vidéos, textes, logos, et même des dossiers entiers : aucune limite de taille. Si la connexion coupe, l’envoi reprend tout seul.</span>
+      ${upState()}
       <input id="file-in" type="file" multiple class="sr">
     </label>
+    <div class="drop-more"><label class="btn btn-line btn-sm" for="dir-in">${ic('folder')}${'Déposer un dossier entier'}</label><input id="dir-in" type="file" webkitdirectory multiple class="sr"><span class="small muted">Les sous-dossiers sont conservés.</span></div>
     ${p.missing.length ? `<section class="panel" aria-labelledby="mq"><div class="panel-head"><h2 id="mq">${ic('alert')}Ce qu’il nous manque</h2><span class="small muted">${p.missing.length} élément${p.missing.length > 1 ? 's' : ''}</span></div>
       ${p.missing.map((m) => `<div class="ask"><span class="ico">${ic('folder')}</span><div style="flex:1;min-width:0"><div style="font-weight:500">${esc(m.t)}</div>${m.sub ? `<div class="small muted">${esc(m.sub)}</div>` : ''}</div><label class="btn btn-line btn-sm" for="miss-${m.id}">Déposer</label><input id="miss-${m.id}" type="file" multiple class="sr" data-missing="${m.id}"></div>`).join('')}</section>` : ''}
     <section class="panel" aria-labelledby="mf">
@@ -564,7 +598,7 @@
     <section class="panel"><div class="panel-head"><h2>${ic('chat')}Questions fréquentes</h2></div>
       <details><summary>Que se passe-t-il quand je valide ?</summary><p>La validation est enregistrée avec la date et l’heure, l’équipe est prévenue et passe à la suite du projet.</p></details>
       ${['site', 'evolution'].includes(S.project.offer) ? `<details><summary>Le site m’appartient-il ?</summary><p>Oui. Le site est hébergé sur ${R('votre', 'ton')} propre compte Webflow : ${R('vous en êtes propriétaire et restez libre de changer de prestataire', 'tu en es propriétaire et restes libre de changer de prestataire')}.</p></details>` : ''}
-      <details><summary>Où déposer un fichier très lourd ?</summary><p>Dans l’onglet Fichiers, jusqu’à 2 Go par fichier. Au-delà, ${R('envoyez', 'envoie')}-nous un lien WeTransfer dans Messages.</p></details>
+      <details><summary>Où déposer un fichier très lourd ?</summary><p>Dans l’onglet Fichiers, sans limite de taille : ${R('glissez-y', 'glisse-y')} même un dossier entier, ses sous-dossiers sont conservés. Si la connexion coupe, l’envoi reprend tout seul ; ${R('gardez', 'garde')} simplement la page ouverte jusqu’à la fin.</p></details>
       <details><summary>Comment me reconnecter ?</summary><p>Sur la page de connexion, ${R('saisissez votre', 'saisis ton')} e-mail : un lien et un code arrivent en quelques secondes. Pas de mot de passe à retenir.</p></details>
     </section>`;
   }
@@ -1180,8 +1214,8 @@
         <label class="opt"><input type="checkbox" id="c-team"> Signer au nom de l’équipe (« L’équipe Orem »)</label>
       <p class="hint">Le client reçoit un e-mail et voit un bandeau sur son accueil.</p>`;
     else if (C.kind === 'file') body = `<div class="field"><label for="c-cat">Type</label><select id="c-cat">${[['Livrable', 'Livrable (visible dans Fichiers)'], ['Devis', 'Devis'], ['Facture', 'Facture'], ['Contrat', 'Contrat'], ['RIB', 'RIB']].map(([v, l]) => `<option value="${v}">${l}</option>`).join('')}</select></div>
-      <label class="drop small-drop" for="c-file"><span class="ico hl">${ic('up')}</span><strong>Glissez un ou plusieurs fichiers, ou cliquez</strong><span class="small muted">Jusqu’à 2 Go par fichier</span><input id="c-file" type="file" multiple class="sr"></label>
-      ${S.uploading ? `<div class="small">${esc(S.uploading.name)}<span class="progress"><i style="width:${Math.round(S.uploading.p * 100)}%"></i></span></div>` : ''}`;
+      <label class="drop small-drop" for="c-file"><span class="ico hl">${ic('up')}</span><strong>Glissez un ou plusieurs fichiers, ou cliquez</strong><span class="small muted">Sans limite de taille</span><input id="c-file" type="file" multiple class="sr"></label>
+      ${upState()}`;
     else if (C.kind === 'val') body = `<div class="field"><label for="c-v">Quelle validation ?</label><select id="c-v">${P.validations.map((v) => `<option value="${v.id}" ${v.status === 'wait' ? '' : ''}>${esc(v.t)} · ${{ wait: 'pas encore demandée', ready: 'chez le client', approved: 'validée', changes: 'modifications demandées' }[v.status]}</option>`).join('')}</select></div>
       <div class="field"><label for="c-vl">Lien à regarder</label><input id="c-vl" type="url" placeholder="https://www.figma.com/proto/…" value="${esc((P.links && (P.links.proto || P.links.figma)) || '')}"></div>
       <div class="field"><label for="c-vt">Un mot pour le client (facultatif)</label><textarea id="c-vt" rows="2" placeholder="ex. Le plan est prêt, dites-nous ce que vous en pensez."></textarea></div>
@@ -1401,7 +1435,7 @@
       <div class="list">${fromClient.map(fileRow).join('') || '<p class="muted">Le client n’a encore rien déposé.</p>'}</div></section>
     <section class="panel"><div class="panel-head"><h2>${ic('down')}Partagés par l’agence</h2></div>
       <div class="inline" style="margin-bottom:16px"><select id="a-cat" aria-label="Type de document">${Core.AGENCY_CATS.map((c) => `<option>${c}</option>`).join('')}</select><label class="btn btn-primary btn-sm" for="a-up">${ic('up')}Ajouter un fichier</label><input id="a-up" type="file" multiple class="sr" data-agency="1"></div>
-      ${S.uploading ? `<div class="small">${esc(S.uploading.name)}<span class="progress"><i style="width:${Math.round(S.uploading.p * 100)}%"></i></span></div>` : ''}
+      ${upState()}
       <p class="small muted" style="margin-bottom:12px">« Livrable » apparaît dans Fichiers côté client. Devis, factures, contrat et RIB apparaissent dans « Devis et factures ».</p>
       <div class="list">${fromAgency.map(fileRow).join('') || '<p class="muted">Rien de partagé pour l’instant.</p>'}</div></section>`;
   }
@@ -1629,26 +1663,67 @@
   async function markAgencyRead() { const a = Core.alerts(S.project); if (a.newMessages) { try { await API.action(S.project.id, { type: 'msg.read' }); } catch {} } }
   async function logout() { try { await API.logout(); } catch {} S.me = null; S.project = null; S.preview = false; S.login = { step: 'email', email: '', dev: null }; render(true); }
 
+  /* Dépôt de fichiers ou de dossiers entiers, sans limite de taille. Un dossier garde ses sous-dossiers ;
+     plusieurs fichiers d'un coup ne donnent qu'une seule notification à la fin. */
+  const sizeTxt = (b) => (b >= 1e9 ? (b / 1e9).toLocaleString('fr-FR', { maximumFractionDigits: 1 }) + ' Go' : b >= 1e6 ? Math.round(b / 1e6) + ' Mo' : Math.max(1, Math.round(b / 1e3)) + ' Ko');
+  const SKIP = /^(\.ds_store|thumbs\.db|desktop\.ini|\._.*)$/i;
   async function upload(files, opts = {}) {
     const p = S.project; if (!p || !files.length) return;
     if (S.preview) return toast('Aperçu : les actions sont désactivées.');
+    if (S.uploading) return toast(R('Un envoi est déjà en cours : attendez qu’il se termine.', 'Un envoi est déjà en cours : attends qu’il se termine.'));
     const typeOf = (f) => (f.type.startsWith('image') ? 'Images' : f.type.startsWith('video') ? 'Vidéos' : /pdf|word|text|document|presentation|sheet/.test(f.type) ? 'Documents' : 'Autres');
-    let n = 0;
-    for (const f of files) {
-      S.uploading = { name: f.name, p: 0 }; render();
-      try { const r = await API.upload(p.id, f, opts.cat || typeOf(f), (x) => { S.uploading.p = x; const bar = document.querySelector('.progress i'); if (bar) bar.style.width = Math.round(x * 100) + '%'; }, n ? undefined : opts.missing); n++; }
-      catch (e) { toast(e.message); }
+    const items = files.map((f) => (f.file ? f : { file: f, folder: (f.webkitRelativePath || '').split('/').slice(0, -1).join('/') })).filter((x) => !SKIP.test(x.file.name));
+    if (!items.length) return;
+    const batch = items.length > 1, total = items.reduce((t, x) => t + x.file.size, 0);
+    const tops = [...new Set(items.map((x) => x.folder.split('/')[0]).filter(Boolean))];
+    let n = 0, sent = 0, failed = [];
+    S.uploading = { name: items[0].file.name, p: 0, i: 1, n: items.length, total, sent: 0 }; render();
+    for (const [k, it] of items.entries()) {
+      Object.assign(S.uploading, { name: (it.folder ? it.folder + '/' : '') + it.file.name, i: k + 1, wait: false });
+      paintUpload();
+      try {
+        await API.upload(p.id, it.file, opts.cat || typeOf(it.file), (x, waiting) => { S.uploading.p = x; S.uploading.wait = !!waiting; S.uploading.sent = sent + x * it.file.size; paintUpload(); }, n ? undefined : opts.missing, { folder: it.folder, batch });
+        n++; sent += it.file.size;
+      } catch (e) { failed.push(it.file.name); if (!batch) toast(e.message); sent += it.file.size; }
     }
+    if (batch && n) { try { await API.batchDone(p.id, { folder: tops.length === 1 ? tops[0] : '', count: n, size: items.filter((x) => !failed.includes(x.file.name)).reduce((t, x) => t + x.file.size, 0), cat: opts.cat }); } catch {} }
     S.uploading = null;
     await loadProject(p.id);
-    if (n) { S.project.files.slice(0, n).forEach((f) => (f.fresh = true)); render(); toast(isAdmin() ? `${n} fichier${n > 1 ? 's' : ''} partagé${n > 1 ? 's' : ''} avec le client.` : `${n > 1 ? n + ' fichiers envoyés' : 'Fichier envoyé'}. L’équipe est prévenue.`); }
+    if (n) { S.project.files.slice(0, n).forEach((f) => (f.fresh = true)); render(); toast((isAdmin() ? `${n} fichier${n > 1 ? 's' : ''} partagé${n > 1 ? 's' : ''} avec le client.` : `${n > 1 ? n + ' fichiers envoyés' : 'Fichier envoyé'}${tops.length === 1 ? ' (dossier « ' + tops[0] + ' »)' : ''}. L’équipe est prévenue.`) + (failed.length ? ` ${failed.length} n’${failed.length > 1 ? 'ont' : 'a'} pas pu partir : ${failed.slice(0, 3).join(', ')}${failed.length > 3 ? '…' : ''}.` : '')); }
+    else if (failed.length) render();
   }
+  /* Progression sans tout redessiner : barre, fichier en cours, volume envoyé. */
+  function paintUpload() {
+    const u = S.uploading; if (!u) return;
+    const pct = u.total ? Math.min(100, Math.round((u.sent / u.total) * 100)) : Math.round(u.p * 100);
+    document.querySelectorAll('.up-state').forEach((el) => {
+      el.querySelector('.up-name').textContent = u.name;
+      el.querySelector('.up-meta').textContent = (u.n > 1 ? `Fichier ${u.i} sur ${u.n} · ` : '') + `${sizeTxt(u.sent || 0)} sur ${sizeTxt(u.total || 0)}` + (u.wait ? ' · connexion coupée, reprise automatique…' : ` · ${pct} %`);
+      el.querySelector('.progress i').style.width = pct + '%';
+    });
+  }
+  const upState = () => S.uploading ? `<div class="up-state" role="status" aria-live="polite"><span class="up-name">${esc(S.uploading.name)}</span><span class="progress"><i style="width:0%"></i></span><span class="up-meta small muted"></span><span class="small muted">${R('Gardez', 'Garde')} cette page ouverte jusqu’à la fin de l’envoi.</span></div>` : '';
+  /* Glisser-déposer : fichiers et dossiers (avec tous leurs sous-dossiers). */
+  async function dropped(dt) {
+    const entries = [...(dt.items || [])].map((i) => (i.webkitGetAsEntry ? i.webkitGetAsEntry() : null)).filter(Boolean);
+    if (!entries.length) return [...dt.files];
+    const out = [];
+    const walk = async (en, dir) => {
+      if (en.isFile) { try { out.push({ file: await new Promise((ok, ko) => en.file(ok, ko)), folder: dir }); } catch {} return; }
+      if (!en.isDirectory) return;
+      const here = (dir ? dir + '/' : '') + en.name, rd = en.createReader();
+      for (;;) { const batch = await new Promise((ok, ko) => rd.readEntries(ok, ko)).catch(() => []); if (!batch.length) break; for (const c of batch) await walk(c, here); }
+    };
+    for (const en of entries) await walk(en, '');
+    return out;
+  }
+  window.addEventListener('beforeunload', (e) => { if (S.uploading) { e.preventDefault(); e.returnValue = ''; } });
   function bindFiles() {
     const d = $('#drop');
     if (d) {
       ['dragenter', 'dragover'].forEach((ev) => d.addEventListener(ev, (e) => { e.preventDefault(); d.classList.add('over'); }));
       ['dragleave', 'drop'].forEach((ev) => d.addEventListener(ev, (e) => { e.preventDefault(); d.classList.remove('over'); }));
-      d.addEventListener('drop', (e) => upload([...e.dataTransfer.files]));
+      d.addEventListener('drop', async (e) => { const dt = e.dataTransfer; upload(await dropped(dt)); });
     }
   }
 

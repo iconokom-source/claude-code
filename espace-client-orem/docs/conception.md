@@ -33,7 +33,7 @@ Sources : [Noloco](https://noloco.io/blog/client-portal-best-practices) · [Jeta
 | Savoir où on en est | Les 4 temps de la méthode O.R.E.M. (Orienter, Représenter, Exécuter, Mesurer), avec un gabarit par offre (Site web, Direction artistique, Conseil, Évolution) choisi à la création de l'espace. Un livrable lié à une validation reste « À valider » tant que le client n'a pas donné son feu vert. |
 | Ce qu'on attend du client | « Vos actions » regroupe automatiquement les validations en attente, les fichiers manquants et les actions ajoutées par l'agence. |
 | Feu vert écrit | « À valider » : « Je valide » ou « Demander des modifications » (commentaire obligatoire). Chaque décision est horodatée, l'agence la voit dans son tableau de bord. |
-| Déposer sans compte Google | Glisser-déposer, jusqu'à 2 Go par fichier, rangement automatique (images, vidéos, textes), et une liste « Ce qu'il nous manque » avec un bouton « Déposer » par élément. |
+| Déposer sans compte Google | Glisser-déposer de fichiers et de dossiers entiers, sans limite de taille (envoi par morceaux qui reprend tout seul après une coupure), rangement automatique (images, vidéos, textes), et une liste « Ce qu'il nous manque » avec un bouton « Déposer » par élément. |
 | Argent clair | Montant HT et TTC, déjà réglé, reste à payer, statut de chaque facture, IBAN copiable. |
 | Humain | Photos de l'équipe, WhatsApp, réservation de visio, note « Cette semaine » signée par le chef de projet. |
 | Tu ou vous | Réglé par client à la création de l'espace (jamais deviné). |
