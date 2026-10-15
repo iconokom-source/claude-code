@@ -10,7 +10,7 @@ Durée : environ 30 minutes, dont la propagation du DNS.
 
 ## Étape 1 : le DNS (5 minutes, puis jusqu'à 1 heure de propagation)
 
-Chez le gestionnaire du domaine `agence-orem.fr` (OVH, en principe), zone DNS, ajouter :
+Chez Hostinger (hPanel › Noms de domaine › agence-orem.fr › DNS), ajouter :
 
 | Type | Sous-domaine | Cible |
 |---|---|---|
