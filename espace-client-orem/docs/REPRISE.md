@@ -15,7 +15,11 @@ Document de passation pour reprendre **exactement là où on s'est arrêtés** (
 - Correctifs accessibilité et mobile de l'audit du 15/10 (liste plus bas) : 320 px, focus rendu au bon ouvreur (position mémorisée), double anneau de focus sur fond sombre, Échap dans l'aperçu d'e-mail, erreur sur le champ client d'« Ajouter », cloche fermée quand le focus sort, épingle au clavier (flèches, Entrée), « Continuer » de l'accueil guidé décrit par l'étape et son titre, barre latérale nommée, bouton de thème avec son état, mode sombre et déconnexion dans « Plus », barre du haut non collante sous 500 px de hauteur, focus rendu après « Annuler » et « Pas encore », focus sur « Annuler ma validation » après « Oui, je valide ».
 - Audit UX : cloche ouverte à côté de la barre latérale (ne recouvre plus Évolution), puces, numéros et dates sur une ligne, lignes de liste qui passent à la ligne sous 420 px.
 
-**En cours** : relecture copywriting de tous les textes (rapport attendu dans le dossier de travail de la session, puis réécritures P1 et P2 appliquées dans `app.js` et `core.js`).
+- Relecture copywriting (rapport complet : `docs/audit-copywriting.md`, clarté notée 6,5/10 client et 6/10 agence) : les 133 réécritures P1 et P2 sont appliquées dans `app.js` et `core.js` (lexique : « étape » pour les 4 temps O.R.E.M., « prochaine action », « Devis et factures », « faire une demande », « maquette cliquable », « Tests du site » au lieu de « Recette du site », délai unique « sous 24 h ouvrées », erreurs neutres en registre qui disent quoi faire, mot « suivi » retiré). Maquettes : le placeholder nomme bien le designer (`/design|création/`).
+
+**En cours** : rejeu de `tests/tout.sh` après le copywriting (des tests citent d'anciens textes, à adapter).
+
+**Reste aussi du copywriting** : les 52 propositions P3 du rapport ; statut de demande « Proposé » affiché « Devis envoyé » (sans changer la valeur stockée) ; signature de l'e-mail d'invitation selon l'équipe du projet (`core.js`, test `core.js:84`) ; décision à prendre par Louis : l'interface agence vouvoie alors que les e-mails internes tutoient.
 
 **Reste** : rejouer `tests/tout.sh` après le copywriting, regénérer la démo et la republier, restes de l'audit UX (regroupement des 10 onglets de la fiche, « Aperçu des écrans » réservé aux vraies maquettes) et de l'audit produit (point 5 du point d'arrêt du 14/10), puis audit final des 4 angles.
 

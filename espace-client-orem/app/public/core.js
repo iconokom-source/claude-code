@@ -25,10 +25,10 @@
       { d: [9, 21], txt: 'On donne une image au site : direction artistique, textes, puis maquettes.',
         items: [['Direction artistique', 14, 'da'], ['Textes du site', 14, 'da'], ['Maquettes du site', 21, 'maquettes']] },
       { d: [22, 38], txt: 'On construit le site sur Webflow, on le teste ensemble, on le met en ligne et on {vous|te} forme.',
-        items: [['Création du compte Webflow', 23], ['Construction du site', 31], ['Recette du site', 34, 'site'], ['Mise en ligne et remise des accès', 36, 'pv'], ['Formation Webflow (visio)', 38]] },
-      { d: [39, 70], txt: 'On mesure les résultats et on fait évoluer ce qui transforme.',
+        items: [['Création du compte Webflow', 23], ['Construction du site', 31], ['Tests du site', 34, 'site'], ['Mise en ligne et remise des accès', 36, 'pv'], ['Formation Webflow (visio)', 38]] },
+      { d: [39, 70], txt: 'On mesure les résultats et on améliore ce qui {vous |t’}apporte des clients.',
         items: [['Bilan à 30 jours', 66], ['Proposition d’évolution', 70]] }
-    ], validations: [['plan', 'Plan du site', 'Les pages du site et leur organisation', 8], ['da', 'Direction artistique et textes', 'Couleurs, typographies, style et ton', 14], ['maquettes', 'Maquettes du site', 'Le feu vert pour construire le site', 21], ['site', 'Recette du site', 'Le site complet, avant sa mise en ligne', 34], ['pv', 'Réception du site', 'Le site est livré tel que prévu', 36]] },
+    ], validations: [['plan', 'Plan du site', 'Les pages du site et leur organisation', 8], ['da', 'Direction artistique et textes', 'Couleurs, typographies, style et ton', 14], ['maquettes', 'Maquettes du site', 'Le feu vert pour construire le site', 21], ['site', 'Tests du site', 'Le site complet, à tester avant sa mise en ligne', 34], ['pv', 'Réception du site', 'Le site est livré tel que prévu', 36]] },
     da: { label: 'Direction artistique', phases: [
       { d: [0, 7], txt: 'On comprend {votre|ta} marque, {vos|tes} clients et ce qui {vous|te} distingue.',
         items: [['Devis signé', -3], ['Atelier de marque (1 h 30)', 3], ['Synthèse et plateforme de marque', 7, 'plateforme']] },
@@ -71,7 +71,7 @@
     'Maquettes du site': [[[C, 'dessine les maquettes'], [K, '{Vous les commentez puis les validez|Tu les commentes puis les valides}']], 'maquettes'],
     'Création du compte Webflow': [[[K, '{Vous créez|Tu crées} l’espace Webflow de l’entreprise'], [L, 'vérifie l’accès']], 'demarrer'],
     'Construction du site': [[[L, 'construit le site sur Webflow'], [T, 'intègre les textes et le référencement']], 'projet'],
-    'Recette du site': [[[L, 'prépare la recette'], [K, '{Vous testez|Tu testes} le site et {notez|notes} {vos|tes} retours']], 'valider'],
+    'Tests du site': [[[L, 'prépare le site pour {vos|tes} tests'], [K, '{Vous testez|Tu testes} le site et {notez|notes} {vos|tes} retours']], 'valider'],
     'Mise en ligne et remise des accès': [[[L, 'met le site en ligne et {vous|te} remet les accès'], [K, '{Vous validez|Tu valides} la réception']], 'valider'],
     'Formation Webflow (visio)': [[[L, 'anime la formation'], [K, '{Vous choisissez|Tu choisis} le créneau']], 'cal'],
     'Bilan à 30 jours': [[[T, 'lit les chiffres et prépare les recommandations'], [L, 'fait le point technique']], 'documents'],
@@ -98,8 +98,8 @@
   const itemGo = (it) => (it && it.link) || ((ROLES[it && it.t] || [])[1] || '');
   const REVIEW_AXES = [['ecoute', 'Écoute et compréhension du besoin'], ['qualite', 'Qualité du résultat'], ['delais', 'Respect des délais'], ['communication', 'Clarté des échanges'], ['prix', 'Rapport qualité prix']];
   const DEFAULT_MISSING = {
-    site: [['Logo et charte actuelle', 'Les fichiers que vous avez, même anciens.'], ['Photos', 'Équipe, lieux, produits : ce que vous avez déjà.']],
-    da: [['Logo actuel', 'Même ancien, en bonne qualité si possible.'], ['3 ou 4 marques que vous aimez', 'Des liens ou des captures, avec un mot sur ce qui vous plaît.']],
+    site: [['Logo et charte actuels', 'Tous les fichiers existants, même anciens.'], ['Photos', 'Équipe, lieux, produits : celles qui existent déjà.']],
+    da: [['Logo actuel', 'Même ancien, en bonne qualité si possible.'], ['3 ou 4 marques qui inspirent', 'Des liens ou des captures, avec un mot sur ce qui plaît.']],
     conseil: [['Documents existants', 'Plaquette, présentation, chiffres clés : ce qui aide à comprendre l’activité.']],
     evolution: [['Accès Google Analytics et Search Console', 'Pour lire les chiffres du site chaque mois.']]
   };
@@ -211,7 +211,7 @@
     const b = newProject({ client: 'Huchet-Demorge', projet: 'Refonte du site huchet-demorge.fr', contactName: 'Hugo', start: '2025-11-24T09:00:00.000Z', registre: 'tu', amountHT: 9800, offer: 'site' });
     b.id = 'p_huchet'; b.phase = 4; b.golive = '2026-06-15T09:00:00.000Z'; b.deliveredAt = '2026-06-15T09:00:00.000Z';
     placePhases(b, [['2025-11-24', '2025-12-19'], ['2026-01-05', '2026-03-13'], ['2026-03-16', '2026-06-22'], ['2026-06-23', at(30)]]);
-    const due = { 'Proposition commerciale': '2025-11-17', 'Devis signé': '2025-11-20', 'Visio de cadrage (1 h)': '2025-11-26', 'Plan du site (arborescence)': '2025-12-16', 'Direction artistique': '2026-02-06', 'Textes du site': '2026-02-06', 'Maquettes du site': '2026-03-13', 'Création du compte Webflow': '2026-03-18', 'Construction du site': '2026-05-29', 'Recette du site': '2026-06-10', 'Mise en ligne et remise des accès': '2026-06-15', 'Formation Webflow (visio)': '2026-06-22', 'Bilan à 30 jours': '2026-07-15', 'Proposition d’évolution': at(6) };
+    const due = { 'Proposition commerciale': '2025-11-17', 'Devis signé': '2025-11-20', 'Visio de cadrage (1 h)': '2025-11-26', 'Plan du site (arborescence)': '2025-12-16', 'Direction artistique': '2026-02-06', 'Textes du site': '2026-02-06', 'Maquettes du site': '2026-03-13', 'Création du compte Webflow': '2026-03-18', 'Construction du site': '2026-05-29', 'Tests du site': '2026-06-10', 'Mise en ligne et remise des accès': '2026-06-15', 'Formation Webflow (visio)': '2026-06-22', 'Bilan à 30 jours': '2026-07-15', 'Proposition d’évolution': at(6) };
     b.phases.forEach((ph) => ph.items.forEach((i) => { if (due[i.t]) i.due = iso(due[i.t]); }));
     done(b, at(0));
     b.phases[3].items[1].status = 'on';
@@ -376,7 +376,7 @@
 
   function nextStep(project) {
     const prop = (project.proposals || []).find((x) => x.status === 'sent');
-    if (prop && (!project.next || project.next.go !== 'proposition')) return { title: prop.from ? 'Répondre au devis d’évolution' : 'Découvrir la proposition', text: prop.title, go: 'proposition' };
+    if (prop && (!project.next || project.next.go !== 'proposition')) return { title: prop.from ? 'Répondre au devis' : 'Découvrir la proposition', text: prop.title, go: 'proposition' };
     if (project.next && project.next.title) return project.next;
     const ready = project.validations.find((v) => v.status === 'ready');
     if (ready) return { title: 'Valider : ' + ready.t.toLowerCase(), text: '', go: 'valider' };
@@ -443,8 +443,8 @@
 
   function applyInner(store, projectId, user, action, internal) {
     const project = store.projects.find((p) => p.id === projectId);
-    if (!project || !canSee(user, project)) return { error: 'Projet introuvable.' };
-    if (action.type === 'file.add' && !internal) return { error: 'Action inconnue.' };
+    if (!project || !canSee(user, project)) return { error: 'Projet introuvable, ou accès retiré. Se reconnecter ; si le problème continue, écrire à l’équipe.' };
+    if (action.type === 'file.add' && !internal) return { error: 'Action impossible. Recharger la page puis réessayer.' };
     if (user.role !== 'admin' && !CLIENT_ACTIONS.has(action.type) && !(internal && ['file.add', 'missing.done', 'file.sign'].includes(action.type))) return { error: 'Action réservée à l’agence.' };
     // Un espace archivé reste consultable, mais plus rien ne s'y écrit (sauf pour le désarchiver).
     if (project.archivedAt && action.type !== 'project.archive' && !['msg.read', 'seen'].includes(action.type)) return { error: 'Cet espace est archivé : il reste consultable, en lecture seule.' };
@@ -452,14 +452,14 @@
     const now = iso(Date.now());
     switch (action.type) {
       case 'val.approve':
-        if (!v || v.status !== 'ready') return { error: 'Cette étape n’attend pas de validation.' };
+        if (!v || v.status !== 'ready') return { error: 'Cette validation a déjà reçu une réponse. Recharger la page pour voir où elle en est.' };
         v.status = 'approved'; v.history.push({ at: now, by: user.id, action: 'approved' });
         if (project.next.go === 'valider') project.next = { title: '', text: '', go: 'accueil' };
         log(project, user, 'a validé : ' + v.t.toLowerCase()); break;
       case 'val.undo': {
         // Annulation dans les 10 secondes qui suivent une validation, par la personne qui a validé.
         const last = v && v.history[v.history.length - 1];
-        if (!v || v.status !== 'approved' || !last || last.action !== 'approved' || last.by !== user.id || Date.now() - new Date(last.at) > 15000) return { error: 'Cette validation ne peut plus être annulée. Écrivez à l’équipe.' };
+        if (!v || v.status !== 'approved' || !last || last.action !== 'approved' || last.by !== user.id || Date.now() - new Date(last.at) > 15000) return { error: 'Le délai pour annuler est passé. Pour revenir sur cette validation, écrire à l’équipe dans Messages.' };
         v.status = 'ready'; v.history.pop();
         store.notifications = (store.notifications || []).filter((n) => !(n.act === 'val.approve' && n.projectId === project.id && n.vid === v.id && Date.now() - new Date(n.at) < 20000));
         project.activity = project.activity.filter((a) => !(a.by === user.id && a.text === 'a validé : ' + v.t.toLowerCase() && Date.now() - new Date(a.at) < 20000));
@@ -470,8 +470,8 @@
         u.prefs = { ...(u.prefs || {}), mail: !!action.mail, weekly: !!action.weekly }; return { ok: true, silent: true };
       }
       case 'val.changes':
-        if (!v || v.status !== 'ready') return { error: 'Cette étape n’attend pas de validation.' };
-        if (!String(action.comment || '').trim()) return { error: 'Écrivez ce que vous aimeriez changer.' };
+        if (!v || v.status !== 'ready') return { error: 'Cette validation a déjà reçu une réponse. Recharger la page pour voir où elle en est.' };
+        if (!String(action.comment || '').trim()) return { error: 'Il manque la description des modifications souhaitées.' };
         v.status = 'changes'; v.history.push({ at: now, by: user.id, action: 'changes', comment: String(action.comment).slice(0, 4000) });
         if (project.next.go === 'valider') project.next = { title: '', text: '', go: 'accueil' };
         log(project, user, 'a demandé des modifications : ' + v.t.toLowerCase()); break;
@@ -487,7 +487,7 @@
       case 'next.set':
         if (action.go && !['accueil', 'cal', 'valider', 'fichiers', 'projet', 'documents', 'equipe', 'messages', 'maquettes', 'outils', 'proposition'].includes(action.go)) return { error: 'Destination invalide.' };
         project.next = { title: String(action.title || ''), text: String(action.text || ''), go: action.go || 'accueil' };
-        log(project, user, 'a mis à jour la prochaine étape'); break;
+        log(project, user, 'a mis à jour la prochaine action'); break;
       case 'phase.set': {
         const n = Math.max(1, Math.min(project.phases.length, Number(action.n) || 1));
         project.phase = n; log(project, user, 'a passé le projet à l’étape ' + n + ' : ' + project.phases[n - 1].t); break;
@@ -509,7 +509,7 @@
         project.tasks.push({ id: uid('t'), t: String(action.t), done: false }); break;
       case 'task.toggle': {
         const t = project.tasks.find((x) => x.id === action.tid); if (!t) return { error: 'Action introuvable.' };
-        if (t.auto && user.role !== 'admin') return { error: 'Cette action se coche toute seule.' };
+        if (t.auto && user.role !== 'admin') return { error: 'Rien à faire : cette action se coche toute seule dès que l’équipe a l’information.' };
         t.done = !t.done; if (t.done) log(project, user, 'a coché : ' + t.t.toLowerCase()); break;
       }
       case 'item.meta': {
@@ -535,8 +535,8 @@
         // ajoutés par le serveur (adresse IP, navigateur). Passe toujours par le serveur, jamais directement.
         if (!internal) return { error: 'La signature passe par le bouton « Signer ».' };
         const f = project.files.find((x) => x.id === action.fid); if (!f || !f.sign || f.sign.status !== 'requested') return { error: 'Ce document n’attend pas de signature.' };
-        const sign = String(action.name || '').trim(); if (sign.length < 2) return { error: 'Écrivez votre nom pour signer.' };
-        if (!action.agree) return { error: 'Cochez la case pour signer.' };
+        const sign = String(action.name || '').trim(); if (sign.length < 2) return { error: 'Prénom et nom à saisir pour signer.' };
+        if (!action.agree) return { error: 'Pour signer, la case de consentement doit être cochée.' };
         const sig = typeof action.sig === 'string' && /^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(action.sig) && action.sig.length < 120000 ? action.sig : '';
         Object.assign(f.sign, { status: 'signed', name: sign.slice(0, 120), sig, signedAt: now, signedBy: user.id, email: user.email, hash: String(action.hash || '').slice(0, 64), ip: String(action.ip || '').slice(0, 60), ua: String(action.ua || '').slice(0, 300) });
         log(project, user, 'a signé « ' + f.name + ' »'); return { ok: true, file: f.name };
@@ -544,7 +544,7 @@
       case 'evo.reschedule': {
         // Le client demande un autre créneau pour la visio de pilotage : l'équipe est prévenue et répond.
         const e = project.evo; if (!e || !e.active) return { error: 'Pas de visio de pilotage prévue.' };
-        const text = String(action.text || '').trim(); if (text.length < 3) return { error: 'Indiquez les créneaux qui vous arrangent.' };
+        const text = String(action.text || '').trim(); if (text.length < 3) return { error: 'Il manque les créneaux souhaités (jours et heures).' };
         e.reschedule = (e.reschedule || []).filter((r) => r.status !== 'open').concat([{ id: uid('rs'), at: now, by: user.id, text: text.slice(0, 600), status: 'open' }]).slice(-20);
         log(project, user, 'a demandé un autre créneau pour la visio de pilotage'); break;
       }
@@ -573,13 +573,13 @@
       case 'task.remove': project.tasks = project.tasks.filter((x) => x.id !== action.tid); break;
       case 'setup.webflow': {
         const t = project.tasks.find((x) => x.auto === 'webflow'); if (!t) return { error: 'Étape introuvable.' };
-        const ws = String(action.ws || '').trim(); if (ws.length < 2) return { error: 'Indiquez le nom de l’espace de travail Webflow.' };
+        const ws = String(action.ws || '').trim(); if (ws.length < 2) return { error: 'Il manque le nom de l’espace de travail Webflow.' };
         Object.assign(t, { sent: now, info: { ws: ws.slice(0, 120) } }); log(project, user, 'a créé l’espace Webflow « ' + ws.slice(0, 120) + ' »'); break;
       }
       case 'setup.domain': {
         const t = project.tasks.find((x) => x.auto === 'domaine'); if (!t) return { error: 'Étape introuvable.' };
         const domain = String(action.domain || '').trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
-        if (!/^[a-z0-9àâäéèêëîïôöùûüç-]+(\.[a-z0-9àâäéèêëîïôöùûüç-]+)+$/.test(domain)) return { error: 'Indiquez le nom de domaine, par exemple entreprise.fr.' };
+        if (!/^[a-z0-9àâäéèêëîïôöùûüç-]+(\.[a-z0-9àâäéèêëîïôöùûüç-]+)+$/.test(domain)) return { error: 'Nom de domaine incomplet : il doit ressembler à entreprise.fr.' };
         const mode = ['delegate', 'vault', 'unknown'].includes(action.mode) ? action.mode : 'unknown';
         if (mode === 'vault' && !internal) return { error: 'Les identifiants passent par le coffre chiffré.' };
         Object.assign(t, { sent: now, info: { domain: domain.slice(0, 120), registrar: String(action.registrar || '').slice(0, 60), mode } });
@@ -598,7 +598,7 @@
       case 'missing.done': case 'missing.remove':
         project.missing = project.missing.filter((m) => m.id !== action.mid); break;
       case 'file.add': {
-        const fl = action.file; if (!fl || !fl.name) return { error: 'Fichier manquant.' };
+        const fl = action.file; if (!fl || !fl.name) return { error: 'Aucun fichier reçu : relancer l’envoi.' };
         if (fl.id && !/^f_[a-f0-9]{8,64}$/.test(fl.id)) return { error: 'Fichier invalide.' };
         if (fl.path && !(String(fl.path).replace(/\\/g, '/').startsWith('uploads/' + project.id + '/') && !String(fl.path).includes('..'))) return { error: 'Fichier invalide.' };
         const cats = user.role === 'admin' ? FILE_CATS.concat(AGENCY_CATS) : FILE_CATS;
@@ -611,7 +611,7 @@
       case 'file.remove': {
         const fl = project.files.find((f) => f.id === action.fid); if (!fl) return { error: 'Fichier introuvable.' };
         // Le client peut retirer ce qu'il a déposé lui-même pendant 24 heures ; ensuite, il demande à l'équipe.
-        if (user.role !== 'admin' && (fl.by !== user.id || Date.now() - new Date(fl.at) > DAY)) return { error: 'Ce fichier ne peut plus être retiré. Écrivez à l’équipe.' };
+        if (user.role !== 'admin' && (fl.by !== user.id || Date.now() - new Date(fl.at) > DAY)) return { error: 'Ce fichier ne peut plus être retiré (délai de 24 h passé). Pour le supprimer, écrire à l’équipe dans Messages.' };
         project.files = project.files.filter((f) => f !== fl);
         if (user.role !== 'admin') { store.notifications = (store.notifications || []).filter((n) => !(n.act === 'file.add' && n.projectId === project.id && n.fid === fl.id)); log(project, user, 'a retiré « ' + fl.name + ' »'); }
         break;
@@ -659,7 +659,7 @@
       }
       case 'msg.post': {
         const text = String(action.text || '').trim();
-        if (!text) return { error: 'Écrivez votre message.' };
+        if (!text) return { error: 'Message vide : rien n’a été envoyé.' };
         const loom = action.loom && action.loom.url ? { url: String(action.loom.url), title: String(action.loom.title || 'Vidéo'), duration: String(action.loom.duration || '') } : undefined;
         project.messages.unshift({ id: uid('m'), by: user.role === 'admin' && action.asTeam ? 'team' : user.id, at: now, text: text.slice(0, 4000), loom, fromAgency: user.role === 'admin', readByAgency: user.role === 'admin', readByClient: user.role !== 'admin' });
         log(project, user, loom ? 'a envoyé une vidéo' : 'a envoyé un message'); break;
@@ -668,9 +668,9 @@
         project.messages.forEach((m) => { if (user.role === 'admin') { if (m.readByAgency === false) m.readByAgency = true; } else if (m.readByClient === false) m.readByClient = true; }); break;
       case 'request.add': {
         const text = String(action.text || '').trim();
-        if (!text) return { error: 'Décrivez votre demande.' };
+        if (!text) return { error: 'Demande vide : il manque la description.' };
         project.requests.unshift({ id: uid('r'), by: user.id, at: now, type: String(action.kind || 'Autre'), priority: String(action.priority || 'Normal'), text: text.slice(0, 4000), status: user.role === 'admin' ? 'Proposé' : 'Nouveau' });
-        log(project, user, 'a demandé une évolution : ' + String(action.kind || 'autre').toLowerCase()); break;
+        log(project, user, 'a fait une demande : ' + String(action.kind || 'autre').toLowerCase()); break;
       }
       case 'request.owner': {
         const r = project.requests.find((x) => x.id === action.rid); if (!r) return { error: 'Demande introuvable.' };
@@ -742,12 +742,12 @@
       }
       case 'review.add': {
         const score = Number(action.score);
-        if (!(score >= 1 && score <= 5)) return { error: 'Choisissez une note de 1 à 5.' };
+        if (!(score >= 1 && score <= 5)) return { error: 'Note manquante : choisir de 1 à 5 étoiles.' };
         // 4 ou 5 : l'avis part aussi sur Google. 3 ou moins : un questionnaire de bilan, jamais publié.
         let survey;
         if (score <= 3) {
           const q = action.survey || {}, txt = (k, n = 2000) => String(q[k] || '').trim().slice(0, n);
-          if (!txt('bad')) return { error: 'Dites-nous ce qui n’a pas fonctionné, même en quelques mots.' };
+          if (!txt('bad')) return { error: 'Il manque ce qui n’a pas fonctionné : quelques mots suffisent.' };
           const axes = {}; for (const k of REVIEW_AXES.map((a) => a[0])) { const v = Number(q.axes && q.axes[k]); if (v >= 1 && v <= 5) axes[k] = v; }
           survey = { good: txt('good'), bad: txt('bad'), phase: txt('phase', 60), recommend: txt('recommend'), axes, call: !!q.call };
         }
@@ -829,10 +829,10 @@
       }
       case 'proposal.accept': {
         const pr = (project.proposals || []).find((x) => x.id === action.prid);
-        if (!pr || pr.status !== 'sent') return { error: 'Cette proposition n’attend pas de réponse.' };
-        if (pr.validUntil && new Date(pr.validUntil) < new Date()) return { error: 'Cette proposition a expiré. Écrivez-nous, on la met à jour.' };
-        if (!action.agree) return { error: 'Cochez la case pour accepter la proposition.' };
-        const sign = String(action.name || '').trim(); if (sign.length < 2) return { error: 'Écrivez votre nom pour signer.' };
+        if (!pr || pr.status !== 'sent') return { error: 'Cette proposition a déjà reçu une réponse. Recharger la page pour la voir.' };
+        if (pr.validUntil && new Date(pr.validUntil) < new Date()) return { error: 'Cette proposition a expiré. Un message à l’équipe suffit pour recevoir une version à jour.' };
+        if (!action.agree) return { error: 'Pour accepter, la case de consentement doit être cochée.' };
+        const sign = String(action.name || '').trim(); if (sign.length < 2) return { error: 'Prénom et nom à saisir pour signer.' };
         const ht = pr.lines.reduce((t, l) => t + l.ht, 0);
         const sigImg = typeof action.sig === 'string' && /^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(action.sig) && action.sig.length < 120000 ? action.sig : '';
         Object.assign(pr, { status: 'accepted', acceptedAt: now, acceptedBy: user.id, signName: sign.slice(0, 120), sig: sigImg, proof: internal && action.proof ? { ip: String(action.proof.ip || '').slice(0, 60), ua: String(action.proof.ua || '').slice(0, 300), email: user.email } : { email: user.email } });
@@ -856,7 +856,7 @@
       }
       case 'proposal.decline': {
         const pr = (project.proposals || []).find((x) => x.id === action.prid);
-        if (!pr || pr.status !== 'sent') return { error: 'Cette proposition n’attend pas de réponse.' };
+        if (!pr || pr.status !== 'sent') return { error: 'Cette proposition a déjà reçu une réponse. Recharger la page pour la voir.' };
         pr.status = 'declined'; pr.declined = { at: now, by: user.id, comment: String(action.comment || '').slice(0, 2000) };
         log(project, user, 'a décliné la proposition : ' + pr.title); break;
       }
@@ -867,9 +867,9 @@
         log(project, user, 'a publié une nouvelle version : ' + action.t); break;
       }
       case 'pin.add': {
-        const text = String(action.text || '').trim(); if (!text) return { error: 'Écrivez votre commentaire.' };
+        const text = String(action.text || '').trim(); if (!text) return { error: 'Commentaire vide : rien n’a été envoyé.' };
         const x = Number(action.x), y = Number(action.y);
-        if (!(x >= 0 && x <= 100 && y >= 0 && y <= 100) || !String(action.img || '')) return { error: 'Placez le commentaire sur l’image.' };
+        if (!(x >= 0 && x <= 100 && y >= 0 && y <= 100) || !String(action.img || '')) return { error: 'Cliquer sur l’image, à l’endroit à commenter.' };
         project.pins = project.pins || [];
         project.pins.push({ id: uid('pin'), img: String(action.img).slice(0, 300), x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10, text: text.slice(0, 1000), by: user.id, at: now, status: 'open', version: String(action.version || '').slice(0, 10) });
         log(project, user, 'a commenté une maquette'); break;
@@ -880,7 +880,7 @@
       }
       case 'project.archive':
         project.archivedAt = action.undo ? null : now; break;
-      default: return { error: 'Action inconnue.' };
+      default: return { error: 'Action impossible. Recharger la page puis réessayer.' };
     }
     return { ok: true };
   }
@@ -906,7 +906,7 @@
       case 'val.approve': { const v = project.validations.find((x) => x.id === action.vid); return `${who} a validé : ${v ? v.t.toLowerCase() : 'une étape'}`; }
       case 'val.changes': { const v = project.validations.find((x) => x.id === action.vid); return `${who} demande des modifications : ${v ? v.t.toLowerCase() : ''} « ${String(action.comment).slice(0, 100)} »`; }
       case 'val.request': { const v = project.validations.find((x) => x.id === action.vid), what = v ? v.t.toLowerCase() : 'une étape'; return audience === 'client' ? `${who} attend ${project.registre === 'tu' ? 'ta' : 'votre'} validation : ${what}` : `${who} a demandé la validation : ${what}`; }
-      case 'request.add': return `${who} demande une évolution (${action.kind || 'autre'}) : « ${String(action.text).slice(0, 100)} »`;
+      case 'request.add': return `${who} fait une demande (${action.kind || 'autre'}) : « ${String(action.text).slice(0, 100)} »`;
       case 'user.onboarded': return `${who} a découvert son espace`;
       case 'file.signreq': return audience === 'client' ? `${who} ${project.registre === 'tu' ? 't’' : 'vous '}envoie un document à signer : ${res.file || ''}` : `${who} a demandé la signature de ${res.file || 'un document'}`;
       case 'file.sign': return `${who} a signé ${res.file || 'un document'}`;
@@ -917,7 +917,7 @@
       case 'setup.domain': return action.mode === 'vault' ? `${who} a déposé les accès du nom de domaine dans le coffre chiffré` : action.mode === 'delegate' ? `${who} a donné un accès délégué au nom de domaine ${action.domain}` : `${who} ne sait pas qui gère le domaine ${action.domain} : à retrouver`;
       case 'setup.check': { const t = project.tasks.find((x) => x.id === action.tid); return action.ok ? `${who} a vérifié : ${t ? t.t.toLowerCase() : 'une étape'}` : `${who} ${project.registre === 'tu' ? 'te' : 'vous'} demande de reprendre : ${t ? t.t.toLowerCase() : 'une étape'}${action.why ? ' (« ' + String(action.why).slice(0, 120) + ' »)' : ''}`; }
       case 'asset.add': return `${who} a ajouté « ${action.title} » à la bibliothèque`;
-      case 'next.set': return `${who} a mis à jour la prochaine étape`;
+      case 'next.set': return `${who} a mis à jour la prochaine action`;
       case 'proposal.send': { const pr = project.proposals.find((x) => x.id === action.prid); return audience === 'client' ? `${who} ${project.registre === 'tu' ? 't’' : 'vous '}a envoyé une proposition : ${pr ? pr.title : ''}` : `${who} a envoyé la proposition ${pr ? pr.title : ''}`; }
       case 'proposal.accept': return `${who} a accepté la proposition : ${res.proposal}`;
       case 'proposal.decline': { const pr = project.proposals.find((x) => x.id === action.prid); return `${who} a décliné la proposition${pr ? ' « ' + pr.title + ' »' : ''}${action.comment ? ' : « ' + String(action.comment).slice(0, 100) + ' »' : ''}`; }
@@ -993,10 +993,10 @@
   const esc = (x) => String(x ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
   function apply(store, projectId, user, rawAction, internal) {
-    if (!rawAction || typeof rawAction !== 'object' || Array.isArray(rawAction) || typeof rawAction.type !== 'string') return { error: 'Requête invalide.' };
+    if (!rawAction || typeof rawAction !== 'object' || Array.isArray(rawAction) || typeof rawAction.type !== 'string') return { error: 'Action impossible. Recharger la page puis réessayer.' };
     let action;
-    try { action = clean(rawAction); } catch (e) { return { error: e.message === 'LINK' ? 'Lien invalide : utilisez une adresse qui commence par https://' : 'Requête invalide.' }; }
-    if (typeof action.type !== 'string') return { error: 'Requête invalide.' };
+    try { action = clean(rawAction); } catch (e) { return { error: e.message === 'LINK' ? 'Lien invalide : utilisez une adresse qui commence par https://' : 'Action impossible. Recharger la page puis réessayer.' }; }
+    if (typeof action.type !== 'string') return { error: 'Action impossible. Recharger la page puis réessayer.' };
     const project0 = store.projects.find((p) => p.id === projectId);
     const snap = project0 ? JSON.stringify(project0) : null, usersSnap = JSON.stringify(store.users);
     let res;
@@ -1005,7 +1005,7 @@
       // Rien ne doit rester à moitié modifié.
       if (project0) Object.assign(project0, JSON.parse(snap));
       store.users.splice(0, store.users.length, ...JSON.parse(usersSnap));
-      return { error: 'Requête invalide.' };
+      return { error: 'Action impossible. Recharger la page puis réessayer.' };
     }
     if (res.error) return res;
     const project = store.projects.find((p) => p.id === projectId);
@@ -1101,7 +1101,7 @@
       for (const inv of p.invoices || []) {
         if (inv.status !== 'due' || !inv.date || inv.remindedAt || now - new Date(inv.date).getTime() < 10 * DAY) continue;
         inv.remindedAt = at;
-        push('files', `Petit rappel : ${inv.label.toLowerCase()}${inv.num ? ' ' + inv.num : ''} reste à régler. ${tu ? 'Tu trouveras' : 'Vous trouverez'} l’IBAN dans Documents.`,
+        push('files', `Petit rappel : ${inv.label.toLowerCase()}${inv.num ? ' ' + inv.num : ''} reste à régler. ${tu ? 'Tu trouveras' : 'Vous trouverez'} l’IBAN dans « Devis et factures ».`,
           `Relance automatique envoyée à ${p.contactName || p.client} : ${inv.label.toLowerCase()}`, 'documents');
       }
     }

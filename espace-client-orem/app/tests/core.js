@@ -102,7 +102,7 @@ ok('Recalage : une validation pas encore demandée par l’agence ne décale rie
   ok('Évolution : une proposition Évolution signée active l’abonnement', (() => { const V = d.projects.find((p) => p.id === 'p_varenne'); Core.apply(d, 'p_varenne', louis, { type: 'proposal.save', title: 'Évolution', lines: [{ t: 'Mois', ht: 900 }], kind: 'evolution' }); const pr = V.proposals[0]; Core.apply(d, 'p_varenne', louis, { type: 'proposal.send', prid: pr.id }); Core.apply(d, 'p_varenne', U('u_julie'), { type: 'proposal.accept', prid: pr.id, agree: true, name: 'Julie V' }); return V.evo && V.evo.active === true; })());
   ok('Avis 2/5 : questionnaire obligatoire, jamais publié, appel proposé à l’équipe', !!Core.apply(d, 'p_huchet', hugo, { type: 'review.add', score: 2 }).error && !Core.apply(d, 'p_huchet', hugo, { type: 'review.add', score: 2, public: true, survey: { bad: 'Délais', call: true, axes: { delais: 2 } } }).error && H.review.public === false && H.review.survey.axes.delais === 2 && H.tasks.some((t) => t.auto === 'review-call') && !Core.forUser(H, hugo).tasks.some((t) => t.team));
   ok('Avis 5/5 : publié sur Google noté', !Core.apply(d, 'p_huchet', hugo, { type: 'review.add', score: 5, google: true, text: 'Top' }).error && H.review.google === true);
-  ok('Qui fait quoi : rôles par défaut, au registre du client', Core.reg(Core.itemWho({ t: 'Recette du site' })[1][1], 'tu') === 'Tu testes le site et notes tes retours');
+  ok('Qui fait quoi : rôles par défaut, au registre du client', Core.reg(Core.itemWho({ t: 'Tests du site' })[1][1], 'tu') === 'Tu testes le site et notes tes retours');
 }
 console.log(R.join('\n'));
 process.exitCode = R.some((l) => l.startsWith('✘')) ? 1 : 0;

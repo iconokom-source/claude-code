@@ -22,7 +22,7 @@
     const j = async (url, opts = {}) => {
       const r = await fetch(url, { credentials: 'same-origin', ...opts, headers: { 'Content-Type': 'application/json', 'X-Orem': '1', ...(opts.headers || {}) } });
       const data = await r.json().catch(() => ({}));
-      if (!r.ok) { const e = new Error(data.error || 'Erreur ' + r.status); e.status = r.status; throw e; }
+      if (!r.ok) { const e = new Error(data.error || R('Une erreur est survenue (code ' + r.status + '). Rechargez la page et réessayez.', 'Une erreur est survenue (code ' + r.status + '). Recharge la page et réessaie.')); e.status = r.status; throw e; }
       return data;
     };
     return {
@@ -40,8 +40,8 @@
         x.open('POST', `/api/projects/${id}/files?name=${encodeURIComponent(file.name)}&cat=${encodeURIComponent(cat || '')}${missing ? '&missing=' + encodeURIComponent(missing) : ''}`);
         x.setRequestHeader('X-Orem', '1');
         x.upload.onprogress = (e) => e.lengthComputable && onp && onp(e.loaded / e.total);
-        x.onload = () => { let d = {}; try { d = JSON.parse(x.responseText); } catch {} x.status < 300 ? ok(d) : ko(new Error(d.error || 'Envoi impossible.')); };
-        x.onerror = () => ko(new Error('Connexion perdue pendant l’envoi. Réessayez.'));
+        x.onload = () => { let d = {}; try { d = JSON.parse(x.responseText); } catch {} x.status < 300 ? ok(d) : ko(new Error(d.error || R('Envoi impossible. Réessayez dans un instant ; si cela continue, écrivez à l’équipe dans Messages.', 'Envoi impossible. Réessaie dans un instant ; si cela continue, écris à l’équipe dans Messages.'))); };
+        x.onerror = () => ko(new Error(R('Connexion perdue pendant l’envoi. Vérifiez votre connexion internet, puis renvoyez le fichier.', 'Connexion perdue pendant l’envoi. Vérifie ta connexion internet, puis renvoie le fichier.')));
         x.send(file);
       }),
       fileUrl: (f) => (f.demo ? null : '/api/files/' + encodeURIComponent(f.id)),
@@ -193,7 +193,7 @@
       card = `<div class="pcard">${clientLogo(p, 'dark', 'pc-logo') || `<strong>${esc(p.client)}</strong>`}<span class="small">${p.archivedAt ? 'Espace archivé' : p.deliveredAt ? (p.offer === 'site' ? 'Site en ligne · ' : 'Livré · ') + esc(phName(p.phases[p.phases.length - 1])) : esc(phName(p.phases[p.phase - 1]))}</span><div class="pdots">${dots}<span>${p.phase}/${p.phases.length}</span></div></div>`;
     }
     const meImg = S.me.photo && IMG[S.me.photo] && !S.preview ? `<img src="${IMG[S.me.photo]}" alt="">` : esc(((S.preview ? p.contactName : S.me.name) || '?')[0]);
-    return `${S.preview ? `<div class="preview-bar">${ic('eye', 'width:18px;height:18px')}<span>Aperçu de l’espace de ${esc(p.client)}, tel que le client le voit</span><button data-act="endpreview">Revenir à l’administration</button></div>` : ''}
+    return `${S.preview ? `<div class="preview-bar">${ic('eye', 'width:18px;height:18px')}<span>Aperçu de l’espace de ${esc(p.client)}, tel que le client le voit</span><button data-act="endpreview">Quitter l’aperçu</button></div>` : ''}
     <a class="skip" href="#main" data-act="skip">Aller au contenu</a>
     <div class="app">
       <aside class="side" aria-label="Navigation">
@@ -229,7 +229,7 @@
     const v = ph.items.reduce((s, it) => s + ({ done: 1, review: 0.75, on: 0.5 }[itS(it)] || 0), 0);
     return Math.max(8, Math.round((v / n) * 100));
   }
-  const CTA = { proposition: ['Lire la proposition', 'proposition'], valider: ['Voir et valider', 'valider'], fichiers: ['Déposer mes fichiers', 'fichiers'], projet: ['Voir le projet', 'projet'], documents: ['Voir les documents', 'documents'], equipe: ['Voir les créneaux', 'equipe'], outils: ['Ouvrir la boîte à outils', 'outils'], messages: ['Lire le message', 'messages'], maquettes: ['Voir les maquettes', 'maquettes'] };
+  const CTA = { proposition: ['Lire la proposition', 'proposition'], valider: ['Voir et valider', 'valider'], fichiers: ['Déposer mes fichiers', 'fichiers'], projet: ['Voir les étapes', 'projet'], documents: ['Voir les devis et factures', 'documents'], equipe: ['Contacter l’équipe', 'equipe'], outils: ['Ouvrir la boîte à outils', 'outils'], messages: ['Lire le message', 'messages'], maquettes: ['Voir les maquettes', 'maquettes'] };
 
   /* ---------- Bien démarrer : les trois priorités à l'arrivée (acompte, Webflow, nom de domaine) ---------- */
   const REGISTRARS = {
@@ -238,8 +238,8 @@
     IONOS: 'Dans IONOS : Compte › Utilisateurs et accès › Ajouter un utilisateur, avec l’adresse {mail}, accès aux domaines.',
     GoDaddy: 'Dans GoDaddy : Paramètres du compte › Accès délégué › Inviter, avec l’adresse {mail}, accès « Produits et domaines ».',
     'Squarespace Domains': 'Dans Squarespace Domains (anciennement Google Domains) : le domaine › Permissions › Ajouter un utilisateur, avec l’adresse {mail}.',
-    'o2switch': 'o2switch ne propose pas d’accès délégué : passez par le coffre chiffré ci-dessous.',
-    Autre: 'Cherchez « accès délégué », « utilisateurs » ou « contact technique » dans votre espace : invitez {mail}. Sinon, passez par le coffre chiffré.'
+    'o2switch': 'o2switch ne propose pas d’accès délégué : choisir plutôt l’option « Coffre chiffré » ci-dessus.',
+    Autre: 'Dans l’espace client de votre hébergeur, chercher « accès délégué », « utilisateurs » ou « contact technique », puis inviter {mail}. Sinon, choisir l’option « Coffre chiffré ».'
   };
   /* Logo du client : en blanc sur fond sombre, en noir sur fond clair (« mono »), ou dans ses couleurs (« color »). */
   function clientLogo(p, on, cls = '') {
@@ -275,7 +275,7 @@
         <div class="inline">${inv && inv.payUrl ? `<a class="btn btn-primary" href="${esc(inv.payUrl)}" target="_blank" rel="noopener">Payer en ligne</a>` : ''}<button class="btn btn-line" data-act="copy">${ic('copy')}Copier l’IBAN</button><a class="btn btn-line" href="#documents" data-go="documents">Voir la facture</a></div>`);
       if (x.k === 'webflow') { const t = x.task;
         return sec(x, i, `<p>Le site ${R('vous ', 't’')}appartient dès le premier jour : il est construit dans ${R('votre', 'ton')} propre espace Webflow, et l’hébergement est à ${R('votre', 'ton')} nom.</p>
-        <ol class="su-steps"><li>Créez un compte sur <a href="https://webflow.com/signup" target="_blank" rel="noopener">webflow.com</a> avec l’adresse e-mail de l’entreprise.</li><li>Créez un espace de travail (« Workspace ») au nom de ${esc(p.client)}. L’offre gratuite suffit pour commencer.</li><li>Dans les réglages de l’espace, « Members », invitez <strong>${esc(mail)}</strong>.</li></ol>
+        <ol class="su-steps"><li>${R('Créez', 'Crée')} un compte sur <a href="https://webflow.com/signup" target="_blank" rel="noopener">webflow.com</a> avec l’adresse e-mail de l’entreprise.</li><li>${R('Créez', 'Crée')} un espace de travail (appelé « Workspace » dans Webflow) au nom de ${esc(p.client)}. L’offre gratuite suffit pour commencer.</li><li>Dans les réglages de cet espace, rubrique « Members » (membres), ${R('invitez', 'invite')} <strong>${esc(mail)}</strong>.</li></ol>
         ${t.retry && !t.sent ? `<p class="hint warn-t">L’équipe ${R('vous', 'te')} demande de reprendre : « ${esc(t.retry)} »</p>` : ''}
         ${x.st === 'done' ? `<p>Invitation reçue et acceptée${by(t)} : merci !</p>` : x.st === 'sent' ? `<p>Merci ! L’équipe vérifie l’invitation pour l’espace « ${esc(t.info.ws)} ».</p>` : `<form class="form" data-form="su-wf"><div class="field"><label for="su-ws">Nom de l’espace de travail Webflow</label><input id="su-ws" type="text" value="${esc(p.client)}" autocomplete="organization"></div><div><button class="btn btn-primary" type="submit">C’est fait, l’invitation est partie</button></div></form>`}`); }
       const t = x.task, i0 = t.info || {};
@@ -287,14 +287,14 @@
         ${x.st === 'done' ? `<p>Accès vérifié${by(t)} pour <strong>${esc(i0.domain)}</strong>. ${S.vault ? '' : 'Rien n’est conservé dans le coffre.'}</p>` : x.st === 'sent' ? `<p>Merci ! L’équipe vérifie l’accès à <strong>${esc(i0.domain)}</strong>${i0.mode === 'vault' ? ' (identifiants dans le coffre chiffré, effacés dès la vérification)' : ''}.</p>${S.vault ? `<button class="btn btn-line btn-sm" data-act="vault-erase">Effacer mes identifiants du coffre</button>` : ''}` : `
         <form class="form" data-form="su-dn">
           <div class="line"><div class="field"><label for="su-d">Nom de domaine</label><input id="su-d" type="text" inputmode="url" autocomplete="url" placeholder="ex. ${esc(p.client.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ''))}.fr" value="${esc(i0.domain || S.suDom || '')}"></div>
-          <div class="field"><label for="su-r">Chez qui est-il ?</label><select id="su-r" data-sureg="1">${regOpts}</select></div></div>
+          <div class="field"><label for="su-r">Où a-t-il été acheté ?</label><select id="su-r" data-sureg="1">${regOpts}</select></div></div>
           <fieldset class="field"><legend>Comment ${R('voulez-vous', 'veux-tu')} donner l’accès ?</legend>
             <label class="opt"><input type="radio" name="su-m" value="delegate" ${mode === 'delegate' ? 'checked' : ''}> Accès délégué (recommandé, sans mot de passe)</label>
             <label class="opt"><input type="radio" name="su-m" value="vault" ${mode === 'vault' ? 'checked' : ''}> Coffre chiffré (identifiant et mot de passe)</label>
             <label class="opt"><input type="radio" name="su-m" value="unknown" ${mode === 'unknown' ? 'checked' : ''}> Je ne sais pas qui le gère</label></fieldset>
-          ${mode === 'delegate' ? `<p class="howto">${how}</p>` : mode === 'vault' ? `<div class="vault-n"><p class="small">${ic('lock')}Chiffrés dès l’envoi, visibles par l’équipe seulement, chaque consultation apparaît dans ${R('votre', 'ton')} historique. Effacés dès que l’accès est vérifié, et au plus tard dans 30 jours. Si le compte a une double authentification, on ${R('vous ', 't’')}appelle au moment de la connexion.</p>
+          ${mode === 'delegate' ? `<p class="howto">${how}</p>` : mode === 'vault' ? `<div class="vault-n"><p class="small">${ic('lock')}Chiffrés dès l’envoi, visibles par l’équipe seulement, chaque consultation est enregistrée. Effacés dès que l’accès est vérifié, et au plus tard dans 30 jours. Si le compte a une double authentification, on ${R('vous ', 't’')}appelle au moment de la connexion.</p>
             <div class="line"><div class="field"><label for="su-l">Identifiant</label><input id="su-l" type="text" autocomplete="off" spellcheck="false"></div><div class="field"><label for="su-p">Mot de passe</label><input id="su-p" type="password" autocomplete="new-password"></div></div>
-            <div class="field"><label for="su-n">Précision (facultatif)</label><input id="su-n" type="text" placeholder="ex. compte au nom de Paul, le gérant"></div></div>` : `<p class="howto">Aucun souci : indiquez seulement le nom de domaine, l’équipe retrouve où il est géré et ${R('vous', 'te')} dit quoi faire.</p>`}
+            <div class="field"><label for="su-n">Précision (facultatif)</label><input id="su-n" type="text" placeholder="ex. compte au nom de Paul, le gérant"></div></div>` : `<p class="howto">Aucun souci : ${R('indiquez', 'indique')} seulement le nom de domaine, l’équipe retrouve où il est géré et ${R('vous', 'te')} dit quoi faire.</p>`}
           <div><button class="btn btn-primary" type="submit">${mode === 'vault' ? 'Envoyer dans le coffre chiffré' : mode === 'delegate' ? 'C’est fait, l’accès est donné' : 'Envoyer'}</button></div></form>`}`);
     }).join('');
     return `<div class="head"><div><h1>Bien démarrer</h1><p class="lead">${st.length} priorités pour lancer le projet sans attendre</p></div></div>${parts}`;
@@ -314,10 +314,10 @@
     const doneN = p.tasks.filter((t) => t.done).length;
     let rk = 0;
     const note = p.note && p.note.text, author = S.team.find((u) => u.id === p.note.by);
-    const meta = prospect() ? 'Avant le démarrage du projet' : [p.offer === 'site' && j >= 0 ? `J-${j} avant la mise en ligne` : p.offer !== 'site' && j >= 0 ? `Livraison dans ${j} jour${j > 1 ? 's' : ''}` : '', phName(ph)].filter(Boolean).join(' · ');
+    const meta = prospect() ? 'Avant le démarrage du projet' : [p.offer === 'site' && j >= 0 ? (j ? `Mise en ligne dans ${j} jour${j > 1 ? 's' : ''}` : 'Mise en ligne aujourd’hui') : p.offer !== 'site' && j >= 0 ? `Livraison dans ${j} jour${j > 1 ? 's' : ''}` : '', phName(ph)].filter(Boolean).join(' · ');
     return `
     <div class="head"><div><h1 class="brandish">Bonjour ${esc(p.contactName || S.me.name)}</h1><p class="lead">${esc(cap(fmtLong(Date.now())))} · ${esc(p.projet)}</p></div>${clientLogo(p, 'auto', 'head-logo')}</div>
-    <section class="next" aria-labelledby="nx"><div><div class="k">Prochaine étape</div><h2 id="nx">${esc(nx.title)}</h2>${nx.text ? `<p>${esc(nx.text)}</p>` : ''}<div class="meta">${esc(meta)}</div></div>${ctaHtml}</section>
+    <section class="next" aria-labelledby="nx"><div><div class="k">${R('Votre prochaine action', 'Ta prochaine action')}</div><h2 id="nx">${esc(nx.title)}</h2>${nx.text ? `<p>${esc(nx.text)}</p>` : ''}<div class="meta">${esc(meta)}</div></div>${ctaHtml}</section>
     ${countdown()}
     ${unreadBanner()}
     ${setupHtml}
@@ -403,7 +403,7 @@
     const p = S.project;
     return `
     <div class="head"><div><h1>Étapes</h1><p class="lead">${esc(p.projet)} · ${esc(Core.offerOf(p))}</p></div><span class="chip hl">${esc(phName(p.phases[p.phase - 1]))}</span></div>
-    <p class="muted" style="max-width:62ch;margin-top:-12px">${p.phases.length} temps, selon la méthode O.R.E.M. : Orienter, Représenter, Exécuter, Mesurer. On ne passe au temps suivant qu’avec ${R('votre', 'ton')} feu vert. Les dates sont indicatives et ajustées ensemble.</p>
+    <p class="muted" style="max-width:62ch;margin-top:-12px">${p.phases.length} étapes, selon la méthode O.R.E.M. : Orienter, Représenter, Exécuter, Mesurer. On ne passe à l’étape suivante qu’avec ${R('votre', 'ton')} feu vert. Les dates sont indicatives : on les ajuste ensemble.</p>
     <section class="panel"><ol class="phases">
     ${p.phases.map((ph, i) => { const st = phS(ph);
       const late = Core.lateDays(p, ph);
@@ -421,11 +421,11 @@
     const p = S.project, L = (p.proposals || []).slice().sort((a, b) => (a.status === 'sent' ? -1 : 0) - (b.status === 'sent' ? -1 : 0));
     const card = (pr) => {
       const ht = pr.lines.reduce((t, l) => t + l.ht, 0), dep = Math.round(ht * pr.depositPct) / 100;
-      const head = `<div class="prop-h"><div><div class="k">${pr.from ? 'Devis d’évolution' : 'Proposition'}${pr.quote ? ' · ' + esc(pr.quote) : ''}</div><h2>${esc(pr.title)}</h2></div>${{ sent: `<span class="chip warn">En attente de ${R('votre', 'ta')} réponse</span>`, accepted: '<span class="chip ok">Acceptée</span>', declined: '<span class="chip idle">Déclinée</span>' }[pr.status] || ''}</div>`;
+      const head = `<div class="prop-h"><div><div class="k">${pr.from ? 'Devis' : 'Proposition'}${pr.quote ? ' · ' + esc(pr.quote) : ''}</div><h2>${esc(pr.title)}</h2></div>${{ sent: `<span class="chip warn">En attente de ${R('votre', 'ta')} réponse</span>`, accepted: '<span class="chip ok">Acceptée</span>', declined: '<span class="chip idle">Déclinée</span>' }[pr.status] || ''}</div>`;
       const table = `<div class="table-wrap"><table class="prop-t"><caption class="sr">Détail de la proposition</caption><thead><tr><th scope="col">Ce qu’on fait</th><th scope="col" class="num">Montant HT</th></tr></thead><tbody>${pr.lines.map((l) => `<tr><td>${esc(l.t)}</td><td class="num">${money(l.ht)}</td></tr>`).join('')}</tbody>
         <tfoot><tr><th scope="row">Total HT</th><td class="num">${money(ht)}</td></tr><tr><th scope="row">TVA (20 %)</th><td class="num">${money(Math.round(ht * 20) / 100)}</td></tr><tr class="ttc"><th scope="row">Total TTC</th><td class="num">${money(Math.round(ht * 120) / 100)}</td></tr></tfoot></table></div>`;
       const terms = `<p class="small muted">${pr.depositPct ? `Acompte de ${pr.depositPct} % à la signature (${money(dep)} HT), solde à la livraison. ` : 'Facturé à la livraison. '}${pr.status === 'sent' && pr.validUntil ? 'Proposition valable jusqu’au ' + fmt(pr.validUntil, { day: 'numeric', month: 'long' }) + '.' : ''}${pr.example && API.demo ? ' Montants d’exemple.' : ''}</p>`;
-      const foot = pr.status === 'accepted' ? `<div class="prop-ok">${ic('ok')}<div><strong>Acceptée le ${esc(fmtTime(pr.acceptedAt))}</strong><span class="small muted">Signé « ${esc(pr.signName)} » depuis l’espace${pr.proof && pr.proof.ip ? ', avec la date, l’heure et l’adresse de connexion' : ''}. ${pr.depositPct ? 'La facture d’acompte est dans Documents.' : ''}</span>${pr.sig ? `<img class="sig-img" src="${pr.sig}" alt="Signature de ${esc(pr.signName)}">` : ''}</div>${pr.depositPct ? `<a class="btn btn-line btn-sm" href="#documents" data-go="documents">Voir la facture</a>` : ''}</div>`
+      const foot = pr.status === 'accepted' ? `<div class="prop-ok">${ic('ok')}<div><strong>Acceptée le ${esc(fmtTime(pr.acceptedAt))}</strong><span class="small muted">Signé « ${esc(pr.signName)} » depuis l’espace${pr.proof && pr.proof.ip ? ', avec la date, l’heure et l’adresse de connexion' : ''}. ${pr.depositPct ? 'La facture d’acompte est dans « Devis et factures ».' : ''}</span>${pr.sig ? `<img class="sig-img" src="${pr.sig}" alt="Signature de ${esc(pr.signName)}">` : ''}</div>${pr.depositPct ? `<a class="btn btn-line btn-sm" href="#documents" data-go="documents">Voir la facture</a>` : ''}</div>`
         : pr.status === 'declined' ? `<p class="muted">${R('Vous avez décliné', 'Tu as décliné')} cette proposition le ${fmt(pr.declined.at, { day: 'numeric', month: 'long' })}. On revient vers ${R('vous', 'toi')} avec une nouvelle version.</p>`
         : S.propDecline === pr.id ? `<form class="form" data-form="decline" data-id="${esc(pr.id)}"><div class="field"><label for="dc-${pr.id}">Qu’est-ce qui ne ${R('vous', 'te')} convient pas ?</label><textarea id="dc-${pr.id}" rows="3"></textarea></div><div class="inline"><button class="btn btn-line" type="submit">Envoyer ma réponse</button><button class="ghost" type="button" data-act="decline-cancel">Annuler</button></div></form>`
         : `<form class="form prop-sign" data-form="accept" data-id="${esc(pr.id)}">${signBox(pr.id, `J’ai lu la proposition${cfg().cgvUrl ? ` et les <a href="${esc(cfg().cgvUrl)}" target="_blank" rel="noopener">conditions générales</a>` : ''} et je l’accepte${pr.depositPct ? `, acompte de ${pr.depositPct} % compris` : ''}.`)}
@@ -443,7 +443,7 @@
   function signBox(id, consent) {
     return `<div class="sign-box"><label class="check-l"><input type="checkbox" id="sg-ok-${id}"> ${consent}</label>
       <div class="field"><label for="sg-n-${id}">${R('Votre', 'Ton')} nom, pour signer</label><input id="sg-n-${id}" type="text" autocomplete="name" placeholder="Prénom Nom" data-signname="${id}"></div>
-      <div class="field"><span class="lbl" id="sg-l-${id}">Signature tracée <span class="muted">(facultative)</span></span><div class="sign-pad"><canvas id="sg-c-${id}" width="600" height="180" role="img" aria-labelledby="sg-l-${id}" data-pad="${id}"></canvas><span class="sign-ph" aria-hidden="true">Signez ici avec le doigt ou la souris</span></div>
+      <div class="field"><span class="lbl" id="sg-l-${id}">Signature tracée <span class="muted">(facultative)</span></span><div class="sign-pad"><canvas id="sg-c-${id}" width="600" height="180" role="img" aria-labelledby="sg-l-${id}" data-pad="${id}"></canvas><span class="sign-ph" aria-hidden="true">${R('Signez', 'Signe')} ici avec le doigt ou la souris</span></div>
         <div class="inline"><button class="ghost small" type="button" data-act="pad-clear" data-id="${id}">Effacer la signature</button></div></div>
       <p class="small muted">Signature électronique : la date, l’heure et ${R('votre', 'ton')} adresse de connexion sont enregistrées avec une empreinte du document, consultables dans un certificat.</p></div>`;
   }
@@ -472,13 +472,13 @@
     const later = p.validations.filter((v) => v.status === 'wait');
     const card = (v) => {
       const form = S.valForm === v.id
-        ? `<form class="field" data-form="changes" data-id="${esc(v.id)}"><label for="chg-${v.id}">Qu’${R('aimeriez-vous', 'aimerais-tu')} changer ?</label><textarea id="chg-${v.id}" required placeholder="Par exemple : regrouper deux pages, ajouter une page Presse…"></textarea><span class="small muted">L’équipe ${R('vous', 'te')} répond sous 24 h ouvrées.</span><div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-primary" type="submit">Envoyer mes remarques</button><button class="btn btn-line" type="button" data-act="valcancel" data-id="${esc(v.id)}">Annuler</button></div></form>`
+        ? `<form class="field" data-form="changes" data-id="${esc(v.id)}"><label for="chg-${v.id}">Qu’${R('aimeriez-vous', 'aimerais-tu')} changer ?</label><textarea id="chg-${v.id}" required placeholder="Par exemple : regrouper deux pages, ajouter une page Presse…"></textarea><span class="small muted">L’équipe ${R('vous', 'te')} répond sous 24 h ouvrées.</span><div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-primary" type="submit">Envoyer ma demande de modifications</button><button class="btn btn-line" type="button" data-act="valcancel" data-id="${esc(v.id)}">Annuler</button></div></form>`
         : S.valConfirm === v.id ? `<div class="confirm" role="group" aria-label="Confirmer la validation"><p><strong>${R('Vous donnez votre', 'Tu donnes ton')} feu vert pour « ${esc(v.t)} » ?</strong> L’équipe passe à la suite.</p><div class="acts"><button class="btn btn-primary" data-act="approve-ok" data-id="${esc(v.id)}">${ic('check')}Oui, je valide</button><button class="btn btn-line" data-act="approve-cancel" data-id="${esc(v.id)}">Pas encore</button></div></div>`
            : `<div class="acts"><button class="btn btn-primary" data-act="approve" data-id="${esc(v.id)}">${ic('check')}Je valide</button><button class="btn btn-line" data-act="changes" data-id="${esc(v.id)}">Demander des modifications</button></div>
            <p class="small muted">Valider, c’est donner ${R('votre', 'ton')} feu vert écrit pour passer à la suite. Il est enregistré avec la date et l’heure.</p>`;
       return `<section class="panel valcard"><div><span class="chip warn">En attente de ${R('votre', 'ta')} validation</span></div>
         <h2>${esc(v.t)}</h2><p class="muted">${esc(Core.reg(v.sub, S.project.registre))}. Prêt depuis le ${fmt(v.readyAt, { day: 'numeric', month: 'long' })}.</p>
-        ${v.link ? `<a class="link" href="${esc(v.link)}" target="_blank" rel="noopener">Ouvrir et regarder ${ic('arrow', 'width:14px;height:14px;vertical-align:-2px')}</a>` : ''}
+        ${v.link ? `<a class="link" href="${esc(v.link)}" target="_blank" rel="noopener">Ouvrir le livrable ${ic('arrow', 'width:14px;height:14px;vertical-align:-2px')}</a>` : ''}
         ${form}</section>`;
     };
     return `
@@ -486,8 +486,8 @@
     ${signSection()}
     ${propsOnly() ? `<section class="panel"><div class="panel-head"><h2>${ic('doc')}${propsOnly() > 1 ? 'Propositions' : 'Proposition'} à lire</h2></div><ul class="list plain">${p.proposals.filter((x) => x.status === 'sent').map((x) => `<li class="row"><div class="grow"><div class="title">${esc(x.title)}</div><div class="sub">${money(x.lines.reduce((t, l) => t + l.ht, 0))} HT · valable jusqu’au ${fmt(x.validUntil, { day: 'numeric', month: 'long' })}</div></div><a class="btn btn-primary btn-sm" href="#proposition" data-go="proposition">Lire et répondre</a></li>`).join('')}</ul></section>` : ''}
     ${ready.map(card).join('') || propsSent() || toSign().length ? ready.map(card).join('') : `<div class="empty">Rien à valider pour l’instant. On ${R('vous', 'te')} prévient dès que la prochaine étape est prête.</div>`}
-    ${done.length ? `<section class="panel"><div class="panel-head"><h2>${ic('ok')}Déjà ${R('traité', 'traité')}</h2></div><div class="list">${done.map((v) => { const h = v.history[v.history.length - 1] || {};
-      return `<div class="row"><span class="ico ${v.status === 'approved' ? 'ok' : ''}">${ic(v.status === 'approved' ? 'ok' : 'chat')}</span><div class="grow"><div class="title">${esc(v.t)}</div><div class="sub">${v.status === 'approved' ? `Validé par ${esc(h.by === S.me.id ? S.me.name : who(h.by))} le ${fmt(h.at, { day: '2-digit', month: '2-digit' })} à ${fmt(h.at, { hour: '2-digit', minute: '2-digit' }).replace(':', ' h ')}` : 'Remarques envoyées le ' + fmt(h.at, { day: 'numeric', month: 'long' }) + (h.comment ? ' : « ' + esc(h.comment) + ' »' : '')}</div></div>${v.status === 'approved' ? '<span class="chip ok">Validé</span>' : '<span class="chip hl">En cours de reprise</span>'}</div>`; }).join('')}</div></section>` : ''}
+    ${done.length ? `<section class="panel"><div class="panel-head"><h2>${ic('ok')}Déjà répondu</h2></div><div class="list">${done.map((v) => { const h = v.history[v.history.length - 1] || {};
+      return `<div class="row"><span class="ico ${v.status === 'approved' ? 'ok' : ''}">${ic(v.status === 'approved' ? 'ok' : 'chat')}</span><div class="grow"><div class="title">${esc(v.t)}</div><div class="sub">${v.status === 'approved' ? `Validé par ${esc(h.by === S.me.id ? S.me.name : who(h.by))} le ${fmt(h.at, { day: '2-digit', month: '2-digit' })} à ${fmt(h.at, { hour: '2-digit', minute: '2-digit' }).replace(':', ' h ')}` : 'Modifications demandées le ' + fmt(h.at, { day: 'numeric', month: 'long' }) + (h.comment ? ' : « ' + esc(h.comment) + ' »' : '')}</div></div>${v.status === 'approved' ? '<span class="chip ok">Validé</span>' : '<span class="chip hl">Modifications en cours</span>'}</div>`; }).join('')}</div></section>` : ''}
     ${later.length ? `<section class="panel"><div class="panel-head"><h2>${ic('lock')}Les prochaines validations</h2></div><div class="list">${later.map((v) => `<div class="row"><span class="ico">${ic('lock')}</span><div class="grow"><div class="title">${esc(v.t)}</div><div class="sub">${esc(Core.reg(v.sub, S.project.registre))}</div></div><span class="small muted num" style="text-align:right">Vers le ${fmt(v.due)}</span></div>`).join('')}</div></section>` : ''}`;
   }
 
@@ -498,7 +498,7 @@
     const q = (S.fq || '').toLowerCase();
     const shown = (S.cat === 'Tous' ? mine : mine.filter((f) => f.cat === S.cat)).filter((f) => !q || f.name.toLowerCase().includes(q));
     const tab = S.ftab === 'docs' ? 'docs' : 'mine';
-    const tabs = `<div class="tabs" role="tablist" aria-label="Fichiers">${[['mine', 'Fichiers'], ['docs', 'Factures et documents']].map(([k, l]) => `<button role="tab" id="ft-${k}" aria-controls="ft-panel" aria-selected="${tab === k}" tabindex="${tab === k ? 0 : -1}" data-ftab="${k}">${l}${k === 'docs' && p.invoices.some((x) => x.status === 'due') ? '<span class="badge">1<span class="sr"> à régler</span></span>' : ''}</button>`).join('')}</div>`;
+    const tabs = `<div class="tabs" role="tablist" aria-label="Fichiers">${[['mine', 'Fichiers'], ['docs', 'Devis et factures']].map(([k, l]) => `<button role="tab" id="ft-${k}" aria-controls="ft-panel" aria-selected="${tab === k}" tabindex="${tab === k ? 0 : -1}" data-ftab="${k}">${l}${k === 'docs' && p.invoices.some((x) => x.status === 'due') ? '<span class="badge">1<span class="sr"> à régler</span></span>' : ''}</button>`).join('')}</div>`;
     if (tab === 'docs') return `<div class="head"><div><h1>Fichiers et factures</h1><p class="lead">Devis, factures et paiement</p></div>${zipBtn()}</div>${tabs}<div role="tabpanel" id="ft-panel" aria-labelledby="ft-docs" class="tabpanel">${docsBody()}</div>`;
     const count = (c) => (c === 'Tous' ? mine.length : mine.filter((f) => f.cat === c).length);
     const delivs = p.files.filter((f) => f.from === 'agence' && f.cat === 'Livrable');
@@ -556,8 +556,8 @@
       <div style="min-width:0;flex:1 1 280px"><h2>Besoin d’en parler de vive voix ?</h2><p class="muted" style="margin-top:6px">${R('Réservez', 'Réserve')} une visio de 30 minutes quand ${R('vous voulez', 'tu veux')}.</p></div>
       <a class="btn btn-primary" href="${CALF()}" target="_blank" rel="noopener">${ic('cal')}Réserver une visio</a></section>
     <section class="panel"><div class="panel-head"><h2>${ic('chat')}Questions fréquentes</h2></div>
-      <details><summary>Que se passe-t-il quand je valide une étape ?</summary><p>La validation est enregistrée avec la date et l’heure, l’équipe est prévenue et l’étape suivante démarre.</p></details>
-      ${['site', 'evolution'].includes(S.project.offer) ? `<details><summary>Le site m’appartient-il ?</summary><p>Oui. Le site est hébergé sur ${R('votre', 'ton')} propre compte Webflow : ${R('vous en êtes propriétaire, vous êtes libres', 'tu en es propriétaire, tu es libre')}.</p></details>` : ''}
+      <details><summary>Que se passe-t-il quand je valide ?</summary><p>La validation est enregistrée avec la date et l’heure, l’équipe est prévenue et passe à la suite du projet.</p></details>
+      ${['site', 'evolution'].includes(S.project.offer) ? `<details><summary>Le site m’appartient-il ?</summary><p>Oui. Le site est hébergé sur ${R('votre', 'ton')} propre compte Webflow : ${R('vous en êtes propriétaire et restez libre de changer de prestataire', 'tu en es propriétaire et restes libre de changer de prestataire')}.</p></details>` : ''}
       <details><summary>Où déposer un fichier très lourd ?</summary><p>Dans l’onglet Fichiers, jusqu’à 2 Go par fichier. Au-delà, ${R('envoyez', 'envoie')}-nous un lien WeTransfer dans Messages.</p></details>
       <details><summary>Comment me reconnecter ?</summary><p>Sur la page de connexion, ${R('saisissez votre', 'saisis ton')} e-mail : un lien et un code arrivent en quelques secondes. Pas de mot de passe à retenir.</p></details>
     </section>`;
@@ -588,7 +588,7 @@
     switch (id) {
       case 'ou': if (prospect()) return `Le projet démarre dès que la proposition est acceptée. <a href="#proposition" data-go="proposition">Lire la proposition</a>`;
         if (p.deliveredAt) return `${R('Votre', 'Ton')} site est en ligne depuis le <strong>${fmt(p.deliveredAt, { day: 'numeric', month: 'long', year: 'numeric' })}</strong>. ${p.results && p.results.stats[0] ? esc(p.results.stats[0][0]) + ' ' + esc(p.results.stats[0][1]) + '. ' : ''}Pour aller plus loin, on peut le faire évoluer chaque mois. <a href="#outils" data-go="outils">Voir les options</a>`;
-        return `Le projet est à l’étape ${p.phase} sur ${p.phases.length} : <strong>${esc(phName(ph))}</strong>. ${done} livrable${done > 1 ? 's' : ''} sur ${ph.items.length} ${done > 1 ? 'sont faits' : 'est fait'} sur cette étape. Mise en ligne prévue vers le <strong>${fmt(p.golive, { day: 'numeric', month: 'long' })}</strong>, dans ${Math.max(0, daysTo(p.golive))} jours. <a href="#projet" data-go="projet">Voir les étapes</a>`;
+        return `Le projet est à l’étape ${p.phase} sur ${p.phases.length} : <strong>${esc(phName(ph))}</strong>. ${done} livrable${done > 1 ? 's' : ''} sur ${ph.items.length} ${done > 1 ? 'sont faits' : 'est fait'} sur cette étape. ${p.offer === 'site' ? 'Mise en ligne' : 'Livraison'} prévue vers le <strong>${fmt(p.golive, { day: 'numeric', month: 'long' })}</strong>, dans ${Math.max(0, daysTo(p.golive))} jours. <a href="#projet" data-go="projet">Voir les étapes</a>`;
       case 'moi': { const list = [...(p.proposals || []).filter((x) => x.status === 'sent').map((x) => 'répondre à la proposition « ' + x.title + ' »'), ...p.validations.filter((v) => v.status === 'ready').map((v) => 'valider ' + v.t.toLowerCase()), ...p.missing.map((m) => 'déposer ' + m.t.toLowerCase())];
         return list.length ? `${list.length} chose${list.length > 1 ? 's' : ''} ${R('vous attendent', 't’attendent')} : ${list.map(esc).join(', ')}. <a href="#${propsSent() ? 'proposition' : pending() ? 'valider' : 'fichiers'}" data-go="${propsSent() ? 'proposition' : pending() ? 'valider' : 'fichiers'}">Commencer</a>` : `Rien pour le moment. On ${R('vous', 'te')} prévient dès qu’on a besoin de ${R('vous', 'toi')}.`; }
       case 'rdv': return p.meeting && p.meeting.when ? `<strong>${esc(p.meeting.title)}</strong>, ${esc(fmtTime(p.meeting.when))}. Besoin d’un autre créneau ? <a href="${CALF()}" target="_blank" rel="noopener">Réserver une visio</a>` : `Aucun rendez-vous fixé. <a href="${CALF()}" target="_blank" rel="noopener">Réserver une visio de 30 minutes</a>`;
@@ -618,7 +618,7 @@
     const welcome = (p.messages || []).filter((m) => m.fromAgency && m.loom && /bienvenue/i.test(m.loom.title)).sort((a, b) => new Date(a.at) - new Date(b.at))[0] || (cfg().welcomeLoom ? { loom: { url: cfg().welcomeLoom, title: 'Bienvenue chez Orem', duration: '' } } : null);
     const arts = [
       ['Bienvenue', p.phase > 1 || p.tasks.some((t) => t.done) ? `${R('Votre', 'Ton')} espace est prêt, ${esc(first)}.` : `Bienvenue ${esc(first)}, ${R('votre', 'ton')} projet démarre ici.`],
-      ['Le chemin', `${p.phases.length} temps, de la première visio ${p.offer === 'site' ? 'à la mise en ligne' : 'à la livraison'}.`],
+      ['Le chemin', `${p.phases.length} étapes, de la première visio ${p.offer === 'site' ? 'à la mise en ligne' : 'à la livraison'}.`],
       ['Pour démarrer', `${R('Vos', 'Tes')} premières actions.`],
       ['Dernier détail', `On ${R('vous', 'te')} prévient comment ?`]
     ];
@@ -634,8 +634,8 @@
          <label><input type="checkbox" id="pf-week" checked> Le point de la semaine par e-mail, dès que l’équipe le publie</label>
        </div>`;
     const bodies = p.deliveredAt ? [`<h3>Un mot de l’équipe</h3><p>Bienvenue dans l’espace ${esc(p.client)}. ${R('Vous y retrouvez', 'Tu y retrouves')} tout ce qu’on a construit ensemble, les résultats du site et des outils pour ${R('votre', 'ton')} quotidien.</p><p>Une idée, une question ? On est à un message de ${R('vous', 'toi')}.</p><p class="muted small">${teamSig()}</p>`,
-      `<h3>${R('Ce que vous y trouverez', 'Ce qu’il y a ici')}</h3>${li([evoOn(p) ? ['Évolution', 'La visio du mois, les bilans et les axes en cours'] : ['Résultats', 'Les chiffres du site, mis à jour chaque mois'], ['Bibliothèque', 'Visuels, maquettes et cas d’étude à réutiliser'], ['Boîte à outils', 'Fiche teaser, kit de marque, signature e-mail'], ['Messages', 'Les vidéos et messages de l’équipe']])}`,
-      `<h3>Trois raccourcis</h3>${li([['Préparer une fiche teaser de bien', 'Boîte à outils'], ['Demander une évolution du site', 'Boîte à outils'], ['Télécharger les visuels du cas client', 'Bibliothèque']])}`,
+      `<h3>${R('Ce que vous y trouverez', 'Ce qu’il y a ici')}</h3>${li([evoOn(p) ? ['Évolution', 'La visio du mois, les bilans et les axes en cours'] : ['Résultats', 'Les chiffres du site, mis à jour chaque mois'], ['Bibliothèque', 'Visuels, maquettes et cas d’étude à réutiliser'], ['Boîte à outils', 'Kit de marque, signature e-mail, demandes sur le site'], ['Messages', 'Les vidéos et messages de l’équipe']])}`,
+      `<h3>Trois raccourcis</h3>${li([['Copier les couleurs de la marque', 'Boîte à outils'], ['Faire une demande sur le site', 'Boîte à outils'], ['Télécharger les visuels du projet', 'Bibliothèque']])}`,
       notifBody
     ] : [
       `<h3>Un mot de l’équipe</h3>
@@ -697,16 +697,16 @@
     const rep = p.phases.find((x) => x.letter === 'R');
     const shots = (p.assets || []).filter((a) => a.img && a.kind === 'Maquettes').slice(0, 4);
     if (!L.figma && !L.proto) return `<div class="head"><div><h1>Maquettes et visuels</h1><p class="lead">${p.offer === 'site' ? 'Les écrans du site, en direct depuis Figma' : p.offer === 'da' ? 'Les pistes et l’identité, en direct depuis Figma' : 'Les documents de travail, en direct depuis Figma'}</p></div></div>
-      <div class="empty big">${ic('figma')}<strong>${p.offer === 'da' ? 'Les pistes créatives arrivent' : 'Les maquettes arrivent'} avec le temps « Représenter »${rep ? ', vers le ' + fmt(rep.from, { day: 'numeric', month: 'long' }) : ''}</strong><span>Dès que ${esc(((S.team.find((u) => /design/i.test(u.title || '')) || S.team[0] || { name: 'l’équipe' }).name || '').split(' ')[0])} commence le design, ${R('vous les verrez', 'tu les verras')} ici en direct, sans compte Figma.</span></div>`;
+      <div class="empty big">${ic('figma')}<strong>${p.offer === 'da' ? 'Les pistes créatives arrivent' : 'Les maquettes arrivent'} avec l’étape « Représenter »${rep ? ', vers le ' + fmt(rep.from, { day: 'numeric', month: 'long' }) : ''}</strong><span>Dès que ${esc(((S.team.find((u) => /design|création/i.test(u.title || '')) || S.team[0] || { name: 'l’équipe' }).name || '').split(' ')[0])} commence le design, ${R('vous les verrez', 'tu les verras')} ici en direct, sans compte Figma.</span></div>`;
     return `<div class="head"><div><h1>Maquettes et visuels</h1><p class="lead">En direct depuis Figma, toujours la dernière version</p></div>
-      <div class="head-actions">${L.proto ? `<a class="btn btn-primary" href="${esc(L.proto)}" target="_blank" rel="noopener">${ic('play')}Tester le prototype</a>` : ''}${L.figma ? `<a class="btn btn-line" href="${esc(L.figma)}" target="_blank" rel="noopener">${ic('figma')}Ouvrir dans Figma</a>` : ''}</div></div>
+      <div class="head-actions">${L.proto ? `<a class="btn btn-primary" href="${esc(L.proto)}" target="_blank" rel="noopener">${ic('play')}Parcourir la maquette cliquable</a>` : ''}${L.figma ? `<a class="btn btn-line" href="${esc(L.figma)}" target="_blank" rel="noopener">${ic('figma')}Ouvrir dans Figma</a>` : ''}</div></div>
       ${!API.demo && (L.proto || L.figma) ? `<section class="panel flush"><div class="figma-frame"><iframe src="${figmaEmbed(L.proto || L.figma)}" title="Maquettes Figma" allowfullscreen loading="lazy"></iframe></div></section>` : ''}
-      ${API.demo || shots.length ? `<section class="panel"><div class="panel-head"><h2>${ic('eye')}${API.demo ? 'Aperçu des écrans' : 'Commenter un écran'}</h2><span class="aside">Le prototype s’ouvre dans un nouvel onglet, sans compte Figma</span></div>
+      ${API.demo || shots.length ? `<section class="panel"><div class="panel-head"><h2>${ic('eye')}${API.demo ? 'Aperçu des écrans' : 'Commenter un écran'}</h2><span class="aside">La maquette cliquable s’ouvre dans un nouvel onglet, sans compte Figma</span></div>
           ${shots.length ? `<p class="small muted" style="margin-bottom:12px">${R('Cliquez sur un écran, puis sur l’endroit à commenter', 'Clique sur un écran, puis sur l’endroit à commenter')}.</p><div class="shots">${shots.map((a) => `<button class="shot" data-act="zoom" data-pin="1" data-src="${esc(a.img)}" data-title="${esc(a.title)}"><img src="${esc(asset(a.img))}" alt="${esc(a.title)}" loading="lazy"><span>${esc(a.title)}</span></button>`).join('')}</div>` : '<p class="muted">Les captures des écrans apparaîtront ici.</p>'}</section>` : ''}
       ${(p.versions || []).length ? `<section class="panel"><div class="panel-head"><h2>${ic('figma')}Versions</h2><span class="aside">La plus récente en premier</span></div><ul class="list plain">${p.versions.map((v, i) => `<li class="row"><span class="chip ${i ? 'idle' : 'hl'}">${esc(v.label)}</span><div class="grow"><div class="title">${esc(v.t)}</div><div class="sub">${fmt(v.at, { day: 'numeric', month: 'long' })}${i ? '' : ' · dernière version'}</div></div><a class="btn btn-line btn-sm" href="${esc(v.url)}" target="_blank" rel="noopener">Ouvrir<span class="sr"> ${esc(v.label)}</span></a></li>`).join('')}</ul></section>` : ''}
       ${pinsPanel()}
       <section class="panel"><div class="panel-head"><h2>${ic('chat')}Comment donner ${R('votre', 'ton')} avis</h2></div>
-        <div class="tips"><div><span class="rank">01</span><p>${R('Ouvrez le prototype et cliquez', 'Ouvre le prototype et clique')} comme sur le vrai site.</p></div><div><span class="rank">02</span><p>${R('Notez ce qui vous gêne', 'Note ce qui te gêne')}, écran par écran.</p></div><div><span class="rank">03</span><p>${R('Validez ou demandez', 'Valide ou demande')} des modifications dans « À valider ».</p></div></div></section>`;
+        <div class="tips"><div><span class="rank">01</span><p>${R('Ouvrez la maquette cliquable et cliquez', 'Ouvre la maquette cliquable et clique')} comme sur le vrai site.</p></div><div><span class="rank">02</span><p>${R('Notez ce qui vous gêne', 'Note ce qui te gêne')}, écran par écran.</p></div><div><span class="rank">03</span><p>${R('Validez ou demandez', 'Valide ou demande')} des modifications dans « À valider ».</p></div></div></section>`;
   }
 
   /* ---------- Messages ---------- */
@@ -717,7 +717,7 @@
     return `<div class="head"><div><h1>Messages</h1><p class="lead">Les messages et les vidéos de l’équipe, au même endroit</p></div></div>
       ${videos.length > 1 ? `<p class="small muted">${videos.length} vidéos de l’équipe dans la conversation, la plus récente en bas.</p>` : ''}
       <section class="panel"><div class="panel-head"><h2>${ic('chat')}Conversation</h2><span class="aside">Réponse sous 24 h ouvrées</span></div>
-        <div class="thread" tabindex="0" role="log" aria-label="Conversation">${list.map(msgBubble).join('') || '<p class="muted">Aucun message pour l’instant.</p>'}</div>
+        <div class="thread" tabindex="0" role="log" aria-label="Conversation">${list.map(msgBubble).join('') || `<p class="muted">Aucun message pour l’instant. ${R('Écrivez', 'Écris')} ci-dessous : l’équipe répond sous 24 h ouvrées.</p>`}</div>
         <form class="compose" data-form="msg"><label class="sr" for="msg-t">${R('Votre', 'Ton')} message</label><textarea id="msg-t" placeholder="${R('Écrivez votre message', 'Écris ton message')}…" rows="2"></textarea><button class="btn btn-primary" type="submit">Envoyer</button></form>
       </section>`;
   }
@@ -731,7 +731,7 @@
     const k = S.bk && kinds.includes(S.bk) ? S.bk : 'Tout';
     const shown = k === 'Tout' ? A : A.filter((a) => a.kind === k);
     if (!A.length && !(p.brand && p.brand.colors.length)) return '';
-    return `<section class="panel" aria-labelledby="bib-h"><div class="panel-head"><h2 id="bib-h">${ic('folder')}Bibliothèque</h2><span class="aside">Visuels et planches du cas d’étude, libres d’usage pour ${R('votre', 'ta')} communication</span></div>
+    return `<section class="panel" aria-labelledby="bib-h"><div class="panel-head"><h2 id="bib-h">${ic('folder')}Bibliothèque</h2><span class="aside">Les visuels du projet, libres d’usage pour ${R('votre', 'ta')} communication</span></div>
       ${A.some((a) => a.fileId) && API.exportUrl(p.id) ? `<div class="inline"><a class="btn btn-line btn-sm" href="${API.exportUrl(p.id, 'biblio')}" download>${ic('down')}Tout télécharger (ZIP)</a></div>` : ''}
       ${A.length ? `<div class="cats" role="group" aria-label="Filtrer la bibliothèque">${kinds.map((x) => `<button class="cat" data-bk="${esc(x)}" aria-pressed="${k === x}"><strong>${esc(x)}</strong><span class="num">${x === 'Tout' ? A.length : A.filter((a) => a.kind === x).length}</span></button>`).join('')}</div>
       <div class="gallery">${shown.map((a) => `<article class="tile">${a.img ? `<button class="tile-img" data-act="zoom" data-src="${esc(a.img)}" data-title="${esc(a.title)}" aria-label="Agrandir : ${esc(a.title)}"><img src="${esc(asset(a.img))}" alt="" loading="lazy"></button>` : ''}
@@ -742,10 +742,10 @@
 
   /* ---------- Boîte à outils ---------- */
   const TOOLS = {
-    teaser: ['doc', 'Fiche teaser de bien', 'Une fiche d’une page pour présenter un hôtel ou une boulangerie à un acquéreur, aux couleurs du cabinet.'],
+    teaser: ['doc', 'Fiche de présentation d’un bien', 'Une fiche d’une page pour présenter un hôtel ou une boulangerie à un acquéreur, aux couleurs du cabinet.'],
     brand: ['eye', 'Kit de marque', 'Couleurs, typographies et visuels officiels, à copier en un clic.'],
     signature: ['mail', 'Signature e-mail', 'Une signature propre et cohérente pour toute l’équipe.'],
-    request: ['plus', 'Demander une évolution', 'Une idée, une correction, une nouvelle page : ${decris}, on s’en occupe.'],
+    request: ['plus', 'Faire une demande', 'Une idée, une correction, une nouvelle page : ${decris}, on s’en occupe.'],
     webflow: ['play', 'Se former à Webflow', 'Les vidéos pour modifier ${site} en autonomie.']
   };
   // Un outil n'apparaît que s'il a de quoi servir : la marque une fois les couleurs posées, Webflow à partir de la construction.
@@ -757,7 +757,7 @@
       <div class="toolgrid">${tools.map((t) => { const [i, n, d] = TOOLS[t]; return `<button class="toolcard" data-tool="${t}"><span class="ico hl">${ic(i)}</span><strong>${n}</strong><span>${d.replace('${site}', R('votre site', 'ton site')).replace('${decris}', R('décrivez-la', 'décris-la'))}</span><em>Ouvrir ${ic('arrow')}</em></button>`; }).join('')}</div>`;
   }
   function evolutionCard() {
-    return `<section class="evo"><div><div class="k">Évolution</div><h2>${R('Votre', 'Ton')} site ne doit pas se figer.</h2><p>Chaque mois, on lit les chiffres avec ${R('vous', 'toi')}, on décide des priorités et on fait évoluer ce qui transforme : formulaires, pages, supports commerciaux.</p></div>
+    return `<section class="evo"><div><div class="k">Évolution</div><h2>${R('Votre', 'Ton')} site ne doit pas se figer.</h2><p>Chaque mois, on lit les chiffres avec ${R('vous', 'toi')}, on décide des priorités et on améliore ce qui ${R('vous ', 't’')}apporte des clients : formulaires, pages, supports commerciaux.</p></div>
       <div class="evo-a"><a class="btn" href="${esc(CALF())}" target="_blank" rel="noopener">Réserver un appel de 30 minutes ${ic('arrow')}</a><button class="ghost on-dark" data-tool="request">Ou ${R('décrivez', 'décris')} une demande</button></div></section>`;
   }
   function toolView(t) {
@@ -825,18 +825,18 @@
 
   /* ---------- Plus (mobile) ---------- */
   function vPlus() {
-    const items = [...(evoOpen(S.project) ? [['evolution', 'Évolution', 'arrow']] : []), ['projet', 'Étapes', 'map'], ['maquettes', 'Maquettes et visuels', 'figma'], ['documents', 'Factures et documents', 'doc'], ...(visibleTools(S.project).length ? [['outils', 'Boîte à outils', 'plus']] : []), ['equipe', 'Équipe et aide', 'team'], ['preferences', 'Mes notifications', 'mail']];
+    const items = [...(evoOpen(S.project) ? [['evolution', 'Évolution', 'arrow']] : []), ['projet', 'Étapes', 'map'], ['maquettes', 'Maquettes et visuels', 'figma'], ['documents', 'Devis et factures', 'doc'], ...(visibleTools(S.project).length ? [['outils', 'Boîte à outils', 'plus']] : []), ['equipe', 'Équipe et aide', 'team'], ['preferences', 'Mes notifications', 'mail']];
     return `<div class="head"><div><h1>Tout ${R('votre', 'ton')} espace</h1></div></div><section class="panel"><div class="list">${items.map(([id, l, i]) => `<a class="row linkrow" href="#${id}" data-go="${id}"><span class="ico">${ic(i)}</span><div class="grow"><div class="title">${l}</div></div>${id === 'valider' && pending() + propsSent() ? `<span class="badge">${pending() + propsSent()}</span>` : ''}${ic('arrow', 'width:18px;height:18px;color:var(--muted)')}</a>`).join('')}</div></section>
       <section class="panel"><div class="list"><button class="row linkrow" data-act="theme" aria-pressed="${isDark() ? 'true' : 'false'}"><span class="ico">${ic('moon')}</span><div class="grow"><div class="title">Mode sombre</div></div></button><button class="row linkrow" data-act="logout"><span class="ico">${ic('back')}</span><div class="grow"><div class="title">Se déconnecter</div></div></button></div></section>`;
   }
 
   /* ---------- Évolution : l'étape supérieure ----------
-     Pendant le projet, l'entrée est visible mais verrouillée ; après la mise en ligne, c'est l'espace du suivi mensuel :
+     Pendant le projet, l'entrée est visible mais verrouillée ; après la mise en ligne, c'est l'espace de l'accompagnement mensuel :
      prochaine visio de pilotage, bilans de chaque mois, axes d'amélioration et leur avancement. */
   const evoOpen = (p) => !!p && (p.offer === 'evolution' || !!p.deliveredAt || !!(p.evo && p.evo.active));
   const evoOn = (p) => !!(p && p.evo && p.evo.active);
   function evoNav(p) {
-    if (!evoOpen(p)) return `<div class="nav-evo locked" aria-disabled="true" title="Disponible après la mise en ligne"><span class="ne-i">${ic('lock')}</span><span class="ne-t"><strong>Évolution</strong><small>L’étape supérieure, après la mise en ligne</small></span></div>`;
+    if (!evoOpen(p)) return `<div class="nav-evo locked" aria-disabled="true" title="Disponible après la mise en ligne"><span class="ne-i">${ic('lock')}</span><span class="ne-t"><strong>Évolution</strong><small>Disponible après la mise en ligne</small></span></div>`;
     return `<a class="nav-evo" href="#evolution" data-go="evolution" ${S.view === 'evolution' ? 'aria-current="page"' : ''}><span class="ne-i">${ic('arrow')}</span><span class="ne-t"><strong>Évolution</strong><small>${evoOn(p) ? 'Visio, bilans et axes du mois' : 'Faire progresser le site chaque mois'}</small></span></a>`;
   }
   const monthName = (m) => cap(new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' }).format(new Date(m + '-15T12:00:00')));
@@ -844,7 +844,7 @@
   function axWho(w) { if (w === 'client') return R('Vous', 'Toi'); if (w === 'both') return R('L’agence et vous', 'L’agence et toi'); const u = S.team.find((x) => x.id === w); return u ? u.name.split(' ')[0] : 'L’agence'; }
   function evoMeeting(p, compact) {
     const e = p.evo, m = e.meeting || {}, open = (e.reschedule || []).find((r) => r.status === 'open');
-    return `<section class="next evo-meet" aria-labelledby="evm"><div><div class="k">Prochaine visio de pilotage</div><h2 id="evm">${m.when ? esc(cap(fmtTime(m.when))) : 'Date à fixer ensemble'}</h2>
+    return `<section class="next evo-meet" aria-labelledby="evm"><div><div class="k">Prochaine visio mensuelle</div><h2 id="evm">${m.when ? esc(cap(fmtTime(m.when))) : 'Date à fixer ensemble'}</h2>
       <p>${esc(m.mode || 'Visio de pilotage')} : on lit les chiffres du mois, on fait le point sur les axes en cours et on décide des priorités.</p>
       ${open ? `<div class="meta">Demande de changement envoyée le ${fmt(open.at, { day: 'numeric', month: 'long' })} : l’équipe ${R('vous', 'te')} propose un créneau très vite.</div>` : ''}</div>
       <div class="evo-a">${compact ? `<a class="btn" href="#evolution" data-go="evolution">Ouvrir l’espace Évolution ${ic('arrow')}</a>` : ''}${!open ? `<button class="${compact ? 'ghost on-dark' : 'btn'}" data-act="rs-open" aria-expanded="${!!S.rsOpen}">Demander un autre créneau</button>` : ''}</div></section>
@@ -854,16 +854,16 @@
     const p = S.project, e = p.evo || {};
     const pend = (p.proposals || []).filter((x) => x.status === 'sent');
     const propCard = pend.length ? `<a class="newmsg" href="#proposition" data-go="proposition"><span class="grow"><strong>${R('Une proposition vous attend', 'Une proposition t’attend')}</strong><span>${esc(pend[0].title)}</span></span><span class="btn btn-primary btn-sm">Lire et signer</span></a>` : '';
-    if (!evoOn(p)) return `<div class="head"><div><h1>Évolution</h1><p class="lead">L’étape supérieure : faire progresser ${R('votre', 'ton')} site chaque mois</p></div></div>${propCard}
+    if (!evoOn(p)) return `<div class="head"><div><h1>Évolution</h1><p class="lead">Faire progresser ${R('votre', 'ton')} site, mois après mois</p></div></div>${propCard}
       <section class="panel"><div class="panel-head"><h2>${ic('arrow')}Ce que comprend l’Évolution</h2></div>
-        <ol class="ob-list evo-inc">${[['Une visio de pilotage par mois', 'On lit les chiffres ensemble et on décide des priorités.'], ['Un bilan mensuel', 'Ce qui a été fait, ce que disent les chiffres, ce qu’on fait ensuite.'], ['Des axes d’amélioration suivis', 'Chaque chantier avec son responsable, son échéance et son avancement.'], ['Les interventions du mois', 'Pages, formulaires, référencement, visuels : on fait évoluer ce qui transforme.']].map(([t, d], i) => `<li class="li"><span class="rank">${String(i + 1).padStart(2, '0')}</span><div><strong>${t}</strong><span>${d}</span></div></li>`).join('')}</ol>
+        <ol class="ob-list evo-inc">${[['Une visio de pilotage par mois', 'On lit les chiffres ensemble et on décide des priorités.'], ['Un bilan mensuel', 'Ce qui a été fait, ce que disent les chiffres, ce qu’on fait ensuite.'], ['Un plan d’amélioration à jour', 'Chaque amélioration avec son responsable, son échéance et son avancement.'], ['Les interventions du mois', 'Pages, formulaires, référencement, visuels : on améliore ce qui rapporte.']].map(([t, d], i) => `<li class="li"><span class="rank">${String(i + 1).padStart(2, '0')}</span><div><strong>${t}</strong><span>${d}</span></div></li>`).join('')}</ol>
         <div class="inline"><a class="btn btn-primary" href="${esc(CALF())}" target="_blank" rel="noopener">En parler en 30 minutes ${ic('arrow')}</a></div></section>`;
     const ax = (e.axes || []).slice().sort((a, b) => (b.priority ? 1 : 0) - (a.priority ? 1 : 0) || ({ on: 0, todo: 1, done: 2 }[a.status] - { on: 0, todo: 1, done: 2 }[b.status]));
     const reps = e.reports || [], openRp = S.rpOpen || (reps[0] && reps[0].id);
     return `<div class="head"><div><h1>Évolution</h1><p class="lead">Depuis le ${fmt(e.since, { day: 'numeric', month: 'long', year: 'numeric' })} · une visio et un bilan chaque mois</p></div></div>
       ${evoMeeting(p)}
       ${propCard}
-      <section class="panel" aria-labelledby="ax-h"><div class="panel-head"><h2 id="ax-h">${ic('ok')}Axes d’amélioration</h2><span class="small muted num">${ax.filter((a) => a.status === 'done').length} sur ${ax.length} faits</span></div>
+      <section class="panel" aria-labelledby="ax-h"><div class="panel-head"><h2 id="ax-h">${ic('ok')}Améliorations en cours</h2><span class="small muted num">${ax.filter((a) => a.status === 'done').length} sur ${ax.length} faits</span></div>
         <ul class="list plain">${ax.map((a) => `<li class="row ax-row ${a.status}"><div class="grow"><div class="title">${a.priority ? '<span class="chip warn">Priorité du mois</span> ' : ''}${esc(a.t)}</div>${a.effect ? `<div class="sub">Effet attendu : ${esc(a.effect)}</div>` : ''}<div class="sub">${esc(axWho(a.who))}${a.due ? ' · ' + (a.status === 'done' ? 'fait' : 'prévu pour le') + ' ' + fmt(a.due, { day: 'numeric', month: 'long' }) : ''}</div></div>${AX_CHIP[a.status]}</li>`).join('') || '<li class="muted">Les axes du mois arrivent après la première visio.</li>'}</ul></section>
       <section class="panel" aria-labelledby="rp-h"><div class="panel-head"><h2 id="rp-h">${ic('doc')}Bilans mensuels</h2><span class="aside">Tous les mois, au même endroit</span></div>
         <div class="reports">${reps.map((r) => { const f = r.fileId && p.files.find((x) => x.id === r.fileId), url = f && API.fileUrl(f), open = r.id === openRp;
@@ -892,7 +892,7 @@
           ${!evoOn(p) && p.meeting && p.meeting.when ? `<div class="meet"><span class="ico">${ic('cal')}</span><div class="grow"><div class="title">${esc(p.meeting.title)}</div><div class="sub">${esc(cap(fmtTime(p.meeting.when)))}</div></div></div>` : ''}</section>
       </div>
       <section class="panel"><div class="panel-head"><h2>${ic('folder')}Tout ce qu’on a construit ensemble</h2></div>
-        <div class="quick">${[(p.tools || []).includes('teaser') ? ['tool:teaser', 'Fiche teaser', 'Présenter un bien en 2 minutes', 'doc'] : ['outils', 'Boîte à outils', 'Kit de marque, signature…', 'plus'], ['maquettes', 'Maquettes et visuels', 'Le fichier Figma et le prototype', 'figma'], ['biblio', 'Bibliothèque', `${(p.assets || []).filter((a) => a.kind !== 'Maquettes').length} visuels à télécharger`, 'folder'], ['fichiers', 'Fichiers', 'Guide Webflow, accès, bilans', 'doc']].map(([g, t, d, i]) => `<a class="qcard" href="#${g.replace('tool:', '')}" ${g.startsWith('tool:') ? `data-tool="${g.slice(5)}"` : `data-go="${g}"`}><span class="ico hl">${ic(i)}</span><strong>${t}</strong><span>${esc(d)}</span></a>`).join('')}</div></section>
+        <div class="quick">${[(p.tools || []).includes('teaser') ? ['tool:teaser', 'Fiche de présentation', 'Présenter un bien en 2 minutes', 'doc'] : ['outils', 'Boîte à outils', 'Kit de marque, signature…', 'plus'], ['maquettes', 'Maquettes et visuels', 'Le fichier Figma et le prototype', 'figma'], ['biblio', 'Bibliothèque', `${(p.assets || []).filter((a) => a.kind !== 'Maquettes').length} visuels à télécharger`, 'folder'], ['fichiers', 'Fichiers', 'Guide Webflow, accès, bilans', 'doc']].map(([g, t, d, i]) => `<a class="qcard" href="#${g.replace('tool:', '')}" ${g.startsWith('tool:') ? `data-tool="${g.slice(5)}"` : `data-go="${g}"`}><span class="ico hl">${ic(i)}</span><strong>${t}</strong><span>${esc(d)}</span></a>`).join('')}</div></section>
       ${reviewPanel()}
       ${qaPanel()}`;
   }
@@ -988,15 +988,15 @@
   }
 
   /* ---------- Agence : mise en ligne et fin de projet ---------- */
-  const TOOL_LBL = { teaser: 'Fiche teaser de bien', brand: 'Kit de marque', signature: 'Signature e-mail', request: 'Demande d’évolution', webflow: 'Vidéos Webflow' };
+  const TOOL_LBL = { teaser: 'Fiche de présentation d’un bien', brand: 'Kit de marque', signature: 'Signature e-mail', request: 'Demandes sur le site', webflow: 'Vidéos Webflow' };
   function tLivraison() {
     const p = S.project, site = p.offer === 'site', R0 = p.results || { period: '', stats: [] }, B = p.brand || { colors: [], fonts: [] };
     const pv = p.validations.find((v) => v.key === 'pv');
     const H = p.handover || [];
     const head = p.deliveredAt
       ? `<section class="panel"><div class="panel-head"><h2>${ic('ok')}${site ? 'Site en ligne' : 'Projet livré'} depuis le ${fmt(p.deliveredAt, { day: 'numeric', month: 'long', year: 'numeric' })}</h2><button class="btn btn-line btn-sm" data-act="undeliver">Annuler la mise en ligne</button></div>
-          <p class="muted">L’accueil du client montre ${site ? 'son site en ligne' : 'le projet livré'}, ses résultats et ses outils. Le temps « Mesurer » est en cours.</p></section>`
-      : `<form class="panel form" data-form="deliver"><div class="panel-head" style="margin:0"><h2>${ic('globe')}${site ? 'Mettre en ligne' : 'Livrer le projet'}</h2><span class="aside">Les trois premiers temps passent en « Terminé »</span></div>
+          <p class="muted">L’accueil du client montre ${site ? 'son site en ligne' : 'le projet livré'}, ses résultats et ses outils. L’étape « Mesurer » est en cours.</p></section>`
+      : `<form class="panel form" data-form="deliver"><div class="panel-head" style="margin:0"><h2>${ic('globe')}${site ? 'Mettre en ligne' : 'Livrer le projet'}</h2><span class="aside">Les trois premières étapes passent en « Terminé »</span></div>
           ${pv && pv.status !== 'approved' ? `<div class="alert">${ic('alert')}<div>Le procès-verbal (« ${esc(pv.t)} ») n’est pas encore validé par le client. ${pv.status === 'wait' ? 'Demandez-le dans l’onglet Validations.' : 'Il est chez le client.'}</div></div>
             <div class="field"><label for="dl-f">Livrer quand même : pourquoi ? (gardé dans l’historique)</label><input id="dl-f" type="text" placeholder="ex. Réception validée par téléphone le 14/10"></div>` : pv ? `<p class="small muted">Procès-verbal validé par ${esc(who((pv.history.filter((h) => h.action === 'approved').pop() || {}).by))} le ${fmt((pv.history.filter((h) => h.action === 'approved').pop() || {}).at, { day: 'numeric', month: 'long' })}.</p>` : ''}
           <div class="line"><div class="field"><label for="dl-w">Date de mise en ligne</label><input id="dl-w" type="date" value="${dayKey(Date.now())}"></div>${site ? `<div class="field"><label for="dl-s">Adresse du site</label><input id="dl-s" type="url" value="${esc(p.links.site || p.links.preview || '')}" placeholder="https://www.exemple.fr"></div>` : ''}</div>
@@ -1041,7 +1041,7 @@
     return `<div class="lb" role="dialog" aria-modal="true" aria-label="${esc(Z.title)}" data-act="unzoom"><figure>
       <div class="pin-wrap">${Z.pin ? `<button class="pin-area" data-act="pin-here" aria-label="Commenter un endroit de l’écran : ${esc(Z.title)}. Flèches pour choisir l’endroit, Entrée pour commenter." aria-describedby="pin-pos"><img src="${esc(Z.src)}" alt="">${Z.kb ? `<span class="pin-kb" style="left:${Z.kb.x}%;top:${Z.kb.y}%"></span>` : ''}</button><span class="sr" id="pin-pos" aria-live="polite">${Z.kb ? `Repère à ${Math.round(Z.kb.x)} % de la largeur et ${Math.round(Z.kb.y)} % de la hauteur` : ''}</span>` : `<img src="${esc(Z.src)}" alt="${esc(Z.title)}">`}
         ${pins.map((x, i) => `<span class="pin ${x.status}" style="left:${x.x}%;top:${x.y}%" title="${esc(x.text)}">${i + 1}</span>`).join('')}
-        ${Z.at ? `<form class="pin-form" data-form="pin" style="left:${Math.min(Z.at.x, 70)}%;top:${Math.min(Z.at.y, 80)}%"><label class="sr" for="pin-t">${R('Votre', 'Ton')} commentaire</label><textarea id="pin-t" rows="2" placeholder="${R('Votre', 'Ton')} commentaire à cet endroit"></textarea><div class="inline"><button class="btn btn-primary btn-sm" type="submit">Épingler</button><button class="ghost" type="button" data-act="pin-cancel">Annuler</button></div></form>` : ''}</div>
+        ${Z.at ? `<form class="pin-form" data-form="pin" style="left:${Math.min(Z.at.x, 70)}%;top:${Math.min(Z.at.y, 80)}%"><label class="sr" for="pin-t">${R('Votre', 'Ton')} commentaire</label><textarea id="pin-t" rows="2" placeholder="${R('Votre', 'Ton')} commentaire à cet endroit"></textarea><div class="inline"><button class="btn btn-primary btn-sm" type="submit">Ajouter le commentaire</button><button class="ghost" type="button" data-act="pin-cancel">Annuler</button></div></form>` : ''}</div>
       <figcaption>${esc(Z.title)}${Z.pin ? ` · ${pins.length} commentaire${pins.length > 1 ? 's' : ''}${v ? ' · ' + esc(v.label) : ''}` : ''}</figcaption>
       ${pins.length ? `<ol class="pin-list">${pins.map((x) => `<li class="${x.status}"><span>${esc(x.text)}</span><span class="small">${esc(who(x.by))} · ${fmt(x.at)}${x.status === 'resolved' ? ' · traité' : ''}</span></li>`).join('')}</ol>` : ''}</figure>
       <button class="lb-x" data-act="unzoom" aria-label="Fermer">×</button></div>`;
@@ -1108,7 +1108,7 @@
           <span class="ico ${n.read ? '' : 'hl'}">${ic(TYPE_ICO[n.type] || 'eye')}</span>
           <span class="grow"><span class="title">${esc(n.text)}</span><span class="sub">${esc(n.client)} · ${TYPE_LBL[n.type] || ''} · ${ago(n.at)}${n.done ? ' · traité' : ''}</span></span>
           ${n.read ? '' : '<span class="dot-new" aria-hidden="true"></span><span class="sr">Non lu</span>'}${ic('arrow', 'width:18px;height:18px;color:var(--muted);flex:none')}</button>
-        ${n.todo || n.done ? `<div class="inbox-acts">${n.todo && ['msg.post', 'request.add', 'val.changes', 'pin.add'].includes(n.act) ? `<button class="btn btn-line btn-sm" data-act="reply" data-id="${esc(n.id)}">${ic('chat')}Répondre</button>` : ''}<button class="btn btn-line btn-sm" data-act="${n.done ? 'undone' : 'done'}" data-id="${esc(n.id)}">${n.done ? 'Remettre à traiter' : ic('check') + 'Traité'}</button></div>` : ''}
+        ${n.todo || n.done ? `<div class="inbox-acts">${n.todo && ['msg.post', 'request.add', 'val.changes', 'pin.add'].includes(n.act) ? `<button class="btn btn-line btn-sm" data-act="reply" data-id="${esc(n.id)}">${ic('chat')}Répondre</button>` : ''}<button class="btn btn-line btn-sm" data-act="${n.done ? 'undone' : 'done'}" data-id="${esc(n.id)}">${n.done ? 'Remettre à traiter' : ic('check') + 'Marquer comme traité'}</button></div>` : ''}
         ${S.replyTo === n.id ? `<form class="inline reply" data-form="reply" data-id="${esc(n.id)}"><label class="sr" for="rp-${n.id}">Réponse à ${esc(n.client)}</label><textarea id="rp-${n.id}" rows="2" placeholder="Votre réponse, envoyée dans l’espace du client"></textarea><button class="btn btn-primary btn-sm" type="submit">Envoyer</button></form>` : ''}</li>`;
     return `<div class="head"><div><h1>Boîte de réception</h1><p class="lead">Ce que les clients attendent de l’agence, puis l’activité de vos espaces</p></div>
       <div class="head-actions">${todo.length ? `<button class="btn btn-line" data-act="inbox-done-all">${ic('check')}Tout marquer comme traité</button>` : ''}</div></div>
@@ -1117,13 +1117,13 @@
         <div class="inline filters"><label class="sr" for="ib-t">Type</label><select id="ib-t" data-ibfilter="type"><option value="">Tous les types</option>${Object.entries(TYPE_LBL).map(([k, l]) => `<option value="${k}" ${S.inboxType === k ? 'selected' : ''}>${l}</option>`).join('')}</select>
         <label class="sr" for="ib-c">Client</label><select id="ib-c" data-ibfilter="client"><option value="">Tous les clients</option>${clients.map(([id, c]) => `<option value="${id}" ${S.inboxClient === id ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select></div></div>
       <section class="panel">${list.length ? `<ul class="list plain">${list.map(row).join('')}</ul>`
-        : `<div class="empty big" style="border:0">${ic('ok')}<strong>${f === 'todo' ? 'Rien à traiter' : 'Rien ici'}</strong><span>${f === 'todo' ? 'Les messages, fichiers, demandes de modifications et d’évolution des clients arriveront ici' + (S.me.notify && S.me.notify.email !== 'off' ? ', et par e-mail selon vos réglages' : '') + '.' : 'Aucune notification avec ces filtres.'}</span></div>`}</section>`;
+        : `<div class="empty big" style="border:0">${ic('ok')}<strong>${f === 'todo' ? 'Rien à traiter' : 'Rien ici'}</strong><span>${f === 'todo' ? 'Les messages, fichiers, demandes de modifications et demandes sur le site des clients arriveront ici' + (S.me.notify && S.me.notify.email !== 'off' ? ', et par e-mail selon vos réglages' : '') + '.' : 'Aucune notification avec ces filtres.'}</span></div>`}</section>`;
   }
 
   /* ---------- Équipe : réglages ---------- */
   function vReglages() {
     const n = S.me.notify || { email: 'instant', events: {} };
-    const ev = [['files', 'Un client dépose un fichier'], ['messages', 'Un client écrit ou envoie un message'], ['validations', 'Un client valide ou demande des modifications'], ['requests', 'Un client demande une évolution'], ['activity', 'Un collègue publie quelque chose dans un de mes projets']];
+    const ev = [['files', 'Un client dépose un fichier'], ['messages', 'Un client écrit ou envoie un message'], ['validations', 'Un client valide ou demande des modifications'], ['requests', 'Un client fait une demande sur son site'], ['activity', 'Un collègue publie quelque chose dans un de mes projets']];
     const ob = S.outbox || { items: [] };
     return `<div class="head"><div><h1>Réglages</h1><p class="lead">${esc(S.me.name)} · ${esc(S.me.email)}</p></div><div class="head-actions"><button class="btn btn-line" data-act="logout">${ic('out')}Se déconnecter</button><button class="btn btn-line" data-act="logout-all">Déconnecter tous mes appareils</button></div></div>
       <form class="panel form" data-form="prefs" data-autosave="submit"><div class="panel-head" style="margin:0"><h2>${ic('mail')}Mes notifications par e-mail</h2><span class="aside">Dans la boîte de réception, vous voyez toujours tout</span></div>
@@ -1143,7 +1143,7 @@
         <div><button class="btn btn-primary btn-sm" type="submit">Enregistrer</button></div></form>
       <section class="panel"><div class="panel-head"><h2>${ic('globe')}Outils connectés</h2><span class="aside">Clés dans le coffre Notion, fournies au lancement du serveur</span></div>
         <div class="list">${(S.connectors || []).map((c) => `<div class="row"><span class="ico ${c.configured ? 'ok' : ''}">${ic(c.configured ? 'ok' : 'lock')}</span><div class="grow"><div class="title">${esc(c.label)}</div><div class="sub">${esc(c.does)}${c.last ? ` · dernière synchronisation ${ago(c.last.at)} : ${esc(c.last.summary)}` : ''}${!c.configured && (c.missing || []).length && /_/.test(c.missing[0]) ? `<br>Clé à fournir : ${esc(c.missing.join(', '))}` : ''}</div></div>${c.configured ? '<span class="chip ok">Connecté</span>' : '<span class="chip idle">Non connecté</span>'}${c.configured && ['abby', 'qonto', 'google'].includes(c.id) ? `<button class="btn btn-line btn-sm" data-act="sync" data-id="${esc(c.id)}">Synchroniser</button>` : ''}</div>`).join('') || '<p class="muted">Aucun connecteur.</p>'}</div>
-        <p class="hint">Rien n’est appelé tant qu’une clé n’est pas fournie. Pipedrive prépare l’espace d’un deal gagné ; l’offre et le registre restent à choisir par l’équipe.</p></section>
+        <p class="hint">Rien n’est appelé tant qu’une clé n’est pas fournie. Pipedrive prépare l’espace dès qu’une affaire est gagnée ; l’équipe choisit ensuite l’offre et le tutoiement ou le vouvoiement.</p></section>
       <section class="panel"><div class="panel-head"><h2>${ic('mail')}E-mails envoyés</h2><span class="aside">${ob.enabled ? 'Envoi réel activé' : 'Envoi réel désactivé : les e-mails restent ici tant que l’espace n’est pas en ligne'}</span></div>
         <div class="list">${(ob.items || []).slice(0, 15).map((m, i) => `<button class="row inbox-row" data-mail="${esc(i)}"><span class="ico">${ic('mail')}</span><span class="grow"><span class="title">${esc(m.subject)}</span><span class="sub">À ${esc(m.to)} · ${ago(m.at)}</span></span>${ic('eye', 'width:18px;height:18px;color:var(--muted);flex:none')}</button>`).join('') || '<p class="muted">Aucun e-mail pour l’instant. Déposez un fichier côté client pour voir ce que reçoit l’équipe.</p>'}</div></section>`;
   }
@@ -1171,7 +1171,7 @@
     else if (C.kind === 'val') body = `<div class="field"><label for="c-v">Quelle validation ?</label><select id="c-v">${P.validations.map((v) => `<option value="${v.id}" ${v.status === 'wait' ? '' : ''}>${esc(v.t)} · ${{ wait: 'pas encore demandée', ready: 'chez le client', approved: 'validée', changes: 'modifications demandées' }[v.status]}</option>`).join('')}</select></div>
       <div class="field"><label for="c-vl">Lien à regarder</label><input id="c-vl" type="url" placeholder="https://www.figma.com/proto/…" value="${esc((P.links && (P.links.proto || P.links.figma)) || '')}"></div>
       <div class="field"><label for="c-vt">Un mot pour le client (facultatif)</label><textarea id="c-vt" rows="2" placeholder="ex. Le plan est prêt, dites-nous ce que vous en pensez."></textarea></div>
-      <p class="hint">Elle devient la prochaine étape sur son accueil et il reçoit un e-mail.</p>`;
+      <p class="hint">Elle devient sa prochaine action sur l’accueil, et il reçoit un e-mail.</p>`;
     else if (C.kind === 'asset') body = `<div class="line"><div class="field"><label for="c-at">Titre</label><input id="c-at" type="text" placeholder="ex. Maquette de la page d’accueil"></div><div class="field"><label for="c-ak">Catégorie</label><select id="c-ak">${[['Visuels', 'Visuels'], ['Présentation', 'Présentation'], ['Cas d’étude', 'Cas d’étude'], ['Logos', 'Logos'], ['Maquettes', 'Écran de maquette à commenter (hors bibliothèque)']].map(([k, l]) => `<option value="${k}">${l}</option>`).join('')}</select></div></div>
       <div class="field"><label for="c-ai">Image (facultatif)</label><input id="c-ai" type="file" accept="image/*"></div>
       <div class="field"><label for="c-au">Ou un lien (Figma, site, PDF…)</label><input id="c-au" type="url" placeholder="https://"></div>`;
@@ -1239,7 +1239,7 @@
   function waitingOf(p) {
     const a = p.alerts || Core.alerts(p);
     if (p.draft) return { who: 'agence', txt: 'Espace à ouvrir' };
-    const ag = [a.newFiles && `${a.newFiles} fichier${a.newFiles > 1 ? 's' : ''}`, a.newMessages && `${a.newMessages} message${a.newMessages > 1 ? 's' : ''}`, a.changes && 'modifications demandées', a.requests && `demande${a.requests > 1 ? 's' : ''} d’évolution`].filter(Boolean);
+    const ag = [a.newFiles && `${a.newFiles} fichier${a.newFiles > 1 ? 's' : ''}`, a.newMessages && `${a.newMessages} message${a.newMessages > 1 ? 's' : ''}`, a.changes && 'modifications demandées', a.requests && `demande${a.requests > 1 ? 's' : ''} sur le site`].filter(Boolean);
     const clw = [a.proposals && (a.proposals > 1 ? `${a.proposals} propositions` : 'une proposition'), a.waiting && (a.waiting > 1 ? `${a.waiting} validations` : 'une validation'), a.missing && !p.delivered && `${a.missing} fichier${a.missing > 1 ? 's' : ''} attendu${a.missing > 1 ? 's' : ''}`, a.due && (a.due > 1 ? `${a.due} factures à régler` : 'une facture à régler')].filter(Boolean);
     if (ag.length) return { who: 'agence', txt: ag.join(', '), both: clw.length ? clw.join(', ') : '' };
     const cl = [a.proposals && (a.proposals > 1 ? `${a.proposals} propositions` : 'une proposition'), a.waiting && (a.waiting > 1 ? `${a.waiting} validations` : 'une validation'), a.missing && `${a.missing} fichier${a.missing > 1 ? 's' : ''} attendu${a.missing > 1 ? 's' : ''}`, a.due && (a.due > 1 ? `${a.due} factures à régler` : 'une facture à régler')].filter(Boolean);
@@ -1255,7 +1255,7 @@
     const rows = P.map((p) => { const w = waitingOf(p), j = daysTo(p.golive);
       return `<tr><th scope="row"><button class="linklike" data-open="${esc(p.id)}"><span class="c-name">${esc(p.client)}</span><span class="small muted">${esc(p.projet)}</span></button></th>
         <td><span class="small">${esc(p.offerLabel || '')}</span><br><span class="small muted">${esc(p.phaseName)}</span></td>
-        <td class="num">${p.archived ? '<span class="chip idle">Archivé</span>' : p.delivered ? '<span class="chip ok">En ligne</span>' : `<span class="${j < 0 ? 'chip warn' : j <= 14 ? 'chip hl' : 'small'}">${j < 0 ? `J+${-j}` : `J-${j}`}</span><br><span class="small muted">${fmt(p.golive)}</span>`}</td>
+        <td class="num">${p.archived ? '<span class="chip idle">Archivé</span>' : p.delivered ? '<span class="chip ok">En ligne</span>' : `<span class="${j < 0 ? 'chip warn' : j <= 14 ? 'chip hl' : 'small'}">${j < 0 ? `${-j} j de retard` : `dans ${j} j`}</span><br><span class="small muted">${fmt(p.golive)}</span>`}</td>
         <td>${w.who === 'agence' ? `<span class="chip warn">Agence</span> <span class="small">${esc(w.txt)}</span>${w.both ? `<br><span class="chip hl">Client</span> <span class="small">${esc(w.both)}</span>` : ''}` : w.who === 'client' ? `<span class="chip hl">Client</span> <span class="small">${esc(w.txt)}</span>` : `<span class="small muted">${esc(w.txt)}</span>`}</td>
         <td>${p.team ? faces(p.team.members) : ''}</td></tr>`; }).join('');
     const needs = P.filter((p) => waitingOf(p).who === 'agence').length;
@@ -1264,16 +1264,16 @@
     <div class="inbox-bar"><div class="cats" role="group" aria-label="Afficher"><button class="cat" data-mine="1" aria-pressed="${mine}"><strong>Mes clients</strong><span class="num">${S.projects.filter((p) => !p.team || !p.team.members.length || p.team.members.includes(S.me.id)).length}</span></button><button class="cat" data-mine="0" aria-pressed="${!mine}"><strong>Toute l’agence</strong><span class="num">${S.projects.length}</span></button></div>
       <div class="inline filters"><label class="sr" for="cl-q">Rechercher un client</label><input id="cl-q" type="search" placeholder="Rechercher un client" value="${esc(S.cq || '')}" data-clsearch="1">
       <label class="sr" for="cl-s">Trier</label><select id="cl-s" data-clsort="1">${[['urgence', 'Trier par urgence'], ['echeance', 'Trier par échéance'], ['nom', 'Trier par nom']].map(([v, l]) => `<option value="${v}" ${sort === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div></div>
-    ${needs ? `<div class="alert">${ic('alert')}<div><strong>${needs} client${needs > 1 ? 's' : ''} attend${needs > 1 ? 'ent' : ''} une action de l’agence.</strong> Fichiers à récupérer, messages, modifications, demandes d’évolution ou espace à ouvrir.</div></div>` : ''}
+    ${needs ? `<div class="alert">${ic('alert')}<div><strong>${needs} client${needs > 1 ? 's' : ''} attend${needs > 1 ? 'ent' : ''} une action de l’agence.</strong> Fichiers à récupérer, messages, modifications, demandes sur le site ou espace à ouvrir.</div></div>` : ''}
     ${(() => { const L = S.projects.flatMap((p) => (p.proposalsSent || []).map((x) => ({ ...x, client: p.client, id: p.id }))); return L.length ? `<section class="panel"><div class="panel-head"><h2>${ic('doc')}Propositions en cours</h2><span class="aside">${L.length} chez les clients</span></div><ul class="list plain">${L.map((x) => `<li class="row"><div class="grow"><div class="title">${esc(x.client)} · ${esc(x.title)}</div><div class="sub">${money(x.ht)} HT · envoyée le ${fmt(x.sentAt, { day: 'numeric', month: 'long' })} · valable jusqu’au ${fmt(x.validUntil, { day: 'numeric', month: 'long' })}</div></div><button class="btn btn-line btn-sm" data-open="${esc(x.id)}">Ouvrir</button></li>`).join('')}</ul></section>` : ''; })()}
-    <section class="panel flush"><div class="table-wrap"><table class="grid-clients"><caption class="sr">Espaces clients</caption><thead><tr><th scope="col">Client</th><th scope="col">Offre et temps</th><th scope="col">Échéance</th><th scope="col">En attente de</th><th scope="col">Équipe</th></tr></thead>
+    <section class="panel flush"><div class="table-wrap"><table class="grid-clients"><caption class="sr">Espaces clients</caption><thead><tr><th scope="col">Client</th><th scope="col">Offre et étape</th><th scope="col">Échéance</th><th scope="col">En attente de</th><th scope="col">Équipe</th></tr></thead>
       <tbody>${rows || `<tr><td colspan="5"><div class="empty">${q ? 'Aucun client ne correspond à « ' + esc(S.cq) + ' ».' : 'Aucun espace client pour l’instant.'}</div></td></tr>`}</tbody></table></div></section>`;
   }
   const norm = (x) => String(x || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
   function vNouveau() {
     return `
-    <div class="head"><div><h1>Nouvel espace client</h1><p class="lead">Le client reçoit un lien de connexion, sans mot de passe</p></div></div>
+    <div class="head"><div><h1>Nouvel espace client</h1><p class="lead">Si son e-mail est saisi, le client reçoit une invitation, sans mot de passe à créer</p></div></div>
     <form class="panel form" data-form="create">
       <div class="line"><div class="field"><label for="n-client">Client</label><input id="n-client" type="text" required placeholder="ex. Nom de l’entreprise"></div>
       <div class="field"><label for="n-projet">Projet</label><input id="n-projet" type="text" placeholder="ex. Refonte du site"></div></div>
@@ -1286,12 +1286,12 @@
       <fieldset class="field" style="border:0;padding:0;margin:0"><legend style="font-size:14px;font-weight:500;margin-bottom:8px">Tutoiement ou vouvoiement</legend>
         <div class="radio"><label><input type="radio" name="n-reg" value="vous"> Vouvoiement</label><label><input type="radio" name="n-reg" value="tu"> Tutoiement</label></div>
         <span class="small muted" id="n-reg-h">À choisir avec le client, jamais deviné.</span></fieldset>
-      <p class="small muted">Les 4 temps O.R.E.M. (Orienter, Représenter, Exécuter, Mesurer), les livrables et les validations de l’offre sont créés automatiquement, avec des dates indicatives calculées depuis le démarrage.</p>
+      <p class="small muted">Les 4 étapes O.R.E.M. (Orienter, Représenter, Exécuter, Mesurer), les livrables et les validations de l’offre sont créés automatiquement, avec des dates indicatives calculées depuis le démarrage.</p>
       <div><button class="btn btn-primary" type="submit">Créer l’espace</button></div>
     </form>`;
   }
 
-  const TABS = () => [['pilotage', 'Pilotage'], ['messages', 'Messages'], ['demandes', 'Demandes'], ['validations', 'Validations'], ['fichiers', 'Fichiers'], ['liens', 'Liens'], ['factures', 'Factures'], ...(S.project && (S.project.phase >= 3 || S.project.deliveredAt) ? [['livraison', S.project.offer === 'site' ? 'Mise en ligne' : 'Livraison']] : []), ...(evoOpen(S.project) ? [['evolution', 'Évolution']] : []), ['acces', 'Accès et infos'], ['activite', 'Activité']];
+  const TABS = () => [['pilotage', 'Planning'], ['messages', 'Messages'], ['demandes', 'Demandes'], ['validations', 'Validations'], ['fichiers', 'Fichiers'], ['liens', 'Liens'], ['factures', 'Devis et factures'], ...(S.project && (S.project.phase >= 3 || S.project.deliveredAt) ? [['livraison', S.project.offer === 'site' ? 'Mise en ligne' : 'Livraison']] : []), ...(evoOpen(S.project) ? [['evolution', 'Évolution']] : []), ['acces', 'Accès et infos'], ['activite', 'Activité']];
   function vAdmin() {
     const p = S.project, a = Core.alerts(p);
     const tabCount = { fichiers: a.newFiles, validations: a.changes, messages: a.newMessages, demandes: a.requests, livraison: p.deliveredAt && p.review && !p.review.seen ? 1 : 0 };
@@ -1312,7 +1312,7 @@
   function statusBand(p) {
     if (p.draft || p.archivedAt) return '';
     const a = Core.alerts(p), days = (d) => Math.max(0, -daysTo(d)), since = (d) => (days(d) ? `depuis ${days(d)} jour${days(d) > 1 ? 's' : ''}` : 'depuis aujourd’hui');
-    const ag = [a.newFiles && [`${a.newFiles} fichier${a.newFiles > 1 ? 's' : ''} à récupérer`, 'fichiers'], a.newMessages && [`${a.newMessages} message${a.newMessages > 1 ? 's' : ''} sans réponse`, 'messages'], a.changes && ['Modifications demandées', 'validations'], a.requests && [`${a.requests} demande${a.requests > 1 ? 's' : ''} d’évolution`, 'demandes']].filter(Boolean);
+    const ag = [a.newFiles && [`${a.newFiles} fichier${a.newFiles > 1 ? 's' : ''} à récupérer`, 'fichiers'], a.newMessages && [`${a.newMessages} message${a.newMessages > 1 ? 's' : ''} sans réponse`, 'messages'], a.changes && ['Modifications demandées', 'validations'], a.requests && [`${a.requests} demande${a.requests > 1 ? 's' : ''} sur le site`, 'demandes']].filter(Boolean);
     const ready = p.validations.filter((v) => v.status === 'ready'), due = p.invoices.filter((i) => i.status === 'due');
     const cl = [...ready.map((v) => `${v.t} : à valider ${since(v.readyAt)}`), ...p.missing.slice(0, 2).map((m) => `${m.t} : fichier attendu`), ...due.map((i) => `${i.label} : à régler${i.date ? ' ' + since(i.date) : ''}`)];
     return `<section class="band" aria-label="État du projet">
@@ -1321,7 +1321,7 @@
       <div><div class="k">Échéance</div><span>${p.deliveredAt ? 'En ligne depuis le ' + fmt(p.deliveredAt, { day: 'numeric', month: 'long' }) : `${p.offer === 'site' ? 'Mise en ligne' : 'Livraison'} ${daysTo(p.golive) >= 0 ? 'J-' + daysTo(p.golive) : 'dépassée de ' + -daysTo(p.golive) + ' j'}, le ${fmt(p.golive, { day: 'numeric', month: 'long' })}`}</span></div>
     </section>`;
   }
-  const GO_OPTS = [['accueil', 'Aucun bouton'], ['cal', 'Prise de rendez-vous'], ['valider', 'À valider'], ['fichiers', 'Fichiers'], ['projet', 'Projet'], ['documents', 'Documents'], ['equipe', 'Équipe']];
+  const GO_OPTS = [['accueil', 'Aucun bouton'], ['cal', 'Prise de rendez-vous'], ['valider', 'À valider'], ['fichiers', 'Fichiers'], ['projet', 'Étapes'], ['documents', 'Devis et factures'], ['equipe', 'Équipe et aide']];
   function setupAdmin() {
     const st = setupSteps(); if (!st.length || st.every((x) => x.st === 'done')) return '';
     const V = S.vaultOpen;
@@ -1329,7 +1329,7 @@
       const what = x.k === 'acompte' ? (x.st === 'done' ? 'Reçu' : 'En attente du virement' + (x.sub ? ' · ' + x.sub : ''))
         : x.k === 'webflow' ? (t.sent ? `Espace « ${esc(i0.ws)} », envoyé le ${fmt(t.sent)} : vérifiez l’invitation reçue sur Webflow` : 'Pas encore fait')
         : t.sent ? `${esc(i0.domain)}${i0.registrar ? ' chez ' + esc(i0.registrar) : ''} · ${{ delegate: 'accès délégué', vault: 'identifiants dans le coffre chiffré', unknown: 'le client ne sait pas qui le gère' }[i0.mode] || ''}` : 'Pas encore fait';
-      const btns = x.k !== 'acompte' && t.sent && !t.done ? `${x.k === 'domaine' && i0.mode === 'vault' && S.vault ? (V ? `<button class="btn btn-line btn-sm" data-act="vault-hide">Masquer</button>` : `<button class="btn btn-line btn-sm" data-act="vault-open">${ic('lock')}Afficher les accès</button>`) : ''}<button class="btn btn-primary btn-sm" data-act="setup-ok" data-id="${t.id}" data-k="${x.k}">Vérifié</button><button class="btn btn-line btn-sm" data-act="setup-retry" data-id="${t.id}">À reprendre</button>` : '';
+      const btns = x.k !== 'acompte' && t.sent && !t.done ? `${x.k === 'domaine' && i0.mode === 'vault' && S.vault ? (V ? `<button class="btn btn-line btn-sm" data-act="vault-hide">Masquer</button>` : `<button class="btn btn-line btn-sm" data-act="vault-open">${ic('lock')}Afficher les accès</button>`) : ''}<button class="btn btn-primary btn-sm" data-act="setup-ok" data-id="${t.id}" data-k="${x.k}">C’est vérifié</button><button class="btn btn-line btn-sm" data-act="setup-retry" data-id="${t.id}">Demander de reprendre</button>` : '';
       return `<div class="row"><span class="rank ${x.st === 'done' ? 'ok' : ''}">${x.st === 'done' ? ic('check') : String(st.indexOf(x) + 1).padStart(2, '0')}</span><div class="grow"><div class="title">${esc(x.t)} ${SETUP_CHIP[x.st]}</div><div class="sub">${what}</div>
         ${x.k === 'domaine' && V ? `<dl class="kv vault-o"><dt>Identifiant</dt><dd class="num">${esc(V.login)}</dd><dt>Mot de passe</dt><dd class="num">${esc(V.secret)}</dd>${V.note ? `<dt>Précision</dt><dd>${esc(V.note)}</dd>` : ''}</dl><p class="hint">Consultation inscrite dans l’historique du client. Effacement automatique le ${fmt(V.expires, { day: 'numeric', month: 'long' })}, ou dès que vous cliquez « Vérifié ».</p>` : ''}</div><div class="inline">${btns}</div></div>`; };
     return `<section class="panel" aria-labelledby="sua-h"><div class="panel-head"><h2 id="sua-h">${ic('ok')}Bien démarrer</h2><span class="aside">Les priorités du client à l’arrivée</span></div><div class="list">${st.map(line).join('')}</div></section>`;
@@ -1339,13 +1339,13 @@
     return `
     ${setupAdmin()}
     ${p.offer === 'evolution' ? `<section class="panel" style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between"><div><h2>${ic('cal')}Évolution · mois ${p.cycle || 1}</h2><p class="small muted">Depuis le ${fmt(p.start, { day: 'numeric', month: 'long' })}${(p.cycles || []).length ? ' · ' + p.cycles.length + ' mois précédent' + (p.cycles.length > 1 ? 's' : '') : ''}</p></div><button class="btn btn-line btn-sm" data-act="cycle-next">Démarrer le mois ${(p.cycle || 1) + 1}</button></section>` : ''}
-    <form class="panel form" data-form="phase" data-autosave="1"><div class="panel-head" style="margin:0"><h2>${ic('map')}Temps en cours</h2><span class="aside save-st" aria-live="polite"></span></div>
-      <div class="inline"><select id="a-phase" aria-label="Temps en cours">${p.phases.map((x) => `<option value="${x.n}" ${x.n === p.phase ? 'selected' : ''}>${esc(phName(x))}</option>`).join('')}</select></div></form>
-    <form class="panel form" data-form="next" data-autosave="1"><div class="panel-head" style="margin:0"><h2>${ic('arrow')}Prochaine étape affichée au client</h2><span class="aside save-st" aria-live="polite">Enregistrement automatique</span></div>
+    <form class="panel form" data-form="phase" data-autosave="1"><div class="panel-head" style="margin:0"><h2>${ic('map')}Étape en cours</h2><span class="aside save-st" aria-live="polite"></span></div>
+      <div class="inline"><select id="a-phase" aria-label="Étape en cours">${p.phases.map((x) => `<option value="${x.n}" ${x.n === p.phase ? 'selected' : ''}>${esc(phName(x))}</option>`).join('')}</select></div></form>
+    <form class="panel form" data-form="next" data-autosave="1"><div class="panel-head" style="margin:0"><h2>${ic('arrow')}Prochaine action affichée au client</h2><span class="aside save-st" aria-live="polite">Enregistrement automatique</span></div>
       <div class="field"><label for="a-nt">Titre</label><input id="a-nt" type="text" value="${esc(p.next.title)}" placeholder="${esc(Core.nextStep({ ...p, next: {} }).title)}"></div>
       <div class="field"><label for="a-nx">Texte</label><textarea id="a-nx" placeholder="Une ou deux phrases : ce qu’on attend et pourquoi.">${esc(p.next.text)}</textarea></div>
       <div class="inline"><label for="a-ng" style="flex:none">Bouton vers</label><select id="a-ng">${GO_OPTS.map(([v, l]) => `<option value="${v}" ${p.next.go === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
-      <p class="small muted">Laissez le titre vide pour une prochaine étape automatique (validation en attente, puis fichiers manquants).</p></form>
+      <p class="small muted">Titre vide : l’espace affiche tout seul la prochaine action (validation en attente, puis fichiers manquants).</p></form>
     <form class="panel form" data-form="meeting" data-autosave="1"><div class="panel-head" style="margin:0"><h2>${ic('cal')}Prochain rendez-vous</h2><span class="aside save-st" aria-live="polite">Enregistrement automatique</span></div>
       <div class="line"><div class="field"><label for="a-mt">Intitulé</label><input id="a-mt" type="text" value="${esc(p.meeting.title)}" placeholder="ex. Point d’étape (visio, 30 min)"></div><div class="field"><label for="a-mw">Date et heure</label><input id="a-mw" type="datetime-local" value="${dtKey(p.meeting.when)}"></div></div></form>
     <form class="panel form" data-form="note"><div class="panel-head" style="margin:0"><h2>${ic('cal')}Point de la semaine</h2>${p.note.at ? `<span class="small muted">Publié le ${fmt(p.note.at)}</span>` : ''}</div>
@@ -1353,7 +1353,7 @@
       ${S.drafts[p.id] && S.drafts[p.id].note !== undefined && S.drafts[p.id].note !== p.note.text ? '<p class="hint">Brouillon non publié, conservé sur cet appareil.</p>' : ''}
       <div class="inline"><button class="btn btn-primary btn-sm" type="submit">Publier au client</button><span class="small muted">Il le reçoit par e-mail s’il l’a demandé.</span></div></form>
     <section class="panel"><div class="panel-head"><h2>${ic('doc')}Livrables par étape</h2><span class="small muted">Visibles dans « Étapes » côté client</span></div>
-      ${p.phases.map((ph) => `<details class="ph-fold" ${phS(ph) === 'on' ? 'open' : ''}><summary class="phase-title">${esc(phName(ph))} <span class="small muted">· ${ph.items.filter((it) => itS(it) === 'done').length} sur ${ph.items.length} faits</span></summary>${ph.items.map((it) => `<div class="it"><div>${esc(it.t)}${whoHtml(it)}<button class="linkish small" type="button" data-act="item-edit" data-id="${esc(it.id)}" aria-expanded="${S.itemEdit === it.id}">Qui fait quoi, lien</button>${S.itemEdit === it.id ? itemEditor(it) : ''}${it.val ? `<div class="small muted">Lié à la validation « ${esc((p.validations.find((v) => v.key === it.val) || {}).t || '')} »${itS(it) === 'review' ? ' : en attente du client' : itS(it) === 'done' && it.status !== 'done' ? ' : validé' : ''}</div>` : ''}</div>
+      ${p.phases.map((ph) => `<details class="ph-fold" ${phS(ph) === 'on' ? 'open' : ''}><summary class="phase-title">${esc(phName(ph))} <span class="small muted">· ${ph.items.filter((it) => itS(it) === 'done').length} sur ${ph.items.length} faits</span></summary>${ph.items.map((it) => `<div class="it"><div>${esc(it.t)}${whoHtml(it)}<button class="linkish small" type="button" data-act="item-edit" data-id="${esc(it.id)}" aria-expanded="${S.itemEdit === it.id}">Modifier qui fait quoi et le lien</button>${S.itemEdit === it.id ? itemEditor(it) : ''}${it.val ? `<div class="small muted">Lié à la validation « ${esc((p.validations.find((v) => v.key === it.val) || {}).t || '')} »${itS(it) === 'review' ? ' : en attente du client' : itS(it) === 'done' && it.status !== 'done' ? ' : validé' : ''}</div>` : ''}</div>
         ${it.val && itS(it) !== 'wait' && itS(it) !== 'on' ? `<span class="chip ${itS(it) === 'done' ? 'ok' : 'warn'}">${itS(it) === 'done' ? 'Validé' : 'Chez le client'}</span>` : `<select data-item="${esc(it.id)}" aria-label="Statut : ${esc(it.t)}">${[['wait', 'Prévu'], ['on', 'En cours'], ...(it.val ? [] : [['done', 'Fait']])].map(([v, l]) => `<option value="${v}" ${(it.status === 'done' && it.val ? 'on' : it.status) === v ? 'selected' : ''}>${l}</option>`).join('')}</select>`}
         <input type="date" data-itemdate="${esc(it.id)}" value="${dayKey(it.due)}" aria-label="Date prévue : ${esc(it.t)}"></div>`).join('')}</details>`).join('')}</section>
     <div class="grid2">
@@ -1388,7 +1388,7 @@
     <section class="panel"><div class="panel-head"><h2>${ic('down')}Partagés par l’agence</h2></div>
       <div class="inline" style="margin-bottom:16px"><select id="a-cat" aria-label="Type de document">${Core.AGENCY_CATS.map((c) => `<option>${c}</option>`).join('')}</select><label class="btn btn-primary btn-sm" for="a-up">${ic('up')}Ajouter un fichier</label><input id="a-up" type="file" multiple class="sr" data-agency="1"></div>
       ${S.uploading ? `<div class="small">${esc(S.uploading.name)}<span class="progress"><i style="width:${Math.round(S.uploading.p * 100)}%"></i></span></div>` : ''}
-      <p class="small muted" style="margin-bottom:12px">« Livrable » apparaît dans Fichiers côté client. Devis, factures, contrat et RIB apparaissent dans Documents.</p>
+      <p class="small muted" style="margin-bottom:12px">« Livrable » apparaît dans Fichiers côté client. Devis, factures, contrat et RIB apparaissent dans « Devis et factures ».</p>
       <div class="list">${fromAgency.map(fileRow).join('') || '<p class="muted">Rien de partagé pour l’instant.</p>'}</div></section>`;
   }
   function propEditor() {
@@ -1397,7 +1397,7 @@
     const L = p.proposals || [];
     const st = { draft: '<span class="chip idle">Brouillon</span>', sent: '<span class="chip hl">Chez le client</span>', accepted: '<span class="chip ok">Acceptée</span>', declined: '<span class="chip warn">Déclinée</span>' };
     return `<section class="panel"><div class="panel-head"><h2>${ic('doc')}Propositions et devis</h2>${D0 ? '' : '<button class="btn btn-line btn-sm" data-act="prop-new">Nouvelle proposition</button>'}</div>
-      <ul class="list plain">${L.map((x) => `<li class="row"><div class="grow"><div class="title">${esc(x.title)}</div><div class="sub">${money(x.lines.reduce((t, l) => t + l.ht, 0))} HT${x.from ? ' · depuis une demande' : ''}${x.acceptedAt ? ' · acceptée le ' + fmt(x.acceptedAt, { day: 'numeric', month: 'long' }) + ' par « ' + esc(x.signName) + ' »' : x.sentAt ? ' · envoyée le ' + fmt(x.sentAt, { day: 'numeric', month: 'long' }) : ''}${x.declined && x.declined.comment ? ' · « ' + esc(x.declined.comment) + ' »' : ''}</div></div>${st[x.status] || ''}${x.status !== 'accepted' ? `<button class="btn btn-line btn-sm" data-act="prop-edit" data-id="${esc(x.id)}">Modifier</button>` : ''}${x.status === 'draft' || x.status === 'declined' ? `<button class="btn btn-primary btn-sm" data-act="prop-send" data-id="${esc(x.id)}">Envoyer</button>` : ''}</li>`).join('') || '<p class="muted">Aucune proposition. Celle d’avant signature et les devis d’évolution se préparent ici.</p>'}</ul>
+      <ul class="list plain">${L.map((x) => `<li class="row"><div class="grow"><div class="title">${esc(x.title)}</div><div class="sub">${money(x.lines.reduce((t, l) => t + l.ht, 0))} HT${x.from ? ' · depuis une demande' : ''}${x.acceptedAt ? ' · acceptée le ' + fmt(x.acceptedAt, { day: 'numeric', month: 'long' }) + ' par « ' + esc(x.signName) + ' »' : x.sentAt ? ' · envoyée le ' + fmt(x.sentAt, { day: 'numeric', month: 'long' }) : ''}${x.declined && x.declined.comment ? ' · « ' + esc(x.declined.comment) + ' »' : ''}</div></div>${st[x.status] || ''}${x.status !== 'accepted' ? `<button class="btn btn-line btn-sm" data-act="prop-edit" data-id="${esc(x.id)}">Modifier</button>` : ''}${x.status === 'draft' || x.status === 'declined' ? `<button class="btn btn-primary btn-sm" data-act="prop-send" data-id="${esc(x.id)}">Envoyer</button>` : ''}</li>`).join('') || '<p class="muted">Aucune proposition. La proposition d’avant signature et les devis des demandes se préparent ici.</p>'}</ul>
       ${D0 ? `<form class="form" data-form="proposal" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--line)">
         <div class="line"><div class="field"><label for="pp-t">Titre</label><input id="pp-t" type="text" value="${esc(base.title || '')}" placeholder="ex. Refonte du site"></div><div class="field"><label for="pp-q">N° de devis</label><input id="pp-q" type="text" value="${esc(base.quote || '')}" placeholder="ex. D-2026-0160"></div></div>
         <div class="field"><label for="pp-i">Introduction</label><textarea id="pp-i" rows="3" placeholder="ex. Ce qu’on a compris de votre besoin">${esc(base.intro || '')}</textarea></div>
@@ -1434,7 +1434,7 @@
     <form class="panel form" data-form="infos" data-autosave="submit"><div class="panel-head" style="margin:0"><h2>${ic('globe')}Infos du projet</h2></div>
       <div class="line"><div class="field"><label for="p-c">Client</label><input id="p-c" type="text" value="${esc(p.client)}"></div><div class="field"><label for="p-p">Projet</label><input id="p-p" type="text" value="${esc(p.projet)}"></div></div>
       <div class="line"><div class="field"><label for="p-ct">Prénom du contact</label><input id="p-ct" type="text" value="${esc(p.contactName)}"></div><div class="field"><label for="p-g">Mise en ligne prévue</label><input id="p-g" type="date" value="${dayKey(p.golive)}"></div></div>
-      <fieldset class="field" style="border:0;padding:0;margin:0"><legend style="font-size:14px;font-weight:500;margin-bottom:8px">Registre</legend><div class="radio"><label><input type="radio" name="p-r" value="vous" ${p.registre !== 'tu' ? 'checked' : ''}> Vouvoiement</label><label><input type="radio" name="p-r" value="tu" ${p.registre === 'tu' ? 'checked' : ''}> Tutoiement</label></div></fieldset>
+      <fieldset class="field" style="border:0;padding:0;margin:0"><legend style="font-size:14px;font-weight:500;margin-bottom:8px">Tutoiement ou vouvoiement</legend><div class="radio"><label><input type="radio" name="p-r" value="vous" ${p.registre !== 'tu' ? 'checked' : ''}> Vouvoiement</label><label><input type="radio" name="p-r" value="tu" ${p.registre === 'tu' ? 'checked' : ''}> Tutoiement</label></div></fieldset>
       <div><button class="btn btn-line btn-sm" type="submit">Enregistrer</button></div></form>
     <form class="panel form" data-form="ext" data-autosave="submit"><div class="panel-head" style="margin:0"><h2>${ic('globe')}Outils de l’agence</h2><span class="aside">Pour les synchronisations automatiques</span></div>
       <div class="line"><div class="field"><label for="x-a">Identifiant du client dans Abby</label><input id="x-a" type="text" value="${esc((p.ext || {}).abby)}"></div><div class="field"><label for="x-d">Dossier Google Drive du client</label><input id="x-d" type="text" value="${esc((p.ext || {}).drive)}" placeholder="https://drive.google.com/drive/folders/…"></div></div>
@@ -1471,7 +1471,7 @@
       <label class="opt"><input type="checkbox" id="ev-on" ${e.active ? 'checked' : ''}> Évolution active pour ce client</label>
       <div class="line"><div class="field"><label for="ev-w">Prochaine visio</label><input id="ev-w" type="datetime-local" value="${local(e.meeting && e.meeting.when)}"></div><div class="field"><label for="ev-m">Format</label><input id="ev-m" type="text" value="${esc((e.meeting && e.meeting.mode) || 'Visio de pilotage (45 min)')}"></div></div>
       <div><button class="btn btn-primary btn-sm" type="submit">Enregistrer</button></div></form>
-    <form class="panel form" data-form="evo-axes"><div class="panel-head" style="margin:0"><h2>${ic('ok')}Axes d’amélioration</h2><span class="aside">Une ligne par axe : titre | effet attendu | qui | échéance AAAA-MM-JJ | prévu, en cours ou fait | priorité</span></div>
+    <form class="panel form" data-form="evo-axes"><div class="panel-head" style="margin:0"><h2>${ic('ok')}Améliorations en cours</h2><span class="aside">Une ligne par axe : titre | effet attendu | qui | échéance AAAA-MM-JJ | prévu, en cours ou fait | priorité</span></div>
       <label class="sr" for="ev-ax">Axes</label><textarea id="ev-ax" rows="6" placeholder="Mesurer les demandes jusqu’au CRM | Savoir d’où viennent les demandes | Louis | 2026-10-23 | en cours | priorité">${esc((e.axes || []).map((a) => [a.t, a.effect, whoTxt(a.who), a.due ? dayKey(a.due) : '', stTxt[a.status], a.priority ? 'priorité' : ''].join(' | ').replace(/( \| )+$/, '')).join('\n'))}</textarea>
       <div class="field"><label for="ev-nx">Les mois suivants : mois | ce qu’on prévoit</label><textarea id="ev-nx" rows="3">${esc((e.next || []).map((x) => x.join(' | ')).join('\n'))}</textarea></div>
       <div><button class="btn btn-primary btn-sm" type="submit">Enregistrer les axes</button></div></form>
@@ -1496,14 +1496,14 @@
     const expired = /lien=expire/.test(location.search) ? '<div class="alert">' + ic('alert') + '<div>Ce lien de connexion a expiré ou a déjà servi. Demandez-en un nouveau.</div></div>' : '';
     const form = L.step === 'email'
       ? `<form data-form="login" novalidate>
-          <div><h1 style="font-size:28px">Connexion à votre espace</h1><p class="muted" style="margin-top:8px">Saisissez l’e-mail utilisé pour votre projet. On vous envoie un lien et un code, sans mot de passe à retenir.</p></div>
+          <div><h1 style="font-size:28px">Connexion à votre espace</h1><p class="muted" style="margin-top:8px">Saisissez l’adresse e-mail à laquelle l’agence vous écrit. Vous recevez un lien et un code : pas de mot de passe à retenir.</p></div>
           ${expired}
           <div class="field"><label for="em">Adresse e-mail</label><input id="em" type="email" autocomplete="email" placeholder="vous@entreprise.fr" value="${esc(L.email)}" required></div>
           <button class="btn btn-primary" type="submit">${ic('mail')}Recevoir mon lien de connexion</button>
           ${demo}
         </form>`
       : `<form data-form="verify" novalidate>
-          <div><h1 style="font-size:28px">Vérifiez votre boîte mail</h1><p class="muted" style="margin-top:8px">Si <strong style="color:var(--fg)">${esc(L.email)}</strong> a un espace, un e-mail vient de partir. Cliquez sur le lien, ou saisissez le code à 6 chiffres.</p></div>
+          <div><h1 style="font-size:28px">Vérifiez votre boîte mail</h1><p class="muted" style="margin-top:8px">Si <strong style="color:var(--fg)">${esc(L.email)}</strong> a un espace, un e-mail vient de partir. Cliquez sur le lien, ou saisissez le code à 6 chiffres. Rien reçu après 2 minutes ? Regardez dans les courriers indésirables.</p></div>
           ${L.dev ? `<div class="devcode">${API.demo ? 'Démo' : 'En local'}, aucun e-mail n’est envoyé. Code : <b>${esc(L.dev)}</b></div>` : ''}
           <div class="field"><label for="o1">Code à 6 chiffres</label><div class="otp">${[1, 2, 3, 4, 5, 6].map((i) => `<input id="o${i}" type="text" inputmode="numeric" autocomplete="${i === 1 ? 'one-time-code' : 'off'}" aria-label="Chiffre ${i}">`).join('')}</div></div>
           <button class="btn btn-primary" type="submit">Accéder à mon espace</button>
@@ -1513,7 +1513,7 @@
     return `<main class="login" id="main">
       <section class="login-art" aria-label="Orem">
         <div class="brand" style="padding:0;position:relative;z-index:1"><img class="logo" src="${IMG.logo}" alt=""><b>Orem</b></div>
-        <div style="position:relative;z-index:1;margin-block:40px"><div class="k">Espace client</div><p class="art-t">Tout votre projet, au même endroit.</p><p>Où en est le projet, ce qu’on attend de vous, vos fichiers et vos factures. Sans Notion, sans compte Google.</p><p class="proof">Plus de 40 clients accompagnés depuis 2023 · 100 % de satisfaction client</p></div>
+        <div style="position:relative;z-index:1;margin-block:40px"><div class="k">Espace client</div><p class="art-t">Tout votre projet, au même endroit.</p><p>Où en est le projet, ce qu’on attend de vous, vos fichiers et vos factures. Sans mot de passe, sans compte à créer.</p><p class="proof">Plus de 40 clients accompagnés depuis 2023 · 100 % de satisfaction client</p></div>
         <p class="small art-foot" style="position:relative;z-index:1;color:var(--night-muted)">Orem, marque d’ICONOKOM · agence-orem.fr</p>
       </section>
       <section class="login-form">${form}</section>
@@ -1536,7 +1536,7 @@
     return null;
   }
   const dialogOpen = () => !!(S.ob || S.zoom || S.compose || S.mailView || S.fview);
-  const TITLES = { evolution: 'Évolution', demarrer: 'Bien démarrer', preferences: 'Mes notifications', proposition: 'Proposition', accueil: 'Accueil', projet: 'Étapes', valider: 'À valider', maquettes: 'Maquettes', messages: 'Messages', fichiers: 'Fichiers', documents: 'Documents', outils: 'Boîte à outils', biblio: 'Bibliothèque', equipe: 'Équipe et aide', plus: 'Plus', inbox: 'Boîte de réception', reglages: 'Réglages', clients: 'Clients', nouveau: 'Nouvel espace client' };
+  const TITLES = { evolution: 'Évolution', demarrer: 'Bien démarrer', preferences: 'Mes notifications', proposition: 'Proposition', accueil: 'Accueil', projet: 'Étapes', valider: 'À valider', maquettes: 'Maquettes', messages: 'Messages', fichiers: 'Fichiers', documents: 'Devis et factures', outils: 'Boîte à outils', biblio: 'Bibliothèque', equipe: 'Équipe et aide', plus: 'Plus', inbox: 'Boîte de réception', reglages: 'Réglages', clients: 'Clients', nouveau: 'Nouvel espace client' };
   let wasDialog = false;
   /* onlyMain : seule la zone principale change (filtre, question rapide) ; la barre latérale et le reste ne sont pas reconstruits. */
   function render(focus, onlyMain) {
@@ -1546,7 +1546,7 @@
     const wrap = onlyMain && !dialogOpen() && !hadDialog && S.me && root.querySelector('#main .wrap');
     if (!S.me) { root.innerHTML = vConnexion(); }
     else if (clientMode()) {
-      if (!S.project) { root.innerHTML = shell('<div class="empty">Votre espace est en cours de préparation.</div>'); return; }
+      if (!S.project) { root.innerHTML = shell('<div class="empty">Votre espace est en cours de préparation. L’équipe vous écrit dès qu’il est prêt.</div>'); return; }
       const V = { accueil: () => (S.project.deliveredAt ? vAccueilLivre() : vAccueil()), proposition: vProposition, demarrer: vDemarrer, evolution: vEvolution, preferences: vPreferences, projet: vProjet, valider: vValider, maquettes: vMaquettes, messages: vMessages, fichiers: vFichiers, documents: vDocuments, outils: vOutils, biblio: vBiblio, equipe: vEquipe, plus: vPlus };
       if (!V[S.view]) S.view = 'accueil';
       if (wrap) wrap.innerHTML = wrapHtml(V[S.view]()); else root.innerHTML = shell(V[S.view]()) + bellPop() + (S.ob ? onboarding() : '') + lightbox() + filePreview();
@@ -1639,7 +1639,7 @@
   }
 
   /* ---------- Événements ---------- */
-  function copyText(t, ok) { try { navigator.clipboard.writeText(t).then(() => toast(ok), () => toast('Copie impossible ici. Sélectionnez le texte à la main.')); } catch { toast('Copie impossible ici. Sélectionnez le texte à la main.'); } }
+  function copyText(t, ok) { try { navigator.clipboard.writeText(t).then(() => toast(ok), () => toast(R('Copie impossible ici. Sélectionnez le texte à la main.', 'Copie impossible ici. Sélectionne le texte à la main.'))); } catch { toast(R('Copie impossible ici. Sélectionnez le texte à la main.', 'Copie impossible ici. Sélectionne le texte à la main.')); } }
   function copyHtml(h, ok) { try { navigator.clipboard.write([new ClipboardItem({ 'text/html': new Blob([h], { type: 'text/html' }), 'text/plain': new Blob([h.replace(/<[^>]+>/g, ' ')], { type: 'text/plain' }) })]).then(() => toast(ok), () => copyText(h, ok)); } catch { copyText(h, ok); } }
   document.addEventListener('change', async (e) => {
     const t = e.target;
@@ -1773,7 +1773,7 @@
         const wasDone = a.dataset.act === 'ob-done'; S.ob = null;
         if (!S.preview && !S.me.onboardedAt) { S.me.onboardedAt = new Date().toISOString(); try { await API.action(S.project.id, { type: 'user.onboarded', prefs: wasDone ? prefs : undefined }); } catch {} }
         render(); if (wasDone) celebrate(); break; }
-      case 'copy': { const txt = $('#iban').textContent; const sel = () => { const r = document.createRange(); r.selectNodeContents($('#iban')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast('IBAN sélectionné, copiez-le avec Ctrl+C.'); };
+      case 'copy': { const txt = $('#iban').textContent; const sel = () => { const r = document.createRange(); r.selectNodeContents($('#iban')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast(R('IBAN sélectionné : copiez-le avec Ctrl+C (Cmd+C sur Mac).', 'IBAN sélectionné : copie-le avec Ctrl+C (Cmd+C sur Mac).')); };
         try { navigator.clipboard.writeText(txt).then(() => toast('IBAN copié.'), sel); } catch { sel(); } break; }
     }
   });
@@ -1796,14 +1796,14 @@
       case 'changes': {
         const txt = v('chg-' + f.dataset.id);
         if (!txt) return fieldError('chg-' + f.dataset.id, R('Écrivez ce que vous aimeriez changer.', 'Écris ce que tu aimerais changer.'));
-        if (await act({ type: 'val.changes', vid: f.dataset.id, comment: txt }, 'Remarques envoyées. Réponse sous 24 h ouvrées.')) { S.valForm = null; render(); }
+        if (await act({ type: 'val.changes', vid: f.dataset.id, comment: txt }, 'Demande de modifications envoyée. L’équipe répond sous 24 h ouvrées.')) { S.valForm = null; render(); }
         break; }
       case 'create': {
         const reg = (f.querySelector('[name=n-reg]:checked') || {}).value;
         if (!v('n-client')) return fieldError('n-client', 'Indiquez le nom du client.');
         if (!reg) return fieldError(f.querySelector('[name=n-reg]'), 'Choisissez le tutoiement ou le vouvoiement.');
         try { const r = await API.create({ offer: (f.querySelector('[name=n-offer]:checked') || {}).value, client: v('n-client'), projet: v('n-projet'), contactName: v('n-contact'), email: v('n-email'), start: v('n-start') || undefined, amountHT: v('n-ht'), registre: (f.querySelector('[name=n-reg]:checked') || {}).value });
-          await loadProjects(); await openProject(r.id); toast('Espace créé. Ajoutez la prochaine étape puis donnez l’accès au client.'); } catch (err) { toast(err.message); }
+          await loadProjects(); await openProject(r.id); toast('Espace créé. Vérifiez la prochaine action, puis l’accès du client dans « Accès et infos ».'); } catch (err) { toast(err.message); }
         break; }
       case 'itemmeta': { const id = f.dataset.id; const who = [...f.querySelectorAll('[name=iw]:checked')].map((c) => [c.value, (f.querySelector('#iw-' + c.value) || {}).value || '']);
         if (await act({ type: 'item.meta', iid: id, who, link: (f.querySelector('#il-' + id) || {}).value.trim() }, 'Livrable mis à jour.')) { S.itemEdit = null; render(false, true); } break; }
@@ -1814,16 +1814,16 @@
         if (fl) { try { const r = await API.upload(S.project.id, fl, 'Livrable'); fileId = r.file && r.file.id; } catch (err) { return fieldError('er-f', err.message); } }
         if (await act({ type: 'evo.report', month: v('er-m'), title: v('er-t'), summary: v('er-s'), stats: lines(v('er-k'), 3), done: lines(v('er-d'), 2), fileId }, 'Bilan publié. Le client est prévenu.')) f.reset(); break; }
       case 'reschedule': { if (!v('rs-t')) return fieldError('rs-t', R('Indiquez les créneaux qui vous arrangent.', 'Indique les créneaux qui t’arrangent.')); if (await act({ type: 'evo.reschedule', text: v('rs-t') }, 'Demande envoyée. L’équipe revient vers ' + R('vous', 'toi') + ' très vite.')) S.rsOpen = false; break; }
-      case 'signdoc': { const id2 = f.dataset.id; if (!$('#sg-ok-' + id2).checked) return fieldError('sg-ok-' + id2, 'Cochez la case pour signer.'); if (v('sg-n-' + id2).length < 2) return fieldError('sg-n-' + id2, R('Écrivez votre nom pour signer.', 'Écris ton nom pour signer.'));
+      case 'signdoc': { const id2 = f.dataset.id; if (!$('#sg-ok-' + id2).checked) return fieldError('sg-ok-' + id2, R('Cochez la case « J’ai lu ce document et je le signe ».', 'Coche la case « J’ai lu ce document et je le signe ».')); if (v('sg-n-' + id2).length < 2) return fieldError('sg-n-' + id2, R('Écrivez votre nom pour signer.', 'Écris ton nom pour signer.'));
         if (S.preview) return toast('Aperçu : les actions sont désactivées.');
         try { await API.signFile(S.project.id, id2, { name: v('sg-n-' + id2), agree: true, sig: padData(id2) }); await loadProject(S.project.id); toast('Document signé. Merci !'); celebrate(); } catch (err) { fieldError('sg-n-' + id2, err.message); } break; }
-      case 'su-wf': { if (!v('su-ws')) return fieldError('su-ws', 'Indiquez le nom de l’espace de travail.'); if (await act({ type: 'setup.webflow', ws: v('su-ws') }, 'Merci ! L’équipe vérifie l’invitation.')) { const h = $('#su-domaine-h') || $('#su-webflow-h'); h && h.scrollIntoView({ block: 'start' }); } break; }
+      case 'su-wf': { if (!v('su-ws')) return fieldError('su-ws', R('Indiquez le nom de l’espace de travail Webflow.', 'Indique le nom de l’espace de travail Webflow.')); if (await act({ type: 'setup.webflow', ws: v('su-ws') }, 'Merci ! L’équipe vérifie l’invitation.')) { const h = $('#su-domaine-h') || $('#su-webflow-h'); h && h.scrollIntoView({ block: 'start' }); } break; }
       case 'su-dn': {
         const mode = (document.querySelector('[name=su-m]:checked') || {}).value || 'delegate', domain = v('su-d'), registrar = v('su-r');
-        if (!domain) return fieldError('su-d', 'Indiquez le nom de domaine, par exemple entreprise.fr.');
+        if (!domain) return fieldError('su-d', R('Indiquez le nom de domaine, par exemple entreprise.fr.', 'Indique le nom de domaine, par exemple entreprise.fr.'));
         if (S.preview) return toast('Aperçu : les actions sont désactivées.');
         if (mode === 'vault') {
-          if (!v('su-l')) return fieldError('su-l', 'Indiquez l’identifiant.'); if (!$('#su-p').value) return fieldError('su-p', 'Indiquez le mot de passe.');
+          if (!v('su-l')) return fieldError('su-l', R('Indiquez l’identifiant de connexion.', 'Indique l’identifiant de connexion.')); if (!$('#su-p').value) return fieldError('su-p', R('Indiquez le mot de passe.', 'Indique le mot de passe.'));
           try { await API.vaultPut(S.project.id, { domain, registrar, login: v('su-l'), secret: $('#su-p').value, note: v('su-n') }); $('#su-p').value = ''; S.suMode = S.suReg = S.suDom = null; await loadProject(S.project.id); toast('Identifiants chiffrés et envoyés à l’équipe.'); } catch (err) { fieldError('su-d', err.message); }
         } else if (await act({ type: 'setup.domain', mode, domain, registrar }, mode === 'delegate' ? 'Merci ! L’équipe vérifie l’accès.' : 'Merci ! L’équipe s’en occupe.')) { S.suMode = S.suReg = S.suDom = null; }
         break; }
@@ -1837,20 +1837,20 @@
         try { const r = await API.action(S.project.id, { type: 'proposal.save', prid: D0.prid, rid: D0.rid, title: v('pp-t'), quote: v('pp-q'), intro: v('pp-i'), lines: lns, depositPct: v('pp-d'), validUntil: v('pp-v') || undefined, kind: ($('#pp-evo') || {}).checked ? 'evolution' : undefined });
           if (go === 'send') await API.action(S.project.id, { type: 'proposal.send', prid: r.prid });
           S.propDraft = null; await loadProject(S.project.id); toast(go === 'send' ? 'Proposition envoyée. Le client est prévenu.' : 'Brouillon enregistré.'); } catch (err) { toast(err.message); } break; }
-      case 'accept': { const id2 = f.dataset.id; if (!$('#sg-ok-' + id2).checked) return fieldError('sg-ok-' + id2, 'Cochez la case pour accepter.'); if (v('sg-n-' + id2).length < 2) return fieldError('sg-n-' + id2, R('Écrivez votre nom pour signer.', 'Écris ton nom pour signer.'));
+      case 'accept': { const id2 = f.dataset.id; if (!$('#sg-ok-' + id2).checked) return fieldError('sg-ok-' + id2, R('Cochez la case « J’ai lu la proposition » pour accepter.', 'Coche la case « J’ai lu la proposition » pour accepter.')); if (v('sg-n-' + id2).length < 2) return fieldError('sg-n-' + id2, R('Écrivez votre nom pour signer.', 'Écris ton nom pour signer.'));
         if (S.preview) return toast('Aperçu : les actions sont désactivées.');
         if (await act({ type: 'proposal.accept', prid: id2, agree: true, name: v('sg-n-' + id2), sig: padData(id2) }, R('Proposition acceptée. Merci pour votre confiance !', 'Proposition acceptée. Merci pour ta confiance !'))) celebrate(); break; }
       case 'decline': if (await act({ type: 'proposal.decline', prid: f.dataset.id, comment: v('dc-' + f.dataset.id) }, 'Réponse envoyée à l’équipe.')) { S.propDecline = null; render(); } break;
       case 'pin': { const t = v('pin-t'); if (!t) return fieldError('pin-t', R('Écrivez votre commentaire.', 'Écris ton commentaire.')); if (S.preview) return toast('Aperçu : les actions sont désactivées.');
         try { await API.action(S.project.id, { type: 'pin.add', img: S.zoom.key, x: S.zoom.at.x, y: S.zoom.at.y, text: t, version: ((S.project.versions || [])[0] || {}).label }); S.zoom.at = null; await loadProject(S.project.id); toast('Commentaire épinglé. L’équipe est prévenue.'); } catch (err) { toast(err.message); } break; }
-      case 'request': { const t = v('rq-t'); if (!t) return fieldError('rq-t', R('Décrivez votre demande.', 'Décris ta demande.')); if (S.preview) return toast('Aperçu : les actions sont désactivées.'); act({ type: 'request.add', kind: v('rq-k'), priority: v('rq-p'), text: t }, R('Demande envoyée. On revient vers vous sous 48 h.', 'Demande envoyée. On revient vers toi sous 48 h.')); break; }
+      case 'request': { const t = v('rq-t'); if (!t) return fieldError('rq-t', R('Décrivez votre demande.', 'Décris ta demande.')); if (S.preview) return toast('Aperçu : les actions sont désactivées.'); act({ type: 'request.add', kind: v('rq-k'), priority: v('rq-p'), text: t }, R('Demande envoyée. On revient vers vous sous 24 h ouvrées.', 'Demande envoyée. On revient vers toi sous 24 h ouvrées.')); break; }
       case 'teaser': case 'sig': break;
       case 'compose': composeSubmit(); break;
       case 'prefs': { const em = (f.querySelector('[name=pf-email]:checked') || {}).value; const events = {}; f.querySelectorAll('[name=pf-ev]').forEach((c) => (events[c.value] = c.checked));
         try { const r = await API.setPrefs({ email: em, events }); S.me.notify = r.notify; toast('Réglages enregistrés.'); render(); } catch (err) { toast(err.message); } break; }
       case 'team': { const members = [...f.querySelectorAll('[name=tm]:checked')].map((c) => c.value); act({ type: 'team.set', members, lead: v('tm-lead') }, 'Équipe enregistrée.'); break; }
       case 'phase': act({ type: 'phase.set', n: v('a-phase') }, 'Étape mise à jour.'); break;
-      case 'next': act({ type: 'next.set', title: v('a-nt'), text: v('a-nx'), go: v('a-ng') }, 'Prochaine étape publiée.'); break;
+      case 'next': act({ type: 'next.set', title: v('a-nt'), text: v('a-nx'), go: v('a-ng') }, 'Prochaine action publiée.'); break;
       case 'note': if (await act({ type: 'note.set', text: v('a-note') }, 'Point de la semaine publié dans l’espace du client.')) { delete S.drafts[S.project.id]; render(); } break;
       case 'task': if (v('a-task')) act({ type: 'task.add', t: v('a-task') }, 'Action ajoutée.'); break;
       case 'missing': if (v('a-mi')) act({ type: 'missing.add', t: v('a-mi'), sub: v('a-ms') }, 'Ajouté aux fichiers attendus.'); break;
@@ -1863,7 +1863,7 @@
       case 'brand': act({ type: 'project.brand', colors: lines(v('br-c'), 2), fonts: lines(v('br-f'), 2) }, 'Marque enregistrée.'); break;
       case 'tools': act({ type: 'project.tools', tools: [...f.querySelectorAll('[name=tl]:checked')].map((c) => c.value) }, 'Boîte à outils mise à jour.'); break;
       case 'tutorials': act({ type: 'project.tutorials', tutorials: lines(v('tu-l'), 3).map(([t, d, url]) => ({ t, d, url })) }, 'Vidéos enregistrées.'); break;
-      case 'review': { const sc = Number((f.querySelector('[name=rv-s]:checked') || {}).value); if (!sc) return fieldError(f.querySelector('[name=rv-s]'), 'Choisissez une note de 1 à 5.'); if (S.preview) return toast('Aperçu : les actions sont désactivées.');
+      case 'review': { const sc = Number((f.querySelector('[name=rv-s]:checked') || {}).value); if (!sc) return fieldError(f.querySelector('[name=rv-s]'), R('Choisissez une note de 1 à 5 étoiles.', 'Choisis une note de 1 à 5 étoiles.')); if (S.preview) return toast('Aperçu : les actions sont désactivées.');
         if (sc <= 3) {
           if (!v('rv-bad')) return fieldError('rv-bad', R('Dites-nous ce qui n’a pas fonctionné, même en quelques mots.', 'Dis-nous ce qui n’a pas fonctionné, même en quelques mots.'));
           const axes = Object.fromEntries(Core.REVIEW_AXES.map(([k]) => [k, Number((f.querySelector(`[name=rv-a-${k}]:checked`) || {}).value) || 0]));
