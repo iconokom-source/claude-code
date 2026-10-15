@@ -655,6 +655,10 @@
       case 'user.onboarded': {
         const u = store.users.find((x) => x.id === user.id); if (!u) return { error: 'Utilisateur introuvable.' };
         u.onboardedAt = now; if (action.prefs) u.prefs = { mail: !!action.prefs.mail, weekly: !!action.prefs.weekly };
+        // présentation saisie au dernier écran de la visite guidée : nom obligatoire, le reste facultatif
+        if (String(action.name || '').trim()) u.name = String(action.name).trim().slice(0, 80);
+        if (action.title !== undefined) u.title = String(action.title || '').trim().slice(0, 80);
+        if (action.phone !== undefined) u.phone = String(action.phone || '').replace(/[^\d+ .()-]/g, '').trim().slice(0, 30);
         log(project, user, 'a découvert son espace'); break;
       }
       case 'msg.post': {
@@ -1110,13 +1114,13 @@
   }
 
   /* Invitation : le premier e-mail du client, dans son registre, signé par le chef de projet. */
-  function inviteMail(user, project, lead, baseUrl) {
+  function inviteMail(user, project, lead, baseUrl, link) {
     const tu = project.registre === 'tu', T = (v, t) => (tu ? t : v), first = esc(String(user.name || '').split(' ')[0]);
     const who = 'L\u2019équipe Orem';
-    const url = `${baseUrl}/?email=${encodeURIComponent(user.email)}`;
+    const url = link || `${baseUrl}/?email=${encodeURIComponent(user.email)}`;
     return { to: user.email, name: user.name, subject: `${T('Votre', 'Ton')} espace ${project.client} est prêt`,
-      text: `Bonjour ${user.name},\n${T('Votre', 'Ton')} espace projet est prêt : ${url}\n${T('Connectez-vous', 'Connecte-toi')} avec cette adresse e-mail, sans mot de passe.\n${who} : Louis, Théophile et Clément`,
-      html: `<div style="background:#f3f2ef;padding:32px 16px;font-family:Arial,Helvetica,sans-serif"><table width="100%" style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:16px;padding:28px" cellpadding="0" cellspacing="0"><tr><td style="font-family:Georgia,serif;font-size:22px;color:#000012;padding-bottom:16px">Orem</td></tr><tr><td style="font-size:15px;color:#0b0b12">Bonjour ${first},</td></tr><tr><td style="font-size:15px;color:#2f2f3a;padding:8px 0 16px">${T('Votre', 'Ton')} espace pour le projet <strong>${esc(project.projet)}</strong> est prêt : le planning, ce qu\u2019on attend de ${T('vous', 'toi')}, ${T('vos', 'tes')} fichiers et ${T('vos', 'tes')} factures, au même endroit. Pas de mot de passe : ${T('saisissez', 'saisis')} simplement cette adresse e-mail.</td></tr><tr><td><a href="${esc(url)}" style="display:inline-block;background:#092482;color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:10px;font-size:15px">${T('Ouvrir mon espace', 'Ouvrir mon espace')}</a></td></tr><tr><td style="font-size:15px;color:#2f2f3a;padding-top:20px">${T('À très vite', 'À très vite')},<br>${who}<br><span style="color:#585865;font-size:13px">Louis, Théophile et Clément</span></td></tr></table></div>` };
+      text: `Bonjour ${user.name},\n${T('Votre', 'Ton')} espace projet est prêt : ${url}\nUn clic suffit, sans mot de passe (lien personnel valable 7 jours). Ensuite, ${T('connectez-vous', 'connecte-toi')} avec cette adresse e-mail.\n${who} : Louis, Théophile et Clément`,
+      html: `<div style="background:#f3f2ef;padding:32px 16px;font-family:Arial,Helvetica,sans-serif"><table width="100%" style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:16px;padding:28px" cellpadding="0" cellspacing="0"><tr><td style="font-family:Georgia,serif;font-size:22px;color:#000012;padding-bottom:16px">Orem</td></tr><tr><td style="font-size:15px;color:#0b0b12">Bonjour ${first},</td></tr><tr><td style="font-size:15px;color:#2f2f3a;padding:8px 0 16px">${T('Votre', 'Ton')} espace pour le projet <strong>${esc(project.projet)}</strong> est prêt : le planning, ce qu\u2019on attend de ${T('vous', 'toi')}, ${T('vos', 'tes')} fichiers et ${T('vos', 'tes')} factures, au même endroit. Pas de mot de passe à créer : un clic sur le bouton suffit (lien personnel, valable 7 jours). Pour les fois suivantes, il suffira de saisir cette adresse e-mail.</td></tr><tr><td><a href="${esc(url)}" style="display:inline-block;background:#092482;color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:10px;font-size:15px">${T('Ouvrir mon espace', 'Ouvrir mon espace')}</a></td></tr><tr><td style="font-size:15px;color:#2f2f3a;padding-top:20px">${T('À très vite', 'À très vite')},<br>${who}<br><span style="color:#585865;font-size:13px">Louis, Théophile et Clément</span></td></tr></table></div>` };
   }
   function loginMail(user, code, link, registre) {
     const tu = user.role === 'admin' || registre === 'tu', T = (v, t) => (tu ? t : v);

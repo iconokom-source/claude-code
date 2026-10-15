@@ -128,6 +128,7 @@ function background() {
   for (const [k, v] of Object.entries(db.vault || {})) if (now - new Date(v.at).getTime() > VAULT_TTL) { delete db.vault[k]; changed = true; log('vault.expired', { project: k }); }
   for (const [k, s] of Object.entries(db.sessions)) if (s.exp < now) { delete db.sessions[k]; changed = true; }
   for (const [k, c] of Object.entries(db.codes)) if (c.exp < now) { delete db.codes[k]; changed = true; }
+  for (const [k, c] of Object.entries(db.invites || {})) if (c.exp < now) { delete db.invites[k]; changed = true; }
   for (const [k, v] of hits) if (v.reset < now) hits.delete(k);
   if (changed) save();
 }
@@ -246,6 +247,8 @@ function verifyCode(email, code, ip) {
 function verifyLink(token, ip) {
   if (limited('link-ip:' + ip, 30 * AUTH_SCALE, 15 * 60e3)) return null;
   const h = sha(String(token));
+  const inv = db.invites && db.invites[h];
+  if (inv) { delete db.invites[h]; save(); return inv.exp > Date.now() ? db.users.find((x) => x.id === inv.userId) || null : null; }
   const entry = Object.entries(db.codes).find(([, c]) => c.token === h && c.exp > Date.now());
   if (!entry) return null;
   delete db.codes[entry[0]]; save();
@@ -356,7 +359,10 @@ function invite(projectId, userId) {
   const pr = db.projects.find((x) => x.id === projectId), u = db.users.find((x) => x.id === userId);
   if (!pr || !u) return;
   const lead = db.users.find((x) => x.id === (pr.team && pr.team.lead));
-  sendMail(Core.inviteMail(u, pr, lead, BASE_URL)); log('invite', { project: pr.id, user: u.id });
+  // Lien d'invitation personnel : un clic suffit pour entrer (valable 7 jours, une seule fois). Ensuite, connexion par code ou lien.
+  const token = crypto.randomBytes(24).toString('hex');
+  db.invites ||= {}; db.invites[sha(token)] = { userId: u.id, exp: Date.now() + 7 * 864e5 }; save();
+  sendMail(Core.inviteMail(u, pr, lead, BASE_URL, `${BASE_URL}/auth/${token}`)); log('invite', { project: pr.id, user: u.id });
 }
 function projectBytes(pr) { return pr.files.reduce((s, f) => s + (f.path ? Number(f.size) || 0 : 0), 0); }
 

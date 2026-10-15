@@ -20,7 +20,10 @@ Document de passation pour reprendre **exactement là où on s'est arrêtés** (
 - `tests/tout.sh` rejoué après le copywriting : **11 suites à 100 %** (simulation 25, equipe 14, lots 24, a11y 24, agence 26, waouh 20, accueil 25, connecteurs 40, securite 13, core 61). Tests adaptés aux nouveaux textes (« Mise en ligne dans N jours », « Devis », « Demande : … »). Titre d'un devis tiré d'une demande : « Demande : … » au lieu de « Évolution : … ».
 - Démo regénérée et republiée (version 5) : https://claude.ai/artifact/WBnaucQmcvNXdBjr4YECBT (compte de Louis, privée). Limite connue : dans le lecteur d'artifact, les boutons « Télécharger » de la démo ne font rien (le lecteur bloque les téléchargements) ; dans l'app locale, ils fonctionnent.
 
-**En cours** : rien. Prochaine étape : les restes listés ci-dessous.
+- **Arrivée d'un nouveau client** (test `tests/arrivee.js`, 10 vérifications, captures à chaque écran) : l'invitation contient un **lien de connexion direct** (valable 7 jours, une seule fois, `db.invites`) ; un clic, « Confirmer la connexion », puis la visite guidée. Dernier écran « Faisons connaissance » : prénom et nom (pré-rempli, obligatoire), fonction et téléphone (facultatifs), notifications ; l'équipe les voit dans « Accès et infos ». Les fois suivantes : adresse e-mail puis code ou lien. Un ancien lien `?email=` pré-remplit l'adresse.
+- **Bug corrigé** : sur une adresse `/auth/…`, `index.html` chargeait `core.js` et `app.js` en chemin relatif, donc les liens de connexion par e-mail ne démarraient pas l'app. Chemins passés en absolu (`/core.js`, `/app.js`, `/styles.css`).
+
+**En cours** : bilans mensuels Évolution consultables et téléchargeables (le document présenté en visio, exemple fourni par Louis : un PDF en 16:9 « Évolution · Septembre 2026 » préparé par Orem). Puis : version de test en ligne pour Théophile et Clément (demande de Louis du 15/10 : envois d'e-mails réels, connexions Figma et autres connecteurs testables, tout très clair).
 
 **Reste aussi du copywriting** : les 52 propositions P3 du rapport ; statut de demande « Proposé » affiché « Devis envoyé » (sans changer la valeur stockée) ; signature de l'e-mail d'invitation selon l'équipe du projet (`core.js`, test `core.js:84`) ; décision à prendre par Louis : l'interface agence vouvoie alors que les e-mails internes tutoient.
 

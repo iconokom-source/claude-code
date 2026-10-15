@@ -9,7 +9,7 @@ const css = fs.readFileSync(pub('styles.css'), 'utf8')
   .replace('url(assets/fonts/trykker-latin.woff2)', `url(${b64('assets/fonts/trykker-latin.woff2', 'font/woff2')})`)
   .replace('url(assets/fonts/lexend-deca-latin.woff2)', `url(${b64('assets/fonts/lexend-deca-latin.woff2', 'font/woff2')})`);
 const html = fs.readFileSync(pub('index.html'), 'utf8');
-const body = html.slice(html.indexOf('<body>') + 6, html.indexOf('<script src="core.js">'));
+const body = html.slice(html.indexOf('<body>') + 6, html.indexOf('<script src="/core.js">'));
 const img = { logo: b64('assets/logo-black.png', 'image/png'), louis: b64('assets/louis.jpg', 'image/jpeg'), theophile: b64('assets/theophile.jpg', 'image/jpeg'), clement: b64('assets/clement.jpg', 'image/jpeg') };
 
 const hd = Object.fromEntries([...fs.readdirSync(pub('assets/hd')).map((f) => ['assets/hd/' + f, b64('assets/hd/' + f, 'image/jpeg')]), ...fs.readdirSync(pub('assets/logos')).map((f) => ['assets/logos/' + f, b64('assets/logos/' + f, 'image/svg+xml')])]);

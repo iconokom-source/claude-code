@@ -316,7 +316,7 @@
     const note = p.note && p.note.text, author = S.team.find((u) => u.id === p.note.by);
     const meta = prospect() ? 'Avant le démarrage du projet' : [p.offer === 'site' && j >= 0 ? (j ? `Mise en ligne dans ${j} jour${j > 1 ? 's' : ''}` : 'Mise en ligne aujourd’hui') : p.offer !== 'site' && j >= 0 ? `Livraison dans ${j} jour${j > 1 ? 's' : ''}` : '', phName(ph)].filter(Boolean).join(' · ');
     return `
-    <div class="head"><div><h1 class="brandish">Bonjour ${esc(p.contactName || S.me.name)}</h1><p class="lead">${esc(cap(fmtLong(Date.now())))} · ${esc(p.projet)}</p></div>${clientLogo(p, 'auto', 'head-logo')}</div>
+    <div class="head"><div><h1 class="brandish">Bonjour ${esc(S.preview || !S.me.name ? p.contactName : S.me.name.split(' ')[0])}</h1><p class="lead">${esc(cap(fmtLong(Date.now())))} · ${esc(p.projet)}</p></div>${clientLogo(p, 'auto', 'head-logo')}</div>
     <section class="next" aria-labelledby="nx"><div><div class="k">${R('Votre prochaine action', 'Ta prochaine action')}</div><h2 id="nx">${esc(nx.title)}</h2>${nx.text ? `<p>${esc(nx.text)}</p>` : ''}<div class="meta">${esc(meta)}</div></div>${ctaHtml}</section>
     ${countdown()}
     ${unreadBanner()}
@@ -620,7 +620,7 @@
       ['Bienvenue', p.phase > 1 || p.tasks.some((t) => t.done) ? `${R('Votre', 'Ton')} espace est prêt, ${esc(first)}.` : `Bienvenue ${esc(first)}, ${R('votre', 'ton')} projet démarre ici.`],
       ['Le chemin', `${p.phases.length} étapes, de la première visio ${p.offer === 'site' ? 'à la mise en ligne' : 'à la livraison'}.`],
       ['Pour démarrer', `${R('Vos', 'Tes')} premières actions.`],
-      ['Dernier détail', `On ${R('vous', 'te')} prévient comment ?`]
+      ['Dernier détail', `Faisons connaissance.`]
     ];
     const actions = [...p.validations.filter((v) => v.status === 'ready').map((v) => ['Valider : ' + v.t.toLowerCase(), 'Environ 5 minutes']), ...p.missing.map((m) => ['Déposer : ' + m.t.toLowerCase(), m.sub]), ...p.tasks.filter((t) => !t.done).map((t) => [t.t, ''])].slice(0, 3);
     if (p.deliveredAt) {
@@ -628,7 +628,13 @@
       arts[2] = ['Pour commencer', `Ce que ${R('vous pouvez', 'tu peux')} faire dès maintenant.`];
     }
     const li = (rows) => `<div class="ob-list">${rows.map(([t, d], i) => `<div class="li"><span class="rank">${String(i + 1).padStart(2, '0')}</span><div><strong>${t}</strong><span>${d}</span></div></div>`).join('')}</div>`;
-    const notifBody = `<h3>Les notifications</h3>
+    const notifBody = `<h3>${R('Vous', 'Toi')}</h3>
+       <div class="ob-me">
+         <div class="field"><label for="ob-n">Prénom et nom</label><input id="ob-n" type="text" autocomplete="name" value="${esc(S.me.name || p.contactName || '')}" required></div>
+         <div class="field"><label for="ob-f">Fonction <span class="muted">(facultatif)</span></label><input id="ob-f" type="text" autocomplete="organization-title" value="${esc(S.me.title || '')}" placeholder="ex. Gérante, Responsable marketing"></div>
+         <div class="field"><label for="ob-p">Téléphone <span class="muted">(facultatif)</span></label><input id="ob-p" type="tel" autocomplete="tel" value="${esc(S.me.phone || '')}" placeholder="Pour vous joindre en cas d’urgence"></div>
+       </div>
+       <h3>Les notifications</h3>
        <div class="ob-pref">
          <label><input type="checkbox" id="pf-mail" checked> Un e-mail quand on a besoin de ${R('vous', 'toi')} (validation, nouveau livrable, message)</label>
          <label><input type="checkbox" id="pf-week" checked> Le point de la semaine par e-mail, dès que l’équipe le publie</label>
@@ -1770,8 +1776,12 @@
       case 'ob-prev': S.ob.step--; render(); break;
       case 'ob-skip': case 'ob-done': {
         const prefs = { mail: !!($('#pf-mail') || {}).checked, weekly: !!($('#pf-week') || {}).checked };
-        const wasDone = a.dataset.act === 'ob-done'; S.ob = null;
-        if (!S.preview && !S.me.onboardedAt) { S.me.onboardedAt = new Date().toISOString(); try { await API.action(S.project.id, { type: 'user.onboarded', prefs: wasDone ? prefs : undefined }); } catch {} }
+        const wasDone = a.dataset.act === 'ob-done';
+        const me = wasDone ? { name: ($('#ob-n') || {}).value || '', title: ($('#ob-f') || {}).value || '', phone: ($('#ob-p') || {}).value || '' } : null;
+        if (me && !me.name.trim()) return fieldError('ob-n', R('Indiquez votre prénom et votre nom.', 'Indique ton prénom et ton nom.'));
+        S.ob = null;
+        if (me && !S.preview) Object.assign(S.me, { name: me.name.trim(), title: me.title.trim(), phone: me.phone.trim() });
+        if (!S.preview && !S.me.onboardedAt) { S.me.onboardedAt = new Date().toISOString(); try { await API.action(S.project.id, { type: 'user.onboarded', prefs: wasDone ? prefs : undefined, ...(me || {}) }); } catch {} }
         render(); if (wasDone) celebrate(); break; }
       case 'copy': { const txt = $('#iban').textContent; const sel = () => { const r = document.createRange(); r.selectNodeContents($('#iban')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast(R('IBAN sélectionné : copiez-le avec Ctrl+C (Cmd+C sur Mac).', 'IBAN sélectionné : copie-le avec Ctrl+C (Cmd+C sur Mac).')); };
         try { navigator.clipboard.writeText(txt).then(() => toast('IBAN copié.'), sel); } catch { sel(); } break; }
@@ -1928,6 +1938,8 @@
   });
 
   document.documentElement.lang = 'fr';
+  // Ancien lien d'invitation (?email=) : l'adresse est déjà remplie
+  try { const em = new URLSearchParams(location.search).get('email'); if (em && /^[^@\s]+@[^@\s]+$/.test(em)) { S.login.email = em; history.replaceState(null, '', location.pathname); } } catch {}
   try { const th = localStorage.getItem('orem-theme'); if (th) document.documentElement.dataset.theme = th; } catch {}
   if (API.demo) { API.as('claire@maisonlumen.fr'); enter(); }
   else if (location.pathname.startsWith('/auth/')) { S.loading = false; S.linkToken = location.pathname.slice(6); history.replaceState(null, '', '/'); render(); }

@@ -851,3 +851,5 @@ fieldset.field legend{font-weight:500;margin-bottom:6px;padding:0}
 .chip,span.num,.sub .num{white-space:nowrap}
 @media (max-width:860px){ .bell-pop{left:auto} }
 @media (max-width:420px){ .panel .list .row{flex-wrap:wrap} .panel .list .row .grow{flex-basis:calc(100% - 60px)} }
+.ob-me{display:grid;gap:12px;margin:8px 0 20px}
+.ob-me .field{margin:0}
