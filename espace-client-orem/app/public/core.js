@@ -244,6 +244,8 @@
         { id: 'rp1', month: '2026-07', title: 'Premier mois complet : la base de comparaison', summary: 'Premier état des lieux complet : audience, Google, assistants IA et fiabilité de la mesure.',
           stats: [['1 825', 'visites sur le site', 'premier mois'], ['15', 'demandes d’annonce', 'premier mois'], ['1 750', 'clics depuis Google', 'premier mois'], ['8,5', 'position moyenne', 'premier mois']],
           done: [['Site en ligne depuis le 15 juin', 'Formation Webflow faite le 2 juillet']], at: '2026-08-05T09:00:00.000Z' }] };
+    // Le document présenté en visio, consultable et téléchargeable à tout moment (exemples générés par tools/bilans-exemple.js).
+    b.evo.reports.forEach((r) => { r.doc = `assets/bilans/huchet-demorge-${r.month}.pdf`; });
     b.results = { period: 'Depuis la mise en ligne, le 15 juin 2026', stats: [['~5', 'demandes qualifiées par semaine'], ['11 961', 'utilisateurs actifs'], ['22 825', 'clics depuis Google'], ['68 %', 'du trafic vient de la recherche Google']] };
     b.brand = { colors: [['Cognac', '#A8552D'], ['Cuivre', '#D67C53'], ['Pierre', '#EFE6DC'], ['Nuit', '#160700']], fonts: [['Titres', 'Sans géométrique, capitales espacées'], ['Texte', 'Sans humaniste']] };
     b.tools = ['teaser', 'brand', 'signature', 'request', 'webflow'];

@@ -374,6 +374,12 @@
       ${f.url && !url ? `<a class="btn btn-line btn-sm" href="${esc(f.url)}" target="_blank" rel="noopener">Ouvrir<span class="sr"> ${esc(f.name)}</span></a>` : url ? `<a class="btn btn-line btn-sm" href="${url}">${ic('down')}<span class="sr">Télécharger ${esc(f.name)}</span></a>` : `<button class="btn btn-line btn-sm" data-act="toast" data-msg="Fichier d’exemple : rien à télécharger.">${ic('down')}<span class="sr">Télécharger ${esc(f.name)}</span></button>`}
       ${isAdmin() && !S.preview ? `<button class="x" data-act="file-remove" data-id="${esc(f.id)}" aria-label="Retirer ${esc(f.name)}">×</button>` : mine ? `<button class="x" data-act="file-remove-own" data-id="${esc(f.id)}" aria-label="Retirer ${esc(f.name)} (possible pendant 24 h)" title="Retirer (possible pendant 24 h)">×</button>` : ''}</div>`;
   }
+  /* Document à consulter dans l'espace (bilan mensuel présenté en visio) : lecture plein écran et téléchargement. */
+  function docPreview() {
+    const d = S.docView; if (!d) return '';
+    return `<div class="lb" role="dialog" aria-modal="true" aria-label="${esc(d.title)}" data-act="fview-close"><figure class="fview"><iframe src="${esc(d.src)}${/^data:/.test(d.src) ? '' : '#view=FitH'}" title="${esc(d.title)}"></iframe>
+      <figcaption>${esc(d.title)} · <a href="${esc(d.src)}" download="${esc(d.title)}.pdf">Télécharger</a></figcaption></figure><button class="lb-x" data-act="fview-close" aria-label="Fermer">×</button></div>`;
+  }
   function filePreview() {
     const f = S.fview && S.project && S.project.files.find((x) => x.id === S.fview); if (!f) return '';
     const u = API.fileUrl(f) + '?inline=1', k = kindOf(f);
@@ -873,11 +879,13 @@
         <ul class="list plain">${ax.map((a) => `<li class="row ax-row ${a.status}"><div class="grow"><div class="title">${a.priority ? '<span class="chip warn">Priorité du mois</span> ' : ''}${esc(a.t)}</div>${a.effect ? `<div class="sub">Effet attendu : ${esc(a.effect)}</div>` : ''}<div class="sub">${esc(axWho(a.who))}${a.due ? ' · ' + (a.status === 'done' ? 'fait' : 'prévu pour le') + ' ' + fmt(a.due, { day: 'numeric', month: 'long' }) : ''}</div></div>${AX_CHIP[a.status]}</li>`).join('') || '<li class="muted">Les axes du mois arrivent après la première visio.</li>'}</ul></section>
       <section class="panel" aria-labelledby="rp-h"><div class="panel-head"><h2 id="rp-h">${ic('doc')}Bilans mensuels</h2><span class="aside">Tous les mois, au même endroit</span></div>
         <div class="reports">${reps.map((r) => { const f = r.fileId && p.files.find((x) => x.id === r.fileId), url = f && API.fileUrl(f), open = r.id === openRp;
-          return `<article class="rp ${open ? 'open' : ''}"><button class="rp-h" data-act="rp-open" data-id="${esc(r.id)}" aria-expanded="${open}"><span class="k">${esc(monthName(r.month))}</span><strong>${esc(r.title)}</strong></button>
+          const doc = r.doc ? asset(r.doc) : url, dname = `Bilan ${monthName(r.month)} ${p.client}.pdf`.replace(/[^\w\u00C0-\u017F .-]/g, "");
+          return `<article class="rp ${open ? 'open' : ''}"><div class="rp-row"><button class="rp-h" data-act="rp-open" data-id="${esc(r.id)}" aria-expanded="${open}"><span class="k">${esc(monthName(r.month))}</span><strong>${esc(r.title)}</strong></button>
+            ${doc ? `<div class="rp-a"><button class="btn btn-line btn-sm" data-act="doc-view" data-src="${esc(doc)}" data-title="${esc('Bilan ' + monthName(r.month))}">${ic('eye')}Consulter<span class="sr"> le bilan ${esc(monthName(r.month))}</span></button><a class="btn btn-line btn-sm" href="${esc(doc)}" download="${esc(dname)}">${ic('down')}<span class="sr">Télécharger le bilan ${esc(monthName(r.month))}</span><span aria-hidden="true">PDF</span></a></div>` : f ? `<div class="rp-a"><button class="btn btn-line btn-sm" data-act="toast" data-msg="Fichier d’exemple : rien à ouvrir.">${ic('eye')}Consulter</button></div>` : ''}</div>
             ${open ? `<div class="rp-b">${r.summary ? `<p>${esc(r.summary)}</p>` : ''}
               ${r.stats.length ? `<div class="rp-stats">${r.stats.map(([v, l, d]) => `<div><span class="v num">${esc(v)}</span><span class="l">${esc(l)}</span>${d ? `<span class="d">${esc(d)}</span>` : ''}</div>`).join('')}</div>` : ''}
               ${r.done.length ? `<h3 class="rp-t">Le travail réalisé</h3><ol class="rp-done">${r.done.map(([t, d]) => `<li><strong>${esc(t)}</strong>${d ? `<span>${esc(d)}</span>` : ''}</li>`).join('')}</ol>` : ''}
-              ${f ? `<div class="inline">${url ? `<a class="btn btn-line btn-sm" href="${url}?inline=1" target="_blank" rel="noopener">${ic('doc')}Lire le bilan complet (PDF)</a>` : `<button class="btn btn-line btn-sm" data-act="toast" data-msg="Fichier d’exemple : rien à ouvrir.">${ic('doc')}Lire le bilan complet (PDF)</button>`}</div>` : ''}</div>` : ''}</article>`; }).join('') || '<p class="muted">Le premier bilan arrive à la fin du premier mois.</p>'}</div></section>
+              </div>` : ''}</article>`; }).join('') || '<p class="muted">Le premier bilan arrive à la fin du premier mois.</p>'}</div></section>
       ${(e.next || []).length ? `<section class="panel" aria-labelledby="nx-h"><div class="panel-head"><h2 id="nx-h">${ic('cal')}Les mois suivants</h2></div><div class="months">${e.next.map(([m, t]) => `<div><strong>${esc(m)}</strong><p>${esc(t)}</p></div>`).join('')}</div></section>` : ''}`;
   }
   /* ---------- Accueil d'un projet livré ---------- */
@@ -1485,7 +1493,7 @@
       <div class="line"><div class="field"><label for="er-m">Mois</label><input id="er-m" type="month" value="${new Date(Date.now() - 20 * 864e5).toISOString().slice(0, 7)}"></div><div class="field"><label for="er-t">Titre</label><input id="er-t" type="text" placeholder="ex. Le site attire davantage, il reste à mesurer ce qu’il rapporte"></div></div>
       <div class="field"><label for="er-s">L’essentiel en deux phrases</label><textarea id="er-s" rows="2"></textarea></div>
       <div class="line"><div class="field"><label for="er-k">Chiffres : valeur | libellé | écart</label><textarea id="er-k" rows="4" placeholder="1 838 | visites sur le site | +17,8 % sur août"></textarea></div><div class="field"><label for="er-d">Travail réalisé : titre | précision</label><textarea id="er-d" rows="4"></textarea></div></div>
-      <div class="field"><label for="er-f">Bilan complet en PDF (facultatif)</label><input id="er-f" type="file" accept="application/pdf,.pdf"></div>
+      <div class="field"><label for="er-f">Le document présenté en visio (PDF) : le client pourra le consulter et le télécharger</label><input id="er-f" type="file" accept="application/pdf,.pdf"></div>
       <div><button class="btn btn-primary btn-sm" type="submit">Publier le bilan</button></div></form>`;
   }
   function tActivite() {
@@ -1541,7 +1549,7 @@
     if (f) return `[data-form="${CSS.escape(f.dataset.form)}"]${f.dataset.id ? `[data-id="${CSS.escape(f.dataset.id)}"]` : ''} ${el.tagName.toLowerCase()}${el.type ? `[type="${CSS.escape(el.type)}"]` : ''}`;
     return null;
   }
-  const dialogOpen = () => !!(S.ob || S.zoom || S.compose || S.mailView || S.fview);
+  const dialogOpen = () => !!(S.ob || S.zoom || S.compose || S.mailView || S.fview || S.docView);
   const TITLES = { evolution: 'Évolution', demarrer: 'Bien démarrer', preferences: 'Mes notifications', proposition: 'Proposition', accueil: 'Accueil', projet: 'Étapes', valider: 'À valider', maquettes: 'Maquettes', messages: 'Messages', fichiers: 'Fichiers', documents: 'Devis et factures', outils: 'Boîte à outils', biblio: 'Bibliothèque', equipe: 'Équipe et aide', plus: 'Plus', inbox: 'Boîte de réception', reglages: 'Réglages', clients: 'Clients', nouveau: 'Nouvel espace client' };
   let wasDialog = false;
   /* onlyMain : seule la zone principale change (filtre, question rapide) ; la barre latérale et le reste ne sont pas reconstruits. */
@@ -1555,7 +1563,7 @@
       if (!S.project) { root.innerHTML = shell('<div class="empty">Votre espace est en cours de préparation. L’équipe vous écrit dès qu’il est prêt.</div>'); return; }
       const V = { accueil: () => (S.project.deliveredAt ? vAccueilLivre() : vAccueil()), proposition: vProposition, demarrer: vDemarrer, evolution: vEvolution, preferences: vPreferences, projet: vProjet, valider: vValider, maquettes: vMaquettes, messages: vMessages, fichiers: vFichiers, documents: vDocuments, outils: vOutils, biblio: vBiblio, equipe: vEquipe, plus: vPlus };
       if (!V[S.view]) S.view = 'accueil';
-      if (wrap) wrap.innerHTML = wrapHtml(V[S.view]()); else root.innerHTML = shell(V[S.view]()) + bellPop() + (S.ob ? onboarding() : '') + lightbox() + filePreview();
+      if (wrap) wrap.innerHTML = wrapHtml(V[S.view]()); else root.innerHTML = shell(V[S.view]()) + bellPop() + (S.ob ? onboarding() : '') + lightbox() + filePreview() + docPreview();
     } else {
       const V = { inbox: vInbox, reglages: vReglages, clients: vClients, nouveau: vNouveau, admin: vAdmin };
       if (!V[S.view] || (S.view === 'admin' && !S.project)) S.view = 'inbox';
@@ -1704,7 +1712,8 @@
       case 'approve-ok': { S.valConfirm = null; if (await act({ type: 'val.approve', vid: id })) { S.view = 'valider'; render(); celebrate(); undoBar(id); } break; }
       case 'val-undo': { clearTimeout(undoBar.t); $('#undo') && $('#undo').remove(); if (await act({ type: 'val.undo', vid: id }, 'Validation annulée. Rien n’a été envoyé à l’équipe.')) render(); break; }
       case 'fview': S.fview = id; render(); break;
-      case 'fview-close': if (e.target.closest('video, iframe, img, a')) return; S.fview = null; render(); break;
+      case 'fview-close': if (e.target.closest('video, iframe, img, a')) return; S.fview = null; S.docView = null; render(); break;
+      case 'doc-view': S.docView = { src: a.dataset.src, title: a.dataset.title }; render(); break;
       case 'file-remove-own': if (await act({ type: 'file.remove', fid: id }, 'Fichier retiré.')) render(); break;
       case 'bell': S.bellOpen = !S.bellOpen; render(); if (S.bellOpen) { const f = document.querySelector('#bell-pop button, #bell-pop a'); f && f.focus(); } break;
       case 'bell-read': try { await API.readNotif(); } catch {} await loadInbox(); render(); break;
@@ -1932,7 +1941,7 @@
       e.preventDefault(); tabs[n].focus(); tabs[n].click(); return;
     }
     if (e.key === 'Escape' && S.ob) { const sk = document.querySelector('[data-act=ob-skip]'); if (sk) { sk.click(); return; } S.ob = null; if (!S.preview && !S.me.onboardedAt) { S.me.onboardedAt = new Date().toISOString(); API.action(S.project.id, { type: 'user.onboarded' }).catch(() => {}); } render(); return; }
-    if (e.key === 'Escape' && (S.zoom || S.compose || S.mailView || S.fview)) { S.zoom = null; S.compose = null; S.mailView = null; S.fview = null; render(); return; }
+    if (e.key === 'Escape' && (S.zoom || S.compose || S.mailView || S.fview || S.docView)) { S.zoom = null; S.compose = null; S.mailView = null; S.fview = null; S.docView = null; render(); return; }
     if (e.key === 'Escape' && S.bellOpen) { S.bellOpen = false; render(); const b = document.querySelector('[data-act=bell]'); b && b.focus(); return; }
     if (e.target.closest && e.target.closest('.otp') && e.key === 'Backspace' && !e.target.value && e.target.previousElementSibling) e.target.previousElementSibling.focus();
   });

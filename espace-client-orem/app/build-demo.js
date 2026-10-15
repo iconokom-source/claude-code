@@ -12,7 +12,7 @@ const html = fs.readFileSync(pub('index.html'), 'utf8');
 const body = html.slice(html.indexOf('<body>') + 6, html.indexOf('<script src="/core.js">'));
 const img = { logo: b64('assets/logo-black.png', 'image/png'), louis: b64('assets/louis.jpg', 'image/jpeg'), theophile: b64('assets/theophile.jpg', 'image/jpeg'), clement: b64('assets/clement.jpg', 'image/jpeg') };
 
-const hd = Object.fromEntries([...fs.readdirSync(pub('assets/hd')).map((f) => ['assets/hd/' + f, b64('assets/hd/' + f, 'image/jpeg')]), ...fs.readdirSync(pub('assets/logos')).map((f) => ['assets/logos/' + f, b64('assets/logos/' + f, 'image/svg+xml')])]);
+const hd = Object.fromEntries([...fs.readdirSync(pub('assets/hd')).map((f) => ['assets/hd/' + f, b64('assets/hd/' + f, 'image/jpeg')]), ...fs.readdirSync(pub('assets/bilans')).map((f) => ['assets/bilans/' + f, b64('assets/bilans/' + f, 'application/pdf')]), ...fs.readdirSync(pub('assets/logos')).map((f) => ['assets/logos/' + f, b64('assets/logos/' + f, 'image/svg+xml')])]);
 
 const inner = `<title>Espace client Orem</title>
 <meta name="claude:viewport-fit-sides" content="cover">

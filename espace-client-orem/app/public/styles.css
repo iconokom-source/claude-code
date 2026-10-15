@@ -853,3 +853,8 @@ fieldset.field legend{font-weight:500;margin-bottom:6px;padding:0}
 @media (max-width:420px){ .panel .list .row{flex-wrap:wrap} .panel .list .row .grow{flex-basis:calc(100% - 60px)} }
 .ob-me{display:grid;gap:12px;margin:8px 0 20px}
 .ob-me .field{margin:0}
+/* Bilans mensuels : le document présenté en visio, toujours à portée de clic */
+.rp-row{display:flex;align-items:center;gap:12px;padding-right:16px}
+.rp-row .rp-h{flex:1;min-width:0}
+.rp-a{display:flex;gap:8px;flex:none}
+@media (max-width:560px){ .rp-row{flex-wrap:wrap;padding:0 0 14px} .rp-a{padding-left:16px} }
