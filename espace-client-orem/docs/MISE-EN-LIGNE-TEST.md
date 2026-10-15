@@ -14,9 +14,11 @@ Chez Hostinger (hPanel › Noms de domaine › agence-orem.fr › DNS), ajouter 
 
 | Type | Sous-domaine | Cible |
 |---|---|---|
-| A | `espace` | `188.245.37.4` |
+| A | `espace` | `178.104.114.48` |
 
-Le site agence-orem.fr (Webflow) n'est pas touché : seul le sous-domaine `espace` pointe vers le VPS.
+Le site agence-orem.fr (Webflow) n'est pas touché : seul le sous-domaine `espace` pointe vers le serveur de test (Hetzner `espace-orem-test`, créé par `app/deploy/hetzner-creer.js`, sans terminal).
+
+Si le navigateur affiche `ERR_CERT_COMMON_NAME_INVALID` après le changement : il garde l'ancienne adresse en cache. Chrome › `chrome://settings/security` › « Utiliser le DNS sécurisé » (Google ou Cloudflare), puis `chrome://net-internals/#dns` › « Clear host cache ». Ne jamais accepter l'avertissement.
 
 ## Étape 2 : les e-mails (10 minutes)
 
@@ -40,6 +42,9 @@ GitHub › Settings › Developer settings › Fine-grained tokens › Generate 
 Le script le demande une seule fois et le garde sur le VPS pour les mises à jour.
 
 ## Étape 4 : l'installation (5 minutes)
+
+> **Version actuelle : faite automatiquement.** Le serveur de test Hetzner s'installe et se met à jour tout seul depuis la branche (toutes les 3 minutes). La procédure ci-dessous ne sert que pour installer sur un VPS accessible en SSH.
+
 
 Sur le Mac :
 

@@ -38,12 +38,13 @@ Document de passation pour reprendre **exactement là où on s'est arrêtés** (
 - Brevo : compte « Agence Orem », domaine agence-orem.fr authentifié (DKIM brevo1/brevo2), expéditeurs contact@, louis@, theophile@, clement@ vérifiés ; SPF et DMARC (avec rua) mis à jour chez Hostinger.
 - Coffre Notion : `BREVO_API_KEY_OREM`, `HETZNER_API_TOKEN`, `GITHUB_TOKEN_VPS_ESPACE` ajoutés (collés dans la conversation : à régénérer avant la production ; le jeton GitHub n'a pas d'expiration).
 - Clés présentes sur le serveur (dans `/etc/espace-orem.env` et les données cloud-init de Hetzner) : Brevo, Pipedrive, Abby, Figma, Claude. Qonto et Google non configurés.
-- **Reste** : Louis remplace l'IP de l'enregistrement A `espace` (Hostinger) par 178.104.114.48 ; ensuite vérifier https://espace.agence-orem.fr, Réglages › Tester la version en ligne, et donner l'accès à Théophile et Clément.
+- **Fait (15/10, soir)** : enregistrement A `espace` → 178.104.114.48 chez Hostinger, certificat HTTPS émis par Caddy (après un redémarrage du serveur par l'API : les premières demandes étaient parties avant le changement de DNS). Louis voyait `ERR_CERT_COMMON_NAME_INVALID` : cache DNS de son poste qui gardait l'ancienne IP du pipeline ; réglé par le DNS sécurisé de Chrome. Le site s'ouvre chez lui. `/api/health` : `{"ok":true,"test":true,"mail":true}`.
+- **Reste** : Louis vérifie l'étape 5 (code reçu de contact@, e-mail générique et e-mail en son nom, « Tester » sur chaque outil), puis on donne l'accès à Théophile et Clément.
 - Pour changer une clé ou un réglage sur ce serveur sans terminal : recréer le serveur (supprimer puis relancer le script ; les données de test sont perdues) ou ajouter plus tard une page d'administration des réglages.
 
 - `tests/tout.sh` : **15 suites à 100 %** (simulation 25, equipe 14, lots 24, a11y 24, agence 26, waouh 20, accueil 25, arrivee 9, bilans 5, depots 11, connecteurs 40, securite 13, core 61, version-test 12). `agence` a échoué une fois sur une question de délai pendant le passage complet, puis passé seul et rejoué : à surveiller. Export ZIP : ZIP64 seulement au-delà de 4 Go (les petites archives restent au format classique) ; branche ZIP64 vérifiée par Python et unzip avec un seuil abaissé (`unzip -l` affiche alors les accents en `#U00e9` si la langue du système n'est pas réglée : affichage seulement, les fichiers sont intacts).
 
-**En cours** : rien. Prochaine étape : attendre que Louis ait fait les étapes 1 à 4 du guide de mise en ligne, puis l'aider à vérifier (étape 5) ; en attendant, les restes de l'audit UX et produit et les 52 propositions P3 du copywriting.
+**En cours** : vérification de l'étape 5 par Louis sur https://espace.agence-orem.fr ; en attendant, les restes de l'audit UX et produit et les 52 propositions P3 du copywriting.
 
 **Reste aussi du copywriting** : les 52 propositions P3 du rapport ; statut de demande « Proposé » affiché « Devis envoyé » (sans changer la valeur stockée) ; signature de l'e-mail d'invitation selon l'équipe du projet (`core.js`, test `core.js:84`) ; décision à prendre par Louis : l'interface agence vouvoie alors que les e-mails internes tutoient.
 
