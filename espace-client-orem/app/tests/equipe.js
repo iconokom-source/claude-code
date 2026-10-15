@@ -7,8 +7,8 @@ const ok = (label, v) => R.push(`${v ? '✔' : '✘'} ${label}`);
   const errs = [];
   async function login(email, vp = { width: 1440, height: 900 }) {
     const p = await (await br.newContext({ viewport: vp, reducedMotion: 'reduce' })).newPage(); p.on('pageerror', (e) => errs.push(email + ': ' + e.message));
-    await p.goto(B); await p.fill('#em', email); await p.click('form[data-form=login] button[type=submit]'); await p.waitForSelector('.devcode b', { timeout: 8000 }).catch(async () => { throw new Error('Pas de code de connexion pour ' + email + ' : ' + (await p.textContent('#toast').catch(() => '')) + ' (limite de connexions ? redémarrer le serveur)'); });
-    await p.fill('#o1', await p.textContent('.devcode b')); await p.click('form[data-form=verify] button[type=submit]'); await p.waitForSelector('#main'); await p.waitForLoadState('networkidle'); await p.waitForTimeout(250);
+    await p.goto(B); await p.fill('#em', email); await p.locator('form[data-form=login]').evaluate((f) => f.requestSubmit()); await p.waitForSelector('.devcode b', { timeout: 8000 }).catch(async () => { throw new Error('Pas de code de connexion pour ' + email + ' : ' + (await p.textContent('#toast').catch(() => '')) + ' (limite de connexions ? redémarrer le serveur)'); });
+    await p.fill('#o1', await p.textContent('.devcode b')); await p.locator('form[data-form=verify]').evaluate((f) => f.requestSubmit()); await p.waitForSelector('#main'); await p.waitForLoadState('networkidle'); await p.waitForTimeout(250);
     if (await p.$('.ob')) { await p.keyboard.press('Escape'); await p.waitForTimeout(100); }
     return p;
   }
@@ -51,11 +51,11 @@ const ok = (label, v) => R.push(`${v ? '✔' : '✘'} ${label}`);
   await louis.click('[data-inbox=activity]'); await louis.waitForTimeout(150);
   ok('Louis voit « Clément a envoyé une vidéo » dans l’activité de sa boîte', /Clément a envoyé une vidéo/.test(await louis.locator('#main').innerText()));
   await louis.click('.side [data-go=clients]'); await louis.click('.cat[data-mine="0"]'); await louis.click('[data-open=p_varenne]'); await louis.click('[data-tab=acces]');
-  await louis.check('[name=tm][value=u_clement]'); await louis.click('form[data-form=team] button'); await louis.waitForTimeout(300);
+  await louis.check('[name=tm][value=u_clement]'); await louis.locator('form[data-form=team]').evaluate((f) => f.requestSubmit()); await louis.waitForTimeout(300);
   await louis.screenshot({ path: OUT + '/3-equipe.png', fullPage: true });
   // 7. Julie écrit ; Théophile (récap) le voit et s'envoie le récap
   const julie = await login('julie@cabinet-varenne.fr');
-  await julie.click('.side [data-go=messages]'); await julie.fill('#msg-t', 'Bonjour, je vous envoie le logo demain.'); await julie.click('form[data-form=msg] button'); await julie.waitForTimeout(300);
+  await julie.click('.side [data-go=messages]'); await julie.fill('#msg-t', 'Bonjour, je vous envoie le logo demain.'); await julie.locator('form[data-form=msg]').evaluate((f) => f.requestSubmit()); await julie.waitForTimeout(300);
   const theo = await login('theophile@agence-orem.fr');
   ok('Théophile (chef de projet Varenne) voit le message de Julie', /Julie/.test(await theo.locator('#main').innerText()));
   const ob3 = await outbox(theo);
@@ -65,7 +65,7 @@ const ok = (label, v) => R.push(`${v ? '✔' : '✘'} ${label}`);
   ok('Le récap du jour de Théophile part (bouton « M’envoyer le récap »)', ob4.some((m) => m.startsWith('theophile@') && /récap/i.test(m)));
   await theo.click('[data-mail="0"]'); await theo.waitForTimeout(200); await theo.screenshot({ path: OUT + '/4-email.png' });
   await theo.click('[data-act=mail-close]');
-  await theo.check('[name=pf-email][value=instant]'); await theo.click('form[data-form=prefs] button[type=submit]'); await theo.waitForTimeout(300);
+  await theo.check('[name=pf-email][value=instant]'); await theo.locator('form[data-form=prefs]').evaluate((f) => f.requestSubmit()); await theo.waitForTimeout(300);
   ok('Théophile passe en « à chaque nouveauté »', await theo.evaluate(async () => (await (await fetch('/api/me')).json()).user.notify.email === 'instant'));
   ok('Clément (ajouté à Varenne) reçoit le message de Julie', await clem.evaluate(async () => (await (await fetch('/api/inbox')).json()).items.some((n) => /Julie/.test(n.text))));
   console.log('compose open?', !!(await clem.$('.compose-card')), await clem.textContent('#toast')); if (await clem.$('.compose-card')) await clem.keyboard.press('Escape');

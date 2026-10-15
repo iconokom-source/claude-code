@@ -8,19 +8,19 @@ const errs = [];
   async function login(email, vp = { width: 1440, height: 900 }) {
     const p = await (await br.newContext({ viewport: vp, reducedMotion: 'reduce', isMobile: vp.width < 500, hasTouch: vp.width < 500 })).newPage();
     p.on('pageerror', (e) => errs.push(email + ' : ' + e.message)); p.on('dialog', (d) => d.accept());
-    await p.goto(B); await p.fill('#em', email); await p.click('form[data-form=login] button[type=submit]');
+    await p.goto(B); await p.fill('#em', email); await p.locator('form[data-form=login]').evaluate((f) => f.requestSubmit());
     await p.waitForSelector('.devcode b', { timeout: 8000 }); await p.fill('#o1', await p.textContent('.devcode b'));
-    await p.click('form[data-form=verify] button[type=submit]'); await p.waitForSelector('#main'); await p.waitForLoadState('networkidle'); await p.waitForTimeout(250);
+    await p.locator('form[data-form=verify]').evaluate((f) => f.requestSubmit()); await p.waitForSelector('#main'); await p.waitForLoadState('networkidle'); await p.waitForTimeout(250);
     if (await p.$('.ob')) { await p.keyboard.press('Escape'); await p.waitForTimeout(120); }
     return p;
   }
   const main = (p) => p.locator('#main').innerText();
   // Claire écrit, Hugo demande une évolution (déjà dans les données), Claire dépose un fichier
   const claire = await login('claire@maisonlumen.fr');
-  await claire.click('.side [data-go=messages]'); await claire.fill('#msg-t', 'Pouvez-vous ajouter une page Presse ?'); await claire.click('form[data-form=msg] button'); await claire.waitForTimeout(300);
+  await claire.click('.side [data-go=messages]'); await claire.fill('#msg-t', 'Pouvez-vous ajouter une page Presse ?'); await claire.locator('form[data-form=msg]').evaluate((f) => f.requestSubmit()); await claire.waitForTimeout(300);
 
   const hugo0 = await login('hugo@huchet-demorge.fr');
-  await hugo0.click('.side [data-go=messages]'); await hugo0.fill('#msg-t', 'Peut-on ajouter le logo du cabinet en pied de page ?'); await hugo0.click('form[data-form=msg] button'); await hugo0.waitForTimeout(300);
+  await hugo0.click('.side [data-go=messages]'); await hugo0.fill('#msg-t', 'Peut-on ajouter le logo du cabinet en pied de page ?'); await hugo0.locator('form[data-form=msg]').evaluate((f) => f.requestSubmit()); await hugo0.waitForTimeout(300);
   const louis = await login('louis@agence-orem.fr');
   const todo = await louis.locator('[data-inbox=todo] .num').innerText(), badge = await louis.locator('.side [data-go=inbox] .badge').innerText();
   ok('Boîte de réception : « À traiter » par défaut, badge = nombre à traiter', (await louis.getAttribute('[data-inbox=todo]', 'aria-pressed')) === 'true' && badge.replace(/\D/g, '') === todo, `${badge} / ${todo}`);
@@ -33,7 +33,7 @@ const errs = [];
   // Répondre directement
   await louis.locator('.inbox-item', { hasText: 'Pouvez-vous ajouter' }).locator('[data-act=reply]').click(); await louis.waitForTimeout(100);
   const rp = await louis.locator('form[data-form=reply] textarea').getAttribute('id');
-  await louis.fill('#' + rp, 'Oui Claire, on vous la propose au prochain point.'); await louis.click('form[data-form=reply] button'); await louis.waitForTimeout(400);
+  await louis.fill('#' + rp, 'Oui Claire, on vous la propose au prochain point.'); await louis.locator('form[data-form=reply]').evaluate((f) => f.requestSubmit()); await louis.waitForTimeout(400);
   ok('Réponse directe depuis la boîte : envoyée et retirée de « À traiter »', !/Pouvez-vous ajouter une page Presse/.test(await main(louis)));
   await claire.reload(); await claire.waitForSelector('#main'); await claire.click('.side [data-go=messages]'); await claire.waitForTimeout(200);
   ok('Claire reçoit la réponse dans son espace', /on vous la propose au prochain point/.test(await main(claire)));

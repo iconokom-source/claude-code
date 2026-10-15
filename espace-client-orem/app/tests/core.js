@@ -68,9 +68,20 @@ const cp = Core.createProject(db2, db2.users.find((u) => u.id === 'u_louis'), { 
 ok('Création refusée sans registre explicite (côté serveur aussi)', /tutoiement/.test(cp.error || ''));
 const cp2 = Core.createProject(db2, db2.users.find((u) => u.id === 'u_louis'), { client: 'Atelier Neuf', email: 'a@atelier-neuf.fr', registre: 'vous', offer: 'site' });
 const nu = db2.users.find((u) => u.email === 'a@atelier-neuf.fr');
-ok('Création : invitation à envoyer, accès au nom de domaine attendu', cp2.invite === nu.id && db2.projects[0].missing.some((m) => /nom de domaine/.test(m.t)));
+ok('Création : invitation à envoyer, Webflow et nom de domaine dans « Bien démarrer »', cp2.invite === nu.id && ['webflow', 'domaine'].every((k) => db2.projects[0].tasks.some((t) => t.auto === k && t.go === 'demarrer')));
+ok('Création : les trois membres de l’équipe sur le projet', ['u_louis', 'u_theo', 'u_clement'].every((id) => db2.projects[0].team.members.includes(id)));
+{ const P = db2.projects[0], pid = P.id, cl = nu, lo = db2.users.find((u) => u.id === 'u_louis');
+  ok('Bien démarrer : le client déclare l’espace Webflow', !Core.apply(db2, pid, cl, { type: 'setup.webflow', ws: 'Atelier Neuf' }).error && !!P.tasks.find((t) => t.auto === 'webflow').sent);
+  ok('Bien démarrer : le client ne peut pas cocher lui-même', !!Core.apply(db2, pid, cl, { type: 'setup.check', tid: P.tasks.find((t) => t.auto === 'webflow').id, ok: true }).error);
+  ok('Bien démarrer : mot de passe refusé hors du coffre', !!Core.apply(db2, pid, cl, { type: 'setup.domain', mode: 'vault', domain: 'atelier-neuf.fr' }).error);
+  ok('Bien démarrer : nom de domaine invalide refusé', !!Core.apply(db2, pid, cl, { type: 'setup.domain', mode: 'delegate', domain: 'pas un domaine' }).error);
+  ok('Bien démarrer : accès délégué déclaré', !Core.apply(db2, pid, cl, { type: 'setup.domain', mode: 'delegate', domain: 'https://www.Atelier-Neuf.fr/', registrar: 'Gandi' }).error && P.tasks.find((t) => t.auto === 'domaine').info.domain === 'www.atelier-neuf.fr');
+  const r = Core.apply(db2, pid, lo, { type: 'setup.check', tid: P.tasks.find((t) => t.auto === 'domaine').id, ok: true });
+  ok('Bien démarrer : vérification par l’équipe, coffre à effacer', r.ok && r.purgeVault === true && P.tasks.find((t) => t.auto === 'domaine').done);
+  ok('Logo du client : http refusé, image enregistrée sinon', !!Core.apply(db2, pid, lo, { type: 'project.logo', img: 'http://x.fr/l.png' }).error && !Core.apply(db2, pid, lo, { type: 'project.logo', img: 'https://x.fr/l.png', tone: 'mono' }).error && P.brand.logo === 'https://x.fr/l.png');
+  ok('Logo du client : conservé quand on change les couleurs', !Core.apply(db2, pid, lo, { type: 'project.brand', colors: [['Bleu', '#112233']], fonts: [] }).error && P.brand.logo === 'https://x.fr/l.png'); }
 const im = Core.inviteMail(nu, db2.projects[0], db2.users.find((u) => u.id === 'u_louis'), 'http://x');
-ok('E-mail d’invitation au vouvoiement, signé par le chef de projet', /Votre espace Atelier Neuf est prêt/.test(im.subject) && /Louis/.test(im.html) && !/\u2014/.test(im.html));
+ok('E-mail d’invitation au vouvoiement, signé par l’équipe', /Votre espace Atelier Neuf est prêt/.test(im.subject) && /L\u2019équipe Orem/.test(im.html) && /Louis, Théophile et Clément/.test(im.html) && !/\u2014/.test(im.html));
 ok('Le client ne peut plus retirer un fichier attendu sans rien déposer', !!Core.apply(db2, 'p_varenne', db2.users.find((u) => u.id === 'u_julie'), { type: 'missing.done', mid: 'vm1' }).error);
 ok('Relance des fichiers attendus après 5 jours ouvrés', Core.runReminders(db2, Date.now() + 9 * 864e5).notices.some((n) => n.userId === 'u_julie' && /il nous manque/.test(n.text)));
 const db3 = Core.seed(); const vv = db3.projects.find((p) => p.id === 'p_varenne'); const g = vv.golive;

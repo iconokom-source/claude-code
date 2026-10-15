@@ -214,7 +214,15 @@ Failles vérifiées (fichier:ligne dans la version actuelle) :
 3. Copier le brouillon sur `app/server.js`, adapter `app.js` (écran de confirmation du lien, `/api/verify` ne renvoie plus `user`).
 4. Rejouer les deux tests + les tests de sécurité de l'audit (faux `file.add`, `Host` piégé, cookie mal formé, champs de 1 Mo, date invalide).
 
-## Point d'arrêt (session du 14 octobre 2026, soir)
+## Point d'arrêt (session du 15 octobre 2026)
+
+**Fait dans cette session** (voir `docs/conception.md` section 11 et `docs/mcp.md`) : sections du pilotage espacées ; équipe de trois sur tous les projets, rôles du site sans « cofondateur », Clément Saint-Hilaire avec son WhatsApp, photo recadrée, bienvenue signée par l'équipe ; « Bien démarrer » (acompte, espace Webflow, accès au nom de domaine par délégation ou coffre chiffré) ; bibliothèque de visuels téléchargeables sans renvoi au site, ZIP, connecteur Figma ; vignettes de fichiers ; logo du client recoloré en blanc ou en noir ; serveur MCP (`app/mcp.js`) et jetons d'API (`app/jeton.js`) pour piloter les espaces depuis Claude Code ; icône `menu`, carte « À régler », boutons d'enregistrement masqués, tests adaptés.
+
+**Reste à faire** : rejouer `tests/tout.sh` jusqu'à 100 % après les derniers correctifs (bandeau en jours du calendrier, simulation et lots adaptés), puis les points 4 à 6 et la liste accessibilité ci-dessous.
+
+**À valider par Louis, en plus** : consignes d'accès délégué par registraire (`REGISTRARS` dans `app.js`), identifiant OVH de l'agence (réglage `ovhNic`), adresse d'invitation Webflow (`webflowInvite`, par défaut louis@agence-orem.fr), jeton Figma pour l'import réel, photo de Clément en meilleure définition (à déposer dans `app/public/assets/clement.jpg`).
+
+## Point d'arrêt précédent (session du 14 octobre 2026, soir)
 
 **Les 8 lots sont faits, testés et poussés** (commits `551723c` à `63271b0`), puis le réaudit indépendant a été lancé (4 relecteurs) et ses correctifs appliqués en partie. `docs/reprise/server.wip.js` est obsolète (le serveur actuel l'a remplacé).
 

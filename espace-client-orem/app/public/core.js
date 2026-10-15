@@ -57,11 +57,20 @@
     ], validations: [['priorites', 'Priorités du mois', 'Ce qu’on fait évoluer ce mois-ci', 6]] }
   };
   const DEFAULT_MISSING = {
-    site: [['Logo et charte actuelle', 'Les fichiers que vous avez, même anciens.'], ['Photos', 'Équipe, lieux, produits : ce que vous avez déjà.'], ['Accès au nom de domaine', 'L’identifiant de l’hébergeur (OVH, Gandi…) ou la personne qui le gère.']],
+    site: [['Logo et charte actuelle', 'Les fichiers que vous avez, même anciens.'], ['Photos', 'Équipe, lieux, produits : ce que vous avez déjà.']],
     da: [['Logo actuel', 'Même ancien, en bonne qualité si possible.'], ['3 ou 4 marques que vous aimez', 'Des liens ou des captures, avec un mot sur ce qui vous plaît.']],
     conseil: [['Documents existants', 'Plaquette, présentation, chiffres clés : ce qui aide à comprendre l’activité.']],
     evolution: [['Accès Google Analytics et Search Console', 'Pour lire les chiffres du site chaque mois.']]
   };
+  /* « Bien démarrer » : les trois priorités du client à l'arrivée (site web) : l'acompte, l'espace Webflow
+     à son nom, l'accès au nom de domaine. Le client les envoie, l'équipe vérifie et coche. */
+  const SETUP = [['webflow', 'Créer l’espace Webflow de l’entreprise'], ['domaine', 'Donner l’accès au nom de domaine']];
+  function addSetup(project, at) {
+    if (project.offer !== 'site') return;
+    const i = project.tasks.findIndex((t) => t.auto === 'acompte');
+    const add = SETUP.filter(([k]) => !project.tasks.some((t) => t.auto === k)).map(([k, t]) => ({ id: uid('t'), t, done: false, auto: k, go: 'demarrer', at }));
+    project.tasks.splice(i >= 0 ? i + 1 : 0, 0, ...add);
+  }
   const PRELAUNCH = ['Redirections 301 de l’ancien site', 'Mentions légales et politique de confidentialité', 'Bandeau cookies conforme', 'Nom de domaine et DNS prêts', 'Titres et descriptions des pages', 'Formulaires testés de bout en bout', 'Google Analytics et Search Console installés'];
   const DEFAULT_TOOLS = { site: ['brand', 'signature', 'request', 'webflow'], da: ['brand', 'signature'], conseil: ['request'], evolution: ['brand', 'signature', 'request', 'webflow'] };
   const HANDOVER = ['Accès administrateur Webflow transmis', 'Fichiers sources Figma partagés', 'Guide de réutilisation remis', 'Formation réalisée', 'Google Analytics et Search Console connectés'];
@@ -104,10 +113,11 @@
   }
 
   function seed(now = Date.now()) {
+    const TEAM3 = ['u_louis', 'u_theo', 'u_clement'];
     const users = [
-      { id: 'u_louis', email: 'louis@agence-orem.fr', name: 'Louis Montagne', role: 'admin', title: 'Cofondateur, chef de projet', phone: '07 50 37 15 72', wa: 'https://wa.me/33750371572', photo: 'louis' },
-      { id: 'u_theo', email: 'theophile@agence-orem.fr', name: 'Théophile Lamouret', role: 'admin', title: 'Cofondateur, stratégie et textes', phone: '07 71 67 39 47', wa: 'https://wa.me/33771673947', photo: 'theophile' },
-      { id: 'u_clement', email: 'clement@agence-orem.fr', name: 'Clément', role: 'admin', title: 'Designer, il dessine les maquettes', photo: 'clement' }
+      { id: 'u_louis', email: 'louis@agence-orem.fr', name: 'Louis Montagne', role: 'admin', title: 'Développeur Webflow', about: 'Conçoit et livre les sites : Webflow, automatisations, référencement.', phone: '07 50 37 15 72', wa: 'https://wa.me/33750371572', photo: 'louis' },
+      { id: 'u_theo', email: 'theophile@agence-orem.fr', name: 'Théophile Lamouret', role: 'admin', title: 'Stratège', about: 'Positionnement, textes et référencement : la clarté du message.', phone: '07 71 67 39 47', wa: 'https://wa.me/33771673947', photo: 'theophile' },
+      { id: 'u_clement', email: 'clement@agence-orem.fr', name: 'Clément Saint-Hilaire', role: 'admin', title: 'Directeur de création', about: 'Identité visuelle, direction artistique, maquettes et interfaces.', phone: '06 95 62 59 25', wa: 'https://wa.me/33695625925', photo: 'clement' }
     ];
     const at = (n, h) => { const d = new Date(now + n * DAY); if (h !== undefined) d.setHours(h, 0, 0, 0); return d.toISOString(); };
     const f = (name, cat, from, by, d, size, extra = {}) => ({ id: uid('f'), name, cat, from, by, at: d, size, seen: true, demo: true, ...extra });
@@ -125,6 +135,7 @@
     a.note = { text: 'Le plan du site est prêt : 7 pages, avec une page par atelier comme on en a parlé en visio. Clément démarre les premières pistes graphiques dès votre feu vert.', by: 'u_louis', at: at(-1, 17) };
     a.meeting = { title: 'Point d’étape (visio, 30 min)', when: at(8, 10) };
     a.tasks = [{ id: 't1', t: 'Réserver la visio de cadrage', done: true }, { id: 't2', t: 'Régler l’acompte de 50 %', done: true, auto: 'acompte', go: 'documents' }];
+    addSetup(a, at(-20, 9)); a.tasks.filter((t) => t.go === 'demarrer').forEach((t) => Object.assign(t, { done: true, sent: at(-19, 10), checkedAt: at(-18, 9), checkedBy: 'u_louis', info: t.auto === 'webflow' ? { ws: 'Maison Lumen' } : { domain: 'maisonlumen.fr', registrar: 'OVHcloud', mode: 'delegate' } }));
     a.missing = [{ id: 'm1', t: 'Photos de l’équipe', sub: 'Pour la page À propos. Portraits ou photos de groupe.', at: at(-4) }, { id: 'm2', t: '2 ou 3 témoignages clients', sub: 'Un texte court suffit, on s’occupe de la mise en forme.', at: at(-4) }];
     a.billing = { totalHT: 6900, totalTTC: 8280, quote: 'D-2026-0142', signedAt: at(-15, 15) };
     a.invoices = [
@@ -177,14 +188,12 @@
     b.tools = ['teaser', 'brand', 'signature', 'request', 'webflow'];
     b.tutorials = [{ t: 'Modifier un texte ou une image', d: '3 min', url: '' }, { t: 'Ajouter un hôtel ou une boulangerie à vendre', d: '4 min', url: '' }, { t: 'Publier un article', d: '3 min', url: '' }, { t: 'Publier ses changements en toute sécurité', d: '2 min', url: '' }];
     b.handover = HANDOVER.map((t) => ({ t, done: true }));
+    // Bibliothèque : les visuels du fichier Figma (pages « Bento reveal » et « Cas d'étude »), à télécharger. Aucun renvoi vers le site de l'agence.
     b.assets = [
-      { id: 'a1', kind: 'Réalisation', title: 'Visuel de couverture du cas client', img: 'assets/hd/cover.jpg', url: 'https://www.agence-orem.fr/realisations/huchet-demorge' },
-      { id: 'a2', kind: 'Réalisation', title: 'Mise en scène du site sur mobile', img: 'assets/hd/ecran-1.jpg' },
-      { id: 'a3', kind: 'Réalisation', title: 'Pages annonces d’hôtels', img: 'assets/hd/ecran-2.jpg' },
-      { id: 'a4', kind: 'Réalisation', title: 'Monogramme HD', img: 'assets/hd/ecran-3.jpg' },
-      { id: 'a5', kind: 'Cas d’étude', title: 'Cas client Huchet-Demorge sur agence-orem.fr', img: 'assets/hd/cover.jpg', url: 'https://www.agence-orem.fr/realisations/huchet-demorge' },
-      { id: 'a6', kind: 'Maquettes', title: 'Fichier Figma complet (maquettes et composants)', url: b.links.figma },
-      { id: 'a7', kind: 'Maquettes', title: 'Prototype interactif', url: b.links.proto }
+      { id: 'a1', kind: 'Présentation', title: 'Visuel de présentation (bento)', img: 'assets/hd/cover.jpg', by: 'team' },
+      { id: 'a2', kind: 'Cas d’étude', title: 'Cas d’étude · planche 01', img: 'assets/hd/ecran-1.jpg', by: 'team' },
+      { id: 'a3', kind: 'Cas d’étude', title: 'Cas d’étude · planche 02', img: 'assets/hd/ecran-2.jpg', by: 'team' },
+      { id: 'a4', kind: 'Cas d’étude', title: 'Cas d’étude · planche 03', img: 'assets/hd/ecran-3.jpg', by: 'team' }
     ];
     b.messages = [
       { id: 'hm4', fromAgency: true, by: 'u_clement', at: '2026-01-13T15:00:00.000Z', text: 'Présentation des wireframes et de la page d’accueil, avec les choix de direction artistique.', loom: { url: 'https://www.loom.com/share/8b9f66df6c52449fa0ff18afea1658b3', title: 'Wireframes et page d’accueil', duration: '9 min' } },
@@ -204,7 +213,7 @@
       f('Devis D-2025-0098 signé.pdf', 'Devis', 'agence', 'u_louis', '2025-11-20T10:00:00.000Z', 98000),
       f('Textes des annonces.docx', 'Documents', 'client', 'u_hugo', '2025-12-10T11:00:00.000Z', 64000),
       f('Photos du cabinet (24 fichiers).zip', 'Images', 'client', 'u_hugo', '2025-12-04T09:00:00.000Z', 154000000),
-      f('Logo Huchet-Demorge HD.svg', 'Images', 'client', 'u_hugo', '2025-11-27T10:00:00.000Z', 52000)
+      f('Logo Huchet-Demorge HD.svg', 'Images', 'client', 'u_hugo', '2025-11-27T10:00:00.000Z', 52000, { thumb: 'assets/hd/ecran-3.jpg' })
     ];
     b.activity = [{ at: at(-5, 9), by: 'u_hugo', text: 'a demandé une évolution : formulaires', seen: false }];
 
@@ -214,11 +223,12 @@
     c.phases[0].items[0].status = 'done'; c.phases[0].items[1].status = 'done';
     c.next = { title: 'Réserver la visio de cadrage', text: 'Une heure pour caler ensemble vos objectifs, vos cibles et le plan du site. Choisissez le créneau qui vous arrange.', go: 'cal' };
     c.tasks = [{ id: 'vt1', t: 'Réserver la visio de cadrage (1 h)', done: false, go: 'cal' }, { id: 'vt2', t: 'Régler l’acompte de 50 %', done: false, go: 'documents', auto: 'acompte' }];
-    c.missing = [{ id: 'vm1', t: 'Logo et charte actuelle', sub: 'Les fichiers que vous avez, même anciens.', at: at(-1) }, { id: 'vm2', t: 'Photos du cabinet et de l’équipe', sub: 'Si vous en avez déjà, sinon on en parle en visio.', at: at(-1) }, { id: 'vm3', t: 'Accès au nom de domaine', sub: 'L’identifiant de votre hébergeur (OVH, Gandi…) ou la personne qui le gère.', at: at(-1) }];
+    addSetup(c, at(-3, 15));
+    c.missing = [{ id: 'vm1', t: 'Logo et charte actuelle', sub: 'Les fichiers que vous avez, même anciens.', at: at(-1) }, { id: 'vm2', t: 'Photos du cabinet et de l’équipe', sub: 'Si vous en avez déjà, sinon on en parle en visio.', at: at(-1) }];
     c.billing.quote = 'D-2026-0151'; c.billing.signedAt = at(-3, 15);
     c.invoices = [{ id: 'vinv1', num: 'F-2026-0199', label: 'Facture d’acompte (50 %)', ht: 3800, ttc: 4560, status: 'due', date: at(-1, 9) }, { id: 'vinv2', num: '', label: 'Facture de solde (50 %)', ht: 3800, ttc: 4560, status: 'future', date: null }];
     c.files = [f('Devis D-2026-0151 signé.pdf', 'Devis', 'agence', 'u_theo', at(-3, 15), 97000), f('Facture F-2026-0199.pdf', 'Facture', 'agence', 'u_theo', at(-1, 9), 88000), f('IBAN ICONOKOM.pdf', 'RIB', 'agence', 'u_theo', at(-1, 9), 61000)];
-    c.messages = [{ id: 'vm-1', fromAgency: true, readByClient: false, by: 'u_theo', at: at(-1, 10), text: 'Bienvenue Julie ! Petite vidéo de 2 minutes pour vous présenter votre espace et la suite du projet.', loom: { url: 'https://www.loom.com/share/8b9f66df6c52449fa0ff18afea1658b3', title: 'Bienvenue dans votre espace', duration: '2 min' } }];
+    c.messages = [{ id: 'vm-1', fromAgency: true, readByClient: false, by: 'team', at: at(-1, 10), text: 'Bienvenue Julie ! Petite vidéo de 2 minutes pour vous présenter votre espace et la suite du projet.', loom: { url: 'https://www.loom.com/share/8b9f66df6c52449fa0ff18afea1658b3', title: 'Bienvenue dans votre espace', duration: '2 min' } }];
     c.activity = [];
 
     /* Exemple 4 : Domaine des Vergers (fictif), avant signature : Inès découvre sa proposition et l'accepte en ligne. */
@@ -231,7 +241,7 @@
     d.next = { title: 'Découvrir votre proposition', text: 'Tout est détaillé : ce qu’on fait, dans quel ordre, et le budget. Vous pouvez l’accepter en ligne, ou nous poser vos questions.', go: 'proposition' };
     d.messages = [{ id: 'dm1', fromAgency: true, readByClient: false, by: 'u_theo', at: at(-1, 17), text: 'Bonjour Inès, votre proposition est en ligne. Je reste disponible pour en parler.' }];
     d.activity = [{ at: at(-1, 17), by: 'u_theo', text: 'a envoyé la proposition', seen: true }];
-    d.team = { lead: 'u_theo', members: ['u_theo', 'u_clement'] };
+    d.team = { lead: 'u_theo', members: TEAM3 };
     // Huchet : devis d'un clic depuis la demande d'évolution (montant fictif)
     b.proposals = [{ id: 'pr_hd1', status: 'sent', title: 'Évolution : l’annonce dans chaque e-mail de contact', quote: 'D-2026-0161', sentAt: at(-3, 10), validUntil: at(27), from: 'hr1',
       intro: 'Suite à ta demande : chaque e-mail de contact indiquera l’annonce concernée (intitulé et lien).', lines: [{ t: 'Champ caché « annonce » sur les formulaires et modèle d’e-mail', ht: 450 }], depositPct: 0, example: true }];
@@ -239,6 +249,7 @@
     const hugoNotice = { id: uid('n'), userId: 'u_hugo', projectId: 'p_huchet', client: 'Huchet-Demorge', type: 'validations', act: 'proposal.send', text: 'Louis t’a envoyé une proposition : Évolution : l’annonce dans chaque e-mail de contact', by: 'u_louis', at: at(-3, 10), read: false, reg: 'tu', go: { view: 'proposition' } };
     a.versions = [{ id: 've1', label: 'V1', t: 'Plan du site', url: 'https://www.figma.com/proto/exemple-maison-lumen-plan', at: at(-2, 11) }];
     b.versions = [{ id: 'hv2', label: 'V2', t: 'Maquettes finales', url: b.links.proto, at: '2026-03-13T10:00:00.000Z' }, { id: 'hv1', label: 'V1', t: 'Maquettes desktop', url: b.links.proto, at: '2026-02-20T10:00:00.000Z' }];
+    for (const [x, f] of [[a, 'lumen'], [b, 'huchet'], [c, 'varenne'], [d, 'vergers']]) x.brand.logo = 'assets/logos/' + f + '.svg';
     users.push(
       { id: 'u_ines', email: 'ines@domaine-des-vergers.fr', name: 'Inès', role: 'client', projectId: d.id },
       { id: 'u_claire', email: 'claire@maisonlumen.fr', name: 'Claire', role: 'client', projectId: a.id },
@@ -248,9 +259,9 @@
     users.find((u) => u.id === 'u_louis').notify = { email: 'instant', events: { files: true, messages: true, validations: true, requests: true, activity: false } };
     users.find((u) => u.id === 'u_theo').notify = { email: 'digest', events: { files: true, messages: true, validations: true, requests: true, activity: false } };
     users.find((u) => u.id === 'u_clement').notify = { email: 'instant', events: { files: true, messages: true, validations: true, requests: false, activity: false } };
-    a.team = { lead: 'u_louis', members: ['u_louis', 'u_clement'] };
-    b.team = { lead: 'u_louis', members: ['u_louis', 'u_theo', 'u_clement'] };
-    c.team = { lead: 'u_theo', members: ['u_theo', 'u_louis'] };
+    a.team = { lead: 'u_louis', members: TEAM3 };
+    b.team = { lead: 'u_louis', members: TEAM3 };
+    c.team = { lead: 'u_theo', members: TEAM3 };
     const N = (userId, p, type, text, by, d, go) => ({ id: uid('n'), userId, projectId: p.id, client: p.client, type, act: { files: 'file.add', requests: 'request.add', activity: 'val.request' }[type], rid: type === 'requests' ? 'hr1' : undefined, done: type === 'requests', read: type === 'requests', text, by, at: d, go: { view: 'admin', tab: go } });
     const notifications = [
       N('u_louis', a, 'files', 'Claire a déposé « Texte À propos.docx »', 'u_claire', at(-3, 18), 'fichiers'),
@@ -334,7 +345,7 @@
   }
 
   /* ---------- Écriture ---------- */
-  const CLIENT_ACTIONS = new Set(['user.prefs', 'val.undo', 'file.remove', 'proposal.accept', 'proposal.decline', 'pin.add', 'val.approve', 'val.changes', 'task.toggle', 'user.onboarded', 'msg.post', 'msg.read', 'request.add', 'review.add']);
+  const CLIENT_ACTIONS = new Set(['user.prefs', 'val.undo', 'file.remove', 'proposal.accept', 'proposal.decline', 'pin.add', 'val.approve', 'val.changes', 'task.toggle', 'user.onboarded', 'msg.post', 'msg.read', 'request.add', 'review.add', 'setup.webflow', 'setup.domain']);
 
   /* ---------- Validation des données entrantes ----------
      Tout ce qui vient du navigateur est borné en taille, et les liens doivent être en https. */
@@ -436,6 +447,27 @@
         t.done = !t.done; if (t.done) log(project, user, 'a coché : ' + t.t.toLowerCase()); break;
       }
       case 'task.remove': project.tasks = project.tasks.filter((x) => x.id !== action.tid); break;
+      case 'setup.webflow': {
+        const t = project.tasks.find((x) => x.auto === 'webflow'); if (!t) return { error: 'Étape introuvable.' };
+        const ws = String(action.ws || '').trim(); if (ws.length < 2) return { error: 'Indiquez le nom de l’espace de travail Webflow.' };
+        Object.assign(t, { sent: now, info: { ws: ws.slice(0, 120) } }); log(project, user, 'a créé l’espace Webflow « ' + ws.slice(0, 120) + ' »'); break;
+      }
+      case 'setup.domain': {
+        const t = project.tasks.find((x) => x.auto === 'domaine'); if (!t) return { error: 'Étape introuvable.' };
+        const domain = String(action.domain || '').trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+        if (!/^[a-z0-9àâäéèêëîïôöùûüç-]+(\.[a-z0-9àâäéèêëîïôöùûüç-]+)+$/.test(domain)) return { error: 'Indiquez le nom de domaine, par exemple entreprise.fr.' };
+        const mode = ['delegate', 'vault', 'unknown'].includes(action.mode) ? action.mode : 'unknown';
+        if (mode === 'vault' && !internal) return { error: 'Les identifiants passent par le coffre chiffré.' };
+        Object.assign(t, { sent: now, info: { domain: domain.slice(0, 120), registrar: String(action.registrar || '').slice(0, 60), mode } });
+        log(project, user, mode === 'vault' ? 'a déposé les accès du nom de domaine dans le coffre chiffré' : mode === 'delegate' ? 'a donné un accès délégué au nom de domaine' : 'a indiqué le nom de domaine ' + domain); break;
+      }
+      case 'vault.read': log(project, user, 'a ouvert les accès du nom de domaine (coffre chiffré)'); break;
+      case 'setup.check': {
+        const t = project.tasks.find((x) => x.id === action.tid && ['webflow', 'domaine'].includes(x.auto)); if (!t) return { error: 'Étape introuvable.' };
+        if (action.ok) { t.done = true; t.checkedAt = now; t.checkedBy = user.id; log(project, user, 'a vérifié : ' + t.t.toLowerCase()); }
+        else { t.done = false; t.sent = null; t.retry = String(action.why || '').slice(0, 300); log(project, user, 'a demandé de reprendre : ' + t.t.toLowerCase()); }
+        return { ok: true, purgeVault: t.auto === 'domaine' && !!action.ok };
+      }
       case 'missing.add':
         if (!String(action.t || '').trim()) return { error: 'Écrivez ce qu’il manque.' };
         project.missing.push({ id: uid('m'), t: String(action.t), sub: String(action.sub || ''), at: now }); break;
@@ -505,7 +537,7 @@
         const text = String(action.text || '').trim();
         if (!text) return { error: 'Écrivez votre message.' };
         const loom = action.loom && action.loom.url ? { url: String(action.loom.url), title: String(action.loom.title || 'Vidéo'), duration: String(action.loom.duration || '') } : undefined;
-        project.messages.unshift({ id: uid('m'), by: user.id, at: now, text: text.slice(0, 4000), loom, fromAgency: user.role === 'admin', readByAgency: user.role === 'admin', readByClient: user.role !== 'admin' });
+        project.messages.unshift({ id: uid('m'), by: user.role === 'admin' && action.asTeam ? 'team' : user.id, at: now, text: text.slice(0, 4000), loom, fromAgency: user.role === 'admin', readByAgency: user.role === 'admin', readByClient: user.role !== 'admin' });
         log(project, user, loom ? 'a envoyé une vidéo' : 'a envoyé un message'); break;
       }
       case 'msg.read':
@@ -568,7 +600,13 @@
         const hex = /^#[0-9a-f]{6}$/i;
         const colors = (Array.isArray(action.colors) ? action.colors : []).filter((c) => Array.isArray(c) && hex.test(c[1])).slice(0, 12).map(([n, h]) => [String(n || '').slice(0, 40), h]);
         const fonts = (Array.isArray(action.fonts) ? action.fonts : []).filter((f) => Array.isArray(f) && f[1]).slice(0, 6).map(([r, n]) => [String(r || '').slice(0, 40), String(n).slice(0, 80)]);
-        project.brand = { colors, fonts }; break;
+        project.brand = { ...(project.brand || {}), colors, fonts }; break;
+      }
+      case 'project.logo': {
+        // Logo du client, affiché dans son espace en blanc ou en noir selon le fond (« mono »), ou tel quel (« color »).
+        project.brand = project.brand || { colors: [], fonts: [] };
+        if (!action.img) { delete project.brand.logo; break; }
+        project.brand.logo = safeUrl(action.img, 'img'); project.brand.logoTone = action.tone === 'color' ? 'color' : 'mono'; break;
       }
       case 'project.tools': {
         const known = ['teaser', 'brand', 'signature', 'request', 'webflow'];
@@ -621,6 +659,7 @@
       case 'project.ext': {
         project.ext = project.ext || {};
         for (const k of ['abby', 'drive', 'ga4', 'gsc']) if (action[k] !== undefined) project.ext[k] = String(action[k] || '').trim().slice(0, 300);
+        if (action.figma !== undefined) { project.ext.figma = action.figma ? safeUrl(action.figma, 'figma') : ''; delete project.ext.figmaVersion; }
         break;
       }
       case 'invoice.pay': {
@@ -670,6 +709,7 @@
           // La signature lance le projet : devis coché, acompte et visio de démarrage dans « À faire ».
           project.phases[0].items.forEach((i) => { if (/proposition|devis/i.test(i.t)) i.status = 'done'; });
           if (pr.depositPct > 0 && !project.tasks.some((t) => t.auto === 'acompte')) project.tasks.push({ id: uid('t'), t: `Régler l’acompte de ${pr.depositPct} %`, done: false, auto: 'acompte', go: 'documents' });
+          addSetup(project, now);
           const kick = project.phases[0].items.find((i) => /visio|atelier|entretiens/i.test(i.t));
           if (kick && !project.tasks.some((t) => t.go === 'cal')) project.tasks.push({ id: uid('t'), t: 'Réserver : ' + kick.t.charAt(0).toLowerCase() + kick.t.slice(1), done: false, go: 'cal' });
           if (!project.missing.length) project.missing = (DEFAULT_MISSING[project.offer] || []).map(([t, sub]) => ({ id: uid('m'), t, sub, at: now }));
@@ -715,7 +755,7 @@
      et les autres membres de l'équipe. Chacun règle ce qu'il reçoit et à quel rythme. */
   const EVENT = {
     'file.add': 'files', 'msg.post': 'messages', 'val.approve': 'validations', 'val.changes': 'validations',
-    'request.add': 'requests', 'review.add': 'messages', 'client.remind': 'validations',
+    'request.add': 'requests', 'review.add': 'messages', 'setup.webflow': 'files', 'setup.domain': 'files', 'setup.check': 'activity', 'client.remind': 'validations',
     'proposal.send': 'validations', 'proposal.accept': 'validations', 'proposal.decline': 'messages', 'pin.add': 'messages', 'version.add': 'files', 'project.deliver': 'activity', 'val.request': 'validations', 'user.onboarded': 'activity', 'asset.add': 'files', 'next.set': 'activity', 'note.set': 'activity'
   };
   const TAB = { files: 'fichiers', messages: 'messages', validations: 'validations', requests: 'demandes', activity: 'activite' };
@@ -733,6 +773,9 @@
       case 'val.request': { const v = project.validations.find((x) => x.id === action.vid), what = v ? v.t.toLowerCase() : 'une étape'; return audience === 'client' ? `${who} attend ${project.registre === 'tu' ? 'ta' : 'votre'} validation : ${what}` : `${who} a demandé la validation : ${what}`; }
       case 'request.add': return `${who} demande une évolution (${action.kind || 'autre'}) : « ${String(action.text).slice(0, 100)} »`;
       case 'user.onboarded': return `${who} a découvert son espace`;
+      case 'setup.webflow': return `${who} a créé l’espace Webflow « ${action.ws} » : vérifiez l’invitation`;
+      case 'setup.domain': return action.mode === 'vault' ? `${who} a déposé les accès du nom de domaine dans le coffre chiffré` : action.mode === 'delegate' ? `${who} a donné un accès délégué au nom de domaine ${action.domain}` : `${who} ne sait pas qui gère le domaine ${action.domain} : à retrouver`;
+      case 'setup.check': { const t = project.tasks.find((x) => x.id === action.tid); return action.ok ? `${who} a vérifié : ${t ? t.t.toLowerCase() : 'une étape'}` : `${who} ${project.registre === 'tu' ? 'te' : 'vous'} demande de reprendre : ${t ? t.t.toLowerCase() : 'une étape'}${action.why ? ' (« ' + String(action.why).slice(0, 120) + ' »)' : ''}`; }
       case 'asset.add': return `${who} a ajouté « ${action.title} » à la bibliothèque`;
       case 'next.set': return `${who} a mis à jour la prochaine étape`;
       case 'proposal.send': { const pr = project.proposals.find((x) => x.id === action.prid); return audience === 'client' ? `${who} ${project.registre === 'tu' ? 't’' : 'vous '}a envoyé une proposition : ${pr ? pr.title : ''}` : `${who} a envoyé la proposition ${pr ? pr.title : ''}`; }
@@ -845,7 +888,7 @@
   /* Réglages de l'agence (coordonnées bancaires, liens de réservation…) : plus rien d'écrit en dur dans l'interface. */
   const DEFAULT_SETTINGS = {
     holder: 'ICONOKOM', address: '34 place du Général de Gaulle, Bureau 3, 59000 Lille', iban: 'FR76 1695 8000 0188 1420 4296 259', bic: 'QNTOFRP1XXX', bank: 'Qonto',
-    booking: 'https://app.iclosed.io/e/Orem/rdv-30min', training: '', reviewUrl: '', welcomeLoom: '', cgvUrl: '', site: 'https://www.agence-orem.fr'
+    booking: 'https://app.iclosed.io/e/Orem/rdv-30min', training: '', reviewUrl: '', welcomeLoom: '', cgvUrl: '', site: 'https://www.agence-orem.fr', webflowInvite: 'louis@agence-orem.fr', ovhNic: ''
   };
   const settingsOf = (store) => ({ ...DEFAULT_SETTINGS, ...(store.settings || {}) });
   function publicConfig(store) { return settingsOf(store); }
@@ -929,11 +972,11 @@
   /* Invitation : le premier e-mail du client, dans son registre, signé par le chef de projet. */
   function inviteMail(user, project, lead, baseUrl) {
     const tu = project.registre === 'tu', T = (v, t) => (tu ? t : v), first = esc(String(user.name || '').split(' ')[0]);
-    const who = lead ? esc(lead.name.split(' ')[0]) : 'L\u2019équipe Orem';
+    const who = 'L\u2019équipe Orem';
     const url = `${baseUrl}/?email=${encodeURIComponent(user.email)}`;
     return { to: user.email, name: user.name, subject: `${T('Votre', 'Ton')} espace ${project.client} est prêt`,
-      text: `Bonjour ${user.name},\n${T('Votre', 'Ton')} espace projet est prêt : ${url}\n${T('Connectez-vous', 'Connecte-toi')} avec cette adresse e-mail, sans mot de passe.\n${who}, Orem`,
-      html: `<div style="background:#f3f2ef;padding:32px 16px;font-family:Arial,Helvetica,sans-serif"><table width="100%" style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:16px;padding:28px" cellpadding="0" cellspacing="0"><tr><td style="font-family:Georgia,serif;font-size:22px;color:#000012;padding-bottom:16px">Orem</td></tr><tr><td style="font-size:15px;color:#0b0b12">Bonjour ${first},</td></tr><tr><td style="font-size:15px;color:#2f2f3a;padding:8px 0 16px">${T('Votre', 'Ton')} espace pour le projet <strong>${esc(project.projet)}</strong> est prêt : le planning, ce qu\u2019on attend de ${T('vous', 'toi')}, ${T('vos', 'tes')} fichiers et ${T('vos', 'tes')} factures, au même endroit. Pas de mot de passe : ${T('saisissez', 'saisis')} simplement cette adresse e-mail.</td></tr><tr><td><a href="${esc(url)}" style="display:inline-block;background:#092482;color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:10px;font-size:15px">${T('Ouvrir mon espace', 'Ouvrir mon espace')}</a></td></tr><tr><td style="font-size:15px;color:#2f2f3a;padding-top:20px">${T('À très vite', 'À très vite')},<br>${who}${lead && lead.title ? ', ' + esc(lead.title.toLowerCase()) : ''}</td></tr></table></div>` };
+      text: `Bonjour ${user.name},\n${T('Votre', 'Ton')} espace projet est prêt : ${url}\n${T('Connectez-vous', 'Connecte-toi')} avec cette adresse e-mail, sans mot de passe.\n${who} : Louis, Théophile et Clément`,
+      html: `<div style="background:#f3f2ef;padding:32px 16px;font-family:Arial,Helvetica,sans-serif"><table width="100%" style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:16px;padding:28px" cellpadding="0" cellspacing="0"><tr><td style="font-family:Georgia,serif;font-size:22px;color:#000012;padding-bottom:16px">Orem</td></tr><tr><td style="font-size:15px;color:#0b0b12">Bonjour ${first},</td></tr><tr><td style="font-size:15px;color:#2f2f3a;padding:8px 0 16px">${T('Votre', 'Ton')} espace pour le projet <strong>${esc(project.projet)}</strong> est prêt : le planning, ce qu\u2019on attend de ${T('vous', 'toi')}, ${T('vos', 'tes')} fichiers et ${T('vos', 'tes')} factures, au même endroit. Pas de mot de passe : ${T('saisissez', 'saisis')} simplement cette adresse e-mail.</td></tr><tr><td><a href="${esc(url)}" style="display:inline-block;background:#092482;color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:10px;font-size:15px">${T('Ouvrir mon espace', 'Ouvrir mon espace')}</a></td></tr><tr><td style="font-size:15px;color:#2f2f3a;padding-top:20px">${T('À très vite', 'À très vite')},<br>${who}<br><span style="color:#585865;font-size:13px">Louis, Théophile et Clément</span></td></tr></table></div>` };
   }
   function loginMail(user, code, link, registre) {
     const tu = user.role === 'admin' || registre === 'tu', T = (v, t) => (tu ? t : v);
@@ -966,8 +1009,9 @@
     // Le registre n'est jamais deviné : sans choix explicite, l'espace reste en brouillon (cas Pipedrive).
     if (!['tu', 'vous'].includes(data.registre) && !data.draft) return { error: 'Choisissez le tutoiement ou le vouvoiement.' };
     const p = newProject(data);
-    p.team = { lead: user.id, members: [user.id] };
+    p.team = { lead: user.id, members: store.users.filter((u) => u.role === 'admin').map((u) => u.id) };
     p.missing = (DEFAULT_MISSING[p.offer] || []).map(([t, sub]) => ({ id: uid('m'), t, sub, at: iso(Date.now()) }));
+    if (!data.prospect) addSetup(p, iso(Date.now()));
     if (data.draft) p.draft = { from: data.draft, at: iso(Date.now()) };
     store.projects.unshift(p);
     let invite;

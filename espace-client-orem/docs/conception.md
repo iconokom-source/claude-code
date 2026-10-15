@@ -144,3 +144,18 @@ Tests : `node tests/connecteurs.js` lance un faux serveur local qui imite les qu
 - **Versions V1, V2** des maquettes et **commentaires épinglés** sur les écrans : le client clique à l'endroit voulu, l'équipe les marque traités.
 - **Assistant** (API Claude, SDK `@anthropic-ai/sdk` en dépendance facultative, clé `ANTHROPIC_API_KEY` dans le coffre) : répond seulement à partir des données du projet, dans le registre du client, renvoie vers l'équipe sinon. Modèle `claude-opus-5-5` par défaut (`ASSISTANT_MODEL` pour en changer), effort bas, repli automatique côté serveur en cas de refus. Sans clé, le panneau s'appelle « Réponses rapides ».
 - Vidéo de bienvenue dans l'accueil guidé, prénoms sous les photos, confettis contenus dans le bandeau.
+
+## 11. Demandes du 15 octobre 2026
+
+**Équipe sans hiérarchie.** Louis, Théophile et Clément sont sur tous les projets (création, Pipedrive, données d'exemple). Chacun est présenté par sa fonction, reprise du site (collection « Membres » du Webflow Orem) : Louis Montagne, développeur Webflow ; Théophile Lamouret, stratège ; Clément Saint-Hilaire, directeur de création. Plus de « cofondateur ». Le message de bienvenue, l'invitation et la visite guidée sont signés « L'équipe Orem : Louis, Théophile et Clément ». Un message peut être signé au nom de l'équipe (case dans « Ajouter » et dans l'onglet Messages). Le « chef de projet » devient « contact principal du client ».
+
+**Bien démarrer.** Les trois priorités du client à son arrivée (offre Site web) : régler l'acompte (se coche seul à réception du virement), créer l'espace Webflow de l'entreprise et y inviter l'agence (adresse réglable : `webflowInvite`), donner l'accès au nom de domaine. Le client déclare, l'équipe vérifie (« Vérifié » ou « À reprendre » avec un mot). Pour le domaine, trois voies :
+- accès délégué, recommandé, sans mot de passe (consignes par registraire : OVHcloud, Gandi, IONOS, GoDaddy, Squarespace Domains ; à relire par Louis, et renseigner l'identifiant OVH de l'agence dans `ovhNic`) ;
+- coffre chiffré : identifiant et mot de passe chiffrés en AES-256-GCM avant d'être écrits (clé `VAULT_KEY` ou `data/vault.key`, à garder hors des sauvegardes), jamais renvoyés dans un projet, un export, un e-mail ou une notification, lisibles par l'équipe seulement, chaque lecture inscrite dans l'historique du client, effacés à la vérification ou au bout de 30 jours ;
+- « je ne sais pas qui le gère » : le client donne le nom de domaine, l'équipe retrouve le registraire.
+
+**Bibliothèque.** Uniquement des visuels à télécharger (présentation « bento », planches du cas d'étude), libres d'usage pour la communication du client, sans renvoi vers agence-orem.fr. « Tout télécharger » produit un ZIP des visuels. Connecteur Figma (`FIGMA_TOKEN`, jeton personnel en lecture seule) : il lit le fichier du projet (Outils de l'agence, ou le lien Figma du projet), prend les cadres des pages « Bento… » et « Cas d'étude » dans l'ordre de lecture, les exporte en PNG à 2x et les range dans la bibliothèque. Une nouvelle version du fichier remplace les anciens visuels Figma.
+
+**Vignettes de fichiers.** Partout dans l'appli : l'image elle-même pour les photos, sinon une petite page au format du fichier (PDF rouge, Word bleu, Excel vert, ZIP, vidéo, fichiers de création).
+
+**Logo du client.** Ajouté dans « Accès et infos » (SVG ou PNG transparent) ; affiché dans la barre latérale, l'en-tête de l'accueil et la visite guidée, recoloré en blanc sur fond sombre et en noir sur fond clair (ou laissé dans ses couleurs).

@@ -38,6 +38,29 @@ if (HTTPS && !MAIL_ENABLED) { console.error('Refus de démarrer : en https, les 
 if (!LOOPBACK && !MAIL_ENABLED) { console.error('Refus de démarrer : un serveur exposé doit envoyer les codes par e-mail (MAIL_ENABLED=1 et BREVO_API_KEY).'); process.exit(1); }
 
 fs.mkdirSync(UPLOADS, { recursive: true });
+
+/* ---------- Coffre des accès (nom de domaine) ----------
+   Les identifiants confiés par un client sont chiffrés (AES-256-GCM) avant d'être écrits sur le disque.
+   Clé : VAULT_KEY (64 caractères hexadécimaux) ou, à défaut, data/vault.key créée au premier lancement (droits 600),
+   à garder hors des sauvegardes de db.json. Jamais renvoyés dans un projet, un export, un e-mail ou une notification ;
+   lisibles par l'équipe seulement, chaque lecture est inscrite dans l'historique du client ; effacés à la vérification
+   de l'accès ou au bout de 30 jours. */
+const VAULT_TTL = 30 * 864e5;
+const VAULT_KEY = (() => {
+  if (/^[0-9a-f]{64}$/i.test(process.env.VAULT_KEY || '')) return Buffer.from(process.env.VAULT_KEY, 'hex');
+  const f = path.join(DATA, 'vault.key');
+  try { const k = Buffer.from(fs.readFileSync(f, 'utf8').trim(), 'hex'); if (k.length === 32) return k; } catch {}
+  fs.mkdirSync(DATA, { recursive: true }); const k = crypto.randomBytes(32); fs.writeFileSync(f, k.toString('hex'), { mode: 0o600 }); return k;
+})();
+function seal(obj, aad) {
+  const iv = crypto.randomBytes(12), c = crypto.createCipheriv('aes-256-gcm', VAULT_KEY, iv); c.setAAD(Buffer.from(aad));
+  const data = Buffer.concat([c.update(JSON.stringify(obj), 'utf8'), c.final()]);
+  return { iv: iv.toString('base64'), tag: c.getAuthTag().toString('base64'), data: data.toString('base64') };
+}
+function unseal(box, aad) {
+  const d = crypto.createDecipheriv('aes-256-gcm', VAULT_KEY, Buffer.from(box.iv, 'base64')); d.setAAD(Buffer.from(aad)); d.setAuthTag(Buffer.from(box.tag, 'base64'));
+  return JSON.parse(Buffer.concat([d.update(Buffer.from(box.data, 'base64')), d.final()]).toString('utf8'));
+}
 const sha = (s) => crypto.createHash('sha256').update(String(s)).digest('hex');
 const log = (event, data = {}) => console.log(JSON.stringify({ at: new Date().toISOString(), event, ...data }));
 
@@ -102,6 +125,7 @@ function background() {
     if (Connectors.configured(name, process.env) && Date.now() - last > every) Connectors.sync(name, db, process.env, null, null, connectorCtx()).then((x) => { save(); if (x.notices) deliver(x.notices); if (x.error) log('sync.error', { name, message: x.error }); });
   }
   const now = Date.now(); let changed = false;
+  for (const [k, v] of Object.entries(db.vault || {})) if (now - new Date(v.at).getTime() > VAULT_TTL) { delete db.vault[k]; changed = true; log('vault.expired', { project: k }); }
   for (const [k, s] of Object.entries(db.sessions)) if (s.exp < now) { delete db.sessions[k]; changed = true; }
   for (const [k, c] of Object.entries(db.codes)) if (c.exp < now) { delete db.codes[k]; changed = true; }
   for (const [k, v] of hits) if (v.reset < now) hits.delete(k);
@@ -151,7 +175,18 @@ function cookie(req, name) {
   }
   return null;
 }
+/* Jetons d'API de l'équipe (serveur MCP, Claude Code) : créés par « node jeton.js <e-mail> », stockés hachés
+   dans data/api-tokens.json, relus à chaque changement du fichier. Réservés aux comptes de l'agence. */
+const TOKENS_FILE = path.join(DATA, 'api-tokens.json');
+let tokens = { mtime: 0, map: {} };
+function tokenUser(req) {
+  const m = String(req.headers.authorization || '').match(/^Bearer\s+(orem_[A-Za-z0-9_-]{20,})$/); if (!m) return null;
+  try { const st = fs.statSync(TOKENS_FILE); if (st.mtimeMs !== tokens.mtime) tokens = { mtime: st.mtimeMs, map: JSON.parse(fs.readFileSync(TOKENS_FILE, 'utf8')) }; } catch { return null; }
+  const t = tokens.map[sha(m[1])]; if (!t || (t.exp && new Date(t.exp) < new Date())) return null;
+  const u = db.users.find((x) => x.id === t.uid); return u && u.role === 'admin' ? u : null;
+}
 function currentUser(req) {
+  const tu = tokenUser(req); if (tu) return tu;
   const sid = cookie(req, COOKIE); if (!sid) return null;
   const s = db.sessions[sha(sid)];
   if (!s || s.exp < Date.now()) return null;
@@ -166,7 +201,7 @@ function openSession(res, user) {
 }
 const clearCookie = (res) => res.setHeader('Set-Cookie', `${COOKIE}=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0${HTTPS ? '; Secure' : ''}`);
 /* Ce qu'on renvoie d'une personne : le client ne voit jamais les réglages internes de l'agence. */
-const publicUser = (u, viewer) => u && { id: u.id, email: u.email, name: u.name, role: u.role, projectId: u.projectId, title: u.title, wa: u.wa, phone: u.phone, photo: u.photo, onboardedAt: u.onboardedAt,
+const publicUser = (u, viewer) => u && { id: u.id, email: u.email, name: u.name, role: u.role, projectId: u.projectId, title: u.title, about: u.about, wa: u.wa, phone: u.phone, photo: u.photo, onboardedAt: u.onboardedAt,
   invitedAt: viewer && viewer.role === 'admin' ? u.invitedAt : undefined, lastLoginAt: viewer && viewer.role === 'admin' ? u.lastLoginAt : undefined, prefs: viewer && viewer.id === u.id ? u.prefs : undefined,
   notify: viewer && viewer.id === u.id && u.role === 'admin' ? Core.prefsOf(u) : undefined };
 const team = (viewer) => db.users.filter((u) => u.role === 'admin').map((u) => publicUser(u, viewer));
@@ -285,10 +320,10 @@ function exportEntries(pr, user) {
     'Étapes', ...pr.phases.map((ph) => `  ${ph.letter} · ${ph.t} (${Core.phaseState(pr, ph) === 'done' ? 'terminé' : Core.phaseState(pr, ph) === 'on' ? 'en cours' : 'à venir'})\n${ph.items.map((it) => `    - ${it.t} : ${{ done: 'fait', review: 'à valider', on: 'en cours', wait: 'prévu' }[Core.itemState(pr, it)]}`).join('\n')}`), '',
     'Validations', ...pr.validations.map((v) => `  - ${v.t} : ${{ wait: 'pas encore demandée', ready: 'en attente', approved: 'validée', changes: 'modifications demandées' }[v.status]}${v.history.filter((h) => h.action === 'approved').map((h) => ` le ${new Date(h.at).toLocaleString('fr-FR')} par ${people[h.by] || h.by}`).join('')}`), '',
     'Factures', ...pr.invoices.map((i) => `  - ${i.label} ${i.num || ''} : ${i.ttc} € TTC, ${{ paid: 'payée', due: 'à régler', future: 'à venir' }[i.status] || i.status}`), '',
-    'Messages', ...pr.messages.slice().reverse().map((m) => `  [${new Date(m.at).toLocaleString('fr-FR')}] ${people[m.by] || m.by} : ${m.text}${m.loom ? ' (vidéo : ' + m.loom.url + ')' : ''}`)];
+    'Messages', ...pr.messages.slice().reverse().map((m) => `  [${new Date(m.at).toLocaleString('fr-FR')}] ${people[m.by] || (m.by === 'team' ? 'L’équipe Orem' : m.by)} : ${m.text}${m.loom ? ' (vidéo : ' + m.loom.url + ')' : ''}`)];
   const files = Core.forUser(pr, user).files.map((f) => ({ f: pr.files.find((x) => x.id === f.id) })).map(({ f }) => ({ f, abs: filePath(f) }))
     .filter(({ abs }) => { try { return abs && fs.statSync(abs).isFile(); } catch { return false; } })
-    .map(({ f, abs }) => ({ name: (f.from === 'client' ? 'Fichiers déposés/' : 'Documents de l’agence/') + f.name, abs, size: Number(f.size) || 0 }));
+    .map(({ f, abs }) => ({ name: (f.from === 'client' ? 'Fichiers déposés/' : f.cat === 'Bibliothèque' ? 'Bibliothèque/' : 'Documents de l’agence/') + f.name, abs, size: Number(f.size) || 0 }));
   return [{ name: 'Récapitulatif du projet.txt', data: Buffer.from('﻿' + lines.join('\n'), 'utf8') }, ...files];
 }
 /* Contexte donné aux connecteurs : enregistrer un PDF importé (Abby) comme un fichier déposé par l'agence. */
@@ -301,7 +336,8 @@ function connectorCtx() {
       const dest = path.join(dir, id); await fs.promises.writeFile(dest, buf);
       const by = db.users.find((u) => u.id === (pr.team && pr.team.lead)) || db.users.find((u) => u.role === 'admin');
       const r = Core.addFile(db, pr.id, by, { id, name, size: buf.length, cat, path: path.relative(DATA, dest) });
-      if (r.error) fs.rm(dest, { force: true }, () => {});
+      if (r.error) { fs.rm(dest, { force: true }, () => {}); return null; }
+      return { id };
     }
   };
 }
@@ -401,7 +437,8 @@ async function handle(req, res) {
     if (!pr || !Core.canSee(user, pr)) return send(res, 404, { error: 'Projet introuvable.' });
     const access = user.role === 'admin' ? db.users.filter((u) => u.projectId === pr.id).map((u) => publicUser(u, user)) : undefined;
     const people = Object.fromEntries(db.users.filter((u) => u.role === 'admin' || u.projectId === pr.id).map((u) => [u.id, u.name]));
-    return send(res, 200, { project: Core.forUser(pr, user), access, people });
+    const vault = db.vault && db.vault[pr.id] ? { at: db.vault[pr.id].at } : null;
+    return send(res, 200, { project: Core.forUser(pr, user), access, people, vault });
   }
 
   m = p.match(/^\/api\/projects\/([\w-]+)\/action$/);
@@ -414,9 +451,38 @@ async function handle(req, res) {
       save(); deliver(r.notices); invite(m[1], r.invite);
       if (r.accepted) Connectors.onAccept(db.projects.find((x) => x.id === m[1]), r.accepted, process.env, connectorCtx()).then((x) => { if (x && x.ok) log('pipedrive.won', { project: m[1] }); }).catch((e) => log('pipedrive.error', { message: e.message }));
       if (doomed) { const abs = filePath(doomed); if (abs) fs.rm(abs, { force: true }, () => {}); }
+      if (r.purgeVault && db.vault && db.vault[m[1]]) { delete db.vault[m[1]]; save(); log('vault.erased', { project: m[1], user: user.id, why: 'checked' }); }
     }
     const { notices, ...pub } = r;
     return send(res, r.error ? 400 : 200, pub);
+  }
+
+  m = p.match(/^\/api\/projects\/([\w-]+)\/vault$/);
+  if (m) {
+    const pr = db.projects.find((x) => x.id === m[1]);
+    if (!pr || !Core.canSee(user, pr)) return send(res, 404, { error: 'Projet introuvable.' });
+    db.vault = db.vault || {};
+    if (req.method === 'POST') {
+      if (limited('vault:' + user.id, 10, 60 * 60e3)) return send(res, 429, { error: 'Trop d’essais. Réessayez dans un moment.' });
+      const b = await readJson(req), str = (v, n) => String(v || '').slice(0, n);
+      if (!str(b.login, 200).trim() || !str(b.secret, 500)) return send(res, 400, { error: 'Indiquez l’identifiant et le mot de passe.' });
+      const r = Core.apply(db, pr.id, user, { type: 'setup.domain', mode: 'vault', domain: b.domain, registrar: b.registrar }, true);
+      if (r.error) return send(res, 400, { error: r.error });
+      db.vault[pr.id] = { at: new Date().toISOString(), by: user.id, box: seal({ login: str(b.login, 200).trim(), secret: str(b.secret, 500), note: str(b.note, 500) }, pr.id) };
+      save(); deliver(r.notices); log('vault.put', { project: pr.id, user: user.id });
+      return send(res, 200, { ok: true });
+    }
+    if (req.method === 'GET') {
+      if (user.role !== 'admin') return send(res, 403, { error: 'Réservé à l’équipe.' });
+      const v = db.vault[pr.id]; if (!v) return send(res, 404, { error: 'Aucun accès dans le coffre.' });
+      let content; try { content = unseal(v.box, pr.id); } catch { return send(res, 500, { error: 'Le coffre ne peut pas être ouvert avec la clé actuelle.' }); }
+      Core.apply(db, pr.id, user, { type: 'vault.read' }, true); save(); log('vault.read', { project: pr.id, user: user.id });
+      return send(res, 200, { ...content, at: v.at, expires: new Date(new Date(v.at).getTime() + VAULT_TTL).toISOString() });
+    }
+    if (req.method === 'DELETE') {
+      if (db.vault[pr.id]) { delete db.vault[pr.id]; save(); log('vault.erased', { project: pr.id, user: user.id, why: 'asked' }); }
+      return send(res, 200, { ok: true });
+    }
   }
 
   m = p.match(/^\/api\/projects\/([\w-]+)\/export$/);
@@ -424,10 +490,12 @@ async function handle(req, res) {
     const pr = db.projects.find((x) => x.id === m[1]);
     if (!pr || !Core.canSee(user, pr)) return send(res, 404, { error: 'Projet introuvable.' });
     if (limited('export:' + user.id, 10, 60 * 60e3)) return send(res, 429, { error: 'Trop d’exports en peu de temps. Réessayez dans un moment.' });
-    const entries = exportEntries(pr, user);
+    const part = url.searchParams.get('part') === 'biblio' ? 'biblio' : null;
+    const entries = part ? exportEntries(pr, user).filter((e) => e.name.startsWith('Bibliothèque/')) : exportEntries(pr, user);
+    if (part && !entries.length) return send(res, 404, { error: 'Aucun visuel à télécharger pour l’instant.' });
     if (entries.reduce((s, e) => s + (e.size || 0), 0) > 4e9) return send(res, 413, { error: 'L’espace dépasse 4 Go : téléchargez les fichiers un par un.' });
     log('project.export', { user: user.id, project: pr.id });
-    return sendZip(res, `Espace ${pr.client}.zip`, entries).catch(() => res.destroy());
+    return sendZip(res, part ? `Visuels ${pr.client}.zip` : `Espace ${pr.client}.zip`, entries).catch(() => res.destroy());
   }
 
   m = p.match(/^\/api\/projects\/([\w-]+)\/ask$/);

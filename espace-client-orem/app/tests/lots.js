@@ -9,9 +9,9 @@ const CLIENT_VIEWS = ['accueil', 'projet', 'valider', 'maquettes', 'messages', '
   async function login(email, keepOb) {
     const p = await (await br.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' })).newPage();
     p.on('pageerror', (e) => errs.push(email + ' : ' + e.message)); p.on('dialog', (d) => d.accept());
-    await p.goto(B); await p.fill('#em', email); await p.click('form[data-form=login] button[type=submit]');
+    await p.goto(B); await p.fill('#em', email); await p.locator('form[data-form=login]').evaluate((f) => f.requestSubmit());
     await p.waitForSelector('.devcode b', { timeout: 8000 }); await p.fill('#o1', await p.textContent('.devcode b'));
-    await p.click('form[data-form=verify] button[type=submit]'); await p.waitForSelector('#main'); await p.waitForLoadState('networkidle'); await p.waitForTimeout(250);
+    await p.locator('form[data-form=verify]').evaluate((f) => f.requestSubmit()); await p.waitForSelector('#main'); await p.waitForLoadState('networkidle'); await p.waitForTimeout(250);
     if (!keepOb && await p.$('.ob')) { await p.keyboard.press('Escape'); await p.waitForTimeout(150); }
     return p;
   }
@@ -52,28 +52,28 @@ const CLIENT_VIEWS = ['accueil', 'projet', 'valider', 'maquettes', 'messages', '
   ok('Accueil guidé : plus de promesse WhatsApp', !/WhatsApp/i.test(obTxt));
   ok('Accueil guidé : le point de la semaine par e-mail, au vouvoiement', /point de la semaine par e-mail/.test(obTxt));
   await julie.click('[data-act=ob-done]'); await julie.waitForTimeout(200);
-  ok('Acompte : pas de case à cocher pour le client', (await julie.locator('button[data-act=task]', { hasText: '' }).filter({ has: julie.locator('xpath=..', { hasText: 'acompte' }) }).count()) === 0 && /Se coche tout seul/.test(await main(julie)));
+  ok('Acompte : pas de case à cocher pour le client', (await julie.locator('button[data-act=task]', { hasText: '' }).filter({ has: julie.locator('xpath=..', { hasText: 'acompte' }) }).count()) === 0 && /se coche tout seul/i.test(await main(julie)));
 
   // 4. Louis crée un espace « Conseil » au tutoiement
   const louis = await login('louis@agence-orem.fr');
   await go(louis, 'nouveau');
   ok('Création : les 4 offres sont proposées', (await louis.locator('[name=n-offer]').count()) === 4);
   await louis.fill('#n-client', 'Atelier Brun'); await louis.fill('#n-contact', 'Paul'); await louis.fill('#n-email', 'paul@atelier-brun.fr');
-  await louis.click('form[data-form=create] button[type=submit]'); await louis.waitForTimeout(250);
+  await louis.locator('form[data-form=create]').evaluate((f) => f.requestSubmit()); await louis.waitForTimeout(250);
   ok('Création refusée tant que le registre n’est pas choisi (jamais deviné)', (await louis.locator('h1').innerText()) === 'Nouvel espace client');
   await louis.check('[name=n-offer][value=conseil]'); await louis.check('[name=n-reg][value=tu]');
   await louis.screenshot({ path: OUT + '/lots-2-creation.png', fullPage: true });
-  await louis.click('form[data-form=create] button[type=submit]'); await louis.waitForTimeout(500);
+  await louis.locator('form[data-form=create]').evaluate((f) => f.requestSubmit()); await louis.waitForTimeout(500);
   ok('Espace Conseil créé, au temps « O · Orienter »', /Atelier Brun/.test(await louis.locator('h1').innerText()) && /Conseil · O · Orienter/.test(await main(louis)), await louis.locator('.head .lead').innerText().catch(() => ''));
 
   // 5. Louis met en ligne Maison Lumen
-  await go(louis, 'clients'); await louis.click('.cat[data-mine="0"]'); await louis.click('[data-open=p_lumen]'); await louis.click('[data-tab=livraison]'); await louis.waitForTimeout(200);
+  await go(louis, 'clients'); await louis.click('.cat[data-mine="0"]'); await louis.click('[data-open=p_lumen]'); await louis.waitForTimeout(300); await louis.selectOption('#a-phase', '3'); await louis.waitForTimeout(500); await louis.click('[data-tab=livraison]'); await louis.waitForTimeout(200);
   ok('Onglet « Mise en ligne » avec l’alerte du procès-verbal non validé', /Réception du site/.test(await main(louis)));
-  await louis.fill('#dl-s', 'https://www.maisonlumen.fr'); if (await louis.$('#dl-f')) await louis.fill('#dl-f', 'Réception validée par téléphone'); await louis.click('form[data-form=deliver] button[type=submit]'); await louis.waitForTimeout(500);
+  await louis.fill('#dl-s', 'https://www.maisonlumen.fr'); if (await louis.$('#dl-f')) await louis.fill('#dl-f', 'Réception validée par téléphone'); await louis.locator('form[data-form=deliver]').evaluate((f) => f.requestSubmit()); await louis.waitForTimeout(500);
   ok('Mise en ligne faite côté agence', /Site en ligne depuis le/.test(await main(louis)));
-  await louis.fill('#rs-p', 'Depuis la mise en ligne'); await louis.fill('#rs-s', '12 | demandes de devis\n3 400 | visiteurs'); await louis.click('form[data-form=results] button'); await louis.waitForTimeout(300);
-  await louis.check('[data-handover="0"]'); await louis.waitForTimeout(300);
-  await louis.fill('#tu-l', 'Modifier un texte | 3 min | https://www.loom.com/share/8b9f66df6c52449fa0ff18afea1658b3\nAjouter un atelier | 4 min |'); await louis.click('form[data-form=tutorials] button'); await louis.waitForTimeout(300);
+  await louis.fill('#rs-p', 'Depuis la mise en ligne'); await louis.fill('#rs-s', '12 | demandes de devis\n3 400 | visiteurs'); await louis.locator('form[data-form=results]').evaluate((f) => f.requestSubmit()); await louis.waitForTimeout(300);
+  await louis.check('[data-handover="0"]'); await louis.waitForTimeout(700);
+  await louis.fill('#tu-l', 'Modifier un texte | 3 min | https://www.loom.com/share/8b9f66df6c52449fa0ff18afea1658b3\nAjouter un atelier | 4 min |'); await louis.locator('form[data-form=tutorials]').evaluate((f) => f.requestSubmit()); await louis.waitForTimeout(300);
   await louis.screenshot({ path: OUT + '/lots-3-mise-en-ligne.png', fullPage: true });
   await claire.reload(); await claire.waitForSelector('#main'); await claire.waitForTimeout(300);
   ok('Claire voit « Votre site travaille pour vous » et ses résultats', /Votre site travaille pour vous/.test(await main(claire)) && /12\s*demandes de devis/.test(await main(claire)));
@@ -90,17 +90,17 @@ const CLIENT_VIEWS = ['accueil', 'projet', 'valider', 'maquettes', 'messages', '
   await go(hugo, 'accueil');
   ok('Hugo : demande d’avis sur l’accueil, au tutoiement', /Ton avis sur le projet/.test(await main(hugo)));
   await hugo.click('.stars label >> nth=4'); await hugo.waitForTimeout(150); await hugo.fill('#rv-t', 'Un site qui nous ressemble enfin.'); await hugo.check('#rv-p');
-  await hugo.click('form[data-form=review] button[type=submit]'); await hugo.waitForTimeout(400);
+  await hugo.locator('form[data-form=review]').evaluate((f) => f.requestSubmit()); await hugo.waitForTimeout(400);
   ok('Avis de Hugo enregistré (5 sur 5)', /Merci pour ton avis/.test(await main(hugo)));
   await hugo.screenshot({ path: OUT + '/lots-4-avis.png', fullPage: true });
   await go(louis, 'inbox'); await louis.waitForTimeout(200);
   ok('Louis voit l’avis de Hugo dans sa boîte de réception', /Hugo a laissé un avis : 5\/5/.test(await main(louis)));
 
   // 7. Réglages de l'agence : lien d'avis Google
-  await go(louis, 'reglages'); await louis.fill('#st-r', 'https://g.page/r/orem-exemple/review'); await louis.click('form[data-form=settings] button'); await louis.waitForTimeout(300);
+  await go(louis, 'reglages'); await louis.fill('#st-r', 'https://g.page/r/orem-exemple/review'); await louis.locator('form[data-form=settings]').evaluate((f) => f.requestSubmit()); await louis.waitForTimeout(300);
   await hugo.reload(); await hugo.waitForSelector('#main'); await hugo.waitForTimeout(300);
   ok('Avis 5/5 : Hugo se voit proposer de le publier sur Google', /Publier l’avis sur Google/.test(await main(hugo)));
-  await go(louis, 'reglages'); await louis.fill('#st-b', 'http://pas-https.fr'); await louis.click('form[data-form=settings] button'); await louis.waitForTimeout(300);
+  await go(louis, 'reglages'); await louis.fill('#st-b', 'http://pas-https.fr'); await louis.locator('form[data-form=settings]').evaluate((f) => f.requestSubmit()); await louis.waitForTimeout(300);
   ok('Lien non https refusé dans les réglages', /https/.test(await louis.textContent('#toast')));
 
   // 8. Export ZIP (Claire a déposé un fichier réel)

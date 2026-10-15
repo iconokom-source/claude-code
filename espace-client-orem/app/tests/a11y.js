@@ -9,9 +9,9 @@ const R = []; const ok = (l, v, extra) => R.push(`${v ? '✔' : '✘'} ${l}${!v 
   async function login(email, vp = { width: 1440, height: 900 }) {
     const p = await (await br.newContext({ viewport: vp, reducedMotion: 'reduce', isMobile: vp.width < 500, hasTouch: vp.width < 500 })).newPage();
     p.on('pageerror', (e) => errs.push(email + ' : ' + e.message)); p.on('dialog', (d) => d.accept());
-    await p.goto(B); await p.fill('#em', email); await p.click('form[data-form=login] button[type=submit]');
+    await p.goto(B); await p.fill('#em', email); await p.locator('form[data-form=login]').evaluate((f) => f.requestSubmit());
     await p.waitForSelector('.devcode b', { timeout: 8000 }); await p.fill('#o1', await p.textContent('.devcode b'));
-    await p.click('form[data-form=verify] button[type=submit]'); await p.waitForSelector('#main'); await p.waitForLoadState('networkidle'); await p.waitForTimeout(250);
+    await p.locator('form[data-form=verify]').evaluate((f) => f.requestSubmit()); await p.waitForSelector('#main'); await p.waitForLoadState('networkidle'); await p.waitForTimeout(250);
     return p;
   }
   const act = (p) => p.evaluate(() => { const a = document.activeElement; return a ? a.tagName + (a.id ? '#' + a.id : '') + [...a.attributes].filter((x) => x.name.startsWith('data-')).map((x) => `[${x.name}=${x.value}]`).join('') : 'null'; });
@@ -20,7 +20,7 @@ const R = []; const ok = (l, v, extra) => R.push(`${v ? '✔' : '✘'} ${l}${!v 
   // Connexion : erreur sous le champ, un seul h1, landmark main
   { const p = await (await br.newContext()).newPage(); await p.goto(B);
     ok('Connexion : un seul titre h1 et un landmark main', (await p.locator('h1').count()) === 1 && (await p.locator('main').count()) === 1);
-    await p.fill('#em', 'pas-une-adresse'); await p.click('form[data-form=login] button[type=submit]'); await p.waitForTimeout(150);
+    await p.fill('#em', 'pas-une-adresse'); await p.locator('form[data-form=login]').evaluate((f) => f.requestSubmit()); await p.waitForTimeout(150);
     ok('E-mail invalide : erreur sous le champ, reliée et focus dessus', (await p.getAttribute('#em', 'aria-invalid')) === 'true' && /valide/.test(await p.textContent('#em-err')) && (await act(p)) === 'INPUT#em' && /em-err/.test(await p.getAttribute('#em', 'aria-describedby')));
     await p.type('#em', 'x'); ok('L’erreur disparaît dès qu’on corrige', !(await p.$('#em-err')));
   }
@@ -40,9 +40,9 @@ const R = []; const ok = (l, v, extra) => R.push(`${v ? '✔' : '✘'} ${l}${!v 
   await c.click('.side [data-go=accueil]'); await c.waitForTimeout(150);
   await c.click('[data-act=qa][data-id=rdv]'); await c.waitForTimeout(150);
   ok('Réponse rapide : focus conservé sur la question', /data-id=rdv/.test(await act(c)), await act(c));
-  await c.click('.side [data-go=messages]'); await c.fill('#msg-t', 'Bonjour !'); await c.click('form[data-form=msg] button'); await c.waitForTimeout(400);
+  await c.click('.side [data-go=messages]'); await c.fill('#msg-t', 'Bonjour !'); await c.locator('form[data-form=msg]').evaluate((f) => f.requestSubmit()); await c.waitForTimeout(400);
   ok('Message envoyé : le focus ne retombe pas sur la page', await notBody(c), await act(c));
-  await c.click('form[data-form=msg] button'); await c.waitForTimeout(150);
+  await c.locator('form[data-form=msg]').evaluate((f) => f.requestSubmit()); await c.waitForTimeout(150);
   ok('Message vide : erreur sous le champ au vouvoiement', /Écrivez votre message/.test(await c.textContent('#msg-t-err').catch(() => '')));
   await c.click('.side [data-go=biblio]').catch(() => {}); await c.click('.side [data-go=maquettes]'); await c.waitForTimeout(150);
   const t0 = Date.now(); await c.evaluate(() => document.querySelector('[data-act=copy], [data-act=copytxt]') || null);

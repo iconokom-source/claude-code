@@ -8,9 +8,9 @@ const errs = [];
   async function login(email, opts = {}) {
     const p = await (await br.newContext({ viewport: opts.vp || { width: 1440, height: 900 }, colorScheme: opts.dark ? 'dark' : 'light', reducedMotion: 'reduce' })).newPage();
     p.on('pageerror', (e) => errs.push(email + ' : ' + e.message)); p.on('dialog', (d) => d.accept());
-    await p.goto(B); await p.fill('#em', email); await p.click('form[data-form=login] button[type=submit]');
+    await p.goto(B); await p.fill('#em', email); await p.locator('form[data-form=login]').evaluate((f) => f.requestSubmit());
     await p.waitForSelector('.devcode b', { timeout: 8000 }); await p.fill('#o1', await p.textContent('.devcode b'));
-    await p.click('form[data-form=verify] button[type=submit]'); await p.waitForSelector('#main'); await p.waitForLoadState('networkidle'); await p.waitForTimeout(250);
+    await p.locator('form[data-form=verify]').evaluate((f) => f.requestSubmit()); await p.waitForSelector('#main'); await p.waitForLoadState('networkidle'); await p.waitForTimeout(250);
     if (await p.$('.ob')) { await p.keyboard.press('Escape'); await p.waitForTimeout(150); }
     return p;
   }
@@ -52,7 +52,7 @@ const errs = [];
   // Cloche et préférences
   const louis = await login('louis@agence-orem.fr');
   await louis.click('.side [data-go=clients]'); await louis.click('.cat[data-mine="0"]'); await louis.click('[data-open=p_lumen]'); await louis.click('#tab-messages');
-  await louis.fill('#am-t', 'Claire, le compte rendu est prêt.'); await louis.click('form[data-form=amsg] button'); await louis.waitForTimeout(400);
+  await louis.fill('#am-t', 'Claire, le compte rendu est prêt.'); await louis.locator('form[data-form=amsg]').evaluate((f) => f.requestSubmit()); await louis.waitForTimeout(400);
   await claire.reload(); await claire.waitForSelector('#main'); await claire.waitForTimeout(250);
   ok('Cloche : badge de notification côté client', /\d/.test(await claire.locator('.side [data-act=bell] .badge').innerText().catch(() => '')));
   await claire.click('.side [data-act=bell]'); await claire.waitForTimeout(150);
@@ -61,7 +61,7 @@ const errs = [];
   ok('Un clic mène à la bonne rubrique (Messages)', /^Messages/.test(await claire.title()));
   await claire.evaluate(() => document.querySelector('[data-go=preferences]') ? document.querySelector('[data-go=preferences]').click() : null);
   await claire.click('.side [data-act=bell]'); await claire.click('#bell-pop [data-go=preferences]'); await claire.waitForTimeout(200);
-  await claire.uncheck('#cp-week'); await claire.click('form[data-form=cprefs] button'); await claire.waitForTimeout(300);
+  await claire.uncheck('#cp-week'); await claire.locator('form[data-form=cprefs]').evaluate((f) => f.requestSubmit()); await claire.waitForTimeout(300);
   ok('Préférences du client enregistrées', (await claire.evaluate(async () => (await (await fetch('/api/me')).json()).user.prefs.weekly)) === false);
   // Validation : confirmation, puis annulation dans les 10 s
   await claire.click('.side [data-go=valider]'); await claire.click('[data-act=approve]'); await claire.waitForTimeout(150);

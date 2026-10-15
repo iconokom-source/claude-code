@@ -8,9 +8,9 @@ const errs = [];
   async function login(email, keepOb, vp = { width: 1440, height: 900 }) {
     const p = await (await br.newContext({ viewport: vp })).newPage();
     p.on('pageerror', (e) => errs.push(email + ' : ' + e.message)); p.on('dialog', (d) => d.accept());
-    await p.goto(B); await p.fill('#em', email); await p.click('form[data-form=login] button[type=submit]');
+    await p.goto(B); await p.fill('#em', email); await p.locator('form[data-form=login]').evaluate((f) => f.requestSubmit());
     await p.waitForSelector('.devcode b', { timeout: 8000 }); await p.fill('#o1', await p.textContent('.devcode b'));
-    await p.click('form[data-form=verify] button[type=submit]'); await p.waitForSelector('#main'); await p.waitForLoadState('networkidle'); await p.waitForTimeout(250);
+    await p.locator('form[data-form=verify]').evaluate((f) => f.requestSubmit()); await p.waitForSelector('#main'); await p.waitForLoadState('networkidle'); await p.waitForTimeout(250);
     if (!keepOb && await p.$('.ob')) { await p.keyboard.press('Escape'); await p.waitForTimeout(120); }
     return p;
   }
@@ -23,9 +23,9 @@ const errs = [];
   await go(ines, 'proposition');
   ok('Proposition : détail, total HT 5 800 €, TTC 6 960 €, acompte 50 %', /5\s800\s€/.test(await main(ines)) && /6\s960\s€/.test(await main(ines)) && /Acompte de 50 %/.test(await main(ines)));
   await ines.screenshot({ path: OUT + '/waouh-1-proposition.png', fullPage: true });
-  await ines.click('form[data-form=accept] button[type=submit]'); await ines.waitForTimeout(150);
+  await ines.locator('form[data-form=accept]').evaluate((f) => f.requestSubmit()); await ines.waitForTimeout(150);
   ok('Sans la case cochée : erreur sous la case', !!(await ines.$('[id^=ac-ok-][aria-invalid=true]')));
-  await ines.check('[id^=ac-ok-]'); await ines.fill('[id^=ac-n-]', 'Inès Delmas'); await ines.click('form[data-form=accept] button[type=submit]'); await ines.waitForTimeout(500);
+  await ines.check('[id^=ac-ok-]'); await ines.fill('[id^=ac-n-]', 'Inès Delmas'); await ines.locator('form[data-form=accept]').evaluate((f) => f.requestSubmit()); await ines.waitForTimeout(500);
   ok('Acceptée, horodatée, signée « Inès Delmas »', /Acceptée le/.test(await main(ines)) && /Inès Delmas/.test(await main(ines)));
   ok('Confettis dans le bandeau, pas par-dessus la page', (await ines.locator('body > .confetti').count()) === 0);
   await go(ines, 'documents');
@@ -36,7 +36,7 @@ const errs = [];
   // 2. Devis d'un clic depuis une demande d'évolution
   const claire = await login('claire@maisonlumen.fr');
   await go(claire, 'outils'); await claire.click('[data-tool=request]'); await claire.waitForTimeout(150);
-  await claire.fill('#rq-t', 'Ajouter une page Presse avec nos parutions.'); await claire.click('form[data-form=request] button'); await claire.waitForTimeout(300);
+  await claire.fill('#rq-t', 'Ajouter une page Presse avec nos parutions.'); await claire.locator('form[data-form=request]').evaluate((f) => f.requestSubmit()); await claire.waitForTimeout(300);
   const louis = await login('louis@agence-orem.fr');
   await go(louis, 'clients'); await louis.click('.cat[data-mine="0"]'); await louis.click('[data-open=p_lumen]'); await louis.click('#tab-demandes'); await louis.waitForTimeout(150);
   await louis.locator('.row', { hasText: 'page Presse' }).locator('[data-act=prop-from]').click(); await louis.waitForTimeout(200);
@@ -54,7 +54,7 @@ const errs = [];
   await hugo.click('.shot >> nth=0'); await hugo.waitForSelector('.lb .pin-area');
   const box = await hugo.locator('.pin-area img').boundingBox();
   await hugo.mouse.click(box.x + box.width * 0.3, box.y + box.height * 0.4); await hugo.waitForSelector('#pin-t');
-  await hugo.fill('#pin-t', 'Le titre est un peu petit ici.'); await hugo.click('form[data-form=pin] button[type=submit]'); await hugo.waitForTimeout(400);
+  await hugo.fill('#pin-t', 'Le titre est un peu petit ici.'); await hugo.locator('form[data-form=pin]').evaluate((f) => f.requestSubmit()); await hugo.waitForTimeout(400);
   ok('Commentaire épinglé à l’endroit cliqué (pastille 1)', (await hugo.locator('.lb .pin').count()) === 1 && /Le titre est un peu petit/.test(await hugo.locator('.lb').innerText()));
   await hugo.screenshot({ path: OUT + '/waouh-2-pin.png' });
   await hugo.keyboard.press('Escape'); await hugo.waitForTimeout(150);
@@ -66,12 +66,13 @@ const errs = [];
   // 4. Compte à rebours, mise en ligne, kit de lancement
   await go(louis, 'clients'); await louis.click('.cat[data-mine="0"]'); await louis.click('[data-open=p_lumen]'); await louis.waitForTimeout(150);
   await louis.selectOption('#a-phase', '3'); await louis.waitForTimeout(500);
-  await louis.click('#tab-acces'); await louis.fill('#p-g', new Date(Date.now() + 10 * 864e5).toISOString().slice(0, 10)); await louis.click('form[data-form=infos] button'); await louis.waitForTimeout(300);
+  await louis.click('#tab-acces'); await louis.fill('#p-g', new Date(Date.now() + 10 * 864e5).toISOString().slice(0, 10)); await louis.locator('form[data-form=infos]').evaluate((f) => f.requestSubmit()); await louis.waitForTimeout(300);
   await go(claire, 'accueil');
   ok('Compte à rebours : « 10 jours » avant la mise en ligne', /10\s*jours/i.test(await claire.locator('.countdown').innerText().catch(() => '')));
   await claire.screenshot({ path: OUT + '/waouh-3-compte-a-rebours.png' });
-  await louis.click('#tab-liens'); await louis.fill('#lk-o', 'https://ancien.maisonlumen.fr'); await louis.click('form[data-form=links] button[type=submit]'); await louis.waitForTimeout(300);
-  await louis.click('#tab-livraison'); await louis.fill('#dl-s', 'https://www.maisonlumen.fr'); if (await louis.$('#dl-f')) await louis.fill('#dl-f', 'Réception validée par téléphone'); await louis.click('form[data-form=deliver] button[type=submit]'); await louis.waitForTimeout(500);
+  await louis.click('#tab-liens'); await louis.fill('#lk-o', 'https://ancien.maisonlumen.fr'); await louis.locator('form[data-form=links]').evaluate((f) => f.requestSubmit()); await louis.waitForTimeout(300);
+  await louis.click('#tab-pilotage'); await louis.selectOption('#a-phase', '3'); await louis.waitForTimeout(500);
+  await louis.click('#tab-livraison'); await louis.fill('#dl-s', 'https://www.maisonlumen.fr'); if (await louis.$('#dl-f')) await louis.fill('#dl-f', 'Réception validée par téléphone'); await louis.locator('form[data-form=deliver]').evaluate((f) => f.requestSubmit()); await louis.waitForTimeout(500);
   await go(claire, 'accueil');
   ok('Kit de lancement : avant/après et post LinkedIn', /Kit de lancement/.test(await main(claire)) && /Avant/i.test(await main(claire)) && /maisonlumen\.fr/.test(await claire.inputValue('#lk-post')));
   ok('Post LinkedIn sans tiret long', !/[—–]/.test(await claire.inputValue('#lk-post')));

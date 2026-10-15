@@ -13,6 +13,7 @@ const calls = []; let qontoDown = false, gscCalls = 0, lastAsk = null, dealWon =
 let hasSdk = true; try { require.resolve('@anthropic-ai/sdk'); } catch { hasSdk = false; }
 
 /* ---------- Faux outils ---------- */
+let figmaVersion = 1;
 const mock = http.createServer((req, res) => {
   let body = []; req.on('data', (c) => body.push(c)); req.on('end', () => {
     body = Buffer.concat(body); calls.push({ method: req.method, url: req.url, headers: req.headers, body });
@@ -43,6 +44,16 @@ const mock = http.createServer((req, res) => {
       { dimensionValues: [{ value: 'date_range_1' }], metricValues: [{ value: '1000' }, { value: '1500' }, { value: '20' }] }] }) : json({}, 400); }
     if (req.url.startsWith('/gsc/sites/' + encodeURIComponent('sc-domain:huchet-demorge.fr') + '/searchAnalytics/query')) { gscCalls++; return json({ rows: [gscCalls % 2 ? { clicks: 2100, impressions: 40000, position: 6.2 } : { clicks: 1800, impressions: 36000, position: 7.1 }] }); }
     if (req.url.startsWith('/v1/messages')) { lastAsk = JSON.parse(body); return json({ id: 'msg_test', type: 'message', role: 'assistant', model: lastAsk.model, content: [{ type: 'text', text: 'La mise en ligne est prévue vers le 7 novembre — on vous tient au courant.' }], stop_reason: 'end_turn', stop_sequence: null, usage: { input_tokens: 10, output_tokens: 10 } }); }
+    if (req.url.startsWith('/figma/')) {
+      if (req.headers['x-figma-token'] !== 'test-figma' && !req.url.startsWith('/figma/img/')) return json({ err: 'Invalid token' }, 403);
+      const box = (y, x = 0) => ({ x, y, width: 100, height: 100 });
+      if (req.url.startsWith('/figma/files/irfVpJlJI85XG3Cv2h7cK5')) return json({ version: 'v-' + figmaVersion, document: { children: [
+        { name: 'Archives', children: [{ id: '9:1', type: 'FRAME', name: 'vieux', absoluteBoundingBox: box(0) }] },
+        { name: 'Bento reveal', children: [{ id: '1:1', type: 'FRAME', name: 'bento reveal', absoluteBoundingBox: box(0) }] },
+        { name: 'Cas d’étude', children: [{ id: '2:2', type: 'FRAME', name: 'C 63', absoluteBoundingBox: box(500) }, { id: '2:1', type: 'FRAME', name: 'C 64', absoluteBoundingBox: box(100) }, { id: '2:3', type: 'TEXT', name: 'text', absoluteBoundingBox: box(0) }] }] } });
+      if (req.url.startsWith('/figma/images/irfVpJlJI85XG3Cv2h7cK5')) { const ids = decodeURIComponent(req.url.split('ids=')[1].split('&')[0]).split(','); return json({ err: null, images: Object.fromEntries(ids.map((id) => [id, `http://127.0.0.1:${MOCK}/figma/img/${id.replace(':', '-')}.png`])) }); }
+      if (req.url.startsWith('/figma/img/')) { res.writeHead(200, { 'content-type': 'image/png' }); return res.end('PNGFIGMA' + req.url); }
+    }
     if (req.url.startsWith('/drive/files')) return req.headers.authorization === 'Bearer tok-test' ? json({ id: 'drive-file-1' }) : json({}, 401);
     json({ error: 'inconnu ' + req.url }, 404);
   });
@@ -56,7 +67,7 @@ const mock = http.createServer((req, res) => {
     ABBY_API_KEY: 'test-abby', ABBY_API_URL: `http://127.0.0.1:${MOCK}/abby`,
     QONTO_LOGIN: 'test-login', QONTO_SECRET_KEY: 'test-secret', QONTO_API_URL: `http://127.0.0.1:${MOCK}/qonto`,
     GOOGLE_SERVICE_ACCOUNT_JSON: JSON.stringify({ client_email: 'espace@test.iam.gserviceaccount.com', private_key: privateKey.export({ type: 'pkcs8', format: 'pem' }) }),
-    GA4_API_URL: `http://127.0.0.1:${MOCK}/ga4`, GSC_API_URL: `http://127.0.0.1:${MOCK}/gsc`, ANTHROPIC_API_KEY: 'test-anthropic', ANTHROPIC_BASE_URL: `http://127.0.0.1:${MOCK}`,
+    GA4_API_URL: `http://127.0.0.1:${MOCK}/ga4`, GSC_API_URL: `http://127.0.0.1:${MOCK}/gsc`, FIGMA_TOKEN: 'test-figma', FIGMA_API_URL: `http://127.0.0.1:${MOCK}/figma`, ANTHROPIC_API_KEY: 'test-anthropic', ANTHROPIC_BASE_URL: `http://127.0.0.1:${MOCK}`,
     GOOGLE_TOKEN_URL: `http://127.0.0.1:${MOCK}/google/token`, GOOGLE_DRIVE_UPLOAD_URL: `http://127.0.0.1:${MOCK}/drive` };
   const srv = spawn(process.execPath, [path.join(__dirname, '..', 'server.js')], { env, stdio: ['ignore', 'pipe', 'pipe'] });
   let log = ''; srv.stdout.on('data', (c) => (log += c)); srv.stderr.on('data', (c) => (log += c));
@@ -69,7 +80,7 @@ const mock = http.createServer((req, res) => {
       const r = await fetch(B + '/api/verify', { method: 'POST', headers: h, body: JSON.stringify({ email, code }) });
       const cookie = (r.headers.get('set-cookie') || '').split(';')[0];
       const call = async (u, o = {}) => { const x = await fetch(B + u, { ...o, headers: { ...h, cookie, ...(o.headers || {}) } }); return { status: x.status, body: await x.json().catch(() => ({})) }; };
-      return { call, act: (pid, a) => call(`/api/projects/${pid}/action`, { method: 'POST', body: JSON.stringify(a) }), project: async (pid) => (await call('/api/projects/' + pid)).body.project };
+      return { cookie, call, act: (pid, a) => call(`/api/projects/${pid}/action`, { method: 'POST', body: JSON.stringify(a) }), project: async (pid) => (await call('/api/projects/' + pid)).body.project };
     }
     const louis = await session('louis@agence-orem.fr');
     const st = (await louis.call('/api/connectors')).body.connectors;
@@ -136,6 +147,20 @@ const mock = http.createServer((req, res) => {
     const dc = calls.find((c) => c.url.startsWith('/drive/files'));
     ok('Drive : jeton obtenu avec un JWT signé par le compte de service', calls.some((c) => c.url === '/google/token') && up.status === 200);
     ok('Drive : fichier envoyé dans le dossier du client', dc && dc.body.toString().includes('"parents":["DOSSIER-VARENNE"]') && dc.body.toString().includes('Logo Varenne.png') && dc.body.toString().includes('PNGTEST'));
+
+    // 4 bis. Figma : visuels du fichier Huchet dans la bibliothèque de Hugo
+    const fg = await louis.call('/api/connectors/figma/sync', { method: 'POST', body: JSON.stringify({ projectId: 'p_huchet' }) });
+    const hp = await louis.project('p_huchet'), fa = hp.assets.filter((a) => a.figma);
+    ok('Figma : 3 visuels importés (bento + 2 planches), pages hors sujet ignorées', fg.status === 200 && fa.length === 3 && !fa.some((a) => a.figma === '9:1'), JSON.stringify(fg.body));
+    ok('Figma : planches dans l’ordre de lecture du fichier', fa.find((a) => a.title.endsWith('01')).figma === '2:1' && fa.find((a) => a.title.endsWith('02')).figma === '2:2');
+    ok('Figma : images en PNG à 2x, jeton envoyé en en-tête', calls.some((c) => /\/figma\/images\/.*format=png&scale=2/.test(c.url) && c.headers['x-figma-token'] === 'test-figma'));
+    ok('Figma : aucun visuel ne renvoie vers le site de l’agence', !hp.assets.some((a) => /agence-orem\.fr/.test(a.url || '')));
+    const n0 = calls.filter((c) => c.url.startsWith('/figma/img/')).length;
+    await louis.call('/api/connectors/figma/sync', { method: 'POST', body: JSON.stringify({ projectId: 'p_huchet' }) });
+    ok('Figma : fichier inchangé, rien n’est réimporté', calls.filter((c) => c.url.startsWith('/figma/img/')).length === n0 && (await louis.project('p_huchet')).assets.filter((a) => a.figma).length === 3);
+    const hugo = await session('hugo@huchet-demorge.fr');
+    const zr = await fetch(B + '/api/projects/p_huchet/export?part=biblio', { headers: { cookie: hugo.cookie } }), zb = Buffer.from(await zr.arrayBuffer());
+    ok('Figma : Hugo télécharge tous les visuels en un ZIP', zr.status === 200 && zb.includes(Buffer.from('PNGFIGMA')) && zb.includes(Buffer.from('Bibliothèque/')) && !zb.includes(Buffer.from('Récapitulatif')));
 
     // 5. Bilan mensuel GA4 + Search Console
     await louis.act('p_huchet', { type: 'project.ext', ga4: '312345678', gsc: 'sc-domain:huchet-demorge.fr' });

@@ -11,6 +11,7 @@ const CONNECTORS = {
   abby: { label: 'Abby', env: ['ABBY_API_KEY'], does: 'Import du devis signé et des factures, avec leur PDF' },
   qonto: { label: 'Qonto', env: ['QONTO_LOGIN', 'QONTO_SECRET_KEY'], does: 'Virements reçus : factures passées en « Payée » et client remercié' },
   google: { label: 'Google (Drive, Analytics, Search Console)', env: ['GOOGLE_SERVICE_ACCOUNT_JSON'], does: 'Copie des fichiers reçus dans le Drive du client, bilan mensuel GA4 et Search Console' },
+  figma: { label: 'Figma', env: ['FIGMA_TOKEN'], does: 'Import des visuels (bento, planches du cas d’étude) du fichier Figma du client dans sa bibliothèque, prêts à télécharger' },
   claude: { label: 'Assistant (API Claude)', env: ['ANTHROPIC_API_KEY'], does: 'Réponses aux questions des clients, à partir de leur projet' }
 };
 const configured = (name, env) => CONNECTORS[name].env.every((k) => !!env[k]);
@@ -23,7 +24,8 @@ const API = {
   googleToken: (env) => url(env, 'GOOGLE_TOKEN_URL', 'https://oauth2.googleapis.com/token'),
   drive: (env) => url(env, 'GOOGLE_DRIVE_UPLOAD_URL', 'https://www.googleapis.com/upload/drive/v3'),
   ga4: (env) => url(env, 'GA4_API_URL', 'https://analyticsdata.googleapis.com/v1beta'),
-  gsc: (env) => url(env, 'GSC_API_URL', 'https://searchconsole.googleapis.com/webmasters/v3')
+  gsc: (env) => url(env, 'GSC_API_URL', 'https://searchconsole.googleapis.com/webmasters/v3'),
+  figma: (env) => url(env, 'FIGMA_API_URL', 'https://api.figma.com/v1')
 };
 
 function status(env, db) {
@@ -208,6 +210,49 @@ async function reportSync(db, env, projects, ctx, now = new Date()) {
   return { summary: `${n} bilan${n > 1 ? 's' : ''} mensuel${n > 1 ? 's' : ''} (${month})`, notices: [] };
 }
 
+/* ---------- Figma : visuels du client dans sa bibliothèque ----------
+   Lit le fichier Figma du projet (Outils de l'agence, ou à défaut le lien Figma du projet), prend les cadres
+   des pages « Bento… » (présentation) et « Cas d'étude » (planches, dans l'ordre de lecture), les exporte en PNG
+   et les range dans la bibliothèque, téléchargeables par le client. Jeton personnel Figma en lecture seule. */
+const figmaKey = (u) => { const m = String(u || '').match(/figma\.com\/(?:file|design|proto|board)\/([A-Za-z0-9]{10,64})/); return m ? m[1] : null; };
+const FIGMA_PAGES = [[/bento/, 'Présentation'], [/cas d ?etude|etude de cas|case stud/, 'Cas d’étude']];
+async function figmaSync(db, env, projects, ctx) {
+  const base = API.figma(env), h = { 'X-Figma-Token': env.FIGMA_TOKEN };
+  let n = 0, files = 0;
+  for (const p of projects) {
+    const key = figmaKey((p.ext && p.ext.figma) || (p.links && p.links.figma)); if (!key) continue;
+    const f = await getJson(ctx, `${base}/files/${key}?depth=2`, h);
+    if (p.ext && p.ext.figmaVersion === f.version) continue;
+    const picks = [];
+    for (const page of (f.document && f.document.children) || []) {
+      const kind = (FIGMA_PAGES.find(([re]) => re.test(norm(page.name))) || [])[1]; if (!kind) continue;
+      const frames = (page.children || []).filter((c) => c.visible !== false && ['FRAME', 'SECTION', 'COMPONENT', 'GROUP', 'INSTANCE'].includes(c.type));
+      const box = (c) => c.absoluteBoundingBox || { x: 0, y: 0 };
+      frames.sort((a, b) => box(a).y - box(b).y || box(a).x - box(b).x);
+      frames.slice(0, 80).forEach((c, i) => picks.push({ id: c.id, kind, title: kind === 'Présentation' ? (frames.length > 1 ? `Visuel de présentation ${i + 1}` : 'Visuel de présentation') : `Cas d’étude · planche ${String(i + 1).padStart(2, '0')}` }));
+    }
+    if (!picks.length) continue;
+    const urls = {};
+    for (let i = 0; i < picks.length; i += 40) {
+      const r = await getJson(ctx, `${base}/images/${key}?ids=${encodeURIComponent(picks.slice(i, i + 40).map((x) => x.id).join(','))}&format=png&scale=2`, h);
+      if (r.err) throw new Error(String(r.err)); Object.assign(urls, r.images || {});
+    }
+    const added = [];
+    for (const x of picks) {
+      const u = urls[x.id]; if (!u || !(/^https:\/\//.test(u) || u.startsWith(new URL(base).origin + '/')) || !ctx.saveFile) continue;
+      const r = await (ctx.fetch || fetch)(u); if (!r.ok) continue;
+      const buf = Buffer.from(await r.arrayBuffer()); if (buf.length > 25e6) continue;
+      const saved = await ctx.saveFile(p.id, `${norm(p.client).replace(/ /g, '-') || 'visuel'}-${norm(x.title).replace(/ /g, '-')}.png`, buf, 'Bibliothèque');
+      if (saved && saved.id) { added.push({ id: 'a_fg_' + crypto.randomBytes(6).toString('hex'), kind: x.kind, title: x.title, url: '', img: `/api/files/${saved.id}?inline=1`, fileId: saved.id, figma: x.id, by: 'team', at: new Date().toISOString() }); files++; }
+    }
+    if (!added.length) continue;
+    // Nouvelle version du fichier : les anciens visuels Figma laissent la place aux nouveaux, le reste de la bibliothèque ne bouge pas.
+    p.assets = [...added, ...(p.assets || []).filter((a) => !a.figma)];
+    p.ext = p.ext || {}; p.ext.figmaVersion = f.version; n++;
+  }
+  return { summary: `${files} visuel${files > 1 ? 's' : ''} importé${files > 1 ? 's' : ''} pour ${n} projet${n > 1 ? 's' : ''}`, notices: [] };
+}
+
 async function sync(name, db, env, projectId, user, ctx = {}) {
   if (!CONNECTORS[name]) return { error: 'Connecteur inconnu.' };
   if (!configured(name, env)) return { error: `Connecteur non configuré : ajoutez ${CONNECTORS[name].env.join(', ')} au lancement du serveur.` };
@@ -215,7 +260,7 @@ async function sync(name, db, env, projectId, user, ctx = {}) {
   // Tout ou rien : si l'outil répond mal en cours de route, les projets reviennent à leur état d'avant.
   const snap = JSON.stringify(projects), seen = JSON.stringify((db.meta && db.meta.qontoSeen) || []), notifN = (db.notifications || []).length;
   try {
-    const r = name === 'abby' ? await abbySync(db, env, projects, ctx) : name === 'qonto' ? await qontoSync(db, env, projects, ctx) : name === 'google' ? await reportSync(db, env, projects, ctx, ctx.now) : { error: 'Ce connecteur ne se synchronise pas à la demande.' };
+    const r = name === 'abby' ? await abbySync(db, env, projects, ctx) : name === 'qonto' ? await qontoSync(db, env, projects, ctx) : name === 'google' ? await reportSync(db, env, projects, ctx, ctx.now) : name === 'figma' ? await figmaSync(db, env, projects, ctx) : { error: 'Ce connecteur ne se synchronise pas à la demande.' };
     if (!r.error) stamp(db, name, r.summary);
     return r;
   } catch (e) {
@@ -288,4 +333,4 @@ async function onAccept(project, proposalId, env, ctx = {}) {
   return { ok: true };
 }
 const db0 = (ctx) => ctx.db || { meta: {} };
-module.exports = { CONNECTORS, status, webhook, sync, ask, copyToDrive, configured, assistantReady, onAccept };
+module.exports = { figmaKey, CONNECTORS, status, webhook, sync, ask, copyToDrive, configured, assistantReady, onAccept };
