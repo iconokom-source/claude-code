@@ -76,7 +76,7 @@ const CLIENT_VIEWS = ['accueil', 'projet', 'valider', 'maquettes', 'messages', '
   await louis.fill('#tu-l', 'Modifier un texte | 3 min | https://www.loom.com/share/8b9f66df6c52449fa0ff18afea1658b3\nAjouter un atelier | 4 min |'); await louis.locator('form[data-form=tutorials]').evaluate((f) => f.requestSubmit()); await louis.waitForTimeout(300);
   await louis.screenshot({ path: OUT + '/lots-3-mise-en-ligne.png', fullPage: true });
   await claire.reload(); await claire.waitForSelector('#main'); await claire.waitForTimeout(300);
-  ok('Claire voit « Votre site travaille pour vous » et ses résultats', /Votre site travaille pour vous/.test(await main(claire)) && /12\s*demandes de devis/.test(await main(claire)));
+  ok('Claire voit « Votre site est en ligne » et ses résultats', /Votre site est en ligne/.test(await main(claire)) && /12\s*demandes de devis/.test(await main(claire)));
   const ob = await louis.evaluate(async () => (await (await fetch('/api/outbox')).json()).items.map((m) => m.to + ' | ' + m.subject));
   await new Promise((r) => setTimeout(r, 500));
   const ob2 = await louis.evaluate(async () => (await (await fetch('/api/outbox')).json()).items.map((m) => m.to + ' | ' + m.html));

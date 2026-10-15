@@ -56,6 +56,47 @@
       { d: [26, 30], txt: 'On documente ce qui a été fait et ce que ça change.', items: [['Rapport mensuel', 30]] }
     ], validations: [['priorites', 'Priorités du mois', 'Ce qu’on fait évoluer ce mois-ci', 6]] }
   };
+  /* Qui fait quoi sur chaque livrable, et où le trouver. Rôles par défaut selon la fonction de chacun
+     (Louis : Webflow et livraison du site ; Théophile : stratégie, textes, référencement ; Clément : création),
+     modifiables par l'équipe sur chaque projet. « client » = ce qu'il y a à faire côté client.
+     Des phrases : « Théophile rédige la proposition », « Vous la lisez et l’acceptez en ligne » (registre du client). */
+  const L = 'u_louis', T = 'u_theo', C = 'u_clement', K = 'client';
+  const ROLES = {
+    'Proposition commerciale': [[[T, 'rédige la proposition et {vous|te} la présente'], [K, '{Vous la lisez et l’acceptez|Tu la lis et l’acceptes} en ligne']], 'proposition'],
+    'Devis signé': [[[L, 'établit le devis'], [K, '{Vous le signez|Tu le signes} en ligne']], 'documents'],
+    'Visio de cadrage (1 h)': [[[L, 'anime la visio et fixe le planning'], [T, 'cadre les objectifs et les cibles'], [C, 'recueille {vos|tes} goûts et références'], [K, '{Vous choisissez|Tu choisis} le créneau']], 'cal'],
+    'Plan du site (arborescence)': [[[T, 'construit le plan des pages'], [K, '{Vous le validez|Tu le valides} ou {demandez|demandes} des changements']], 'valider'],
+    'Direction artistique': [[[C, 'crée les couleurs, les typographies et le style'], [K, '{Vous la validez|Tu la valides}']], 'valider'],
+    'Textes du site': [[[T, 'écrit les textes, pensés pour Google'], [K, '{Vous les relisez et les validez|Tu les relis et les valides}']], 'valider'],
+    'Maquettes du site': [[[C, 'dessine les maquettes'], [K, '{Vous les commentez puis les validez|Tu les commentes puis les valides}']], 'maquettes'],
+    'Création du compte Webflow': [[[K, '{Vous créez|Tu crées} l’espace Webflow de l’entreprise'], [L, 'vérifie l’accès']], 'demarrer'],
+    'Construction du site': [[[L, 'construit le site sur Webflow'], [T, 'intègre les textes et le référencement']], 'projet'],
+    'Recette du site': [[[L, 'prépare la recette'], [K, '{Vous testez|Tu testes} le site et {notez|notes} {vos|tes} retours']], 'valider'],
+    'Mise en ligne et remise des accès': [[[L, 'met le site en ligne et {vous|te} remet les accès'], [K, '{Vous validez|Tu valides} la réception']], 'valider'],
+    'Formation Webflow (visio)': [[[L, 'anime la formation'], [K, '{Vous choisissez|Tu choisis} le créneau']], 'cal'],
+    'Bilan à 30 jours': [[[T, 'lit les chiffres et prépare les recommandations'], [L, 'fait le point technique']], 'documents'],
+    'Proposition d’évolution': [[[T, 'propose les priorités'], [K, '{Vous choisissez|Tu choisis} ce qu’on fait évoluer']], 'proposition'],
+    'Atelier de marque (1 h 30)': [[[C, 'anime l’atelier'], [T, 'travaille le positionnement'], [K, '{Vous choisissez|Tu choisis} le créneau']], 'cal'],
+    'Synthèse et plateforme de marque': [[[T, 'rédige la plateforme de marque'], [K, '{Vous la validez|Tu la valides}']], 'valider'],
+    'Pistes créatives': [[[C, 'crée les pistes'], [K, '{Vous choisissez|Tu choisis} une piste']], 'valider'],
+    'Direction artistique finale': [[[C, 'affine la piste retenue'], [K, '{Vous la validez|Tu la valides}']], 'valider'],
+    'Logo et déclinaisons': [[[C, 'dessine le logo et ses déclinaisons']], 'maquettes'],
+    'Charte graphique': [[[C, 'réalise la charte graphique'], [K, '{Vous la validez|Tu la valides}']], 'valider'],
+    'Livraison des fichiers sources': [[[C, 'livre tous les fichiers']], 'fichiers'],
+    'Point d’usage à 30 jours': [[[C, 'fait le point sur {vos|tes} supports'], [K, '{Vous partagez|Tu partages} {vos|tes} retours']], 'cal'],
+    'Entretiens de cadrage': [[[T, 'conduit les entretiens'], [K, '{Vous y participez|Tu y participes}']], 'cal'],
+    'Analyse de l’existant': [[[T, 'analyse l’existant et le marché']], 'projet'],
+    'Restitution du positionnement': [[[T, 'restitue le positionnement'], [K, '{Vous le validez|Tu le valides}']], 'valider'],
+    'Plan d’action priorisé': [[[T, 'rédige le plan d’action'], [K, '{Vous le validez|Tu le valides}']], 'valider'],
+    'Point à 30 jours': [[[T, 'fait le point sur la mise en œuvre']], 'cal'],
+    'Visio de pilotage': [[[L, 'présente les chiffres du mois'], [T, 'propose les priorités'], [K, '{Vous y participez|Tu y participes}']], 'cal'],
+    'Priorités du mois': [[[T, 'propose les priorités'], [K, '{Vous les validez|Tu les valides}']], 'valider'],
+    'Interventions du mois': [[[L, 'réalise les interventions sur le site'], [C, 'crée les visuels si besoin']], 'projet'],
+    'Rapport mensuel': [[[T, 'rédige le bilan du mois']], 'documents']
+  };
+  const itemWho = (it) => (it && Array.isArray(it.who) ? it.who : ((ROLES[it && it.t] || [])[0] || []));
+  const itemGo = (it) => (it && it.link) || ((ROLES[it && it.t] || [])[1] || '');
+  const REVIEW_AXES = [['ecoute', 'Écoute et compréhension du besoin'], ['qualite', 'Qualité du résultat'], ['delais', 'Respect des délais'], ['communication', 'Clarté des échanges'], ['prix', 'Rapport qualité prix']];
   const DEFAULT_MISSING = {
     site: [['Logo et charte actuelle', 'Les fichiers que vous avez, même anciens.'], ['Photos', 'Équipe, lieux, produits : ce que vous avez déjà.']],
     da: [['Logo actuel', 'Même ancien, en bonne qualité si possible.'], ['3 ou 4 marques que vous aimez', 'Des liens ou des captures, avec un mot sur ce qui vous plaît.']],
@@ -115,9 +156,9 @@
   function seed(now = Date.now()) {
     const TEAM3 = ['u_louis', 'u_theo', 'u_clement'];
     const users = [
-      { id: 'u_louis', email: 'louis@agence-orem.fr', name: 'Louis Montagne', role: 'admin', title: 'Développeur Webflow', about: 'Conçoit et livre les sites : Webflow, automatisations, référencement.', phone: '07 50 37 15 72', wa: 'https://wa.me/33750371572', photo: 'louis' },
-      { id: 'u_theo', email: 'theophile@agence-orem.fr', name: 'Théophile Lamouret', role: 'admin', title: 'Stratège', about: 'Positionnement, textes et référencement : la clarté du message.', phone: '07 71 67 39 47', wa: 'https://wa.me/33771673947', photo: 'theophile' },
-      { id: 'u_clement', email: 'clement@agence-orem.fr', name: 'Clément Saint-Hilaire', role: 'admin', title: 'Directeur de création', about: 'Identité visuelle, direction artistique, maquettes et interfaces.', phone: '06 95 62 59 25', wa: 'https://wa.me/33695625925', photo: 'clement' }
+      { id: 'u_louis', email: 'louis@agence-orem.fr', name: 'Louis Montagne', role: 'admin', title: 'Chef de projet et développeur Webflow', contact: ['Le planning, les rendez-vous et l’avancement du projet', 'La construction du site sur Webflow et sa mise en ligne', 'Les devis, les factures et les accès'], phone: '07 50 37 15 72', wa: 'https://wa.me/33750371572', photo: 'louis' },
+      { id: 'u_theo', email: 'theophile@agence-orem.fr', name: 'Théophile Lamouret', role: 'admin', title: 'Stratège, contenus et référencement', contact: ['Le positionnement et le message de la marque', 'Les textes du site et leur relecture', 'Le référencement sur Google et dans les IA, et les bilans mensuels'], phone: '07 71 67 39 47', wa: 'https://wa.me/33771673947', photo: 'theophile' },
+      { id: 'u_clement', email: 'clement@agence-orem.fr', name: 'Clément Saint-Hilaire', role: 'admin', title: 'Directeur de création', contact: ['L’identité visuelle, le logo et la charte graphique', 'Les maquettes et les retours sur le design', 'Les visuels, la bibliothèque et les fichiers sources'], phone: '06 95 62 59 25', wa: 'https://wa.me/33695625925', photo: 'clement' }
     ];
     const at = (n, h) => { const d = new Date(now + n * DAY); if (h !== undefined) d.setHours(h, 0, 0, 0); return d.toISOString(); };
     const f = (name, cat, from, by, d, size, extra = {}) => ({ id: uid('f'), name, cat, from, by, at: d, size, seen: true, demo: true, ...extra });
@@ -144,6 +185,7 @@
     ];
     a.links = { figma: 'https://www.figma.com/design/exemple-maison-lumen', proto: 'https://www.figma.com/proto/exemple-maison-lumen-plan', preview: '', site: 'https://www.maisonlumen.fr' };
     a.files = [
+      f('Cession des droits d’auteur.pdf', 'Contrat', 'agence', 'u_louis', at(-1, 15), 118000, { sign: { status: 'requested', at: at(-1, 15), by: 'u_louis', label: 'Cession des droits sur la marque et le site' } }),
       f('Plan du site, version 1 (Figma)', 'Livrable', 'agence', 'u_clement', at(-2, 11), 0, { url: 'https://www.figma.com/proto/exemple-maison-lumen-plan' }),
       f('Compte rendu de la visio de cadrage.pdf', 'Livrable', 'agence', 'u_louis', at(-4, 16), 412000),
       f('Devis D-2026-0142 signé.pdf', 'Devis', 'agence', 'u_louis', at(-15, 15), 98000),
@@ -183,6 +225,25 @@
       { id: 'hinv2', num: 'F-2026-0112', label: 'Facture de solde (50 %)', ht: 4900, ttc: 5880, status: 'paid', date: '2026-06-15T10:00:00.000Z', paidAt: '2026-06-22T10:00:00.000Z' }
     ];
     b.links = { figma: 'https://www.figma.com/design/irfVpJlJI85XG3Cv2h7cK5/Huchet-Demorge', proto: 'https://www.figma.com/proto/irfVpJlJI85XG3Cv2h7cK5/Huchet-Demorge', preview: '', site: 'https://www.huchet-demorge.fr/' };
+    // Évolution (abonnement mensuel après la mise en ligne) : une visio de pilotage par mois, un bilan, des axes d'amélioration.
+    b.evo = { active: true, since: '2026-07-15T09:00:00.000Z', plan: 'Évolution mensuelle',
+      meeting: { when: at(6, 11), mode: 'Visio de pilotage (45 min)' }, reschedule: [],
+      axes: [
+        { id: 'ax1', t: 'Mesurer chaque demande d’annonce, du site jusqu’au CRM', effect: 'Savoir quelles pages et quelles sources apportent les demandes.', who: 'u_louis', due: at(8), status: 'on', priority: true },
+        { id: 'ax2', t: 'Réécrire les titres des pages hôtels et boulangeries', effect: 'Plus de clics depuis Google sur ces recherches.', who: 'u_theo', due: at(15), status: 'todo' },
+        { id: 'ax3', t: 'Annonce intégrée à chaque e-mail de contact', effect: 'Des demandes plus qualifiées, sans aller-retour.', who: 'u_louis', due: at(22), status: 'todo' },
+        { id: 'ax4', t: 'Nouvelle série de visuels pour LinkedIn', effect: 'Des publications régulières aux couleurs de la marque.', who: 'u_clement', due: at(-5), status: 'done' }],
+      next: [['Novembre', 'Lire les premières demandes par source, enrichir la FAQ.'], ['Décembre', 'Pages par ville pour les recherches locales.'], ['Janvier', 'Section témoignages de vendeurs et d’acheteurs.']],
+      reports: [
+        { id: 'rp3', month: '2026-09', title: 'Le site attire davantage, il reste à mesurer ce qu’il rapporte', summary: 'Meilleur mois depuis la mise en ligne. Les demandes progressent, mais une partie ne remonte pas encore jusqu’au CRM.',
+          stats: [['2 140', 'visites sur le site', '+14 % sur août'], ['21', 'demandes d’annonce', '+5 sur août'], ['1 930', 'clics depuis Google', '+6 % sur août'], ['7,4', 'position moyenne', 'gagne 0,8 place']],
+          done: [['Nouvelle série de visuels LinkedIn', 'Livrée le 12 septembre'], ['Formulaire d’annonce simplifié', '3 champs de moins, en ligne le 18 septembre']], at: '2026-10-03T09:00:00.000Z' },
+        { id: 'rp2', month: '2026-08', title: 'Un mois d’été stable, la recherche Google porte le site', summary: 'Le trafic tient malgré l’été ; les recherches sur le nom de l’agence progressent.',
+          stats: [['1 880', 'visites sur le site', '+3 % sur juillet'], ['16', 'demandes d’annonce', '+1 sur juillet'], ['1 820', 'clics depuis Google', '+4 % sur juillet'], ['8,2', 'position moyenne', 'gagne 0,3 place']],
+          done: [['Pages hôtels : temps de chargement divisé par deux', 'Images optimisées le 7 août']], at: '2026-09-04T09:00:00.000Z' },
+        { id: 'rp1', month: '2026-07', title: 'Premier mois complet : la base de comparaison', summary: 'Premier état des lieux complet : audience, Google, assistants IA et fiabilité de la mesure.',
+          stats: [['1 825', 'visites sur le site', 'premier mois'], ['15', 'demandes d’annonce', 'premier mois'], ['1 750', 'clics depuis Google', 'premier mois'], ['8,5', 'position moyenne', 'premier mois']],
+          done: [['Site en ligne depuis le 15 juin', 'Formation Webflow faite le 2 juillet']], at: '2026-08-05T09:00:00.000Z' }] };
     b.results = { period: 'Depuis la mise en ligne, le 15 juin 2026', stats: [['~5', 'demandes qualifiées par semaine'], ['11 961', 'utilisateurs actifs'], ['22 825', 'clics depuis Google'], ['68 %', 'du trafic vient de la recherche Google']] };
     b.brand = { colors: [['Cognac', '#A8552D'], ['Cuivre', '#D67C53'], ['Pierre', '#EFE6DC'], ['Nuit', '#160700']], fonts: [['Titres', 'Sans géométrique, capitales espacées'], ['Texte', 'Sans humaniste']] };
     b.tools = ['teaser', 'brand', 'signature', 'request', 'webflow'];
@@ -193,7 +254,10 @@
       { id: 'a1', kind: 'Présentation', title: 'Visuel de présentation (bento)', img: 'assets/hd/cover.jpg', by: 'team' },
       { id: 'a2', kind: 'Cas d’étude', title: 'Cas d’étude · planche 01', img: 'assets/hd/ecran-1.jpg', by: 'team' },
       { id: 'a3', kind: 'Cas d’étude', title: 'Cas d’étude · planche 02', img: 'assets/hd/ecran-2.jpg', by: 'team' },
-      { id: 'a4', kind: 'Cas d’étude', title: 'Cas d’étude · planche 03', img: 'assets/hd/ecran-3.jpg', by: 'team' }
+      { id: 'a4', kind: 'Cas d’étude', title: 'Cas d’étude · planche 03', img: 'assets/hd/ecran-3.jpg', by: 'team' },
+      // Écrans des maquettes, à commenter avec des épingles (page Maquettes), hors de la bibliothèque.
+      { id: 'a8', kind: 'Maquettes', title: 'Page d’accueil', img: 'assets/hd/ecran-1.jpg', by: 'u_clement' },
+      { id: 'a9', kind: 'Maquettes', title: 'Pages annonces d’hôtels', img: 'assets/hd/ecran-2.jpg', by: 'u_clement' }
     ];
     b.messages = [
       { id: 'hm4', fromAgency: true, by: 'u_clement', at: '2026-01-13T15:00:00.000Z', text: 'Présentation des wireframes et de la page d’accueil, avec les choix de direction artistique.', loom: { url: 'https://www.loom.com/share/8b9f66df6c52449fa0ff18afea1658b3', title: 'Wireframes et page d’accueil', duration: '9 min' } },
@@ -341,11 +405,13 @@
     (p.invoices || []).forEach((i) => { delete i.paidTx; delete i.remindedAt; });
     p.activity = p.activity.map(({ seen, ...a }) => a);
     p.files = p.files.map(({ seen, path, ...f }) => f);
+    p.tasks = (p.tasks || []).filter((t) => !t.team);
     return p;
   }
 
   /* ---------- Écriture ---------- */
-  const CLIENT_ACTIONS = new Set(['user.prefs', 'val.undo', 'file.remove', 'proposal.accept', 'proposal.decline', 'pin.add', 'val.approve', 'val.changes', 'task.toggle', 'user.onboarded', 'msg.post', 'msg.read', 'request.add', 'review.add', 'setup.webflow', 'setup.domain']);
+  const CLIENT_ACTIONS = new Set(['user.prefs', 'val.undo', 'file.remove', 'proposal.accept', 'proposal.decline', 'pin.add', 'val.approve', 'val.changes', 'task.toggle', 'user.onboarded', 'msg.post', 'msg.read', 'request.add', 'review.add', 'setup.webflow', 'setup.domain', 'evo.reschedule']);
+  // « file.sign » n'est jamais appelée directement par un client : le serveur l'appelle (internal) avec l'empreinte et la preuve.
 
   /* ---------- Validation des données entrantes ----------
      Tout ce qui vient du navigateur est borné en taille, et les liens doivent être en https. */
@@ -361,7 +427,7 @@
     if (depth > 4) return undefined;
     if (v === null || v === undefined || typeof v === 'boolean') return v;
     if (typeof v === 'number') return Number.isFinite(v) ? v : 0;
-    if (typeof v === 'string') return URLS.has(key) ? safeUrl(v, key) : v.slice(0, SHORT.has(key) ? 200 : 4000);
+    if (typeof v === 'string') return URLS.has(key) ? safeUrl(v, key) : v.slice(0, key === 'sig' ? 120000 : SHORT.has(key) ? 200 : 4000);
     if (Array.isArray(v)) return v.slice(0, 50).map((x) => clean(x, key, depth + 1));
     if (typeof v === 'object') { const o = {}; for (const k of Object.keys(v).slice(0, 40)) { if (k === '__proto__' || k === 'constructor' || k === 'prototype' || k === '__internal') continue; o[k] = clean(v[k], k, depth + 1); } return o; }
     return undefined;
@@ -379,7 +445,7 @@
     const project = store.projects.find((p) => p.id === projectId);
     if (!project || !canSee(user, project)) return { error: 'Projet introuvable.' };
     if (action.type === 'file.add' && !internal) return { error: 'Action inconnue.' };
-    if (user.role !== 'admin' && !CLIENT_ACTIONS.has(action.type) && !(internal && ['file.add', 'missing.done'].includes(action.type))) return { error: 'Action réservée à l’agence.' };
+    if (user.role !== 'admin' && !CLIENT_ACTIONS.has(action.type) && !(internal && ['file.add', 'missing.done', 'file.sign'].includes(action.type))) return { error: 'Action réservée à l’agence.' };
     // Un espace archivé reste consultable, mais plus rien ne s'y écrit (sauf pour le désarchiver).
     if (project.archivedAt && action.type !== 'project.archive' && !['msg.read', 'seen'].includes(action.type)) return { error: 'Cet espace est archivé : il reste consultable, en lecture seule.' };
     const v = action.vid && project.validations.find((x) => x.id === action.vid);
@@ -445,6 +511,64 @@
         const t = project.tasks.find((x) => x.id === action.tid); if (!t) return { error: 'Action introuvable.' };
         if (t.auto && user.role !== 'admin') return { error: 'Cette action se coche toute seule.' };
         t.done = !t.done; if (t.done) log(project, user, 'a coché : ' + t.t.toLowerCase()); break;
+      }
+      case 'item.meta': {
+        const it = project.phases.flatMap((x) => x.items).find((x) => x.id === action.iid); if (!it) return { error: 'Livrable introuvable.' };
+        if (action.link !== undefined) { const l = String(action.link || '').trim(); it.link = /^https:\/\//.test(l) ? safeUrl(l, 'link') : ['', 'proposition', 'documents', 'cal', 'valider', 'maquettes', 'demarrer', 'projet', 'fichiers'].includes(l) ? l : (() => { throw new Error('LINK'); })(); }
+        if (Array.isArray(action.who)) {
+          const ok = new Set([...store.users.filter((u) => u.role === 'admin').map((u) => u.id), 'client']);
+          it.who = action.who.filter((w) => Array.isArray(w) && ok.has(w[0])).slice(0, 6).map(([w, t]) => [w, String(t || '').trim().slice(0, 120)]);
+        }
+        break;
+      }
+      case 'file.signreq': {
+        // L'agence demande la signature d'un document (devis, contrat, offre d'Évolution) : il apparaît dans « À valider ».
+        const f = project.files.find((x) => x.id === action.fid); if (!f) return { error: 'Fichier introuvable.' };
+        if (f.from !== 'agence') return { error: 'Seuls les documents de l’agence se signent ici.' };
+        if (f.sign && f.sign.status === 'signed') return { error: 'Ce document est déjà signé.' };
+        if (action.cancel) { delete f.sign; break; }
+        f.sign = { status: 'requested', at: now, by: user.id, label: String(action.label || '').slice(0, 160) };
+        log(project, user, 'a demandé la signature de « ' + f.name + ' »'); return { ok: true, file: f.name };
+      }
+      case 'file.sign': {
+        // Signature électronique simple : consentement explicite, identité (connexion par code), horodatage et empreinte du fichier,
+        // ajoutés par le serveur (adresse IP, navigateur). Passe toujours par le serveur, jamais directement.
+        if (!internal) return { error: 'La signature passe par le bouton « Signer ».' };
+        const f = project.files.find((x) => x.id === action.fid); if (!f || !f.sign || f.sign.status !== 'requested') return { error: 'Ce document n’attend pas de signature.' };
+        const sign = String(action.name || '').trim(); if (sign.length < 2) return { error: 'Écrivez votre nom pour signer.' };
+        if (!action.agree) return { error: 'Cochez la case pour signer.' };
+        const sig = typeof action.sig === 'string' && /^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(action.sig) && action.sig.length < 120000 ? action.sig : '';
+        Object.assign(f.sign, { status: 'signed', name: sign.slice(0, 120), sig, signedAt: now, signedBy: user.id, email: user.email, hash: String(action.hash || '').slice(0, 64), ip: String(action.ip || '').slice(0, 60), ua: String(action.ua || '').slice(0, 300) });
+        log(project, user, 'a signé « ' + f.name + ' »'); return { ok: true, file: f.name };
+      }
+      case 'evo.reschedule': {
+        // Le client demande un autre créneau pour la visio de pilotage : l'équipe est prévenue et répond.
+        const e = project.evo; if (!e || !e.active) return { error: 'Pas de visio de pilotage prévue.' };
+        const text = String(action.text || '').trim(); if (text.length < 3) return { error: 'Indiquez les créneaux qui vous arrangent.' };
+        e.reschedule = (e.reschedule || []).filter((r) => r.status !== 'open').concat([{ id: uid('rs'), at: now, by: user.id, text: text.slice(0, 600), status: 'open' }]).slice(-20);
+        log(project, user, 'a demandé un autre créneau pour la visio de pilotage'); break;
+      }
+      case 'evo.set': {
+        project.evo = project.evo || { active: false, axes: [], reports: [], next: [], reschedule: [] };
+        const e = project.evo;
+        if (action.active !== undefined) { e.active = !!action.active; if (e.active && !e.since) e.since = now; }
+        if (action.meeting !== undefined) { const w = action.meeting && action.meeting.when; if (w && !validDate(w)) return { error: 'Date invalide.' }; e.meeting = { when: w ? iso(w) : null, mode: String((action.meeting && action.meeting.mode) || 'Visio de pilotage').slice(0, 80) }; (e.reschedule || []).forEach((r) => { if (r.status === 'open') r.status = 'done'; }); }
+        if (Array.isArray(action.next)) e.next = action.next.filter((x) => Array.isArray(x) && x[0]).slice(0, 6).map(([m, t]) => [String(m).slice(0, 30), String(t || '').slice(0, 200)]);
+        if (Array.isArray(action.axes)) {
+          const okWho = new Set([...store.users.filter((u) => u.role === 'admin').map((u) => u.id), 'client', 'both']);
+          for (const a of action.axes.slice(0, 20)) { if (a.due && !validDate(a.due)) return { error: 'Date d’échéance invalide.' }; }
+          e.axes = action.axes.filter((a) => a && String(a.t || '').trim()).slice(0, 20).map((a, i) => ({ id: a.id || uid('ax'), t: String(a.t).slice(0, 160), effect: String(a.effect || '').slice(0, 300), who: okWho.has(a.who) ? a.who : 'both', due: a.due ? iso(a.due) : null, status: ['todo', 'on', 'done'].includes(a.status) ? a.status : 'todo', priority: !!a.priority }));
+        }
+        log(project, user, 'a mis à jour l’espace Évolution'); break;
+      }
+      case 'evo.report': {
+        project.evo = project.evo || { active: true, axes: [], reports: [], next: [], reschedule: [] };
+        if (!/^\d{4}-\d{2}$/.test(String(action.month || ''))) return { error: 'Choisissez le mois du bilan.' };
+        const title = String(action.title || '').trim(); if (!title) return { error: 'Donnez un titre au bilan.' };
+        const lines = (a, n) => (Array.isArray(a) ? a : []).filter((x) => Array.isArray(x) && x[0]).slice(0, 8).map((x) => x.slice(0, n).map((y) => String(y || '').slice(0, 200)));
+        const rp = { id: uid('rp'), month: action.month, title: title.slice(0, 160), summary: String(action.summary || '').slice(0, 1200), stats: lines(action.stats, 3), done: lines(action.done, 2), fileId: String(action.fileId || '').slice(0, 60) || undefined, at: now };
+        project.evo.reports = [rp, ...(project.evo.reports || []).filter((r) => r.month !== rp.month)].sort((a, b) => b.month.localeCompare(a.month)).slice(0, 36);
+        log(project, user, 'a publié le bilan du mois ' + rp.month); return { ok: true, report: rp.id };
       }
       case 'task.remove': project.tasks = project.tasks.filter((x) => x.id !== action.tid); break;
       case 'setup.webflow': {
@@ -619,7 +743,16 @@
       case 'review.add': {
         const score = Number(action.score);
         if (!(score >= 1 && score <= 5)) return { error: 'Choisissez une note de 1 à 5.' };
-        project.review = { score, text: String(action.text || '').slice(0, 2000), public: !!action.public, by: user.id, at: now, seen: false };
+        // 4 ou 5 : l'avis part aussi sur Google. 3 ou moins : un questionnaire de bilan, jamais publié.
+        let survey;
+        if (score <= 3) {
+          const q = action.survey || {}, txt = (k, n = 2000) => String(q[k] || '').trim().slice(0, n);
+          if (!txt('bad')) return { error: 'Dites-nous ce qui n’a pas fonctionné, même en quelques mots.' };
+          const axes = {}; for (const k of REVIEW_AXES.map((a) => a[0])) { const v = Number(q.axes && q.axes[k]); if (v >= 1 && v <= 5) axes[k] = v; }
+          survey = { good: txt('good'), bad: txt('bad'), phase: txt('phase', 60), recommend: txt('recommend'), axes, call: !!q.call };
+        }
+        project.review = { score, text: String(action.text || '').slice(0, 2000), public: score >= 4 && !!action.public, google: score >= 4 && !!action.google, survey, by: user.id, at: now, seen: false };
+        if (survey && survey.call && !project.tasks.some((t) => t.auto === 'review-call')) project.tasks.push({ id: uid('t'), t: 'Appeler ' + (project.contactName || 'le client') + ' pour faire le point sur le projet', done: false, auto: 'review-call', team: true });
         log(project, user, 'a laissé un avis (' + score + '/5)'); break;
       }
       case 'prelaunch.toggle': {
@@ -684,7 +817,7 @@
         let pr = action.prid && project.proposals.find((x) => x.id === action.prid);
         if (pr && pr.status === 'accepted') return { error: 'Cette proposition est déjà acceptée.' };
         if (!pr) { pr = { id: uid('pr'), status: 'draft', from: action.rid || undefined }; project.proposals.unshift(pr); }
-        Object.assign(pr, { title: String(action.title).slice(0, 160), intro: String(action.intro || '').slice(0, 2000), lines, quote: String(action.quote || pr.quote || ''), validUntil: action.validUntil ? iso(action.validUntil) : addDays(Date.now(), 30), depositPct: Math.min(100, Math.max(0, Number(action.depositPct ?? 50))) });
+        Object.assign(pr, { kind: action.kind === 'evolution' ? 'evolution' : pr.kind, title: String(action.title).slice(0, 160), intro: String(action.intro || '').slice(0, 2000), lines, quote: String(action.quote || pr.quote || ''), validUntil: action.validUntil ? iso(action.validUntil) : addDays(Date.now(), 30), depositPct: Math.min(100, Math.max(0, Number(action.depositPct ?? 50))) });
         return { ok: true, prid: pr.id };
       }
       case 'proposal.send': {
@@ -701,7 +834,8 @@
         if (!action.agree) return { error: 'Cochez la case pour accepter la proposition.' };
         const sign = String(action.name || '').trim(); if (sign.length < 2) return { error: 'Écrivez votre nom pour signer.' };
         const ht = pr.lines.reduce((t, l) => t + l.ht, 0);
-        Object.assign(pr, { status: 'accepted', acceptedAt: now, acceptedBy: user.id, signName: sign.slice(0, 120) });
+        const sigImg = typeof action.sig === 'string' && /^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(action.sig) && action.sig.length < 120000 ? action.sig : '';
+        Object.assign(pr, { status: 'accepted', acceptedAt: now, acceptedBy: user.id, signName: sign.slice(0, 120), sig: sigImg, proof: internal && action.proof ? { ip: String(action.proof.ip || '').slice(0, 60), ua: String(action.proof.ua || '').slice(0, 300), email: user.email } : { email: user.email } });
         if (pr.depositPct > 0) { const dep = Math.round(ht * pr.depositPct) / 100; project.invoices.push({ id: uid('inv'), num: '', label: `Facture d’acompte (${pr.depositPct} %)${pr.from ? ' : ' + pr.title.toLowerCase() : ''}`, ht: dep, ttc: Math.round(dep * 120) / 100, status: 'due', date: now }); }
         if (pr.from) { const rq = project.requests.find((r) => r.id === pr.from); if (rq) rq.status = 'En cours'; }
         else {
@@ -715,6 +849,7 @@
           if (!project.missing.length) project.missing = (DEFAULT_MISSING[project.offer] || []).map(([t, sub]) => ({ id: uid('m'), t, sub, at: now }));
           project.next = kick ? { title: 'Réserver : ' + kick.t.charAt(0).toLowerCase() + kick.t.slice(1), text: (project.registre === 'tu' ? 'Merci pour ta confiance ! On démarre par ce rendez-vous. Choisis le créneau qui t’arrange.' : 'Merci pour votre confiance ! On démarre par ce rendez-vous. Choisissez le créneau qui vous arrange.'), go: 'cal' } : { title: '', text: '', go: 'accueil' };
         }
+        if (pr.kind === 'evolution') { project.evo = project.evo || { axes: [], reports: [], next: [], reschedule: [] }; project.evo.active = true; project.evo.since = now; }
         project.tasks.forEach((t) => { if (t.auto === 'proposal') t.done = true; });
         if (project.next.go === 'proposition') project.next = { title: '', text: '', go: 'accueil' };
         log(project, user, 'a accepté la proposition : ' + pr.title); return { ok: true, proposal: pr.title, accepted: pr.id };
@@ -755,7 +890,7 @@
      et les autres membres de l'équipe. Chacun règle ce qu'il reçoit et à quel rythme. */
   const EVENT = {
     'file.add': 'files', 'msg.post': 'messages', 'val.approve': 'validations', 'val.changes': 'validations',
-    'request.add': 'requests', 'review.add': 'messages', 'setup.webflow': 'files', 'setup.domain': 'files', 'setup.check': 'activity', 'client.remind': 'validations',
+    'request.add': 'requests', 'review.add': 'messages', 'setup.webflow': 'files', 'evo.reschedule': 'messages', 'file.signreq': 'validations', 'file.sign': 'validations', 'evo.report': 'files', 'evo.set': 'activity', 'setup.domain': 'files', 'setup.check': 'activity', 'client.remind': 'validations',
     'proposal.send': 'validations', 'proposal.accept': 'validations', 'proposal.decline': 'messages', 'pin.add': 'messages', 'version.add': 'files', 'project.deliver': 'activity', 'val.request': 'validations', 'user.onboarded': 'activity', 'asset.add': 'files', 'next.set': 'activity', 'note.set': 'activity'
   };
   const TAB = { files: 'fichiers', messages: 'messages', validations: 'validations', requests: 'demandes', activity: 'activite' };
@@ -773,6 +908,11 @@
       case 'val.request': { const v = project.validations.find((x) => x.id === action.vid), what = v ? v.t.toLowerCase() : 'une étape'; return audience === 'client' ? `${who} attend ${project.registre === 'tu' ? 'ta' : 'votre'} validation : ${what}` : `${who} a demandé la validation : ${what}`; }
       case 'request.add': return `${who} demande une évolution (${action.kind || 'autre'}) : « ${String(action.text).slice(0, 100)} »`;
       case 'user.onboarded': return `${who} a découvert son espace`;
+      case 'file.signreq': return audience === 'client' ? `${who} ${project.registre === 'tu' ? 't’' : 'vous '}envoie un document à signer : ${res.file || ''}` : `${who} a demandé la signature de ${res.file || 'un document'}`;
+      case 'file.sign': return `${who} a signé ${res.file || 'un document'}`;
+      case 'evo.reschedule': return `${who} demande un autre créneau pour la visio de pilotage : « ${String(action.text).slice(0, 140)} »`;
+      case 'evo.report': return audience === 'client' ? `${who} a publié le bilan du mois : ${action.title}` : `${who} a publié le bilan du mois ${action.month}`;
+      case 'evo.set': return action.meeting ? `${who} a fixé la prochaine visio de pilotage${action.meeting.when ? ' : ' + new Date(action.meeting.when).toLocaleString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) : ''}` : `${who} a mis à jour l’espace Évolution`;
       case 'setup.webflow': return `${who} a créé l’espace Webflow « ${action.ws} » : vérifiez l’invitation`;
       case 'setup.domain': return action.mode === 'vault' ? `${who} a déposé les accès du nom de domaine dans le coffre chiffré` : action.mode === 'delegate' ? `${who} a donné un accès délégué au nom de domaine ${action.domain}` : `${who} ne sait pas qui gère le domaine ${action.domain} : à retrouver`;
       case 'setup.check': { const t = project.tasks.find((x) => x.id === action.tid); return action.ok ? `${who} a vérifié : ${t ? t.t.toLowerCase() : 'une étape'}` : `${who} ${project.registre === 'tu' ? 'te' : 'vous'} demande de reprendre : ${t ? t.t.toLowerCase() : 'une étape'}${action.why ? ' (« ' + String(action.why).slice(0, 120) + ' »)' : ''}`; }
@@ -784,7 +924,7 @@
       case 'pin.add': return `${who} a commenté une maquette : « ${String(action.text).slice(0, 100)} »`;
       case 'version.add': return `${who} a publié une nouvelle version : ${action.t}`;
       case 'client.remind': return audience === 'client' ? `Petit rappel de ${who} : ${res.remind} attend ${project.registre === 'tu' ? 'ton' : 'votre'} retour.` : `${who} a relancé ${project.contactName || project.client} : ${res.remind}`;
-      case 'review.add': return `${who} a laissé un avis : ${action.score}/5${action.text ? ' « ' + String(action.text).slice(0, 100) + ' »' : ''}`;
+      case 'review.add': return Number(action.score) <= 3 ? `${who} a donné ${action.score}/5 et a rempli le questionnaire de bilan${action.survey && action.survey.call ? ' : souhaite en parler de vive voix' : ''}` : `${who} a laissé un avis : ${action.score}/5${action.text ? ' « ' + String(action.text).slice(0, 100) + ' »' : ''}${action.google ? ', publié sur Google' : ''}`;
       case 'project.deliver': return action.undo ? `${who} a annulé la mise en ligne` : audience === 'client' ? `${who} a annoncé la mise en ligne : ${project.offer === 'site' ? (project.registre === 'tu' ? 'ton' : 'votre') + ' site est en ligne' : 'le projet est livré'}` : `${who} a mis en ligne le projet ${project.client}`;
       case 'note.set': return audience === 'client' ? `${who} a publié le point de la semaine : « ${String(action.text || '').slice(0, 160)} »` : `${who} a publié le point de la semaine`;
     }
@@ -1024,5 +1164,5 @@
     return { ok: true, id: p.id, invite };
   }
 
-  return { seed, newProject, OFFERS, OREM, itemState, phaseState, lateDays, offerOf: (p) => (OFFERS[p.offer] || OFFERS.site).label, apply, addFile, createProject, summary, forUser, nextStep, alerts, canSee, inbox, readNotif, doneNotif, setPrefs, prefsOf, emailsFor, digestFor, loginMail, inviteMail, publicConfig, setSettings, settingsOf, runReminders, FILE_CATS, AGENCY_CATS, HANDOVER, workDaysBetween, reg, replan };
+  return { seed, newProject, OFFERS, OREM, ROLES, REVIEW_AXES, itemWho, itemGo, itemState, phaseState, lateDays, offerOf: (p) => (OFFERS[p.offer] || OFFERS.site).label, apply, addFile, createProject, summary, forUser, nextStep, alerts, canSee, inbox, readNotif, doneNotif, setPrefs, prefsOf, emailsFor, digestFor, loginMail, inviteMail, publicConfig, setSettings, settingsOf, runReminders, FILE_CATS, AGENCY_CATS, HANDOVER, workDaysBetween, reg, replan };
 });

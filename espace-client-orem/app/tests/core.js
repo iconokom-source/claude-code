@@ -87,5 +87,22 @@ ok('Relance des fichiers attendus après 5 jours ouvrés', Core.runReminders(db2
 const db3 = Core.seed(); const vv = db3.projects.find((p) => p.id === 'p_varenne'); const g = vv.golive;
 Core.runReminders(db3, Date.now() + 20 * 864e5);
 ok('Recalage : une validation pas encore demandée par l’agence ne décale rien', vv.golive === g);
+{ // Signature, Évolution, avis
+  const d = Core.seed(), U = (id) => d.users.find((u) => u.id === id), claire = U('u_claire'), louis = U('u_louis'), hugo = U('u_hugo');
+  const L = d.projects.find((p) => p.id === 'p_lumen'), H = d.projects.find((p) => p.id === 'p_huchet'), f = L.files.find((x) => x.sign);
+  ok('Signature : le client ne peut pas signer sans passer par le serveur', !!Core.apply(d, 'p_lumen', claire, { type: 'file.sign', fid: f.id, name: 'Claire', agree: true }).error);
+  ok('Signature : refusée sans la case cochée', !!Core.apply(d, 'p_lumen', claire, { type: 'file.sign', fid: f.id, name: 'Claire', agree: false }, true).error);
+  ok('Signature : enregistrée avec la preuve', !Core.apply(d, 'p_lumen', claire, { type: 'file.sign', fid: f.id, name: 'Claire Lumen', agree: true, hash: 'abc', ip: '1.2.3.4', ua: 'test', sig: 'data:image/png;base64,AAAA' }, true).error && f.sign.status === 'signed' && f.sign.ip === '1.2.3.4' && f.sign.email === claire.email);
+  ok('Signature : image refusée si ce n’est pas un PNG', (() => { const g = { id: 'fx', name: 'x.pdf', cat: 'Contrat', from: 'agence', sign: { status: 'requested' } }; L.files.push(g); Core.apply(d, 'p_lumen', claire, { type: 'file.sign', fid: 'fx', name: 'Claire', agree: true, sig: 'javascript:alert(1)' }, true); return g.sign.sig === ''; })());
+  ok('Signature : un client ne peut pas demander de signature', !!Core.apply(d, 'p_lumen', claire, { type: 'file.signreq', fid: f.id }).error);
+  ok('Évolution : Hugo demande un autre créneau, l’équipe est prévenue', (() => { const r = Core.apply(d, 'p_huchet', hugo, { type: 'evo.reschedule', text: 'Mardi matin' }); return !r.error && H.evo.reschedule.some((x) => x.status === 'open') && r.notices.some((n) => n.userId === 'u_louis'); })());
+  ok('Évolution : la nouvelle date ferme la demande', !Core.apply(d, 'p_huchet', louis, { type: 'evo.set', meeting: { when: new Date(Date.now() + 9 * 864e5).toISOString(), mode: 'Visio' } }).error && !H.evo.reschedule.some((x) => x.status === 'open'));
+  ok('Évolution : bilan du mois publié et trié', !Core.apply(d, 'p_huchet', louis, { type: 'evo.report', month: '2026-10', title: 'Octobre', stats: [['1', 'x', '+1']], done: [] }).error && H.evo.reports[0].month === '2026-10');
+  ok('Évolution : le client ne peut pas modifier les axes', !!Core.apply(d, 'p_huchet', hugo, { type: 'evo.set', axes: [] }).error);
+  ok('Évolution : une proposition Évolution signée active l’abonnement', (() => { const V = d.projects.find((p) => p.id === 'p_varenne'); Core.apply(d, 'p_varenne', louis, { type: 'proposal.save', title: 'Évolution', lines: [{ t: 'Mois', ht: 900 }], kind: 'evolution' }); const pr = V.proposals[0]; Core.apply(d, 'p_varenne', louis, { type: 'proposal.send', prid: pr.id }); Core.apply(d, 'p_varenne', U('u_julie'), { type: 'proposal.accept', prid: pr.id, agree: true, name: 'Julie V' }); return V.evo && V.evo.active === true; })());
+  ok('Avis 2/5 : questionnaire obligatoire, jamais publié, appel proposé à l’équipe', !!Core.apply(d, 'p_huchet', hugo, { type: 'review.add', score: 2 }).error && !Core.apply(d, 'p_huchet', hugo, { type: 'review.add', score: 2, public: true, survey: { bad: 'Délais', call: true, axes: { delais: 2 } } }).error && H.review.public === false && H.review.survey.axes.delais === 2 && H.tasks.some((t) => t.auto === 'review-call') && !Core.forUser(H, hugo).tasks.some((t) => t.team));
+  ok('Avis 5/5 : publié sur Google noté', !Core.apply(d, 'p_huchet', hugo, { type: 'review.add', score: 5, google: true, text: 'Top' }).error && H.review.google === true);
+  ok('Qui fait quoi : rôles par défaut, au registre du client', Core.reg(Core.itemWho({ t: 'Recette du site' })[1][1], 'tu') === 'Tu testes le site et notes tes retours');
+}
 console.log(R.join('\n'));
 process.exitCode = R.some((l) => l.startsWith('✘')) ? 1 : 0;

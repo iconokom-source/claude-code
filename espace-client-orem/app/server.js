@@ -201,7 +201,7 @@ function openSession(res, user) {
 }
 const clearCookie = (res) => res.setHeader('Set-Cookie', `${COOKIE}=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0${HTTPS ? '; Secure' : ''}`);
 /* Ce qu'on renvoie d'une personne : le client ne voit jamais les réglages internes de l'agence. */
-const publicUser = (u, viewer) => u && { id: u.id, email: u.email, name: u.name, role: u.role, projectId: u.projectId, title: u.title, about: u.about, wa: u.wa, phone: u.phone, photo: u.photo, onboardedAt: u.onboardedAt,
+const publicUser = (u, viewer) => u && { id: u.id, email: u.email, name: u.name, role: u.role, projectId: u.projectId, title: u.title, contact: u.contact, wa: u.wa, phone: u.phone, photo: u.photo, onboardedAt: u.onboardedAt,
   invitedAt: viewer && viewer.role === 'admin' ? u.invitedAt : undefined, lastLoginAt: viewer && viewer.role === 'admin' ? u.lastLoginAt : undefined, prefs: viewer && viewer.id === u.id ? u.prefs : undefined,
   notify: viewer && viewer.id === u.id && u.role === 'admin' ? Core.prefsOf(u) : undefined };
 const team = (viewer) => db.users.filter((u) => u.role === 'admin').map((u) => publicUser(u, viewer));
@@ -446,7 +446,8 @@ async function handle(req, res) {
     const action = await readJson(req);
     const pr = db.projects.find((x) => x.id === m[1]);
     const doomed = action.type === 'file.remove' && pr && Core.canSee(user, pr) ? pr.files.find((f) => f.id === action.fid) : null;
-    const r = Core.apply(db, m[1], user, action);
+    if (action && action.type === 'proposal.accept') action.proof = { ip: ipOf(req), ua: String(req.headers['user-agent'] || '') };
+    const r = Core.apply(db, m[1], user, action, action && action.type === 'proposal.accept');
     if (r.ok) {
       save(); deliver(r.notices); invite(m[1], r.invite);
       if (r.accepted) Connectors.onAccept(db.projects.find((x) => x.id === m[1]), r.accepted, process.env, connectorCtx()).then((x) => { if (x && x.ok) log('pipedrive.won', { project: m[1] }); }).catch((e) => log('pipedrive.error', { message: e.message }));
@@ -455,6 +456,39 @@ async function handle(req, res) {
     }
     const { notices, ...pub } = r;
     return send(res, r.error ? 400 : 200, pub);
+  }
+
+  /* Signature d'un document : le serveur calcule l'empreinte SHA-256 du fichier signé et ajoute la preuve (IP, navigateur). */
+  m = p.match(/^\/api\/projects\/([\w-]+)\/files\/([\w-]+)\/(sign|proof)$/);
+  if (m) {
+    const pr = db.projects.find((x) => x.id === m[1]);
+    if (!pr || !Core.canSee(user, pr)) return send(res, 404, { error: 'Projet introuvable.' });
+    const f = pr.files.find((x) => x.id === m[2]); if (!f) return send(res, 404, { error: 'Fichier introuvable.' });
+    if (m[3] === 'sign' && req.method === 'POST') {
+      if (user.role === 'admin') return send(res, 403, { error: 'C’est au client de signer.' });
+      const b = await readJson(req, 300 * 1024), abs = filePath(f);
+      let hash = ''; try { hash = abs ? crypto.createHash('sha256').update(await fs.promises.readFile(abs)).digest('hex') : ''; } catch {}
+      const r = Core.apply(db, pr.id, user, { type: 'file.sign', fid: f.id, name: b.name, agree: !!b.agree, sig: b.sig, hash, ip: ipOf(req), ua: String(req.headers['user-agent'] || '') }, true);
+      if (r.error) return send(res, 400, { error: r.error });
+      save(); deliver(r.notices); log('file.signed', { project: pr.id, file: f.id, user: user.id });
+      return send(res, 200, { ok: true });
+    }
+    if (m[3] === 'proof' && req.method === 'GET') {
+      const sg = f.sign; if (!sg || sg.status !== 'signed') return send(res, 404, { error: 'Document non signé.' });
+      const e = (x) => String(x || '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+      const when = new Date(sg.signedAt).toLocaleString('fr-FR', { dateStyle: 'full', timeStyle: 'long', timeZone: 'Europe/Paris' });
+      const html = `<!doctype html><html lang="fr"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Certificat de signature : ${e(f.name)}</title>
+<style>body{font:15px/1.55 Arial,Helvetica,sans-serif;color:#0b0b12;max-width:720px;margin:40px auto;padding:0 20px}h1{font-family:Georgia,serif;font-weight:400}dt{color:#585865;font-size:13px;margin-top:12px}dd{margin:2px 0 0;word-break:break-all}.sig{border:1px solid #e2e1dc;border-radius:12px;padding:12px;margin-top:6px;max-width:420px}.sig img{max-width:100%}.foot{margin-top:28px;color:#585865;font-size:13px}@media print{.no-print{display:none}}</style>
+<h1>Certificat de signature électronique</h1><p>Espace client Orem · ${e(pr.client)}</p>
+<dl><dt>Document</dt><dd>${e(f.name)}</dd><dt>Empreinte SHA-256 du fichier signé</dt><dd>${e(sg.hash || 'non disponible')}</dd>
+<dt>Signataire</dt><dd>${e(sg.name)} (${e(sg.email)}), connecté à son espace par un code à usage unique envoyé à cette adresse</dd>
+<dt>Date et heure</dt><dd>${e(when)}</dd><dt>Adresse IP</dt><dd>${e(sg.ip)}</dd><dt>Navigateur</dt><dd>${e(sg.ua)}</dd>
+<dt>Consentement</dt><dd>« J’ai lu ce document et je le signe », coché par le signataire</dd>
+${sg.sig ? `<dt>Signature tracée</dt><dd class="sig"><img src="${sg.sig}" alt="Signature de ${e(sg.name)}"></dd>` : ''}</dl>
+<p class="foot">Signature électronique simple au sens du règlement eIDAS (article 25). Toute modification du fichier changerait son empreinte. Orem, marque d’ICONOKOM.</p><p class="no-print"><button onclick="print()">Imprimer ou enregistrer en PDF</button></p></html>`;
+      res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'content-security-policy': "default-src 'none'; img-src data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'" });
+      return res.end(html);
+    }
   }
 
   m = p.match(/^\/api\/projects\/([\w-]+)\/vault$/);

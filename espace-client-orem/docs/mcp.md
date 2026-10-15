@@ -32,6 +32,10 @@ Lister les jetons : `node jeton.js --liste` ; en retirer un : `node jeton.js --r
 | `fichier_attendu` | Ajoute un fichier que le client doit déposer (relance automatique) |
 | `temps` | Passe le projet au temps O.R.E.M. voulu |
 | `inviter` | Ajoute une personne chez le client |
+| `visio_pilotage` | Évolution : fixe la prochaine visio de pilotage |
+| `bilan_du_mois` | Évolution : publie le bilan mensuel, avec son PDF |
+| `axes` | Évolution : met à jour les axes d'amélioration |
+| `faire_signer` | Dépose un PDF et demande au client de le signer en ligne |
 | `action` | Toute autre action de l'API (type et champs), pour le reste |
 
 ## Garde-fous

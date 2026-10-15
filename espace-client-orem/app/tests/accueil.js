@@ -33,7 +33,7 @@ const errs = [];
   await claire.click('.side [data-go=fichiers]'); await claire.waitForTimeout(150);
   ok('Fichiers et factures : deux onglets', (await claire.locator('[data-ftab]').count()) === 2);
   await claire.setInputFiles('#file-in', { name: 'Photo vitrine.png', mimeType: 'image/png', buffer: require('fs').readFileSync(__dirname + '/../public/assets/logo-black.png') }); await claire.waitForTimeout(600);
-  ok('Miniature de l’image déposée', (await claire.locator('.row', { hasText: 'Photo vitrine.png' }).locator('img.thumb').count()) === 1);
+  ok('Miniature de l’image déposée', (await claire.locator('.row', { hasText: 'Photo vitrine.png' }).locator('.ft-img img').count()) === 1);
   await claire.locator('.row', { hasText: 'Photo vitrine.png' }).locator('[data-act=fview]').click(); await claire.waitForTimeout(300);
   ok('Aperçu intégré de l’image', await claire.evaluate(() => { const i = document.querySelector('.fview img'); return !!i && i.naturalWidth > 0; }));
   await claire.keyboard.press('Escape'); await claire.waitForTimeout(100);

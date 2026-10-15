@@ -58,6 +58,8 @@
       ask: (id, question) => j('/api/projects/' + id + '/ask', { method: 'POST', body: JSON.stringify({ question }) }),
       sync: (name, projectId) => j('/api/connectors/' + name + '/sync', { method: 'POST', body: JSON.stringify({ projectId }) }),
       vaultPut: (id, b) => j('/api/projects/' + id + '/vault', { method: 'POST', body: JSON.stringify(b) }),
+      signFile: (id, fid, b) => j('/api/projects/' + id + '/files/' + fid + '/sign', { method: 'POST', body: JSON.stringify(b) }),
+      proofUrl: (id, fid) => '/api/projects/' + id + '/files/' + fid + '/proof',
       vaultGet: (id) => j('/api/projects/' + id + '/vault'),
       vaultErase: (id) => j('/api/projects/' + id + '/vault', { method: 'DELETE' })
     };
@@ -87,6 +89,8 @@
       vaultPut: (id, b) => { const r = Core.apply(store, id, me, { type: 'setup.domain', mode: 'vault', domain: b.domain, registrar: b.registrar }, true); if (r.error) return fail(r.error); mail(r); vault[id] = { at: new Date().toISOString(), login: b.login, secret: b.secret, note: b.note }; return wait({ ok: true }); },
       vaultGet: (id) => { if (me.role !== 'admin') return fail('Réservé à l’équipe.'); if (!vault[id]) return fail('Aucun accès dans le coffre.'); Core.apply(store, id, me, { type: 'vault.read' }, true); return wait({ ...vault[id], expires: new Date(Date.now() + 30 * 864e5).toISOString() }); },
       vaultErase: (id) => { delete vault[id]; return wait({ ok: true }); },
+      signFile: (id, fid, b) => { const r = Core.apply(store, id, me, { type: 'file.sign', fid, name: b.name, agree: b.agree, sig: b.sig, hash: 'démo', ip: 'démo', ua: navigator.userAgent }, true); mail(r); return r.error ? fail(r.error) : wait(r); },
+      proofUrl: () => null,
       create: (data) => { const r = Core.createProject(store, me, data); return r.error ? fail(r.error) : wait(r); },
       action: (id, a) => { const r = Core.apply(store, id, me, a); mail(r); return r.error ? fail(r.error) : wait(r); },
       upload: (id, file, cat, onp, missing) => { onp && onp(1); const r = Core.addFile(store, id, me, { name: file.name, size: file.size, cat }); if (!r.error && missing) Core.apply(store, id, me, { type: 'missing.done', mid: missing }, true);
@@ -164,7 +168,8 @@
 
   /* ---------- Coque ---------- */
   const pending = () => (S.project ? S.project.validations.filter((v) => v.status === 'ready').length : 0);
-  const propsSent = () => (S.project ? (S.project.proposals || []).filter((x) => x.status === 'sent').length : 0);
+  const propsOnly = () => (S.project ? (S.project.proposals || []).filter((x) => x.status === 'sent').length : 0);
+  const propsSent = () => (S.project ? (S.project.proposals || []).filter((x) => x.status === 'sent').length + S.project.files.filter((f) => f.sign && f.sign.status === 'requested').length : 0);
 
   function shell(content) {
     const p = S.project;
@@ -176,9 +181,9 @@
       : [['Mon projet', [['accueil', 'Accueil', 'home'], ['projet', 'Étapes', 'map'], ['valider', 'À valider', 'ok'], ['maquettes', 'Maquettes et visuels', 'figma']]],
          ['Échanges', [['messages', 'Messages', 'chat'], ['fichiers', 'Fichiers et factures', 'folder']]],
          ...((p && visibleTools(p).length) ? [['Outils', [['outils', 'Boîte à outils', 'plus']]]] : [])];
-    const navHtml = groups.map(([t, items]) => `<div class="sec">${t}</div>${items.map(link).join('')}`).join('');
+    const navHtml = groups.map(([t, items]) => `<div class="sec">${t}</div>${items.map(link).join('')}`).join('') + (!admin && p && !prospect() ? evoNav(p) : '');
     const tabs = admin ? [['inbox', 'Réception', 'mail'], ['clients', 'Clients', 'team'], ['compose', 'Ajouter', 'plus'], ['reglages', 'Réglages', 'gear']] : [['accueil', 'Accueil', 'home'], ['valider', 'À valider', 'ok'], ['messages', 'Messages', 'chat'], ['fichiers', 'Fichiers', 'folder'], ['plus', 'Plus', 'menu']];
-    const tabHtml = tabs.map(([id, l, i]) => { const cur = id === 'plus' ? ['plus', 'projet', 'maquettes', 'documents', 'outils', 'biblio', 'equipe', 'preferences'].includes(S.view) : S.view === id || (id === 'clients' && S.view === 'admin');
+    const tabHtml = tabs.map(([id, l, i]) => { const cur = id === 'plus' ? ['plus', 'projet', 'maquettes', 'documents', 'outils', 'biblio', 'equipe', 'preferences', 'evolution'].includes(S.view) : S.view === id || (id === 'clients' && S.view === 'admin');
       return `<a href="#${id}" data-go="${id}" ${cur ? 'aria-current="page"' : ''}>${ic(i)}<span>${l}</span>${id === 'inbox' && todoInbox() ? `<span class="badge">${todoInbox()}<span class="sr"> à traiter</span></span>` : ''}${id === 'messages' && unread() ? `<span class="badge">${unread()}</span>` : ''}${id === 'valider' && pending() + propsSent() ? `<span class="badge">${pending() + propsSent()}<span class="sr"> à valider</span></span>` : ''}</a>`; }).join('');
     let card;
     if (admin) {
@@ -364,6 +369,8 @@
     const mine = !isAdmin() && !S.preview && f.by === S.me.id && Date.now() - new Date(f.at) < 864e5;
     const thumb = fileThumb(f);
     return `<div class="row">${thumb}<div class="grow"><div class="title" style="overflow-wrap:anywhere">${esc(f.name)}</div><div class="sub num">${esc(f.cat)}${f.size ? ' · ' + size(f.size) : ''} · ${fmt(f.at)}${!agency && isAdmin() && !S.preview ? ' · ' + esc(who(f.by)) : ''}</div></div>${f.fresh ? '<span class="chip ok">Envoyé</span>' : ''}${isAdmin() && !S.preview && f.seen === false ? '<span class="chip warn">Nouveau</span>' : ''}
+      ${f.sign && f.sign.status === 'signed' ? (API.proofUrl(S.project.id, f.id) ? `<a class="chip ok" href="${API.proofUrl(S.project.id, f.id)}" target="_blank" rel="noopener" title="Voir le certificat de signature">Signé le ${fmt(f.sign.signedAt, { day: 'numeric', month: 'short' })}</a>` : `<span class="chip ok">Signé le ${fmt(f.sign.signedAt, { day: 'numeric', month: 'short' })}</span>`) : f.sign ? `<span class="chip warn">À signer</span>` : ''}
+      ${isAdmin() && !S.preview && agency && !(f.sign && f.sign.status === 'signed') ? (f.sign ? `<button class="btn btn-line btn-sm" data-act="sign-cancel" data-id="${esc(f.id)}">Retirer la demande<span class="sr"> de signature : ${esc(f.name)}</span></button>` : `<button class="btn btn-line btn-sm" data-act="sign-req" data-id="${esc(f.id)}">Faire signer<span class="sr"> : ${esc(f.name)}</span></button>`) : ''}
       ${canPreview(f) ? `<button class="btn btn-line btn-sm" data-act="fview" data-id="${esc(f.id)}">${ic('eye')}<span class="sr">Aperçu de ${esc(f.name)}</span></button>` : ''}
       ${f.url && !url ? `<a class="btn btn-line btn-sm" href="${esc(f.url)}" target="_blank" rel="noopener">Ouvrir<span class="sr"> ${esc(f.name)}</span></a>` : url ? `<a class="btn btn-line btn-sm" href="${url}">${ic('down')}<span class="sr">Télécharger ${esc(f.name)}</span></a>` : `<button class="btn btn-line btn-sm" data-act="toast" data-msg="Fichier d’exemple : rien à télécharger.">${ic('down')}<span class="sr">Télécharger ${esc(f.name)}</span></button>`}
       ${isAdmin() && !S.preview ? `<button class="x" data-act="file-remove" data-id="${esc(f.id)}" aria-label="Retirer ${esc(f.name)}">×</button>` : mine ? `<button class="x" data-act="file-remove-own" data-id="${esc(f.id)}" aria-label="Retirer ${esc(f.name)} (possible pendant 24 h)" title="Retirer (possible pendant 24 h)">×</button>` : ''}</div>`;
@@ -376,6 +383,23 @@
       <figcaption>${esc(f.name)} · <a href="${API.fileUrl(f)}">Télécharger</a></figcaption></figure><button class="lb-x" data-act="fview-close" aria-label="Fermer">×</button></div>`;
   }
 
+  /* Qui fait quoi sur un livrable, et le lien vers l'élément concerné. */
+  const GO_LBL = { proposition: 'Lire la proposition', documents: 'Voir le document', valider: 'Voir et valider', maquettes: 'Voir les maquettes', demarrer: 'Bien démarrer', fichiers: 'Voir les fichiers', cal: 'Réserver' };
+  function whoHtml(it) {
+    const W = Core.itemWho(it); if (!W.length) return '';
+    return `<ul class="who-l">${W.map(([w, t]) => { const u = w === 'client' ? null : S.team.find((x) => x.id === w) || { name: who(w) };
+      const name = w === 'client' ? (isAdmin() && !S.preview ? (S.project.contactName || 'Client') : R('Vous', 'Toi')) : u.name.split(' ')[0];
+      const txt = Core.reg(t || '', S.project.registre), sent = w === 'client' ? (isAdmin() && !S.preview ? `<strong>${esc(name)}</strong> : ${esc(txt.charAt(0).toLowerCase() + txt.slice(1))}` : esc(txt)) : `<strong>${esc(name)}</strong> ${esc(txt)}`;
+      return `<li class="${w === 'client' ? 'me' : ''}">${u && IMG[u.photo] ? `<img class="avatar xs" src="${IMG[u.photo]}" alt="">` : `<span class="avatar xs ph">${esc(name[0])}</span>`}<span>${sent}.</span></li>`; }).join('')}</ul>`;
+  }
+  function itemLink(it, done) {
+    const g = Core.itemGo(it), p = S.project; if (!g || g === 'projet') return '';
+    if (/^https:/.test(g)) return `<a class="btn btn-line btn-sm" href="${esc(g)}" target="_blank" rel="noopener">Ouvrir<span class="sr"> : ${esc(it.t)}</span></a>`;
+    if (g === 'cal') return done ? '' : `<a class="btn btn-line btn-sm" href="${CALF()}" target="_blank" rel="noopener">Réserver<span class="sr"> : ${esc(it.t)}</span></a>`;
+    if (g === 'proposition' && !(p.proposals || []).length) return '';
+    if (g === 'demarrer' && !p.tasks.some((t) => t.go === 'demarrer')) return '';
+    return `<a class="btn btn-line btn-sm" href="#${g}" data-go="${g}">${GO_LBL[g] || 'Ouvrir'}<span class="sr"> : ${esc(it.t)}</span></a>`;
+  }
   function vProjet() {
     const p = S.project;
     return `
@@ -387,7 +411,7 @@
       return `<li class="phase"><div class="rail"><span class="dot ${st}" aria-hidden="true">${st === 'done' ? ic('check') : esc(ph.letter || ph.n)}</span>${i < p.phases.length - 1 ? '<span class="line"></span>' : ''}</div>
       <div class="phase-body"><div class="phase-top"><h2 style="font-size:19px">${esc(phName(ph))}</h2>${late ? `<span class="chip warn">En retard de ${late} jour${late > 1 ? 's' : ''}</span>` : PHASE_CHIP[st]}<span class="small muted num">${fmt(ph.from)} au ${fmt(ph.to)}</span></div>
       <p>${esc(Core.reg(ph.txt, S.project.registre))}</p>
-      ${ph.items.length ? `<div class="deliv">${ph.items.map((it) => { const is = itS(it); return `<div class="row"><div class="grow"><div class="title" style="font-weight:400">${esc(it.t)}</div><div class="sub">${is === 'done' ? '' : is === 'review' ? `Prêt, en attente de ${R('votre', 'ton')} feu vert` : 'Prévu vers le ' + fmt(it.due, { day: 'numeric', month: 'long' })}</div></div>${is === 'review' ? `<a href="#valider" data-go="valider">${ITEM_CHIP.review}</a>` : ITEM_CHIP[is] || ''}</div>`; }).join('')}</div>` : ''}
+      ${ph.items.length ? `<div class="deliv">${ph.items.map((it) => { const is = itS(it); return `<div class="row it-row"><div class="grow"><div class="title" style="font-weight:400">${esc(it.t)}</div><div class="sub">${is === 'done' ? '' : is === 'review' ? `Prêt, en attente de ${R('votre', 'ton')} feu vert` : 'Prévu vers le ' + fmt(it.due, { day: 'numeric', month: 'long' })}</div>${whoHtml(it)}</div><div class="it-a">${is === 'review' ? `<a href="#valider" data-go="valider">${ITEM_CHIP.review}</a>` : ITEM_CHIP[is] || ''}${itemLink(it, is === 'done')}</div></div>`; }).join('')}</div>` : ''}
       </div></li>`; }).join('')}
     </ol></section>
     ${handoverPanel()}`;
@@ -402,19 +426,46 @@
       const table = `<div class="table-wrap"><table class="prop-t"><caption class="sr">Détail de la proposition</caption><thead><tr><th scope="col">Ce qu’on fait</th><th scope="col" class="num">Montant HT</th></tr></thead><tbody>${pr.lines.map((l) => `<tr><td>${esc(l.t)}</td><td class="num">${money(l.ht)}</td></tr>`).join('')}</tbody>
         <tfoot><tr><th scope="row">Total HT</th><td class="num">${money(ht)}</td></tr><tr><th scope="row">TVA (20 %)</th><td class="num">${money(Math.round(ht * 20) / 100)}</td></tr><tr class="ttc"><th scope="row">Total TTC</th><td class="num">${money(Math.round(ht * 120) / 100)}</td></tr></tfoot></table></div>`;
       const terms = `<p class="small muted">${pr.depositPct ? `Acompte de ${pr.depositPct} % à la signature (${money(dep)} HT), solde à la livraison. ` : 'Facturé à la livraison. '}${pr.status === 'sent' && pr.validUntil ? 'Proposition valable jusqu’au ' + fmt(pr.validUntil, { day: 'numeric', month: 'long' }) + '.' : ''}${pr.example && API.demo ? ' Montants d’exemple.' : ''}</p>`;
-      const foot = pr.status === 'accepted' ? `<div class="prop-ok">${ic('ok')}<div><strong>Acceptée le ${esc(fmtTime(pr.acceptedAt))}</strong><span class="small muted">Signé « ${esc(pr.signName)} » depuis l’espace. ${pr.depositPct ? 'La facture d’acompte est dans Documents.' : ''}</span></div>${pr.depositPct ? `<a class="btn btn-line btn-sm" href="#documents" data-go="documents">Voir la facture</a>` : ''}</div>`
+      const foot = pr.status === 'accepted' ? `<div class="prop-ok">${ic('ok')}<div><strong>Acceptée le ${esc(fmtTime(pr.acceptedAt))}</strong><span class="small muted">Signé « ${esc(pr.signName)} » depuis l’espace${pr.proof && pr.proof.ip ? ', avec la date, l’heure et l’adresse de connexion' : ''}. ${pr.depositPct ? 'La facture d’acompte est dans Documents.' : ''}</span>${pr.sig ? `<img class="sig-img" src="${pr.sig}" alt="Signature de ${esc(pr.signName)}">` : ''}</div>${pr.depositPct ? `<a class="btn btn-line btn-sm" href="#documents" data-go="documents">Voir la facture</a>` : ''}</div>`
         : pr.status === 'declined' ? `<p class="muted">${R('Vous avez décliné', 'Tu as décliné')} cette proposition le ${fmt(pr.declined.at, { day: 'numeric', month: 'long' })}. On revient vers ${R('vous', 'toi')} avec une nouvelle version.</p>`
         : S.propDecline === pr.id ? `<form class="form" data-form="decline" data-id="${esc(pr.id)}"><div class="field"><label for="dc-${pr.id}">Qu’est-ce qui ne ${R('vous', 'te')} convient pas ?</label><textarea id="dc-${pr.id}" rows="3"></textarea></div><div class="inline"><button class="btn btn-line" type="submit">Envoyer ma réponse</button><button class="ghost" type="button" data-act="decline-cancel">Annuler</button></div></form>`
-        : `<form class="form prop-sign" data-form="accept" data-id="${esc(pr.id)}"><label class="check-l"><input type="checkbox" id="ac-ok-${pr.id}"> J’ai lu la proposition${cfg().cgvUrl ? ` et les <a href="${esc(cfg().cgvUrl)}" target="_blank" rel="noopener">conditions générales</a>` : ''} et je l’accepte${pr.depositPct ? `, acompte de ${pr.depositPct} % compris` : ''}.</label>
-            <div class="field"><label for="ac-n-${pr.id}">${R('Votre', 'Ton')} nom, pour signer</label><input id="ac-n-${pr.id}" type="text" autocomplete="name" placeholder="Prénom Nom"></div>
-            <div class="inline"><button class="btn btn-primary" type="submit">${ic('check')}J’accepte la proposition</button><a class="btn btn-line" href="#messages" data-go="messages">Poser une question</a><button class="ghost" type="button" data-act="decline" data-id="${esc(pr.id)}">Décliner</button></div>
-            <p class="small muted">L’acceptation est enregistrée avec la date et l’heure, comme une signature.</p></form>`;
+        : `<form class="form prop-sign" data-form="accept" data-id="${esc(pr.id)}">${signBox(pr.id, `J’ai lu la proposition${cfg().cgvUrl ? ` et les <a href="${esc(cfg().cgvUrl)}" target="_blank" rel="noopener">conditions générales</a>` : ''} et je l’accepte${pr.depositPct ? `, acompte de ${pr.depositPct} % compris` : ''}.`)}
+            <div class="inline"><button class="btn btn-primary" type="submit">${ic('check')}Signer et accepter</button><a class="btn btn-line" href="#messages" data-go="messages">Poser une question</a><button class="ghost" type="button" data-act="decline" data-id="${esc(pr.id)}">Décliner</button></div></form>`;
       return `<section class="panel prop">${head}${pr.intro ? `<p class="prop-intro">${esc(pr.intro)}</p>` : ''}${table}${terms}${foot}${pr.from ? '' : '<p class="small muted prop-proof">Orem, marque d’ICONOKOM · plus de 40 clients accompagnés depuis 2023 · 100 % de satisfaction client</p>'}</section>`;
     };
     return `<div class="head"><div><h1>${L.length > 1 ? 'Propositions' : 'Proposition'}</h1><p class="lead">${esc(p.client)} · ${esc(Core.offerOf(p))}</p></div></div>
       ${L.map(card).join('') || '<div class="empty">Aucune proposition pour l’instant.</div>'}`;
   }
 
+  /* ---------- Signature électronique (propositions et documents) ----------
+     Nom tapé (obligatoire) et signature tracée au doigt ou à la souris (facultative, pour qui ne peut pas tracer).
+     Le serveur ajoute la date, l'adresse IP, le navigateur et l'empreinte du document. */
+  const toSign = () => (S.project ? S.project.files.filter((f) => f.sign && f.sign.status === 'requested') : []);
+  function signBox(id, consent) {
+    return `<div class="sign-box"><label class="check-l"><input type="checkbox" id="sg-ok-${id}"> ${consent}</label>
+      <div class="field"><label for="sg-n-${id}">${R('Votre', 'Ton')} nom, pour signer</label><input id="sg-n-${id}" type="text" autocomplete="name" placeholder="Prénom Nom" data-signname="${id}"></div>
+      <div class="field"><span class="lbl" id="sg-l-${id}">Signature tracée <span class="muted">(facultative)</span></span><div class="sign-pad"><canvas id="sg-c-${id}" width="600" height="180" role="img" aria-labelledby="sg-l-${id}" data-pad="${id}"></canvas><span class="sign-ph" aria-hidden="true">Signez ici avec le doigt ou la souris</span></div>
+        <div class="inline"><button class="ghost small" type="button" data-act="pad-clear" data-id="${id}">Effacer la signature</button></div></div>
+      <p class="small muted">Signature électronique : la date, l’heure et ${R('votre', 'ton')} adresse de connexion sont enregistrées avec une empreinte du document, consultables dans un certificat.</p></div>`;
+  }
+  const padData = (id) => { const c = document.getElementById('sg-c-' + id); return c && c.dataset.drawn === '1' ? c.toDataURL('image/png') : ''; };
+  function initPads() {
+    document.querySelectorAll('canvas[data-pad]').forEach((c) => { if (c.dataset.ready) return; c.dataset.ready = '1';
+      const x = c.getContext('2d'); x.lineWidth = 2.6; x.lineCap = 'round'; x.lineJoin = 'round'; x.strokeStyle = '#0b0b12'; let on = false;
+      const pt = (e) => { const r = c.getBoundingClientRect(); return [(e.clientX - r.left) * (c.width / r.width), (e.clientY - r.top) * (c.height / r.height)]; };
+      c.addEventListener('pointerdown', (e) => { on = true; c.setPointerCapture(e.pointerId); const [a, b] = pt(e); x.beginPath(); x.moveTo(a, b); e.preventDefault(); });
+      c.addEventListener('pointermove', (e) => { if (!on) return; const [a, b] = pt(e); x.lineTo(a, b); x.stroke(); c.dataset.drawn = '1'; c.parentNode.classList.add('drawn'); });
+      ['pointerup', 'pointercancel', 'pointerleave'].forEach((t) => c.addEventListener(t, () => { on = false; }));
+    });
+  }
+  function signSection() {
+    const L = toSign(); if (!L.length) return '';
+    return `<section class="panel" aria-labelledby="ts-h"><div class="panel-head"><h2 id="ts-h">${ic('doc')}${L.length > 1 ? 'Documents à signer' : 'Document à signer'}</h2></div>
+      ${L.map((f) => `<form class="form sign-doc" data-form="signdoc" data-id="${esc(f.id)}"><div class="row" style="border-top:0">${fileThumb(f)}<div class="grow"><div class="title">${esc(f.sign.label || f.name)}</div><div class="sub">${esc(f.name)} · envoyé le ${fmt(f.sign.at, { day: 'numeric', month: 'long' })} par ${esc(who(f.sign.by).split(' ')[0])}</div></div>
+        ${canPreview(f) ? `<button class="btn btn-line btn-sm" type="button" data-act="fview" data-id="${esc(f.id)}">${ic('eye')}Lire le document</button>` : API.fileUrl(f) ? `<a class="btn btn-line btn-sm" href="${API.fileUrl(f)}">${ic('down')}Télécharger</a>` : ''}</div>
+        ${signBox(f.id, 'J’ai lu ce document et je le signe.')}
+        <div class="inline"><button class="btn btn-primary" type="submit">${ic('check')}Signer le document</button><a class="btn btn-line" href="#messages" data-go="messages">Poser une question</a></div></form>`).join('')}</section>`;
+  }
   function vValider() {
     const p = S.project;
     const ready = p.validations.filter((v) => v.status === 'ready');
@@ -433,8 +484,9 @@
     };
     return `
     <div class="head"><div><h1>À valider</h1><p class="lead">On avance avec ${R('votre', 'ton')} feu vert</p></div></div>
-    ${propsSent() ? `<section class="panel"><div class="panel-head"><h2>${ic('doc')}${propsSent() > 1 ? 'Propositions' : 'Proposition'} à lire</h2></div><ul class="list plain">${p.proposals.filter((x) => x.status === 'sent').map((x) => `<li class="row"><div class="grow"><div class="title">${esc(x.title)}</div><div class="sub">${money(x.lines.reduce((t, l) => t + l.ht, 0))} HT · valable jusqu’au ${fmt(x.validUntil, { day: 'numeric', month: 'long' })}</div></div><a class="btn btn-primary btn-sm" href="#proposition" data-go="proposition">Lire et répondre</a></li>`).join('')}</ul></section>` : ''}
-    ${ready.map(card).join('') || propsSent() ? ready.map(card).join('') : `<div class="empty">Rien à valider pour l’instant. On ${R('vous', 'te')} prévient dès que la prochaine étape est prête.</div>`}
+    ${signSection()}
+    ${propsOnly() ? `<section class="panel"><div class="panel-head"><h2>${ic('doc')}${propsOnly() > 1 ? 'Propositions' : 'Proposition'} à lire</h2></div><ul class="list plain">${p.proposals.filter((x) => x.status === 'sent').map((x) => `<li class="row"><div class="grow"><div class="title">${esc(x.title)}</div><div class="sub">${money(x.lines.reduce((t, l) => t + l.ht, 0))} HT · valable jusqu’au ${fmt(x.validUntil, { day: 'numeric', month: 'long' })}</div></div><a class="btn btn-primary btn-sm" href="#proposition" data-go="proposition">Lire et répondre</a></li>`).join('')}</ul></section>` : ''}
+    ${ready.map(card).join('') || propsSent() || toSign().length ? ready.map(card).join('') : `<div class="empty">Rien à valider pour l’instant. On ${R('vous', 'te')} prévient dès que la prochaine étape est prête.</div>`}
     ${done.length ? `<section class="panel"><div class="panel-head"><h2>${ic('ok')}Déjà ${R('traité', 'traité')}</h2></div><div class="list">${done.map((v) => { const h = v.history[v.history.length - 1] || {};
       return `<div class="row"><span class="ico ${v.status === 'approved' ? 'ok' : ''}">${ic(v.status === 'approved' ? 'ok' : 'chat')}</span><div class="grow"><div class="title">${esc(v.t)}</div><div class="sub">${v.status === 'approved' ? `Validé par ${esc(h.by === S.me.id ? S.me.name : who(h.by))} le ${fmt(h.at, { day: '2-digit', month: '2-digit' })} à ${fmt(h.at, { hour: '2-digit', minute: '2-digit' }).replace(':', ' h ')}` : 'Remarques envoyées le ' + fmt(h.at, { day: 'numeric', month: 'long' }) + (h.comment ? ' : « ' + esc(h.comment) + ' »' : '')}</div></div>${v.status === 'approved' ? '<span class="chip ok">Validé</span>' : '<span class="chip hl">En cours de reprise</span>'}</div>`; }).join('')}</div></section>` : ''}
     ${later.length ? `<section class="panel"><div class="panel-head"><h2>${ic('lock')}Les prochaines validations</h2></div><div class="list">${later.map((v) => `<div class="row"><span class="ico">${ic('lock')}</span><div class="grow"><div class="title">${esc(v.t)}</div><div class="sub">${esc(Core.reg(v.sub, S.project.registre))}</div></div><span class="small muted num" style="text-align:right">Vers le ${fmt(v.due)}</span></div>`).join('')}</div></section>` : ''}`;
@@ -500,7 +552,7 @@
   function vEquipe() {
     return `
     <div class="head"><div><h1>Équipe et aide</h1><p class="lead">Une question ? On répond sous 24 h ouvrées</p></div><button class="btn btn-line" data-act="obopen">${ic('play')}Revoir la visite guidée</button></div>
-    <div class="team">${S.team.map((u) => `<section class="panel person">${IMG[u.photo] ? `<img src="${IMG[u.photo]}" alt="">` : ''}<div><h2 class="person-n">${esc(u.name)}</h2><div class="role-t">${esc(u.title || '')}</div>${u.about ? `<p class="small muted" style="margin-top:4px">${esc(u.about)}</p>` : ''}${u.phone ? `<div class="small muted num" style="margin-top:4px">${esc(u.phone)}</div>` : ''}</div>${u.wa ? `<a class="btn btn-line btn-sm" href="${u.wa}" target="_blank" rel="noopener">${ic('chat')}WhatsApp</a>` : `<a class="btn btn-line btn-sm" href="#messages" data-go="messages">${ic('chat')}Message</a>`}</section>`).join('')}</div>
+    <div class="team">${S.team.map((u) => `<section class="panel person">${IMG[u.photo] ? `<img src="${IMG[u.photo]}" alt="">` : ''}<div><h2 class="person-n">${esc(u.name)}</h2><div class="role-t">${esc(u.title || '')}</div>${(u.contact || []).length ? `<div class="contact-for"><span class="k">${R('Contactez', 'Contacte')} ${esc(u.name.split(' ')[0])} pour</span><ul>${u.contact.map((c) => `<li>${esc(c)}</li>`).join('')}</ul></div>` : ''}${u.phone ? `<div class="small muted num" style="margin-top:4px">${esc(u.phone)}</div>` : ''}</div>${u.wa ? `<a class="btn btn-line btn-sm" href="${u.wa}" target="_blank" rel="noopener">${ic('chat')}WhatsApp</a>` : `<a class="btn btn-line btn-sm" href="#messages" data-go="messages">${ic('chat')}Message</a>`}</section>`).join('')}</div>
     <section class="panel" style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between">
       <div style="min-width:0;flex:1 1 280px"><h2>Besoin d’en parler de vive voix ?</h2><p class="muted" style="margin-top:6px">${R('Réservez', 'Réserve')} une visio de 30 minutes quand ${R('vous voulez', 'tu veux')}.</p></div>
       <a class="btn btn-primary" href="${CALF()}" target="_blank" rel="noopener">${ic('cal')}Réserver une visio</a></section>
@@ -577,9 +629,15 @@
       arts[2] = ['Pour commencer', `Ce que ${R('vous pouvez', 'tu peux')} faire dès maintenant.`];
     }
     const li = (rows) => `<div class="ob-list">${rows.map(([t, d], i) => `<div class="li"><span class="rank">${String(i + 1).padStart(2, '0')}</span><div><strong>${t}</strong><span>${d}</span></div></div>`).join('')}</div>`;
+    const notifBody = `<h3>Les notifications</h3>
+       <div class="ob-pref">
+         <label><input type="checkbox" id="pf-mail" checked> Un e-mail quand on a besoin de ${R('vous', 'toi')} (validation, nouveau livrable, message)</label>
+         <label><input type="checkbox" id="pf-week" checked> Le point de la semaine par e-mail, dès que l’équipe le publie</label>
+       </div>`;
     const bodies = p.deliveredAt ? [`<h3>Un mot de l’équipe</h3><p>Bienvenue dans l’espace ${esc(p.client)}. ${R('Vous y retrouvez', 'Tu y retrouves')} tout ce qu’on a construit ensemble, les résultats du site et des outils pour ${R('votre', 'ton')} quotidien.</p><p>Une idée, une question ? On est à un message de ${R('vous', 'toi')}.</p><p class="muted small">${teamSig()}</p>`,
-      `<h3>${R('Ce que vous y trouverez', 'Ce qu’il y a ici')}</h3>${li([['Résultats', 'Les chiffres du site, mis à jour chaque mois'], ['Bibliothèque', 'Visuels, maquettes et cas d’étude à réutiliser'], ['Boîte à outils', 'Fiche teaser, kit de marque, signature e-mail'], ['Messages', 'Les vidéos et messages de l’équipe']])}`,
-      `<h3>Trois raccourcis</h3>${li([['Préparer une fiche teaser de bien', 'Boîte à outils'], ['Demander une évolution du site', 'Boîte à outils'], ['Télécharger les visuels du cas client', 'Bibliothèque']])}`
+      `<h3>${R('Ce que vous y trouverez', 'Ce qu’il y a ici')}</h3>${li([evoOn(p) ? ['Évolution', 'La visio du mois, les bilans et les axes en cours'] : ['Résultats', 'Les chiffres du site, mis à jour chaque mois'], ['Bibliothèque', 'Visuels, maquettes et cas d’étude à réutiliser'], ['Boîte à outils', 'Fiche teaser, kit de marque, signature e-mail'], ['Messages', 'Les vidéos et messages de l’équipe']])}`,
+      `<h3>Trois raccourcis</h3>${li([['Préparer une fiche teaser de bien', 'Boîte à outils'], ['Demander une évolution du site', 'Boîte à outils'], ['Télécharger les visuels du cas client', 'Bibliothèque']])}`,
+      notifBody
     ] : [
       `<h3>Un mot de l’équipe</h3>
        <p>Merci de nous faire confiance pour ce projet : <strong>${esc(p.projet)}</strong>. Cet espace remplace les mails éparpillés : ${R('vous y trouverez', 'tu y trouveras')} où en est ${p.offer === 'site' ? 'le site' : 'le projet'}, ce qu’on attend de ${R('vous', 'toi')}, ${R('vos', 'tes')} fichiers et ${R('vos', 'tes')} factures.</p>
@@ -592,11 +650,7 @@
       `<h3>${actions.length ? 'Ce qu’on attend de ' + R('vous', 'toi') : 'Rien à faire pour l’instant'}</h3>
        ${actions.length ? `<div class="ob-list">${actions.map(([t, sub], i) => `<div class="li"><span class="rank">${String(i + 1).padStart(2, '0')}</span><div><strong>${esc(t)}</strong>${sub ? `<span>${esc(sub)}</span>` : ''}</div></div>`).join('')}</div>` : `<p>On ${R('vous', 'te')} prévient dès qu’on a besoin de ${R('vous', 'toi')}.</p>`}
        <p class="small muted">${R('Vous les retrouverez', 'Tu les retrouveras')} toujours en haut de l’accueil.</p>`,
-      `<h3>Les notifications</h3>
-       <div class="ob-pref">
-         <label><input type="checkbox" id="pf-mail" checked> Un e-mail quand on a besoin de ${R('vous', 'toi')} (validation, nouveau livrable, message)</label>
-         <label><input type="checkbox" id="pf-week" checked> Le point de la semaine par e-mail, dès que l’équipe le publie</label>
-       </div>`
+      notifBody
     ];
     return `<div class="ob" role="dialog" aria-modal="true" aria-labelledby="ob-t"><div class="ob-card">
       <div class="ob-art">${clientLogo(p, 'dark', 'ob-logo')}<div><div class="k">${arts[st][0]} · ${st + 1} sur 4</div><h2 id="ob-t">${arts[st][1]}</h2></div><div class="faces">${faces}</div></div>
@@ -642,7 +696,7 @@
   function maquettesBody() {
     const p = S.project, L = p.links || {};
     const rep = p.phases.find((x) => x.letter === 'R');
-    const shots = (p.assets || []).filter((a) => a.img && (a.kind === 'Maquettes' || a.kind === 'Réalisation')).slice(0, 4);
+    const shots = (p.assets || []).filter((a) => a.img && a.kind === 'Maquettes').slice(0, 4);
     if (!L.figma && !L.proto) return `<div class="head"><div><h1>Maquettes et visuels</h1><p class="lead">${p.offer === 'site' ? 'Les écrans du site, en direct depuis Figma' : p.offer === 'da' ? 'Les pistes et l’identité, en direct depuis Figma' : 'Les documents de travail, en direct depuis Figma'}</p></div></div>
       <div class="empty big">${ic('figma')}<strong>${p.offer === 'da' ? 'Les pistes créatives arrivent' : 'Les maquettes arrivent'} avec le temps « Représenter »${rep ? ', vers le ' + fmt(rep.from, { day: 'numeric', month: 'long' }) : ''}</strong><span>Dès que ${esc(((S.team.find((u) => /design/i.test(u.title || '')) || S.team[0] || { name: 'l’équipe' }).name || '').split(' ')[0])} commence le design, ${R('vous les verrez', 'tu les verras')} ici en direct, sans compte Figma.</span></div>`;
     return `<div class="head"><div><h1>Maquettes et visuels</h1><p class="lead">En direct depuis Figma, toujours la dernière version</p></div>
@@ -673,7 +727,7 @@
   function vBiblio() { S.toBiblio = true; return vMaquettes(); }
   const dlName = (a) => (S.project.client + ' ' + a.title).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w]+/g, '-').replace(/^-|-$/g, '').toLowerCase() + (a.fileId || /^data:image\/png|\.png$/.test(asset(a.img).slice(0, 40)) ? '.png' : '.jpg');
   function biblioBody() {
-    const p = S.project, A = p.assets || [];
+    const p = S.project, A = (p.assets || []).filter((a) => a.kind !== 'Maquettes');
     const kinds = ['Tout', ...new Set(A.map((a) => a.kind))];
     const k = S.bk && kinds.includes(S.bk) ? S.bk : 'Tout';
     const shown = k === 'Tout' ? A : A.filter((a) => a.kind === k);
@@ -750,7 +804,7 @@
         <section class="panel"><div class="panel-head"><h2>${ic('doc')}${R('Vos', 'Tes')} demandes</h2></div><div class="list">${reqs.map((r) => `<div class="row"><div class="grow"><div class="title">${esc(r.type)} · ${esc(r.priority)}</div><div class="sub">${esc(r.text)}</div></div><span class="chip ${r.status === 'Fait' ? 'ok' : r.status === 'Nouveau' ? 'warn' : 'hl'}">${esc(r.status)}</span></div>`).join('') || '<p class="muted">Aucune demande pour l’instant.</p>'}</div></section></div>`;
     }
     if (t === 'webflow') {
-      const vids = (p.tutorials || []).filter((v) => v.url);
+      const vids = p.tutorials || [];
       return `${back}${head}<section class="panel"><div class="videos">${vids.map((v) => `<div class="vitem">${v.url ? videoCard({ loom: { url: v.url, title: v.t, duration: v.d } }) : `<div class="video-card soon"><span class="play">${ic('play')}</span><span><strong>${esc(v.t)}</strong><span>${v.d ? esc(v.d) + ' · ' : ''}vidéo en préparation</span></span></div>`}</div>`).join('') || `<p class="muted">Les vidéos de formation arrivent avec la formation Webflow. En attendant, ${R('posez vos questions', 'pose tes questions')} dans Messages.</p>`}</div></section>
         ${cfg().training ? '' : '<!--'}<section class="panel" style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between"><div style="flex:1 1 260px;min-width:0"><h2>Besoin d’un coup de main en direct ?</h2><p class="muted" style="margin-top:4px">Une session de formation en visio, sur ${R('votre', 'ton')} site.</p></div><a class="btn btn-primary" href="${esc(cfg().training || CALF())}" target="_blank" rel="noopener" title="${cfg().training ? '' : 'Visio de 30 minutes'}">${ic('cal')}Réserver une formation</a></section>${cfg().training ? '' : '-->'}`;
     }
@@ -772,34 +826,83 @@
 
   /* ---------- Plus (mobile) ---------- */
   function vPlus() {
-    const items = [['projet', 'Étapes', 'map'], ['maquettes', 'Maquettes et visuels', 'figma'], ['documents', 'Factures et documents', 'doc'], ...(visibleTools(S.project).length ? [['outils', 'Boîte à outils', 'plus']] : []), ['equipe', 'Équipe et aide', 'team'], ['preferences', 'Mes notifications', 'mail']];
+    const items = [...(evoOpen(S.project) ? [['evolution', 'Évolution', 'arrow']] : []), ['projet', 'Étapes', 'map'], ['maquettes', 'Maquettes et visuels', 'figma'], ['documents', 'Factures et documents', 'doc'], ...(visibleTools(S.project).length ? [['outils', 'Boîte à outils', 'plus']] : []), ['equipe', 'Équipe et aide', 'team'], ['preferences', 'Mes notifications', 'mail']];
     return `<div class="head"><div><h1>Tout ${R('votre', 'ton')} espace</h1></div></div><section class="panel"><div class="list">${items.map(([id, l, i]) => `<a class="row linkrow" href="#${id}" data-go="${id}"><span class="ico">${ic(i)}</span><div class="grow"><div class="title">${l}</div></div>${id === 'valider' && pending() + propsSent() ? `<span class="badge">${pending() + propsSent()}</span>` : ''}${ic('arrow', 'width:18px;height:18px;color:var(--muted)')}</a>`).join('')}</div></section>`;
   }
 
+  /* ---------- Évolution : l'étape supérieure ----------
+     Pendant le projet, l'entrée est visible mais verrouillée ; après la mise en ligne, c'est l'espace du suivi mensuel :
+     prochaine visio de pilotage, bilans de chaque mois, axes d'amélioration et leur avancement. */
+  const evoOpen = (p) => !!p && (p.offer === 'evolution' || !!p.deliveredAt || !!(p.evo && p.evo.active));
+  const evoOn = (p) => !!(p && p.evo && p.evo.active);
+  function evoNav(p) {
+    if (!evoOpen(p)) return `<div class="nav-evo locked" aria-disabled="true" title="Disponible après la mise en ligne"><span class="ne-i">${ic('lock')}</span><span class="ne-t"><strong>Évolution</strong><small>L’étape supérieure, après la mise en ligne</small></span></div>`;
+    return `<a class="nav-evo" href="#evolution" data-go="evolution" ${S.view === 'evolution' ? 'aria-current="page"' : ''}><span class="ne-i">${ic('arrow')}</span><span class="ne-t"><strong>Évolution</strong><small>${evoOn(p) ? 'Visio, bilans et axes du mois' : 'Faire progresser le site chaque mois'}</small></span></a>`;
+  }
+  const monthName = (m) => cap(new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' }).format(new Date(m + '-15T12:00:00')));
+  const AX_CHIP = { todo: '<span class="chip idle">Prévu</span>', on: '<span class="chip hl">En cours</span>', done: '<span class="chip ok">Fait</span>' };
+  function axWho(w) { if (w === 'client') return R('Vous', 'Toi'); if (w === 'both') return R('L’agence et vous', 'L’agence et toi'); const u = S.team.find((x) => x.id === w); return u ? u.name.split(' ')[0] : 'L’agence'; }
+  function evoMeeting(p, compact) {
+    const e = p.evo, m = e.meeting || {}, open = (e.reschedule || []).find((r) => r.status === 'open');
+    return `<section class="next evo-meet" aria-labelledby="evm"><div><div class="k">Prochaine visio de pilotage</div><h2 id="evm">${m.when ? esc(cap(fmtTime(m.when))) : 'Date à fixer ensemble'}</h2>
+      <p>${esc(m.mode || 'Visio de pilotage')} : on lit les chiffres du mois, on fait le point sur les axes en cours et on décide des priorités.</p>
+      ${open ? `<div class="meta">Demande de changement envoyée le ${fmt(open.at, { day: 'numeric', month: 'long' })} : l’équipe ${R('vous', 'te')} propose un créneau très vite.</div>` : ''}</div>
+      <div class="evo-a">${compact ? `<a class="btn" href="#evolution" data-go="evolution">Ouvrir l’espace Évolution ${ic('arrow')}</a>` : ''}${!open ? `<button class="${compact ? 'ghost on-dark' : 'btn'}" data-act="rs-open" aria-expanded="${!!S.rsOpen}">Demander un autre créneau</button>` : ''}</div></section>
+      ${S.rsOpen && !open ? `<form class="panel form" data-form="reschedule"><div class="field"><label for="rs-t">Les créneaux qui ${R('vous', 't’')}arrangent</label><textarea id="rs-t" rows="2" placeholder="ex. Mardi ou jeudi matin, la semaine prochaine"></textarea></div><div class="inline"><button class="btn btn-primary" type="submit">Envoyer à l’équipe</button><button class="btn btn-line" type="button" data-act="rs-open">Annuler</button></div></form>` : ''}`;
+  }
+  function vEvolution() {
+    const p = S.project, e = p.evo || {};
+    const pend = (p.proposals || []).filter((x) => x.status === 'sent');
+    const propCard = pend.length ? `<a class="newmsg" href="#proposition" data-go="proposition"><span class="grow"><strong>${R('Une proposition vous attend', 'Une proposition t’attend')}</strong><span>${esc(pend[0].title)}</span></span><span class="btn btn-primary btn-sm">Lire et signer</span></a>` : '';
+    if (!evoOn(p)) return `<div class="head"><div><h1>Évolution</h1><p class="lead">L’étape supérieure : faire progresser ${R('votre', 'ton')} site chaque mois</p></div></div>${propCard}
+      <section class="panel"><div class="panel-head"><h2>${ic('arrow')}Ce que comprend l’Évolution</h2></div>
+        <ol class="ob-list evo-inc">${[['Une visio de pilotage par mois', 'On lit les chiffres ensemble et on décide des priorités.'], ['Un bilan mensuel', 'Ce qui a été fait, ce que disent les chiffres, ce qu’on fait ensuite.'], ['Des axes d’amélioration suivis', 'Chaque chantier avec son responsable, son échéance et son avancement.'], ['Les interventions du mois', 'Pages, formulaires, référencement, visuels : on fait évoluer ce qui transforme.']].map(([t, d], i) => `<li class="li"><span class="rank">${String(i + 1).padStart(2, '0')}</span><div><strong>${t}</strong><span>${d}</span></div></li>`).join('')}</ol>
+        <div class="inline"><a class="btn btn-primary" href="${esc(CALF())}" target="_blank" rel="noopener">En parler en 30 minutes ${ic('arrow')}</a></div></section>`;
+    const ax = (e.axes || []).slice().sort((a, b) => (b.priority ? 1 : 0) - (a.priority ? 1 : 0) || ({ on: 0, todo: 1, done: 2 }[a.status] - { on: 0, todo: 1, done: 2 }[b.status]));
+    const reps = e.reports || [], openRp = S.rpOpen || (reps[0] && reps[0].id);
+    return `<div class="head"><div><h1>Évolution</h1><p class="lead">Depuis le ${fmt(e.since, { day: 'numeric', month: 'long', year: 'numeric' })} · une visio et un bilan chaque mois</p></div></div>
+      ${evoMeeting(p)}
+      ${propCard}
+      <section class="panel" aria-labelledby="ax-h"><div class="panel-head"><h2 id="ax-h">${ic('ok')}Axes d’amélioration</h2><span class="small muted num">${ax.filter((a) => a.status === 'done').length} sur ${ax.length} faits</span></div>
+        <ul class="list plain">${ax.map((a) => `<li class="row ax-row ${a.status}"><div class="grow"><div class="title">${a.priority ? '<span class="chip warn">Priorité du mois</span> ' : ''}${esc(a.t)}</div>${a.effect ? `<div class="sub">Effet attendu : ${esc(a.effect)}</div>` : ''}<div class="sub">${esc(axWho(a.who))}${a.due ? ' · ' + (a.status === 'done' ? 'fait' : 'prévu pour le') + ' ' + fmt(a.due, { day: 'numeric', month: 'long' }) : ''}</div></div>${AX_CHIP[a.status]}</li>`).join('') || '<li class="muted">Les axes du mois arrivent après la première visio.</li>'}</ul></section>
+      <section class="panel" aria-labelledby="rp-h"><div class="panel-head"><h2 id="rp-h">${ic('doc')}Bilans mensuels</h2><span class="aside">Tous les mois, au même endroit</span></div>
+        <div class="reports">${reps.map((r) => { const f = r.fileId && p.files.find((x) => x.id === r.fileId), url = f && API.fileUrl(f), open = r.id === openRp;
+          return `<article class="rp ${open ? 'open' : ''}"><button class="rp-h" data-act="rp-open" data-id="${esc(r.id)}" aria-expanded="${open}"><span class="k">${esc(monthName(r.month))}</span><strong>${esc(r.title)}</strong></button>
+            ${open ? `<div class="rp-b">${r.summary ? `<p>${esc(r.summary)}</p>` : ''}
+              ${r.stats.length ? `<div class="rp-stats">${r.stats.map(([v, l, d]) => `<div><span class="v num">${esc(v)}</span><span class="l">${esc(l)}</span>${d ? `<span class="d">${esc(d)}</span>` : ''}</div>`).join('')}</div>` : ''}
+              ${r.done.length ? `<h3 class="rp-t">Le travail réalisé</h3><ol class="rp-done">${r.done.map(([t, d]) => `<li><strong>${esc(t)}</strong>${d ? `<span>${esc(d)}</span>` : ''}</li>`).join('')}</ol>` : ''}
+              ${f ? `<div class="inline">${url ? `<a class="btn btn-line btn-sm" href="${url}?inline=1" target="_blank" rel="noopener">${ic('doc')}Lire le bilan complet (PDF)</a>` : `<button class="btn btn-line btn-sm" data-act="toast" data-msg="Fichier d’exemple : rien à ouvrir.">${ic('doc')}Lire le bilan complet (PDF)</button>`}</div>` : ''}</div>` : ''}</article>`; }).join('') || '<p class="muted">Le premier bilan arrive à la fin du premier mois.</p>'}</div></section>
+      ${(e.next || []).length ? `<section class="panel" aria-labelledby="nx-h"><div class="panel-head"><h2 id="nx-h">${ic('cal')}Les mois suivants</h2></div><div class="months">${e.next.map(([m, t]) => `<div><strong>${esc(m)}</strong><p>${esc(t)}</p></div>`).join('')}</div></section>` : ''}`;
+  }
   /* ---------- Accueil d'un projet livré ---------- */
   function vAccueilLivre() {
     const p = S.project, last = (p.messages || []).filter((m) => m.fromAgency && m.loom).sort((a, b) => new Date(b.at) - new Date(a.at))[0];
     const author = S.team.find((u) => u.id === p.note.by);
     return `<div class="head"><div><h1 class="brandish">Bonjour ${esc(p.contactName || S.me.name)}</h1><p class="lead">${esc(cap(fmtLong(Date.now())))} · ${esc(p.projet)}</p></div>${clientLogo(p, 'auto', 'head-logo')}</div>
-      <section class="next live"><div><div class="k"><span class="pulse"></span>En ligne depuis le ${fmt(p.deliveredAt, { day: 'numeric', month: 'long', year: 'numeric' })}</div><h2>${R('Votre', 'Ton')} site travaille pour ${R('vous', 'toi')}.</h2><p>${esc(p.next.text || '')}</p></div>
-        ${p.links.site ? `<a class="btn" href="${esc(p.links.site)}" target="_blank" rel="noopener">Voir le site ${ic('arrow')}</a>` : ''}</section>
-      ${p.results ? `<div class="kpis">${p.results.stats.map(([v, l]) => `<div class="kpi"><span class="v num">${esc(v)}</span><span class="l">${esc(l)}</span></div>`).join('')}</div><p class="steps-foot" style="margin-top:-8px">${esc(p.results.period)} · chiffres Google Analytics et Search Console</p>` : ''}
-      ${propsSent() ? `<a class="newmsg" href="#proposition" data-go="proposition"><span class="grow"><strong>${R('Une proposition vous attend', 'Une proposition t’attend')}</strong><span>${esc(p.proposals.find((x) => x.status === 'sent').title)}</span></span><span class="btn btn-primary btn-sm">Lire</span></a>` : ''}
+      ${evoOn(p) ? evoMeeting(p, true) + evoHome(p) : `<section class="next live"><div><div class="k"><span class="pulse"></span>En ligne depuis le ${fmt(p.deliveredAt, { day: 'numeric', month: 'long', year: 'numeric' })}</div><h2>${p.offer === 'site' ? R('Votre', 'Ton') + ' site est en ligne.' : 'Le projet est livré.'}</h2><p>${esc(p.next.text || '')}</p></div>
+        ${p.links.site ? `<a class="btn" href="${esc(p.links.site)}" target="_blank" rel="noopener">Voir le site ${ic('arrow')}</a>` : ''}</section>`}
+      ${!evoOn(p) && p.results ? `<div class="kpis">${p.results.stats.map(([v, l]) => `<div class="kpi"><span class="v num">${esc(v)}</span><span class="l">${esc(l)}</span></div>`).join('')}</div><p class="steps-foot" style="margin-top:-8px">${esc(p.results.period)} · chiffres Google Analytics et Search Console</p>` : ''}
+      ${propsOnly() ? `<a class="newmsg" href="#proposition" data-go="proposition"><span class="grow"><strong>${R('Une proposition vous attend', 'Une proposition t’attend')}</strong><span>${esc(p.proposals.find((x) => x.status === 'sent').title)}</span></span><span class="btn btn-primary btn-sm">Lire</span></a>` : ''}
       ${launchKit()}
-      ${monthlyReport()}
-      ${evolutionCard()}
+      ${evoOn(p) ? '' : monthlyReport() + evolutionCard()}
       <div class="grid2">
         ${last ? `<section class="panel"><div class="panel-head"><h2>${ic('play')}Dernière vidéo de l’équipe</h2><a href="#messages" data-go="messages">Tous les messages</a></div><p style="margin-bottom:12px">${esc(last.text)}</p>${last.loom ? videoCard(last) : ''}</section>` : ''}
         <section class="panel"><div class="panel-head"><h2>${ic('cal')}Cette semaine</h2></div>
           ${p.note.text ? `<div class="note">${author && IMG[author.photo] ? `<img class="avatar" src="${IMG[author.photo]}" alt="">` : ''}<div><blockquote>${esc(p.note.text)}</blockquote><div class="who">${esc(author ? author.name.split(' ')[0] : '')}</div></div></div>` : ''}
-          ${p.meeting && p.meeting.when ? `<div class="meet"><span class="ico">${ic('cal')}</span><div class="grow"><div class="title">${esc(p.meeting.title)}</div><div class="sub">${esc(cap(fmtTime(p.meeting.when)))}</div></div></div>` : ''}</section>
+          ${!evoOn(p) && p.meeting && p.meeting.when ? `<div class="meet"><span class="ico">${ic('cal')}</span><div class="grow"><div class="title">${esc(p.meeting.title)}</div><div class="sub">${esc(cap(fmtTime(p.meeting.when)))}</div></div></div>` : ''}</section>
       </div>
       <section class="panel"><div class="panel-head"><h2>${ic('folder')}Tout ce qu’on a construit ensemble</h2></div>
-        <div class="quick">${[(p.tools || []).includes('teaser') ? ['tool:teaser', 'Fiche teaser', 'Présenter un bien en 2 minutes', 'doc'] : ['outils', 'Boîte à outils', 'Kit de marque, signature…', 'plus'], ['maquettes', 'Maquettes et visuels', 'Le fichier Figma et le prototype', 'figma'], ['biblio', 'Bibliothèque', `${(p.assets || []).length} visuels et cas d’étude`, 'folder'], ['fichiers', 'Fichiers', 'Guide Webflow, accès, bilans', 'doc']].map(([g, t, d, i]) => `<a class="qcard" href="#${g.replace('tool:', '')}" ${g.startsWith('tool:') ? `data-tool="${g.slice(5)}"` : `data-go="${g}"`}><span class="ico hl">${ic(i)}</span><strong>${t}</strong><span>${esc(d)}</span></a>`).join('')}</div></section>
+        <div class="quick">${[(p.tools || []).includes('teaser') ? ['tool:teaser', 'Fiche teaser', 'Présenter un bien en 2 minutes', 'doc'] : ['outils', 'Boîte à outils', 'Kit de marque, signature…', 'plus'], ['maquettes', 'Maquettes et visuels', 'Le fichier Figma et le prototype', 'figma'], ['biblio', 'Bibliothèque', `${(p.assets || []).filter((a) => a.kind !== 'Maquettes').length} visuels à télécharger`, 'folder'], ['fichiers', 'Fichiers', 'Guide Webflow, accès, bilans', 'doc']].map(([g, t, d, i]) => `<a class="qcard" href="#${g.replace('tool:', '')}" ${g.startsWith('tool:') ? `data-tool="${g.slice(5)}"` : `data-go="${g}"`}><span class="ico hl">${ic(i)}</span><strong>${t}</strong><span>${esc(d)}</span></a>`).join('')}</div></section>
       ${reviewPanel()}
       ${qaPanel()}`;
   }
 
+  function evoHome(p) {
+    const e = p.evo, rp = (e.reports || [])[0], ax = (e.axes || []).filter((a) => a.status !== 'done');
+    return `<div class="grid2">
+      <section class="panel"><div class="panel-head"><h2>${ic('doc')}Dernier bilan</h2><a href="#evolution" data-go="evolution">Tous les bilans</a></div>${rp ? `<div class="k-sm">${esc(monthName(rp.month))}</div><p class="rp-title">${esc(rp.title)}</p>${rp.summary ? `<p class="muted small" style="margin-top:6px">${esc(rp.summary)}</p>` : ''}` : '<p class="muted">Le premier bilan arrive à la fin du premier mois.</p>'}</section>
+      <section class="panel"><div class="panel-head"><h2>${ic('ok')}Axes en cours</h2><a href="#evolution" data-go="evolution">Voir le détail</a></div><ul class="list plain">${ax.slice(0, 3).map((a) => `<li class="row"><div class="grow"><div class="title">${esc(a.t)}</div><div class="sub">${esc(axWho(a.who))}${a.due ? ' · ' + fmt(a.due, { day: 'numeric', month: 'long' }) : ''}</div></div>${AX_CHIP[a.status]}</li>`).join('') || '<li class="muted">Tout est fait pour ce mois-ci.</li>'}</ul></section></div>`;
+  }
   function monthlyReport() {
     const rp = (S.project.reports || [])[0]; if (!rp) return '';
     const mName = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' }).format(new Date(rp.month + '-15'));
@@ -850,19 +953,38 @@
       <ul class="list plain">${H.map((h) => `<li class="row ${h.done ? 'done' : ''}"><span class="check ${h.done ? 'done' : ''}" role="img" aria-label="${h.done ? 'Fait' : 'À faire'}">${h.done ? ic('check') : ''}</span><div class="grow"><div class="title" style="font-weight:400">${esc(h.t)}</div></div></li>`).join('')}</ul></section>`;
   }
   // L'avis est demandé une fois le projet livré depuis au moins 7 jours : le client a eu le temps de s'en servir.
+  /* Avis en fin de projet : 4 ou 5 étoiles, on invite à publier sur Google ; 3 ou moins, un questionnaire de bilan
+     pour comprendre ce qui n'a pas marché, et proposer d'en parler de vive voix. */
   function reviewPanel() {
     const p = S.project; if (!p.deliveredAt || Date.now() - new Date(p.deliveredAt) < 7 * 864e5) return '';
     const rv = p.review, url = cfg().reviewUrl;
-    if (rv) return `<section class="panel" aria-labelledby="rv"><div class="panel-head"><h2 id="rv">${ic('ok')}Merci pour ${R('votre', 'ton')} avis</h2><span class="small muted">${'★'.repeat(rv.score)}${'☆'.repeat(5 - rv.score)}<span class="sr"> ${rv.score} sur 5</span></span></div>
-      ${rv.text ? `<blockquote class="muted">« ${esc(rv.text)} »</blockquote>` : ''}
-      ${rv.score >= 4 && url ? `<p style="margin-top:12px">${R('Vous pouvez', 'Tu peux')} aussi le publier sur Google, ça nous aide beaucoup.</p><div style="margin-top:12px"><a class="btn btn-primary" href="${esc(url)}" target="_blank" rel="noopener">Publier l’avis sur Google ${ic('arrow')}</a></div>` : ''}</section>`;
+    const stars = (n) => `<span class="small muted">${'★'.repeat(n)}${'☆'.repeat(5 - n)}<span class="sr"> ${n} sur 5</span></span>`;
+    if (rv) return rv.score >= 4
+      ? `<section class="panel" aria-labelledby="rv"><div class="panel-head"><h2 id="rv">${ic('ok')}Merci pour ${R('votre', 'ton')} avis</h2>${stars(rv.score)}</div>
+        ${rv.text ? `<blockquote class="muted">« ${esc(rv.text)} »</blockquote>` : ''}
+        ${url ? `<p style="margin-top:12px">${rv.google ? `Merci de ${R('l’avoir', 'l’avoir')} publié sur Google.` : `${R('Vous pouvez', 'Tu peux')} encore le publier sur Google : c’est ce qui aide le plus une agence comme la nôtre.`}</p>${rv.google ? '' : `<div style="margin-top:12px"><a class="btn btn-primary" href="${esc(url)}" target="_blank" rel="noopener" data-act="rv-google">Publier l’avis sur Google ${ic('arrow')}</a></div>`}` : ''}</section>`
+      : `<section class="panel" aria-labelledby="rv"><div class="panel-head"><h2 id="rv">${ic('ok')}Merci pour ${R('votre', 'ta')} franchise</h2>${stars(rv.score)}</div>
+        <p>L’équipe a bien reçu ${R('vos', 'tes')} réponses et les lit avec attention.${rv.survey && rv.survey.call ? ` On ${R('vous', 't’')}appelle dans les 48 heures ouvrées pour en parler.` : ''}</p></section>`;
     const sc = S.rvScore || 0;
-    return `<form class="panel form" data-form="review" aria-labelledby="rv"><div class="panel-head" style="margin:0"><h2 id="rv">${ic('chat')}${R('Votre', 'Ton')} avis sur le projet</h2><span class="aside">Deux minutes, et ça compte beaucoup pour nous</span></div>
-      <fieldset class="field" style="border:0;padding:0;margin:0"><legend class="small" style="font-weight:500;margin-bottom:8px">${R('Votre', 'Ta')} note</legend>
-        <div class="stars">${[1, 2, 3, 4, 5].map((n) => `<label><input type="radio" name="rv-s" value="${n}" class="sr" ${sc === n ? 'checked' : ''}><span aria-hidden="true">${n <= sc ? '★' : '☆'}</span><span class="sr">${n} sur 5</span></label>`).join('')}</div></fieldset>
-      <div class="field"><label for="rv-t">Ce qui ${R('vous', 't’')}a plu, ce qu’on peut améliorer</label><textarea id="rv-t" rows="3"></textarea></div>
-      <label class="small"><input type="checkbox" id="rv-p"> J’accepte que mon témoignage soit publié sur agence-orem.fr, avec mon prénom et le nom de l’entreprise</label>
-      <div><button class="btn btn-primary" type="submit">Envoyer mon avis</button></div></form>`;
+    const starsIn = `<fieldset class="field" style="border:0;padding:0;margin:0"><legend class="small" style="font-weight:500;margin-bottom:8px">${R('Votre', 'Ta')} note sur l’ensemble du projet</legend>
+        <div class="stars">${[1, 2, 3, 4, 5].map((n) => `<label><input type="radio" name="rv-s" value="${n}" class="sr" ${sc === n ? 'checked' : ''}><span aria-hidden="true">${n <= sc ? '★' : '☆'}</span><span class="sr">${n} sur 5</span></label>`).join('')}</div></fieldset>`;
+    const head = `<div class="panel-head" style="margin:0"><h2 id="rv">${ic('chat')}${R('Votre', 'Ton')} avis sur le projet</h2><span class="aside">Deux minutes, et ça compte beaucoup pour nous</span></div>`;
+    if (!sc) return `<section class="panel form" aria-labelledby="rv">${head}${starsIn}</section>`;
+    if (sc >= 4) return `<form class="panel form" data-form="review" aria-labelledby="rv">${head}${starsIn}
+      <p class="rv-ok">${sc === 5 ? 'Merci, ça nous touche beaucoup !' : 'Merci !'} ${url ? `Le plus beau cadeau pour l’agence : ${R('le dire sur Google', 'le dire sur Google')}, en deux clics.` : ''}</p>
+      <div class="field"><label for="rv-t">En une ou deux phrases, ce qui ${R('vous', 't’')}a plu</label><textarea id="rv-t" rows="3" placeholder="ex. Une équipe à l’écoute, un site clair qui nous ramène des demandes."></textarea>${url ? `<p class="hint">${R('Votre', 'Ton')} texte sera copié : il ${R('vous', 'te')} suffira de le coller sur Google.</p>` : ''}</div>
+      <label class="small"><input type="checkbox" id="rv-p"> J’accepte que ce témoignage soit publié par l’agence, avec mon prénom et le nom de l’entreprise</label>
+      <div class="inline">${url ? `<button class="btn btn-primary" type="submit" value="google">Publier sur Google ${ic('arrow')}</button><button class="btn btn-line" type="submit" value="send">Envoyer à l’équipe seulement</button>` : `<button class="btn btn-primary" type="submit" value="send">Envoyer mon avis</button>`}</div></form>`;
+    const ax = Core.REVIEW_AXES, phases = (p.phases || []).map((ph) => phName(ph));
+    return `<form class="panel form" data-form="review" aria-labelledby="rv">${head}${starsIn}
+      <p class="rv-ko">Merci de ${R('nous le dire', 'nous le dire')}. Quelques questions pour comprendre ce qui n’a pas fonctionné : ${R('vos', 'tes')} réponses vont à l’équipe uniquement, jamais en ligne.</p>
+      <div class="field"><label for="rv-bad">Ce qui n’a pas fonctionné</label><textarea id="rv-bad" rows="3" aria-required="true"></textarea></div>
+      <div class="field"><label for="rv-good">Ce qui a bien fonctionné, malgré tout</label><textarea id="rv-good" rows="2"></textarea></div>
+      <fieldset class="field rv-axes"><legend>Note par point (1 = pas du tout, 5 = très bien)</legend>${ax.map(([k, l]) => `<div class="rv-ax" role="radiogroup" aria-label="${esc(l)}"><span>${esc(l)}</span><span class="rv-n">${[1, 2, 3, 4, 5].map((n) => `<label><input type="radio" name="rv-a-${k}" value="${n}"><span>${n}</span></label>`).join('')}</span></div>`).join('')}</fieldset>
+      <div class="field"><label for="rv-ph">À quel moment ça a coincé ?</label><select id="rv-ph"><option value="">Je ne sais pas</option>${phases.map((x) => `<option>${esc(x)}</option>`).join('')}<option>Après la mise en ligne</option><option>Tout au long du projet</option></select></div>
+      <div class="field"><label for="rv-rec">Qu’aurait-il fallu pour que ${R('vous nous recommandiez', 'tu nous recommandes')} ?</label><textarea id="rv-rec" rows="2"></textarea></div>
+      <label class="opt"><input type="checkbox" id="rv-call" checked> J’aimerais qu’on en parle de vive voix</label>
+      <div><button class="btn btn-primary" type="submit" value="send">Envoyer à l’équipe</button></div></form>`;
   }
 
   /* ---------- Agence : mise en ligne et fin de projet ---------- */
@@ -1169,11 +1291,11 @@
     </form>`;
   }
 
-  const TABS = () => [['pilotage', 'Pilotage'], ['messages', 'Messages'], ['demandes', 'Demandes'], ['validations', 'Validations'], ['fichiers', 'Fichiers'], ['liens', 'Liens'], ['factures', 'Factures'], ...(S.project && (S.project.phase >= 3 || S.project.deliveredAt) ? [['livraison', S.project.offer === 'site' ? 'Mise en ligne' : 'Livraison']] : []), ['acces', 'Accès et infos'], ['activite', 'Activité']];
+  const TABS = () => [['pilotage', 'Pilotage'], ['messages', 'Messages'], ['demandes', 'Demandes'], ['validations', 'Validations'], ['fichiers', 'Fichiers'], ['liens', 'Liens'], ['factures', 'Factures'], ...(S.project && (S.project.phase >= 3 || S.project.deliveredAt) ? [['livraison', S.project.offer === 'site' ? 'Mise en ligne' : 'Livraison']] : []), ...(evoOpen(S.project) ? [['evolution', 'Évolution']] : []), ['acces', 'Accès et infos'], ['activite', 'Activité']];
   function vAdmin() {
     const p = S.project, a = Core.alerts(p);
     const tabCount = { fichiers: a.newFiles, validations: a.changes, messages: a.newMessages, demandes: a.requests, livraison: p.deliveredAt && p.review && !p.review.seen ? 1 : 0 };
-    const body = ({ pilotage: tPilotage, messages: tMessages, demandes: tDemandes, liens: tLiens, validations: tValidations, fichiers: tFichiers, factures: tFactures, livraison: tLivraison, acces: tAcces, activite: tActivite }[S.tab] || tPilotage)();
+    const body = ({ pilotage: tPilotage, messages: tMessages, demandes: tDemandes, liens: tLiens, validations: tValidations, fichiers: tFichiers, factures: tFactures, livraison: tLivraison, evolution: tEvolution, acces: tAcces, activite: tActivite }[S.tab] || tPilotage)();
     return `
     <div><button class="ghost" data-go="clients" style="padding-left:0">${ic('back')}Tous les clients</button></div>
     <div class="head"><div><h1>${esc(p.client)}</h1><p class="lead">${esc(p.projet)} · ${esc(Core.offerOf(p))} · ${esc(phName(p.phases[p.phase - 1]))}${p.deliveredAt ? ' · livré le ' + fmt(p.deliveredAt, { day: 'numeric', month: 'long' }) : ''}</p></div><div class="head-actions"><button class="btn btn-primary" data-act="compose">${ic('plus')}Ajouter</button><button class="btn btn-line" data-act="preview">${ic('eye')}Voir comme le client</button></div></div>
@@ -1231,7 +1353,7 @@
       ${S.drafts[p.id] && S.drafts[p.id].note !== undefined && S.drafts[p.id].note !== p.note.text ? '<p class="hint">Brouillon non publié, conservé sur cet appareil.</p>' : ''}
       <div class="inline"><button class="btn btn-primary btn-sm" type="submit">Publier au client</button><span class="small muted">Il le reçoit par e-mail s’il l’a demandé.</span></div></form>
     <section class="panel"><div class="panel-head"><h2>${ic('doc')}Livrables par étape</h2><span class="small muted">Visibles dans « Étapes » côté client</span></div>
-      ${p.phases.map((ph) => `<details class="ph-fold" ${phS(ph) === 'on' ? 'open' : ''}><summary class="phase-title">${esc(phName(ph))} <span class="small muted">· ${ph.items.filter((it) => itS(it) === 'done').length} sur ${ph.items.length} faits</span></summary>${ph.items.map((it) => `<div class="it"><div>${esc(it.t)}${it.val ? `<div class="small muted">Lié à la validation « ${esc((p.validations.find((v) => v.key === it.val) || {}).t || '')} »${itS(it) === 'review' ? ' : en attente du client' : itS(it) === 'done' && it.status !== 'done' ? ' : validé' : ''}</div>` : ''}</div>
+      ${p.phases.map((ph) => `<details class="ph-fold" ${phS(ph) === 'on' ? 'open' : ''}><summary class="phase-title">${esc(phName(ph))} <span class="small muted">· ${ph.items.filter((it) => itS(it) === 'done').length} sur ${ph.items.length} faits</span></summary>${ph.items.map((it) => `<div class="it"><div>${esc(it.t)}${whoHtml(it)}<button class="linkish small" type="button" data-act="item-edit" data-id="${esc(it.id)}" aria-expanded="${S.itemEdit === it.id}">Qui fait quoi, lien</button>${S.itemEdit === it.id ? itemEditor(it) : ''}${it.val ? `<div class="small muted">Lié à la validation « ${esc((p.validations.find((v) => v.key === it.val) || {}).t || '')} »${itS(it) === 'review' ? ' : en attente du client' : itS(it) === 'done' && it.status !== 'done' ? ' : validé' : ''}</div>` : ''}</div>
         ${it.val && itS(it) !== 'wait' && itS(it) !== 'on' ? `<span class="chip ${itS(it) === 'done' ? 'ok' : 'warn'}">${itS(it) === 'done' ? 'Validé' : 'Chez le client'}</span>` : `<select data-item="${esc(it.id)}" aria-label="Statut : ${esc(it.t)}">${[['wait', 'Prévu'], ['on', 'En cours'], ...(it.val ? [] : [['done', 'Fait']])].map(([v, l]) => `<option value="${v}" ${(it.status === 'done' && it.val ? 'on' : it.status) === v ? 'selected' : ''}>${l}</option>`).join('')}</select>`}
         <input type="date" data-itemdate="${esc(it.id)}" value="${dayKey(it.due)}" aria-label="Date prévue : ${esc(it.t)}"></div>`).join('')}</details>`).join('')}</section>
     <div class="grid2">
@@ -1280,6 +1402,7 @@
         <div class="line"><div class="field"><label for="pp-t">Titre</label><input id="pp-t" type="text" value="${esc(base.title || '')}" placeholder="ex. Refonte du site"></div><div class="field"><label for="pp-q">N° de devis</label><input id="pp-q" type="text" value="${esc(base.quote || '')}" placeholder="ex. D-2026-0160"></div></div>
         <div class="field"><label for="pp-i">Introduction</label><textarea id="pp-i" rows="3" placeholder="ex. Ce qu’on a compris de votre besoin">${esc(base.intro || '')}</textarea></div>
         <div class="field"><label for="pp-l">Lignes : libellé | montant HT</label><textarea id="pp-l" rows="4" placeholder="ex. Atelier de cadrage | 900">${esc((base.lines || []).map((l) => l.t + ' | ' + l.ht).join('\n'))}</textarea></div>
+        <label class="opt"><input type="checkbox" id="pp-evo" ${(D0p => D0p && D0p.kind === 'evolution')((S.project.proposals || []).find((x) => x.id === (S.propDraft || {}).prid))  ? 'checked' : ''}> Offre Évolution : la signature active l’abonnement mensuel du client</label>
         <div class="line"><div class="field"><label for="pp-d">Acompte (%)</label><input id="pp-d" type="number" min="0" max="100" value="${base.depositPct ?? (base.rid ? 0 : 50)}"></div><div class="field"><label for="pp-v">Valable jusqu’au</label><input id="pp-v" type="date" value="${dayKey(base.validUntil || Date.now() + 30 * 864e5)}"></div></div>
         <div class="inline"><button class="btn btn-line" type="submit" name="pp-go" value="save">Enregistrer le brouillon</button><button class="btn btn-primary" type="submit" name="pp-go" value="send">Envoyer au client</button><button class="ghost" type="button" data-act="prop-cancel">Annuler</button></div></form>` : ''}</section>`;
   }
@@ -1327,6 +1450,37 @@
         <div class="line"><div class="field"><label for="br-l">${B.logo ? 'Remplacer le logo' : 'Ajouter le logo'} (SVG ou PNG transparent)</label><input id="br-l" type="file" accept=".svg,.png,.webp,image/svg+xml,image/png,image/webp" data-logo="1"></div>
         <div class="field"><label for="br-t">Affichage</label><select id="br-t" data-logotone="1"><option value="mono" ${B.logoTone !== 'color' ? 'selected' : ''}>En blanc ou en noir selon le fond</option><option value="color" ${B.logoTone === 'color' ? 'selected' : ''}>Dans ses couleurs d’origine</option></select></div></div>
         ${B.logo ? '<div><button class="btn btn-line btn-sm" data-act="logo-remove">Retirer le logo</button></div>' : ''}</section>`;
+  }
+  function itemEditor(it) {
+    const W = Core.itemWho(it), g = it.link || '', has = (w) => W.find((x) => x[0] === w);
+    const people = [...S.team.map((u) => [u.id, u.name.split(' ')[0]]), ['client', S.project.contactName || 'Client']];
+    return `<form class="form it-edit" data-form="itemmeta" data-id="${esc(it.id)}">${people.map(([id, n]) => `<div class="inline"><label class="opt" style="flex:0 0 130px"><input type="checkbox" name="iw" value="${id}" ${has(id) ? 'checked' : ''}> ${esc(n)}</label><label class="sr" for="iw-${id}">Ce que fait ${esc(n)}</label><input id="iw-${id}" type="text" value="${esc((has(id) || [])[1] || '')}" placeholder="ex. dessine les maquettes"></div>`).join('')}
+      <div class="field"><label for="il-${esc(it.id)}">Lien (adresse https, ou vide pour le lien automatique : ${esc(GO_LBL[Core.itemGo({ t: it.t })] || 'aucun')})</label><input id="il-${esc(it.id)}" type="text" value="${esc(/^https:/.test(g) ? g : '')}" placeholder="https://…"></div>
+      <div class="inline"><button class="btn btn-primary btn-sm" type="submit">Enregistrer</button><button class="btn btn-line btn-sm" type="button" data-act="item-edit" data-id="">Fermer</button></div></form>`;
+  }
+  /* Agence : l'espace Évolution du client (visio du mois, axes, bilans). */
+  const WHO_KEYS = { louis: 'u_louis', theophile: 'u_theo', 'théophile': 'u_theo', clement: 'u_clement', 'clément': 'u_clement', client: 'client', tous: 'both', agence: 'both' };
+  const ST_KEYS = { 'prévu': 'todo', prevu: 'todo', 'en cours': 'on', fait: 'done' };
+  function tEvolution() {
+    const p = S.project, e = p.evo || { axes: [], reports: [], next: [] }, open = (e.reschedule || []).filter((r) => r.status === 'open');
+    const whoTxt = (w) => ({ u_louis: 'Louis', u_theo: 'Théophile', u_clement: 'Clément', client: 'client', both: 'tous' }[w] || 'tous');
+    const stTxt = { todo: 'prévu', on: 'en cours', done: 'fait' };
+    const local = (d) => (d ? new Date(new Date(d).getTime() - new Date(d).getTimezoneOffset() * 6e4).toISOString().slice(0, 16) : '');
+    return `${open.length ? `<section class="panel warn-p"><div class="panel-head"><h2>${ic('cal')}Demande de changement de créneau</h2></div>${open.map((r) => `<p>« ${esc(r.text)} » <span class="small muted">${esc(who(r.by))}, ${fmt(r.at, { day: 'numeric', month: 'long' })}</span></p>`).join('')}<p class="hint">Fixez la nouvelle date ci-dessous : le client est prévenu et la demande se ferme.</p></section>` : ''}
+    <form class="panel form" data-form="evo-meet"><div class="panel-head" style="margin:0"><h2>${ic('cal')}Abonnement et visio de pilotage</h2></div>
+      <label class="opt"><input type="checkbox" id="ev-on" ${e.active ? 'checked' : ''}> Évolution active pour ce client</label>
+      <div class="line"><div class="field"><label for="ev-w">Prochaine visio</label><input id="ev-w" type="datetime-local" value="${local(e.meeting && e.meeting.when)}"></div><div class="field"><label for="ev-m">Format</label><input id="ev-m" type="text" value="${esc((e.meeting && e.meeting.mode) || 'Visio de pilotage (45 min)')}"></div></div>
+      <div><button class="btn btn-primary btn-sm" type="submit">Enregistrer</button></div></form>
+    <form class="panel form" data-form="evo-axes"><div class="panel-head" style="margin:0"><h2>${ic('ok')}Axes d’amélioration</h2><span class="aside">Une ligne par axe : titre | effet attendu | qui | échéance AAAA-MM-JJ | prévu, en cours ou fait | priorité</span></div>
+      <label class="sr" for="ev-ax">Axes</label><textarea id="ev-ax" rows="6" placeholder="Mesurer les demandes jusqu’au CRM | Savoir d’où viennent les demandes | Louis | 2026-10-23 | en cours | priorité">${esc((e.axes || []).map((a) => [a.t, a.effect, whoTxt(a.who), a.due ? dayKey(a.due) : '', stTxt[a.status], a.priority ? 'priorité' : ''].join(' | ').replace(/( \| )+$/, '')).join('\n'))}</textarea>
+      <div class="field"><label for="ev-nx">Les mois suivants : mois | ce qu’on prévoit</label><textarea id="ev-nx" rows="3">${esc((e.next || []).map((x) => x.join(' | ')).join('\n'))}</textarea></div>
+      <div><button class="btn btn-primary btn-sm" type="submit">Enregistrer les axes</button></div></form>
+    <form class="panel form" data-form="evo-report"><div class="panel-head" style="margin:0"><h2>${ic('doc')}Publier le bilan du mois</h2><span class="aside">${(e.reports || []).length} bilan${(e.reports || []).length > 1 ? 's' : ''} publié${(e.reports || []).length > 1 ? 's' : ''}</span></div>
+      <div class="line"><div class="field"><label for="er-m">Mois</label><input id="er-m" type="month" value="${new Date(Date.now() - 20 * 864e5).toISOString().slice(0, 7)}"></div><div class="field"><label for="er-t">Titre</label><input id="er-t" type="text" placeholder="ex. Le site attire davantage, il reste à mesurer ce qu’il rapporte"></div></div>
+      <div class="field"><label for="er-s">L’essentiel en deux phrases</label><textarea id="er-s" rows="2"></textarea></div>
+      <div class="line"><div class="field"><label for="er-k">Chiffres : valeur | libellé | écart</label><textarea id="er-k" rows="4" placeholder="1 838 | visites sur le site | +17,8 % sur août"></textarea></div><div class="field"><label for="er-d">Travail réalisé : titre | précision</label><textarea id="er-d" rows="4"></textarea></div></div>
+      <div class="field"><label for="er-f">Bilan complet en PDF (facultatif)</label><input id="er-f" type="file" accept="application/pdf,.pdf"></div>
+      <div><button class="btn btn-primary btn-sm" type="submit">Publier le bilan</button></div></form>`;
   }
   function tActivite() {
     const p = S.project;
@@ -1382,7 +1536,7 @@
     return null;
   }
   const dialogOpen = () => !!(S.ob || S.zoom || S.compose || S.mailView || S.fview);
-  const TITLES = { demarrer: 'Bien démarrer', preferences: 'Mes notifications', proposition: 'Proposition', accueil: 'Accueil', projet: 'Étapes', valider: 'À valider', maquettes: 'Maquettes', messages: 'Messages', fichiers: 'Fichiers', documents: 'Documents', outils: 'Boîte à outils', biblio: 'Bibliothèque', equipe: 'Équipe et aide', plus: 'Plus', inbox: 'Boîte de réception', reglages: 'Réglages', clients: 'Clients', nouveau: 'Nouvel espace client' };
+  const TITLES = { evolution: 'Évolution', demarrer: 'Bien démarrer', preferences: 'Mes notifications', proposition: 'Proposition', accueil: 'Accueil', projet: 'Étapes', valider: 'À valider', maquettes: 'Maquettes', messages: 'Messages', fichiers: 'Fichiers', documents: 'Documents', outils: 'Boîte à outils', biblio: 'Bibliothèque', equipe: 'Équipe et aide', plus: 'Plus', inbox: 'Boîte de réception', reglages: 'Réglages', clients: 'Clients', nouveau: 'Nouvel espace client' };
   let wasDialog = false;
   /* onlyMain : seule la zone principale change (filtre, question rapide) ; la barre latérale et le reste ne sont pas reconstruits. */
   function render(focus, onlyMain) {
@@ -1393,7 +1547,7 @@
     if (!S.me) { root.innerHTML = vConnexion(); }
     else if (clientMode()) {
       if (!S.project) { root.innerHTML = shell('<div class="empty">Votre espace est en cours de préparation.</div>'); return; }
-      const V = { accueil: () => (S.project.deliveredAt ? vAccueilLivre() : vAccueil()), proposition: vProposition, demarrer: vDemarrer, preferences: vPreferences, projet: vProjet, valider: vValider, maquettes: vMaquettes, messages: vMessages, fichiers: vFichiers, documents: vDocuments, outils: vOutils, biblio: vBiblio, equipe: vEquipe, plus: vPlus };
+      const V = { accueil: () => (S.project.deliveredAt ? vAccueilLivre() : vAccueil()), proposition: vProposition, demarrer: vDemarrer, evolution: vEvolution, preferences: vPreferences, projet: vProjet, valider: vValider, maquettes: vMaquettes, messages: vMessages, fichiers: vFichiers, documents: vDocuments, outils: vOutils, biblio: vBiblio, equipe: vEquipe, plus: vPlus };
       if (!V[S.view]) S.view = 'accueil';
       if (wrap) wrap.innerHTML = wrapHtml(V[S.view]()); else root.innerHTML = shell(V[S.view]()) + bellPop() + (S.ob ? onboarding() : '') + lightbox() + filePreview();
     } else {
@@ -1403,6 +1557,7 @@
     }
     const where = !S.me ? 'Connexion' : S.view === 'admin' && S.project ? S.project.client : S.view === 'outils' && S.tool ? (TOOLS[S.tool] || [])[1] : TITLES[S.view];
     document.title = (where ? where + ' · ' : '') + 'Espace client Orem';
+    initPads();
     // Dialogue ouvert : l'arrière-plan devient inerte, le focus va dans le dialogue.
     const dlg = root.querySelector('[role=dialog]'), bg = root.querySelectorAll('.app, .preview-bar, .skip');
     bg.forEach((el) => { if (dlg) el.setAttribute('inert', ''); else el.removeAttribute('inert'); });
@@ -1596,6 +1751,12 @@
       case 'copytxt': copyText(a.dataset.txt, a.dataset.txt + ' copié.'); break;
       case 'vault-erase': if (!confirm('Effacer les identifiants du coffre ?')) break; try { await API.vaultErase(S.project.id); await loadProject(S.project.id); toast('Identifiants effacés du coffre.'); } catch (err) { toast(err.message); } break;
       case 'vault-open': try { const vo = await API.vaultGet(S.project.id); await loadProject(S.project.id); S.vaultOpen = vo; render(false, true); } catch (err) { toast(err.message); } break;
+      case 'item-edit': S.itemEdit = a.dataset.id || null; render(false, true); { const f = S.itemEdit && document.querySelector(`[data-form=itemmeta] input`); f && f.focus(); } break;
+      case 'rs-open': S.rsOpen = !S.rsOpen; render(false, true); { const t = S.rsOpen && $('#rs-t'); t && t.focus(); } break;
+      case 'rp-open': S.rpOpen = a.dataset.id === (S.rpOpen || '') ? '' : a.dataset.id; render(false, true); break;
+      case 'pad-clear': { const c = document.getElementById('sg-c-' + a.dataset.id); if (c) { c.getContext('2d').clearRect(0, 0, c.width, c.height); delete c.dataset.drawn; c.parentNode.classList.remove('drawn'); } break; }
+      case 'sign-req': act({ type: 'file.signreq', fid: a.dataset.id }, 'Demande de signature envoyée au client.'); break;
+      case 'sign-cancel': act({ type: 'file.signreq', fid: a.dataset.id, cancel: true }, 'Demande de signature retirée.'); break;
       case 'logo-remove': act({ type: 'project.logo', img: '' }, 'Logo retiré.'); break;
       case 'vault-hide': S.vaultOpen = null; render(false, true); break;
       case 'setup-ok': if (await act({ type: 'setup.check', tid: a.dataset.id, ok: true }, 'Vérifié. Le client est prévenu.')) { if (a.dataset.k === 'domaine') { S.vaultOpen = null; await loadProject(S.project.id); } } break;
@@ -1644,6 +1805,18 @@
         try { const r = await API.create({ offer: (f.querySelector('[name=n-offer]:checked') || {}).value, client: v('n-client'), projet: v('n-projet'), contactName: v('n-contact'), email: v('n-email'), start: v('n-start') || undefined, amountHT: v('n-ht'), registre: (f.querySelector('[name=n-reg]:checked') || {}).value });
           await loadProjects(); await openProject(r.id); toast('Espace créé. Ajoutez la prochaine étape puis donnez l’accès au client.'); } catch (err) { toast(err.message); }
         break; }
+      case 'itemmeta': { const id = f.dataset.id; const who = [...f.querySelectorAll('[name=iw]:checked')].map((c) => [c.value, (f.querySelector('#iw-' + c.value) || {}).value || '']);
+        if (await act({ type: 'item.meta', iid: id, who, link: (f.querySelector('#il-' + id) || {}).value.trim() }, 'Livrable mis à jour.')) { S.itemEdit = null; render(false, true); } break; }
+      case 'evo-meet': act({ type: 'evo.set', active: $('#ev-on').checked, meeting: { when: v('ev-w') || null, mode: v('ev-m') } }, 'Évolution enregistrée. Le client est prévenu.'); break;
+      case 'evo-axes': { const L = lines(v('ev-ax'), 6), bad = L.find((x) => x[3] && isNaN(new Date(x[3]))); if (bad) return fieldError('ev-ax', 'Date invalide sur la ligne « ' + bad[0] + ' » : écrivez AAAA-MM-JJ.');
+        act({ type: 'evo.set', axes: L.map(([t, effect, w, due, st, pr], i) => ({ id: ((S.project.evo || {}).axes || [])[i] && S.project.evo.axes[i].t === t ? S.project.evo.axes[i].id : undefined, t, effect, who: WHO_KEYS[String(w || '').trim().toLowerCase()] || 'both', due: due || null, status: ST_KEYS[String(st || '').trim().toLowerCase()] || 'todo', priority: /priorit/i.test(pr || '') })), next: lines(v('ev-nx'), 2) }, 'Axes enregistrés.'); break; }
+      case 'evo-report': { if (!v('er-t')) return fieldError('er-t', 'Donnez un titre au bilan.'); let fileId; const fl = $('#er-f').files[0];
+        if (fl) { try { const r = await API.upload(S.project.id, fl, 'Livrable'); fileId = r.file && r.file.id; } catch (err) { return fieldError('er-f', err.message); } }
+        if (await act({ type: 'evo.report', month: v('er-m'), title: v('er-t'), summary: v('er-s'), stats: lines(v('er-k'), 3), done: lines(v('er-d'), 2), fileId }, 'Bilan publié. Le client est prévenu.')) f.reset(); break; }
+      case 'reschedule': { if (!v('rs-t')) return fieldError('rs-t', R('Indiquez les créneaux qui vous arrangent.', 'Indique les créneaux qui t’arrangent.')); if (await act({ type: 'evo.reschedule', text: v('rs-t') }, 'Demande envoyée. L’équipe revient vers ' + R('vous', 'toi') + ' très vite.')) S.rsOpen = false; break; }
+      case 'signdoc': { const id2 = f.dataset.id; if (!$('#sg-ok-' + id2).checked) return fieldError('sg-ok-' + id2, 'Cochez la case pour signer.'); if (v('sg-n-' + id2).length < 2) return fieldError('sg-n-' + id2, R('Écrivez votre nom pour signer.', 'Écris ton nom pour signer.'));
+        if (S.preview) return toast('Aperçu : les actions sont désactivées.');
+        try { await API.signFile(S.project.id, id2, { name: v('sg-n-' + id2), agree: true, sig: padData(id2) }); await loadProject(S.project.id); toast('Document signé. Merci !'); celebrate(); } catch (err) { fieldError('sg-n-' + id2, err.message); } break; }
       case 'su-wf': { if (!v('su-ws')) return fieldError('su-ws', 'Indiquez le nom de l’espace de travail.'); if (await act({ type: 'setup.webflow', ws: v('su-ws') }, 'Merci ! L’équipe vérifie l’invitation.')) { const h = $('#su-domaine-h') || $('#su-webflow-h'); h && h.scrollIntoView({ block: 'start' }); } break; }
       case 'su-dn': {
         const mode = (document.querySelector('[name=su-m]:checked') || {}).value || 'delegate', domain = v('su-d'), registrar = v('su-r');
@@ -1661,12 +1834,12 @@
       case 'proposal': { const go = (e.submitter && e.submitter.value) || 'save'; const D0 = S.propDraft || {};
         const lns = lines(v('pp-l'), 2).map(([t, ht]) => ({ t, ht: Number(String(ht || '').replace(/\s/g, '').replace(',', '.')) || 0 }));
         if (!v('pp-t')) return fieldError('pp-t', 'Donnez un titre.'); if (!lns.length) return fieldError('pp-l', 'Ajoutez au moins une ligne : libellé | montant HT.');
-        try { const r = await API.action(S.project.id, { type: 'proposal.save', prid: D0.prid, rid: D0.rid, title: v('pp-t'), quote: v('pp-q'), intro: v('pp-i'), lines: lns, depositPct: v('pp-d'), validUntil: v('pp-v') || undefined });
+        try { const r = await API.action(S.project.id, { type: 'proposal.save', prid: D0.prid, rid: D0.rid, title: v('pp-t'), quote: v('pp-q'), intro: v('pp-i'), lines: lns, depositPct: v('pp-d'), validUntil: v('pp-v') || undefined, kind: ($('#pp-evo') || {}).checked ? 'evolution' : undefined });
           if (go === 'send') await API.action(S.project.id, { type: 'proposal.send', prid: r.prid });
           S.propDraft = null; await loadProject(S.project.id); toast(go === 'send' ? 'Proposition envoyée. Le client est prévenu.' : 'Brouillon enregistré.'); } catch (err) { toast(err.message); } break; }
-      case 'accept': { const id2 = f.dataset.id; if (!$('#ac-ok-' + id2).checked) return fieldError('ac-ok-' + id2, 'Cochez la case pour accepter.'); if (v('ac-n-' + id2).length < 2) return fieldError('ac-n-' + id2, R('Écrivez votre nom pour signer.', 'Écris ton nom pour signer.'));
+      case 'accept': { const id2 = f.dataset.id; if (!$('#sg-ok-' + id2).checked) return fieldError('sg-ok-' + id2, 'Cochez la case pour accepter.'); if (v('sg-n-' + id2).length < 2) return fieldError('sg-n-' + id2, R('Écrivez votre nom pour signer.', 'Écris ton nom pour signer.'));
         if (S.preview) return toast('Aperçu : les actions sont désactivées.');
-        if (await act({ type: 'proposal.accept', prid: id2, agree: true, name: v('ac-n-' + id2) }, R('Proposition acceptée. Merci pour votre confiance !', 'Proposition acceptée. Merci pour ta confiance !'))) celebrate(); break; }
+        if (await act({ type: 'proposal.accept', prid: id2, agree: true, name: v('sg-n-' + id2), sig: padData(id2) }, R('Proposition acceptée. Merci pour votre confiance !', 'Proposition acceptée. Merci pour ta confiance !'))) celebrate(); break; }
       case 'decline': if (await act({ type: 'proposal.decline', prid: f.dataset.id, comment: v('dc-' + f.dataset.id) }, 'Réponse envoyée à l’équipe.')) { S.propDecline = null; render(); } break;
       case 'pin': { const t = v('pin-t'); if (!t) return fieldError('pin-t', R('Écrivez votre commentaire.', 'Écris ton commentaire.')); if (S.preview) return toast('Aperçu : les actions sont désactivées.');
         try { await API.action(S.project.id, { type: 'pin.add', img: S.zoom.key, x: S.zoom.at.x, y: S.zoom.at.y, text: t, version: ((S.project.versions || [])[0] || {}).label }); S.zoom.at = null; await loadProject(S.project.id); toast('Commentaire épinglé. L’équipe est prévenue.'); } catch (err) { toast(err.message); } break; }
@@ -1691,7 +1864,16 @@
       case 'tools': act({ type: 'project.tools', tools: [...f.querySelectorAll('[name=tl]:checked')].map((c) => c.value) }, 'Boîte à outils mise à jour.'); break;
       case 'tutorials': act({ type: 'project.tutorials', tutorials: lines(v('tu-l'), 3).map(([t, d, url]) => ({ t, d, url })) }, 'Vidéos enregistrées.'); break;
       case 'review': { const sc = Number((f.querySelector('[name=rv-s]:checked') || {}).value); if (!sc) return fieldError(f.querySelector('[name=rv-s]'), 'Choisissez une note de 1 à 5.'); if (S.preview) return toast('Aperçu : les actions sont désactivées.');
-        if (await act({ type: 'review.add', score: sc, text: v('rv-t'), public: $('#rv-p').checked }, R('Merci ! Votre avis est transmis à l’équipe.', 'Merci ! Ton avis est transmis à l’équipe.'))) S.rvScore = 0; break; }
+        if (sc <= 3) {
+          if (!v('rv-bad')) return fieldError('rv-bad', R('Dites-nous ce qui n’a pas fonctionné, même en quelques mots.', 'Dis-nous ce qui n’a pas fonctionné, même en quelques mots.'));
+          const axes = Object.fromEntries(Core.REVIEW_AXES.map(([k]) => [k, Number((f.querySelector(`[name=rv-a-${k}]:checked`) || {}).value) || 0]));
+          if (await act({ type: 'review.add', score: sc, survey: { bad: v('rv-bad'), good: v('rv-good'), phase: v('rv-ph'), recommend: v('rv-rec'), axes, call: $('#rv-call').checked } }, R('Merci, vos réponses sont transmises à l’équipe.', 'Merci, tes réponses sont transmises à l’équipe.'))) S.rvScore = 0;
+          break;
+        }
+        const google = e.submitter && e.submitter.value === 'google' && cfg().reviewUrl, txt = v('rv-t');
+        // Google s'ouvre tout de suite (avant l'attente réseau, sinon le navigateur bloque la fenêtre) ; le texte est copié pour être collé.
+        if (google) { if (txt) { try { navigator.clipboard.writeText(txt); } catch {} } window.open(cfg().reviewUrl, '_blank', 'noopener'); }
+        if (await act({ type: 'review.add', score: sc, text: txt, public: $('#rv-p').checked, google: !!google }, google ? R('Merci ! Collez votre texte sur Google.', 'Merci ! Colle ton texte sur Google.') : R('Merci ! Votre avis est transmis à l’équipe.', 'Merci ! Ton avis est transmis à l’équipe.'))) S.rvScore = 0; break; }
       case 'confirm': { const reg = (f.querySelector('[name=cf-reg]:checked') || {}).value; if (!reg) return fieldError(f.querySelector('[name=cf-reg]'), 'Choisissez le tutoiement ou le vouvoiement.');
         if (await act({ type: 'project.confirm', offer: (f.querySelector('[name=cf-offer]:checked') || {}).value, registre: reg, email: v('cf-e'), name: v('cf-n') }, 'Espace ouvert. Le client peut se connecter avec son e-mail.')) await loadProjects(); break; }
       case 'ext': act({ type: 'project.ext', abby: v('x-a'), drive: v('x-d'), ga4: v('x-g'), gsc: v('x-s'), figma: v('x-f') }, 'Enregistré.'); break;

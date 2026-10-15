@@ -66,6 +66,22 @@ const TOOLS = [
   { name: 'inviter', description: 'Donne accès à l’espace à une personne de plus chez le client (elle reçoit l’invitation).',
     inputSchema: { type: 'object', properties: { client, email: str, prenom: str }, required: ['client', 'email'] },
     run: async (a) => act(await findProject(a.client), { type: 'user.add', email: a.email, name: a.prenom }) },
+  { name: 'visio_pilotage', description: 'Évolution : fixe la prochaine visio de pilotage du client (et active l’abonnement si besoin). Ferme les demandes de changement de créneau.',
+    inputSchema: { type: 'object', properties: { client, quand: { type: 'string', description: 'Date et heure, ex. 2026-11-18T10:00' }, format: str }, required: ['client', 'quand'] },
+    run: async (a) => act(await findProject(a.client), { type: 'evo.set', active: true, meeting: { when: a.quand, mode: a.format || 'Visio de pilotage (45 min)' } }) },
+  { name: 'bilan_du_mois', description: 'Évolution : publie le bilan mensuel (titre, essentiel, chiffres, travail réalisé), avec le PDF complet si un chemin est donné.',
+    inputSchema: { type: 'object', properties: { client, mois: { type: 'string', description: 'AAAA-MM' }, titre: str, essentiel: str, chiffres: { type: 'array', items: { type: 'array', items: str }, description: '[valeur, libellé, écart]' }, realise: { type: 'array', items: { type: 'array', items: str }, description: '[titre, précision]' }, pdf: { type: 'string', description: 'Chemin du PDF du bilan' } }, required: ['client', 'mois', 'titre'] },
+    run: async (a) => { const id = await findProject(a.client); let fileId;
+      if (a.pdf) { const f = path.resolve(a.pdf); const r = await api(`/api/projects/${id}/files?name=${encodeURIComponent(path.basename(f))}&cat=Livrable`, { method: 'POST', raw: true, body: fs.readFileSync(f), headers: { 'content-type': 'application/octet-stream' } }); fileId = r.file && r.file.id; }
+      return act(id, { type: 'evo.report', month: a.mois, title: a.titre, summary: a.essentiel || '', stats: a.chiffres || [], done: a.realise || [], fileId }); } },
+  { name: 'axes', description: 'Évolution : remplace la liste des axes d’amélioration (titre, effet attendu, qui : u_louis, u_theo, u_clement, client ou both, échéance, statut todo/on/done, priorité).',
+    inputSchema: { type: 'object', properties: { client, axes: { type: 'array', items: { type: 'object', properties: { t: str, effect: str, who: str, due: str, status: { type: 'string', enum: ['todo', 'on', 'done'] }, priority: bool }, required: ['t'] } } }, required: ['client', 'axes'] },
+    run: async (a) => act(await findProject(a.client), { type: 'evo.set', axes: a.axes }) },
+  { name: 'faire_signer', description: 'Dépose un PDF (devis, contrat, offre Évolution) et demande au client de le signer en ligne dans son espace.',
+    inputSchema: { type: 'object', properties: { client, chemin: str, intitule: { type: 'string', description: 'ex. Offre Évolution 2027' }, categorie: { type: 'string', description: 'Devis ou Contrat' } }, required: ['client', 'chemin'] },
+    run: async (a) => { const id = await findProject(a.client), f = path.resolve(a.chemin);
+      const r = await api(`/api/projects/${id}/files?name=${encodeURIComponent(path.basename(f))}&cat=${encodeURIComponent(a.categorie || 'Contrat')}`, { method: 'POST', raw: true, body: fs.readFileSync(f), headers: { 'content-type': 'application/octet-stream' } });
+      return act(id, { type: 'file.signreq', fid: r.file.id, label: a.intitule || '' }); } },
   { name: 'action', description: 'Toute autre action de l’espace, au format de l’API (type + champs), pour ce que les autres outils ne couvrent pas.',
     inputSchema: { type: 'object', properties: { client, action: { type: 'object', description: 'ex. { "type": "val.request", "vid": "…" }' } }, required: ['client', 'action'] },
     run: async (a) => act(await findProject(a.client), a.action) }

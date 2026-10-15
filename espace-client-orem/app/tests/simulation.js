@@ -85,7 +85,7 @@ const text = async (p, t) => (await p.locator('#main').innerText()).includes(t);
     const p = await login(br, 'hugo@huchet-demorge.fr', { width: 390, height: 844 });
     P.notes.push('Accueil guidé (déjà vu) : ' + (await visible(p, '.ob')));
     await axe(p, 'Accueil projet livré (mobile)');
-    await task(P, p, 'Voir les résultats du site', async () => {}, () => visible(p, '.kpi'));
+    await task(P, p, 'Voir le dernier bilan mensuel', async () => {}, () => visible(p, '.rp-title'));
     await task(P, p, 'Préparer une fiche teaser pour un hôtel', async ({ click, fill }) => { await click('#main [data-tool=teaser]'); await fill('#tz-name', 'Hôtel 4 étoiles, Marais'); }, () => text(p, 'Marais'));
     await axe(p, 'Fiche teaser');
     await task(P, p, 'Demander une évolution (formulaires)', async ({ click, fill }) => { await click('[data-tool=""]'); await click('[data-tool=request]'); await fill('#rq-t', 'Ajouter le lien de l’annonce dans l’e-mail de contact.'); await click('form[data-form=request] button'); }, () => text(p, 'lien de l’annonce'));

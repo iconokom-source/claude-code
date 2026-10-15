@@ -150,16 +150,16 @@ const mock = http.createServer((req, res) => {
 
     // 4 bis. Figma : visuels du fichier Huchet dans la bibliothèque de Hugo
     const fg = await louis.call('/api/connectors/figma/sync', { method: 'POST', body: JSON.stringify({ projectId: 'p_huchet' }) });
-    const hp = await louis.project('p_huchet'), fa = hp.assets.filter((a) => a.figma);
+    const hpf = await louis.project('p_huchet'), fa = hpf.assets.filter((a) => a.figma);
     ok('Figma : 3 visuels importés (bento + 2 planches), pages hors sujet ignorées', fg.status === 200 && fa.length === 3 && !fa.some((a) => a.figma === '9:1'), JSON.stringify(fg.body));
     ok('Figma : planches dans l’ordre de lecture du fichier', fa.find((a) => a.title.endsWith('01')).figma === '2:1' && fa.find((a) => a.title.endsWith('02')).figma === '2:2');
     ok('Figma : images en PNG à 2x, jeton envoyé en en-tête', calls.some((c) => /\/figma\/images\/.*format=png&scale=2/.test(c.url) && c.headers['x-figma-token'] === 'test-figma'));
-    ok('Figma : aucun visuel ne renvoie vers le site de l’agence', !hp.assets.some((a) => /agence-orem\.fr/.test(a.url || '')));
+    ok('Figma : aucun visuel ne renvoie vers le site de l’agence', !hpf.assets.some((a) => /agence-orem\.fr/.test(a.url || '')));
     const n0 = calls.filter((c) => c.url.startsWith('/figma/img/')).length;
     await louis.call('/api/connectors/figma/sync', { method: 'POST', body: JSON.stringify({ projectId: 'p_huchet' }) });
     ok('Figma : fichier inchangé, rien n’est réimporté', calls.filter((c) => c.url.startsWith('/figma/img/')).length === n0 && (await louis.project('p_huchet')).assets.filter((a) => a.figma).length === 3);
-    const hugo = await session('hugo@huchet-demorge.fr');
-    const zr = await fetch(B + '/api/projects/p_huchet/export?part=biblio', { headers: { cookie: hugo.cookie } }), zb = Buffer.from(await zr.arrayBuffer());
+    const hugoS = await session('hugo@huchet-demorge.fr');
+    const zr = await fetch(B + '/api/projects/p_huchet/export?part=biblio', { headers: { cookie: hugoS.cookie } }), zb = Buffer.from(await zr.arrayBuffer());
     ok('Figma : Hugo télécharge tous les visuels en un ZIP', zr.status === 200 && zb.includes(Buffer.from('PNGFIGMA')) && zb.includes(Buffer.from('Bibliothèque/')) && !zb.includes(Buffer.from('Récapitulatif')));
 
     // 5. Bilan mensuel GA4 + Search Console
