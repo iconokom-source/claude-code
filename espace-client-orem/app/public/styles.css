@@ -867,3 +867,51 @@ fieldset.field legend{font-weight:500;margin-bottom:6px;padding:0}
 /* Version de test : un bandeau discret mais impossible à rater */
 .testbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:4px 12px;padding:6px 16px;background:#ff6200;color:#0b0b12;font-size:var(--t-xs);text-align:center}
 .testbar strong{text-transform:uppercase;letter-spacing:.06em}
+
+/* ---------- Tâches de l'équipe ---------- */
+.tk-bar{margin-bottom:16px}
+.tk-bar .filters{gap:12px;align-items:center}
+.tk-check,.tk-urgent,.tk-person{display:inline-flex;align-items:center;gap:8px;font-size:14px;min-height:44px;cursor:pointer}
+.tk-person{padding:0 12px;border:1px solid var(--line);border-radius:999px;min-height:40px}
+.tk-person:has(input:checked){border-color:var(--fg);background:var(--surface-2)}
+.tk-people{border:0;padding:0;margin:0}
+.tk-people legend{font-weight:500;font-size:14px;margin-bottom:8px}
+.tk-form{margin-bottom:16px;gap:14px}
+.tk-item .tk-form{margin:8px 0;box-shadow:none;border:1px solid var(--line)}
+.tk-ftitle{font-family:var(--serif);font-weight:400;font-size:20px;margin:0}
+.tk-group,.tk-col,.tk-done{margin-bottom:16px}
+.tk-gh,.tk-colh{font-size:15px;font-weight:600;margin:0 0 6px;display:flex;align-items:center;gap:8px}
+.tk-gh .num,.tk-colh .num,.tk-done .num{font-weight:500;color:var(--muted);font-size:13px}
+.tk-group.late .tk-gh{color:var(--bad)}
+.tk-latecount{color:var(--bad);font-weight:600}
+.tk-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.tk-item:first-child .tk-row{border-top:0}
+.tk-state{min-height:36px;border-radius:999px;border:1px solid var(--line);padding:0 28px 0 12px;font:inherit;font-size:13px;font-weight:500;background-color:var(--surface-2);color:var(--fg)}
+.tk-state.s-doing{background-color:var(--hl-soft);color:var(--hl);border-color:transparent}
+.tk-state.s-done{background-color:var(--ok-soft);color:var(--ok);border-color:transparent}
+.tk-main{all:unset;cursor:pointer;display:flex;flex-direction:column;gap:2px;min-width:0;min-height:44px;justify-content:center;border-radius:8px}
+.tk-main:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
+.tk-main .title{font-weight:500;display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.tk-main .sub{font-size:13px;color:var(--muted)}
+.tk-main .tk-note{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tk-main:hover .title{text-decoration:underline;text-underline-offset:3px}
+.tk-row.late .sub{color:var(--bad)}
+.tk-row.done .title{color:var(--muted);text-decoration:line-through}
+.tk-who{display:flex}
+.tk-ini{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:600;background:var(--night);color:var(--night-fg);border:2px solid var(--surface);margin-left:-6px}
+.tk-ini:first-child{margin-left:0}
+.tk-board{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:start}
+.tk-board .tk-row{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"main who" "state state"}
+.tk-board .tk-main{grid-area:main}.tk-board .tk-who{grid-area:who}.tk-board .tk-state{grid-area:state;justify-self:start}
+.tk-done summary{cursor:pointer;display:flex;gap:8px;align-items:center;justify-content:flex-start;min-height:44px}
+.tk-done[open] summary{margin-bottom:8px}
+@media (max-width:860px){
+  .tk-board{grid-template-columns:minmax(0,1fr)}
+  .tk-bar .filters{width:100%;flex-direction:column;align-items:stretch}
+  .tk-bar .filters select{width:100%}
+  .tk-bar .filters .cats{align-self:flex-start}
+  .tk-row{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"main who" "state state"}
+  .tk-main{grid-area:main}.tk-who{grid-area:who}.tk-state{grid-area:state;justify-self:start}
+}
+.btn.danger{color:var(--bad)}
+.filters .tk-check input{flex:none;width:auto}

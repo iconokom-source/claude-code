@@ -86,6 +86,8 @@
       outbox: () => j('/api/outbox'),
       digest: () => j('/api/digest', { method: 'POST' }),
       settings: (b) => j('/api/settings', { method: 'POST', body: JSON.stringify(b) }),
+      tasks: () => j('/api/tasks'),
+      task: (b) => j('/api/tasks', { method: 'POST', body: JSON.stringify(b) }),
       connectors: () => j('/api/connectors'),
       testMail: (kind) => j('/api/test/mail', { method: 'POST', body: JSON.stringify({ kind }) }),
       check: (name) => j('/api/connectors/' + name + '/check', { method: 'POST', body: '{}' }),
@@ -138,6 +140,8 @@
       setPrefs: (p) => { const r = Core.setPrefs(store, me, p); if (r.ok) me.notify = r.notify; return r.error ? fail(r.error) : wait(r); },
       outbox: () => wait({ enabled: false, items: store.outbox }),
       settings: (b) => { const r = Core.setSettings(store, me, b); return r.error ? fail(r.error) : wait(r); },
+      tasks: () => { const r = Core.teamTasks(store, me); return r.error ? fail(r.error) : wait(r); },
+      task: (b) => { const r = Core.taskAct(store, me, b); mail(r); return r.error ? fail(r.error) : wait({ ok: true, task: r.task }); },
       testMail: () => wait({ sent: false, error: 'démo : rien n’est envoyé' }),
       check: () => wait({ ok: false, message: 'Démo : aucun outil n’est branché.' }),
       connectors: () => wait({ connectors: [['pipedrive', 'Pipedrive'], ['abby', 'Abby'], ['qonto', 'Qonto'], ['google', 'Google Drive'], ['figma', 'Figma'], ['claude', 'Assistant (API Claude)']].map(([id, label]) => ({ id, label, configured: false, missing: [], does: 'Non connecté dans la démo' })) }),
@@ -210,17 +214,17 @@
   function shell(content) {
     const p = S.project;
     const admin = !clientMode();
-    const link = ([id, l, i]) => `<a href="#${id}" data-go="${id}" ${S.view === id || (id === 'clients' && S.view === 'admin') ? 'aria-current="page"' : ''}>${ic(i)}<span>${l}</span>${id === 'valider' && pending() + propsSent() ? `<span class="badge" aria-label="${pending() + propsSent()} à valider">${pending() + propsSent()}</span>` : ''}${id === 'messages' && unread() ? `<span class="badge" aria-label="${unread()} non lus">${unread()}</span>` : ''}${id === 'inbox' && todoInbox() ? `<span class="badge" aria-label="${todoInbox()} à traiter">${todoInbox()}</span>` : ''}</a>`;
+    const link = ([id, l, i]) => `<a href="#${id}" data-go="${id}" ${S.view === id || (id === 'clients' && S.view === 'admin') ? 'aria-current="page"' : ''}>${ic(i)}<span>${l}</span>${id === 'valider' && pending() + propsSent() ? `<span class="badge" aria-label="${pending() + propsSent()} à valider">${pending() + propsSent()}</span>` : ''}${id === 'messages' && unread() ? `<span class="badge" aria-label="${unread()} non lus">${unread()}</span>` : ''}${id === 'inbox' && todoInbox() ? `<span class="badge" aria-label="${todoInbox()} à traiter">${todoInbox()}</span>` : ''}${id === 'taches' && myUrgent() ? `<span class="badge" aria-label="${myUrgent()} pour aujourd’hui ou en retard">${myUrgent()}</span>` : ''}</a>`;
     const groups = admin
-      ? [['Au quotidien', [['inbox', 'Boîte de réception', 'mail'], ['clients', 'Clients', 'team']]], ['Gérer', [['nouveau', 'Nouvel espace client', 'plus'], ['reglages', 'Réglages', 'gear']]]]
+      ? [['Au quotidien', [['inbox', 'Boîte de réception', 'mail'], ['taches', 'Tâches de l’équipe', 'check'], ['clients', 'Clients', 'team']]], ['Gérer', [['nouveau', 'Nouvel espace client', 'plus'], ['reglages', 'Réglages', 'gear']]]]
       : prospect() ? [['Ma proposition', [['accueil', 'Accueil', 'home'], ['valider', 'À valider', 'ok']]], ['Échanges', [['messages', 'Messages', 'chat']]]]
       : [['Mon projet', [['accueil', 'Accueil', 'home'], ['projet', 'Étapes', 'map'], ['valider', 'À valider', 'ok'], ['maquettes', 'Maquettes et visuels', 'figma']]],
          ['Échanges', [['messages', 'Messages', 'chat'], ['fichiers', 'Fichiers et factures', 'folder']]],
          ...((p && visibleTools(p).length) ? [['Outils', [['outils', 'Boîte à outils', 'plus']]]] : [])];
     const navHtml = groups.map(([t, items]) => `<div class="sec">${t}</div>${items.map(link).join('')}`).join('') + (!admin && p && !prospect() ? evoNav(p) : '');
-    const tabs = admin ? [['inbox', 'Réception', 'mail'], ['clients', 'Clients', 'team'], ['compose', 'Ajouter', 'plus'], ['reglages', 'Réglages', 'gear']] : [['accueil', 'Accueil', 'home'], ['valider', 'À valider', 'ok'], ['messages', 'Messages', 'chat'], ['fichiers', 'Fichiers', 'folder'], ['plus', 'Plus', 'menu']];
+    const tabs = admin ? [['inbox', 'Réception', 'mail'], ['taches', 'Tâches', 'check'], ['clients', 'Clients', 'team'], ['compose', 'Ajouter', 'plus'], ['reglages', 'Réglages', 'gear']] : [['accueil', 'Accueil', 'home'], ['valider', 'À valider', 'ok'], ['messages', 'Messages', 'chat'], ['fichiers', 'Fichiers', 'folder'], ['plus', 'Plus', 'menu']];
     const tabHtml = tabs.map(([id, l, i]) => { const cur = id === 'plus' ? ['plus', 'projet', 'maquettes', 'documents', 'outils', 'biblio', 'equipe', 'preferences', 'evolution'].includes(S.view) : S.view === id || (id === 'clients' && S.view === 'admin');
-      return `<a href="#${id}" data-go="${id}" ${cur ? 'aria-current="page"' : ''}>${ic(i)}<span>${l}</span>${id === 'inbox' && todoInbox() ? `<span class="badge">${todoInbox()}<span class="sr"> à traiter</span></span>` : ''}${id === 'messages' && unread() ? `<span class="badge">${unread()}</span>` : ''}${id === 'valider' && pending() + propsSent() ? `<span class="badge">${pending() + propsSent()}<span class="sr"> à valider</span></span>` : ''}</a>`; }).join('');
+      return `<a href="#${id}" data-go="${id}" ${cur ? 'aria-current="page"' : ''}>${ic(i)}<span>${l}</span>${id === 'inbox' && todoInbox() ? `<span class="badge">${todoInbox()}<span class="sr"> à traiter</span></span>` : ''}${id === 'taches' && myUrgent() ? `<span class="badge">${myUrgent()}<span class="sr"> pour aujourd’hui ou en retard</span></span>` : ''}${id === 'messages' && unread() ? `<span class="badge">${unread()}</span>` : ''}${id === 'valider' && pending() + propsSent() ? `<span class="badge">${pending() + propsSent()}<span class="sr"> à valider</span></span>` : ''}</a>`; }).join('');
     let card;
     if (admin) {
       const waiting = mineProjects().filter((x) => waitingOf(x).who === 'agence' || waitingOf(x).both).length;
@@ -1143,8 +1147,8 @@
 
 
   /* ---------- Équipe : boîte de réception ---------- */
-  const TYPE_ICO = { files: 'up', messages: 'chat', validations: 'ok', requests: 'plus', activity: 'eye' };
-  const TYPE_LBL = { files: 'Fichier', messages: 'Message', validations: 'Validation', requests: 'Demande', activity: 'Activité' };
+  const TYPE_ICO = { files: 'up', messages: 'chat', validations: 'ok', requests: 'plus', tasks: 'check', activity: 'eye' };
+  const TYPE_LBL = { files: 'Fichier', messages: 'Message', validations: 'Validation', requests: 'Demande', tasks: 'Tâche', activity: 'Activité' };
   const unreadInbox = () => (S.inbox || []).filter((n) => !n.read).length;
   const todoInbox = () => (S.inbox || []).filter((n) => n.todo).length;
   const ago = (d) => { const m = Math.round((Date.now() - new Date(d)) / 6e4); if (m < 1) return 'à l’instant'; if (m < 60) return `il y a ${m} min`; const h = Math.round(m / 60); if (h < 24) return `il y a ${h} h`; const j = Math.round(h / 24); return j === 1 ? 'hier' : `il y a ${j} jours`; };
@@ -1173,10 +1177,82 @@
         : `<div class="empty big" style="border:0">${ic('ok')}<strong>${f === 'todo' ? 'Rien à traiter' : 'Rien ici'}</strong><span>${f === 'todo' ? 'Les messages, fichiers, demandes de modifications et demandes sur le site des clients arriveront ici' + (S.me.notify && S.me.notify.email !== 'off' ? ', et par e-mail selon vos réglages' : '') + '.' : 'Aucune notification avec ces filtres.'}</span></div>`}</section>`;
   }
 
+  /* ---------- Équipe : tâches ----------
+     Comme « Programme & Livrables » dans Notion, mais pour toute l'équipe et tous les clients :
+     les tâches internes et les livrables des projets, par personne, par échéance et par état. */
+  const TK_STATES = [['todo', 'Pas commencé'], ['doing', 'En cours'], ['done', 'Fait']];
+  const tkState = () => ({ who: 'me', client: '', items: true, layout: 'list', edit: null, ...(S.tk || {}) });
+  async function loadTasks() { try { S.tasks = (await API.tasks()).tasks; } catch { S.tasks = []; } }
+  const dayStart = (d = new Date()) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x.getTime(); };
+  function tkWhen(t) {
+    if (!t.due) return 'none';
+    const d = dayStart(t.due), today = dayStart(), wk = today + (7 - ((new Date().getDay() + 6) % 7)) * 864e5;
+    return d < today ? 'late' : d === today ? 'today' : d < wk ? 'week' : 'later';
+  }
+  const myUrgent = () => (S.tasks || []).filter((t) => t.status !== 'done' && t.who.includes(S.me.id) && ['late', 'today'].includes(tkWhen(t))).length;
+  const firstName = (id) => { const u = (S.team || []).find((x) => x.id === id); return u ? u.name.split(' ')[0] : ''; };
+  function tkList() {
+    const k = tkState();
+    return (S.tasks || []).filter((t) => (k.who === 'all' || t.who.includes(k.who === 'me' ? S.me.id : k.who))
+      && (!k.client || (k.client === 'interne' ? !t.projectId : t.projectId === k.client)) && (k.items || t.kind === 'task'));
+  }
+  function tkForm(t) {
+    const item = t && t.kind === 'item', id = t ? t.id : 'new', d = t && t.due ? new Date(t.due) : null;
+    const dv = d ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` : '';
+    const who = t ? t.who : [tkState().who === 'all' || tkState().who === 'me' ? S.me.id : tkState().who];
+    const pid = t ? t.projectId : (tkState().client && tkState().client !== 'interne' ? tkState().client : '');
+    return `<form class="panel form tk-form" data-form="teamtask" data-id="${esc(id)}" aria-label="${t ? 'Modifier la tâche' : 'Nouvelle tâche'}">
+      ${item ? `<p class="small muted">Livrable de ${esc(t.client)} · ${esc(t.step)}. Le titre se change dans le planning du client.</p><h3 class="tk-ftitle">${esc(t.t)}</h3>`
+        : `<div class="field"><label for="tk-t">Tâche</label><input id="tk-t" type="text" maxlength="160" value="${esc(t ? t.t : '')}" placeholder="Ex. : relancer le devis, préparer le bilan du mois" required></div>`}
+      <fieldset class="field tk-people"><legend>Personnes</legend><div class="inline">${(S.team || []).map((u) => `<label class="tk-person"><input type="checkbox" name="tk-w" value="${esc(u.id)}" ${who.includes(u.id) ? 'checked' : ''}> ${esc(u.name.split(' ')[0])}</label>`).join('')}</div></fieldset>
+      <div class="line"><div class="field"><label for="tk-d">Échéance</label><input id="tk-d" type="date" value="${dv}"></div>
+        <div class="field"><label for="tk-s">État</label><select id="tk-s">${TK_STATES.map(([v, l]) => `<option value="${v}" ${(t ? t.status : 'todo') === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+        ${item ? '' : `<div class="field"><label for="tk-p">Client</label><select id="tk-p"><option value="">Aucun (tâche interne)</option>${(S.projects || []).filter((p) => !p.archivedAt).map((p) => `<option value="${esc(p.id)}" ${pid === p.id ? 'selected' : ''}>${esc(p.client)}</option>`).join('')}</select></div>`}</div>
+      ${item ? '' : `<div class="field"><label for="tk-n">Note <span class="muted">(facultatif)</span></label><textarea id="tk-n" rows="2" maxlength="2000">${esc(t ? t.note || '' : '')}</textarea></div>
+      <label class="tk-urgent"><input type="checkbox" id="tk-u" ${t && t.urgent ? 'checked' : ''}> Urgent</label>`}
+      <div class="inline"><button class="btn btn-primary" type="submit">${t ? 'Enregistrer' : 'Ajouter la tâche'}</button><button class="btn btn-line" type="button" data-act="tkcancel">Annuler</button>
+        ${item ? `<button class="btn btn-line" type="button" data-act="tkopen" data-id="${esc(t.projectId)}">${ic('map')}Ouvrir le planning de ${esc(t.client)}</button>` : t ? `<button class="btn btn-line danger" type="button" data-act="tkdel" data-id="${esc(t.id)}">Supprimer</button>` : ''}</div></form>`;
+  }
+  function tkRow(t) {
+    const w = tkWhen(t), k = tkState(), late = w === 'late' && t.status !== 'done';
+    const sub = [t.client || 'Interne', t.kind === 'item' ? t.step : '', t.due ? (late ? 'en retard, prévu le ' : 'pour le ') + fmt(t.due, { weekday: 'short', day: 'numeric', month: 'short' }) : 'sans échéance'].filter(Boolean).join(' · ');
+    if (k.edit === t.id) return `<li class="tk-item">${tkForm(t)}</li>`;
+    return `<li class="tk-item"><div class="tk-row ${t.status === 'done' ? 'done' : ''} ${late ? 'late' : ''}">
+      <label class="sr" for="tks-${esc(t.id)}">État de « ${esc(t.t)} »</label>
+      <select id="tks-${esc(t.id)}" class="tk-state s-${t.status}" data-tkstate="${esc(t.id)}">${TK_STATES.map(([v, l]) => `<option value="${v}" ${t.status === v ? 'selected' : ''}>${l}</option>`).join('')}</select>
+      <button class="tk-main" data-tkedit="${esc(t.id)}"><span class="title">${esc(t.t)}${t.urgent && t.status !== 'done' ? ' <span class="chip bad">Urgent</span>' : ''}${t.kind === 'item' ? ' <span class="chip idle">Livrable</span>' : ''}${t.review ? ' <span class="chip hl">Chez le client</span>' : ''}</span><span class="sub">${esc(sub)}</span>${t.note ? `<span class="sub tk-note">${esc(t.note)}</span>` : ''}<span class="sr">, modifier</span></button>
+      <span class="tk-who" aria-label="Personnes : ${esc(t.who.map(firstName).join(', '))}">${t.who.map((id) => `<span class="tk-ini" title="${esc(firstName(id))}" aria-hidden="true">${esc(firstName(id).slice(0, 1))}</span>`).join('')}</span></div></li>`;
+  }
+  function vTaches() {
+    const k = tkState(), list = tkList(), open = list.filter((t) => t.status !== 'done'), done = list.filter((t) => t.status === 'done');
+    const order = (a, b) => (a.due ? new Date(a.due) : 9e15) - (b.due ? new Date(b.due) : 9e15) || (b.urgent ? 1 : 0) - (a.urgent ? 1 : 0);
+    const groups = [['late', 'En retard'], ['today', 'Aujourd’hui'], ['week', 'Cette semaine'], ['later', 'Plus tard'], ['none', 'Sans échéance']]
+      .map(([g, l]) => [g, l, open.filter((t) => tkWhen(t) === g).sort(order)]).filter((x) => x[2].length);
+    const people = [['me', 'Mes tâches'], ['all', 'Toute l’équipe'], ...(S.team || []).filter((u) => u.id !== S.me.id).map((u) => [u.id, u.name.split(' ')[0]])];
+    const count = (w) => (S.tasks || []).filter((t) => t.status !== 'done' && (w === 'all' || t.who.includes(w === 'me' ? S.me.id : w))).length;
+    const lateN = open.filter((t) => tkWhen(t) === 'late').length;
+    const body = k.layout === 'board'
+      ? `<div class="tk-board">${TK_STATES.map(([v, l]) => { const col = list.filter((t) => t.status === v).sort(order); return `<section class="panel tk-col"><h2 class="tk-colh">${l} <span class="num">${col.length}</span></h2><ul class="list plain">${col.map(tkRow).join('') || '<li class="muted small">Rien ici.</li>'}</ul></section>`; }).join('')}</div>`
+      : `${groups.map(([g, l, ts]) => `<section class="panel tk-group ${g}"><h2 class="tk-gh">${l} <span class="num">${ts.length}</span></h2><ul class="list plain">${ts.map(tkRow).join('')}</ul></section>`).join('')
+        || `<section class="panel"><div class="empty big" style="border:0">${ic('ok')}<strong>Rien à faire ici</strong><span>Ajoutez une tâche, ou changez de personne ou de client.</span></div></section>`}
+        ${done.length ? `<details class="panel tk-done"><summary><strong>Fait</strong> <span class="num">${done.length}</span> <span class="muted small">(30 derniers jours)</span></summary><ul class="list plain">${done.sort((a, b) => new Date(b.doneAt || b.due || 0) - new Date(a.doneAt || a.due || 0)).map(tkRow).join('')}</ul></details>` : ''}`;
+    return `<div class="head"><div><h1>Tâches de l’équipe</h1><p class="lead">Les tâches internes et les livrables de tous les clients, au même endroit${lateN ? ` · <strong class="tk-latecount">${lateN} en retard</strong>` : ''}</p></div>
+      <div class="head-actions"><button class="btn btn-primary" data-act="tknew">${ic('plus')}Nouvelle tâche</button></div></div>
+      ${k.edit === 'new' ? tkForm(null) : ''}
+      <div class="inbox-bar tk-bar"><div class="cats" role="group" aria-label="Personne">${people.map(([w, l]) => `<button class="cat" data-tkwho="${esc(w)}" aria-pressed="${k.who === w}"><strong>${esc(l)}</strong><span class="num">${count(w)}</span></button>`).join('')}</div>
+        <div class="inline filters"><label class="sr" for="tk-fc">Client</label><select id="tk-fc" data-tkfilter="client"><option value="">Tous les clients</option><option value="interne" ${k.client === 'interne' ? 'selected' : ''}>Interne (sans client)</option>${(S.projects || []).filter((p) => !p.archivedAt).map((p) => `<option value="${esc(p.id)}" ${k.client === p.id ? 'selected' : ''}>${esc(p.client)}</option>`).join('')}</select>
+          <label class="tk-check"><input type="checkbox" id="tk-fi" data-tkfilter="items" ${k.items ? 'checked' : ''}> Livrables des projets</label>
+          <div class="cats" role="group" aria-label="Affichage"><button class="cat" data-tklayout="list" aria-pressed="${k.layout === 'list'}">Liste</button><button class="cat" data-tklayout="board" aria-pressed="${k.layout === 'board'}">Tableau</button></div></div></div>
+      ${body}`;
+  }
+  async function tkSave(body, msg) {
+    try { await API.task(body); await loadTasks(); if (msg) toast(msg); render(); return true; } catch (err) { toast(err.message); return false; }
+  }
+
   /* ---------- Équipe : réglages ---------- */
   function vReglages() {
     const n = S.me.notify || { email: 'instant', events: {} };
-    const ev = [['files', 'Un client dépose un fichier'], ['messages', 'Un client écrit ou envoie un message'], ['validations', 'Un client valide ou demande des modifications'], ['requests', 'Un client fait une demande sur son site'], ['activity', 'Un collègue publie quelque chose dans un de mes projets']];
+    const ev = [['files', 'Un client dépose un fichier'], ['messages', 'Un client écrit ou envoie un message'], ['validations', 'Un client valide ou demande des modifications'], ['requests', 'Un client fait une demande sur son site'], ['tasks', 'Un collègue me confie une tâche'], ['activity', 'Un collègue publie quelque chose dans un de mes projets']];
     const ob = S.outbox || { items: [] };
     return `<div class="head"><div><h1>Réglages</h1><p class="lead">${esc(S.me.name)} · ${esc(S.me.email)}</p></div><div class="head-actions"><button class="btn btn-line" data-act="logout">${ic('out')}Se déconnecter</button><button class="btn btn-line" data-act="logout-all">Déconnecter tous mes appareils</button></div></div>
       <form class="panel form" data-form="prefs" data-autosave="submit"><div class="panel-head" style="margin:0"><h2>${ic('mail')}Mes notifications par e-mail</h2><span class="aside">Dans la boîte de réception, vous voyez toujours tout</span></div>
@@ -1592,7 +1668,7 @@
   const root = $('#root');
   /* Focus : on retrouve l'élément actif après chaque rendu (par id ou par ses attributs data-*),
      on enferme le focus dans un dialogue ouvert et on le rend au déclencheur à la fermeture. */
-  const KEYS = ['data-go', 'data-act', 'data-id', 'data-tab', 'data-cat', 'data-bk', 'data-inbox', 'data-mine', 'data-ckind', 'data-tool', 'data-notif', 'data-open', 'data-item', 'data-itemdate', 'data-inv', 'data-req', 'data-handover', 'data-mail', 'data-tz'];
+  const KEYS = ['data-tkwho', 'data-tklayout', 'data-tkedit', 'data-tkstate', 'data-go', 'data-act', 'data-id', 'data-tab', 'data-cat', 'data-bk', 'data-inbox', 'data-mine', 'data-ckind', 'data-tool', 'data-notif', 'data-open', 'data-item', 'data-itemdate', 'data-inv', 'data-req', 'data-handover', 'data-mail', 'data-tz'];
   function keyOf(el) {
     if (!el || el === document.body || !root.contains(el)) return null;
     if (el.id) return '#' + CSS.escape(el.id);
@@ -1604,7 +1680,7 @@
     return null;
   }
   const dialogOpen = () => !!(S.ob || S.zoom || S.compose || S.mailView || S.fview || S.docView);
-  const TITLES = { evolution: 'Évolution', demarrer: 'Bien démarrer', preferences: 'Mes notifications', proposition: 'Proposition', accueil: 'Accueil', projet: 'Étapes', valider: 'À valider', maquettes: 'Maquettes', messages: 'Messages', fichiers: 'Fichiers', documents: 'Devis et factures', outils: 'Boîte à outils', biblio: 'Bibliothèque', equipe: 'Équipe et aide', plus: 'Plus', inbox: 'Boîte de réception', reglages: 'Réglages', clients: 'Clients', nouveau: 'Nouvel espace client' };
+  const TITLES = { evolution: 'Évolution', demarrer: 'Bien démarrer', preferences: 'Mes notifications', proposition: 'Proposition', accueil: 'Accueil', projet: 'Étapes', valider: 'À valider', maquettes: 'Maquettes', messages: 'Messages', fichiers: 'Fichiers', documents: 'Devis et factures', outils: 'Boîte à outils', biblio: 'Bibliothèque', equipe: 'Équipe et aide', plus: 'Plus', inbox: 'Boîte de réception', taches: 'Tâches de l’équipe', reglages: 'Réglages', clients: 'Clients', nouveau: 'Nouvel espace client' };
   let wasDialog = false;
   /* onlyMain : seule la zone principale change (filtre, question rapide) ; la barre latérale et le reste ne sont pas reconstruits. */
   function render(focus, onlyMain) {
@@ -1619,7 +1695,7 @@
       if (!V[S.view]) S.view = 'accueil';
       if (wrap) wrap.innerHTML = wrapHtml(V[S.view]()); else root.innerHTML = shell(V[S.view]()) + bellPop() + (S.ob ? onboarding() : '') + lightbox() + filePreview() + docPreview();
     } else {
-      const V = { inbox: vInbox, reglages: vReglages, clients: vClients, nouveau: vNouveau, admin: vAdmin };
+      const V = { inbox: vInbox, taches: vTaches, reglages: vReglages, clients: vClients, nouveau: vNouveau, admin: vAdmin };
       if (!V[S.view] || (S.view === 'admin' && !S.project)) S.view = 'inbox';
       if (wrap) wrap.innerHTML = wrapHtml(V[S.view]()); else root.innerHTML = shell(V[S.view]()) + composer() + mailPreview();
     }
@@ -1652,17 +1728,19 @@
     S.bellOpen = false;
     if (v === 'compose') return openCompose();
     if (v === 'inbox' && isAdmin()) { await loadInbox(); await loadProjects(); }
+    if (v === 'taches' && isAdmin()) { await loadTasks(); await loadProjects(); }
     if (v === 'reglages' && isAdmin()) { try { S.outbox = await API.outbox(); } catch { S.outbox = null; } try { S.connectors = (await API.connectors()).connectors; } catch { S.connectors = []; } }
     if (v === 'clients' && isAdmin() && !S.preview) { S.project = null; await loadProjects(); }
     // Côté client, chaque changement de vue reprend les dernières données (une étape publiée par l'équipe apparaît tout de suite).
     if (!isAdmin() && S.project && !S.preview) { try { const r = await API.project(S.project.id); S.project = r.project; S.people = r.people || S.people; } catch {} }
+    // Messages lus avant l'affichage : un second rendu effacerait ce que le client commence à écrire.
+    if (v === 'messages' && S.project && !isAdmin() && unread() && !S.preview) { try { await API.action(S.project.id, { type: 'msg.read' }); const r = await API.project(S.project.id); S.project = r.project; } catch {} }
     S.view = v; S.valForm = null; S.tool = v === 'outils' ? S.tool : null; render(true);
     if (S.toBiblio) { S.toBiblio = false; const b = document.getElementById('biblio'); if (b) { b.scrollIntoView({ block: 'start' }); const h = b.querySelector('h2'); if (h) { h.setAttribute('tabindex', '-1'); h.focus({ preventScroll: true }); } } }
-    if (v === 'messages' && S.project && (isAdmin() ? false : unread()) && !S.preview) { try { await API.action(S.project.id, { type: 'msg.read' }); await loadProject(S.project.id); } catch {} }
   }
   async function enter() {
     const r = await API.me(); S.me = r.user; S.team = r.team || []; S.config = r.config || {};
-    if (S.me.role === 'admin') { await loadProjects(); await loadInbox(); S.view = 'inbox'; S.project = null; try { S.connectors = (await API.connectors()).connectors; } catch { S.connectors = []; } }
+    if (S.me.role === 'admin') { await loadProjects(); await loadInbox(); await loadTasks(); S.view = 'inbox'; S.project = null; try { S.connectors = (await API.connectors()).connectors; } catch { S.connectors = []; } }
     else { await loadInbox(); await loadProjects(); if (S.projects[0]) { const d = await API.project(S.projects[0].id); S.project = d.project; S.people = d.people || {}; } S.view = 'accueil'; if (S.project && !S.me.onboardedAt) S.ob = { step: 0 }; orderTeam(); }
     S.loading = false; render(); window.scrollTo(0, 0);
     // Mise en ligne récente : une célébration, une seule fois par appareil.
@@ -1752,6 +1830,8 @@
   function copyHtml(h, ok) { try { navigator.clipboard.write([new ClipboardItem({ 'text/html': new Blob([h], { type: 'text/html' }), 'text/plain': new Blob([h.replace(/<[^>]+>/g, ' ')], { type: 'text/plain' }) })]).then(() => toast(ok), () => copyText(h, ok)); } catch { copyText(h, ok); } }
   document.addEventListener('change', async (e) => {
     const t = e.target;
+    if (t.matches('[data-tkstate]')) { const task = (S.tasks || []).find((x) => x.id === t.dataset.tkstate); await tkSave({ type: 'todo.update', id: t.dataset.tkstate, status: t.value }, t.value === 'done' ? `Fait : ${task ? task.t : 'tâche'}.` : null); return; }
+    if (t.matches('[data-tkfilter]')) { S.tk = { ...tkState(), [t.dataset.tkfilter]: t.type === 'checkbox' ? t.checked : t.value }; render(false, true); return; }
     if (t.matches('[data-cproject]')) { S.compose.projectId = t.value; S.compose.full = t.value ? (await API.project(t.value)).project : null; render(); return; }
     if (t.id === 'c-file' && t.files.length) { composeFiles([...t.files]); t.value = ''; return; }
     if (t.dataset.logo && t.files.length) { const f = t.files[0]; t.value = '';
@@ -1782,12 +1862,15 @@
     if (t.name === 'rv-s') { S.rvScore = Number(t.value); const txt = ($('#rv-t') || {}).value, pub = ($('#rv-p') || {}).checked; render(); if ($('#rv-t')) { $('#rv-t').value = txt || ''; $('#rv-p').checked = !!pub; } const r = document.querySelector(`[name=rv-s][value="${S.rvScore}"]`); r && r.focus(); }
   });
   document.addEventListener('click', async (e) => {
+    const tw = e.target.closest('[data-tkwho]'); if (tw) { S.tk = { ...tkState(), who: tw.dataset.tkwho }; return render(false, true); }
+    const tly = e.target.closest('[data-tklayout]'); if (tly) { S.tk = { ...tkState(), layout: tly.dataset.tklayout }; return render(false, true); }
+    const te = e.target.closest('[data-tkedit]'); if (te) { S.tk = { ...tkState(), edit: te.dataset.tkedit }; render(); const f = $('#tk-t') || $('#tk-d'); if (f) f.focus(); return; }
     const g = e.target.closest('[data-go]'); if (g) { e.preventDefault(); return go(g.dataset.go); }
     const o = e.target.closest('[data-open]'); if (o) return openProject(o.dataset.open);
     const cn = e.target.closest('[data-cnotif]'); if (cn) { const n = (S.inbox || []).find((x) => x.id === cn.dataset.cnotif); try { await API.readNotif(n.id); } catch {} n.read = true; S.bellOpen = false; return go((n.go && n.go.view) || 'accueil'); }
     const ft = e.target.closest('[data-ftab]'); if (ft) { S.ftab = ft.dataset.ftab; return render(false, true); }
     if (S.bellOpen && !e.target.closest('#bell-pop, [data-act=bell]')) { S.bellOpen = false; render(); }
-    const nt = e.target.closest('[data-notif]'); if (nt) { const n = S.inbox.find((x) => x.id === nt.dataset.notif); try { await API.readNotif(n.id); } catch {} n.read = true; await openProject(n.projectId); S.tab = (n.go && n.go.tab) || 'pilotage'; render(true); if (S.tab === 'messages') markAgencyRead(); return; }
+    const nt = e.target.closest('[data-notif]'); if (nt) { const n = S.inbox.find((x) => x.id === nt.dataset.notif); try { await API.readNotif(n.id); } catch {} n.read = true; if (n.go && n.go.view === 'taches') { S.tk = { ...tkState(), edit: n.tid || null }; return go('taches'); } await openProject(n.projectId); S.tab = (n.go && n.go.tab) || 'pilotage'; render(true); if (S.tab === 'messages') markAgencyRead(); return; }
     const ib = e.target.closest('[data-inbox]'); if (ib) { S.inboxFilter = ib.dataset.inbox; return render(false, true); }
     const mn = e.target.closest('[data-mine]'); if (mn) { S.mine = mn.dataset.mine === '1'; return render(false, true); }
     const ck = e.target.closest('[data-ckind]'); if (ck) { S.compose.kind = ck.dataset.ckind; render(); return; }
@@ -1810,6 +1893,10 @@
       case 'fview-close': if (e.target.closest('video, iframe, img, a')) return; S.fview = null; S.docView = null; render(); break;
       case 'doc-view': S.docView = { src: a.dataset.src, title: a.dataset.title }; render(); break;
       case 'testmail': { a.disabled = true; try { const r = await API.testMail(id); toast(r.sent ? `E-mail envoyé depuis ${r.from} à ${S.me.email}. Regardez votre boîte de réception.` : `Non envoyé : ${r.error || 'envoi désactivé'}`); } catch (err) { toast(err.message); } a.disabled = false; try { S.outbox = await API.outbox(); render(false, true); } catch {} break; }
+      case 'tknew': S.tk = { ...tkState(), edit: 'new' }; render(); ($('#tk-t') || {}).focus && $('#tk-t').focus(); break;
+      case 'tkcancel': { const was = tkState().edit; S.tk = { ...tkState(), edit: null }; render(); const b = was && was !== 'new' ? root.querySelector(`[data-tkedit="${CSS.escape(was)}"]`) : $('[data-act=tknew]'); if (b) b.focus(); break; }
+      case 'tkopen': S.tk = { ...tkState(), edit: null }; await openProject(id); S.tab = 'pilotage'; render(true); break;
+      case 'tkdel': { const t = (S.tasks || []).find((x) => x.id === id); if (!confirm(`Supprimer la tâche « ${t ? t.t : ''} » ?`)) break; S.tk = { ...tkState(), edit: null }; await tkSave({ type: 'todo.remove', id }, 'Tâche supprimée.'); break; }
       case 'ccheck': { a.disabled = true; const old = a.textContent; a.textContent = 'Test…'; try { const r = await API.check(id); toast((r.ok ? 'Connexion réussie. ' : 'Échec. ') + r.message); } catch (err) { toast(err.message); } a.disabled = false; a.textContent = old; break; }
       case 'file-remove-own': if (await act({ type: 'file.remove', fid: id }, 'Fichier retiré.')) render(); break;
       case 'bell': S.bellOpen = !S.bellOpen; render(); if (S.bellOpen) { const f = document.querySelector('#bell-pop button, #bell-pop a'); f && f.focus(); } break;
@@ -2001,6 +2088,20 @@
         try { const r = await API.ask(S.project.id, q); S.askA = r.answer || R('Je ne trouve pas la réponse dans le projet. Écrivez à l’équipe depuis Messages, elle répond sous 24 h ouvrées.', 'Je ne trouve pas la réponse dans le projet. Écris à l’équipe depuis Messages, elle répond sous 24 h ouvrées.'); } catch (err) { S.askA = err.message; }
         render(false, true); break; }
       case 'cprefs': if (await act({ type: 'user.prefs', mail: $('#cp-mail').checked, weekly: $('#cp-week').checked }, 'Préférences enregistrées.')) { S.me.prefs = { mail: $('#cp-mail') ? $('#cp-mail').checked : true, weekly: $('#cp-week') ? $('#cp-week').checked : true }; } break;
+      case 'teamtask': {
+        const id = f.dataset.id, isNew = id === 'new', item = id.startsWith('i:');
+        const who = [...f.querySelectorAll('[name=tk-w]:checked')].map((x) => x.value);
+        if (!who.length) { toast('Choisissez au moins une personne.'); break; }
+        if (!item && !v('tk-t')) return fieldError('tk-t', 'Écrivez la tâche.');
+        const body = { type: isNew ? 'todo.add' : 'todo.update', who, due: v('tk-d') ? v('tk-d') + 'T09:00:00' : '', status: v('tk-s') };
+        if (!isNew) body.id = id;
+        if (!item) Object.assign(body, { t: v('tk-t'), projectId: v('tk-p'), note: v('tk-n'), urgent: !!($('#tk-u') || {}).checked });
+        if (item && !body.due) delete body.due;
+        S.tk = { ...tkState(), edit: null };
+        if (await tkSave(body, isNew ? (who.some((w) => w !== S.me.id) ? 'Tâche ajoutée. Les personnes concernées sont prévenues.' : 'Tâche ajoutée.') : 'Tâche enregistrée.')) { const b = !isNew && root.querySelector(`[data-tkedit="${CSS.escape(id)}"]`); if (b) b.focus(); }
+        else { S.tk = { ...tkState(), edit: id }; render(); }
+        break;
+      }
       case 'settings': try { const r = await API.settings({ booking: v('st-b'), training: v('st-t'), reviewUrl: v('st-r'), welcomeLoom: v('st-w'), cgvUrl: v('st-g'), holder: v('st-h'), bank: v('st-k'), address: v('st-a'), iban: v('st-i'), bic: v('st-c') }); S.config = r.settings; render(); toast('Réglages de l’agence enregistrés.'); } catch (err) { toast(err.message); } break;
       case 'infos': act({ type: 'project.update', client: v('p-c'), projet: v('p-p'), contactName: v('p-ct'), golive: v('p-g') || undefined, registre: (f.querySelector('[name=p-r]:checked') || {}).value }, 'Infos enregistrées.'); break;
     }

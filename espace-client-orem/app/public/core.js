@@ -337,7 +337,15 @@
       N('u_clement', a, 'activity', 'Louis a demandé la validation du plan du site', 'u_louis', at(-2, 11), 'validations')
     ];
     notifications.push(hugoNotice);
-    return { users, projects: [a, b, c, d], notifications, outbox: [] };
+    // Tâches internes d'exemple (prospection, administratif, suivi client), à côté des livrables des projets.
+    const todos = [
+      { id: 'td1', t: 'Préparer le bilan d’octobre de Huchet-Demorge', who: ['u_theo'], due: at(3, 10), status: 'doing', projectId: 'p_huchet', note: 'Reprendre les chiffres GA4 et Search Console, et les 3 axes du mois.', urgent: false, by: 'u_louis', at: at(-2, 9), doneAt: null },
+      { id: 'td2', t: 'Relancer les prospects du salon', who: ['u_louis'], due: at(-1, 9), status: 'todo', projectId: null, note: '', urgent: true, by: 'u_louis', at: at(-5, 9), doneAt: null },
+      { id: 'td3', t: 'Mettre à jour le book avec les derniers projets', who: ['u_clement', 'u_louis'], due: at(9, 9), status: 'todo', projectId: null, note: '', urgent: false, by: 'u_clement', at: at(-1, 15), doneAt: null },
+      { id: 'td4', t: 'Envoyer les accès Search Console à Maison Lumen', who: ['u_theo'], due: null, status: 'todo', projectId: 'p_lumen', note: '', urgent: false, by: 'u_theo', at: at(-1, 11), doneAt: null },
+      { id: 'td5', t: 'Facturer l’acompte du Cabinet Varenne', who: ['u_louis'], due: at(-3, 9), status: 'done', projectId: 'p_varenne', note: '', urgent: false, by: 'u_louis', at: at(-6, 9), doneAt: at(-3, 16), doneBy: 'u_louis' }
+    ];
+    return { users, projects: [a, b, c, d], notifications, outbox: [], todos };
   }
 
   /* ---------- Lecture ---------- */
@@ -913,7 +921,7 @@
   const TAB = { files: 'fichiers', messages: 'messages', validations: 'validations', requests: 'demandes', activity: 'activite' };
   const CLIENT_VIEW = { files: 'fichiers', messages: 'messages', validations: 'valider', activity: 'accueil', requests: 'outils' };
   const CLIENT_VIEW_ACT = { 'proposal.send': 'proposition', 'version.add': 'maquettes' };
-  const DEFAULT_PREFS = { email: 'instant', events: { files: true, messages: true, validations: true, requests: true, activity: false } };
+  const DEFAULT_PREFS = { email: 'instant', events: { files: true, messages: true, validations: true, requests: true, tasks: true, activity: false } };
   const prefsOf = (u) => ({ ...DEFAULT_PREFS, ...(u.notify || {}), events: { ...DEFAULT_PREFS.events, ...((u.notify || {}).events || {}) } });
   function describe(action, user, project, res, audience) {
     const who = user.name.split(' ')[0];
@@ -1063,6 +1071,111 @@
     store.settings = next; return { ok: true, settings: next };
   }
 
+  /* ---------- Tâches de l'équipe ----------
+     Une seule liste pour toute l'équipe, sur le modèle de « Programme & Livrables » dans Notion
+     (Nom, Personne, Date de livraison, Étape, État), mais commune à tous les clients :
+     - les tâches internes, liées à un client ou non (prospection, administratif…) : store.todos ;
+     - les livrables des projets confiés à l'équipe, lus directement dans le planning de chaque projet
+       (rien n'est recopié : changer l'état ici change le planning du client, et inversement).
+     États : 'todo' (Pas commencé), 'doing' (En cours), 'done' (Fait). Jamais visible côté client. */
+  const TODO_STATES = ['todo', 'doing', 'done'];
+  const ITEM_TO = { wait: 'todo', on: 'doing', review: 'doing', done: 'done' }, TO_ITEM = { todo: 'wait', doing: 'on', done: 'done' };
+  const teamIds = (store) => new Set(store.users.filter((u) => u.role === 'admin').map((u) => u.id));
+  function teamTasks(store, user, now = Date.now()) {
+    if (!user || user.role !== 'admin') return { error: 'Réservé à l’équipe.' };
+    const team = teamIds(store), out = [], old = now - 30 * 864e5;
+    for (const t of store.todos || []) {
+      if (t.status === 'done' && t.doneAt && new Date(t.doneAt) < old) continue;
+      const p = t.projectId && store.projects.find((x) => x.id === t.projectId);
+      out.push({ ...t, kind: 'task', client: p ? p.client : '' });
+    }
+    for (const p of store.projects) {
+      if (p.archivedAt) continue;
+      for (const ph of p.phases || []) for (const it of ph.items || []) {
+        const who = itemWho(it).map((w) => w[0]).filter((id) => team.has(id));
+        if (!who.length) continue;
+        const state = itemState(p, it), status = ITEM_TO[state] || 'todo';
+        if (status === 'done' && (!it.due || new Date(it.due) < old)) continue;
+        out.push({ id: `i:${p.id}:${it.id}`, kind: 'item', t: it.t, who, due: it.due || null, status, review: state === 'review', projectId: p.id, client: p.client, step: `Étape ${ph.n} · ${ph.t}` });
+      }
+    }
+    return { tasks: out };
+  }
+  function todoNotices(store, user, t, before, client) {
+    const out = [], at = iso(Date.now());
+    store.notifications = store.notifications || [];
+    for (const id of t.who) {
+      if (id === user.id || before.includes(id)) continue;
+      const u = store.users.find((x) => x.id === id && x.role === 'admin'); if (!u) continue;
+      const when = t.due ? `, pour le ${new Date(t.due).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}` : '';
+      const n = { id: uid('n'), userId: id, projectId: t.projectId || null, client: client || 'Interne', type: 'tasks', act: 'todo.assign', tid: t.id, text: `${user.name.split(' ')[0]} t’a confié : « ${t.t} »${when}`, by: user.id, at, read: false, go: { view: 'taches' } };
+      store.notifications.unshift(n); out.push(n);
+    }
+    if (store.notifications.length > 2000) store.notifications.length = 2000;
+    return out;
+  }
+  function taskAct(store, user, body) {
+    if (!user || user.role !== 'admin') return { error: 'Réservé à l’équipe.' };
+    let a; try { a = clean(body || {}); } catch { return { error: 'Action impossible. Recharger la page puis réessayer.' }; }
+    const team = teamIds(store);
+    const whoOf = (w) => (Array.isArray(w) ? [...new Set(w.map(String))].filter((id) => team.has(id)).slice(0, 6) : null);
+    const dueOf = (d) => (d === '' || d === null ? null : d === undefined ? undefined : validDate(d) ? iso(d) : false);
+    const projOf = (id) => (id === '' || id === null ? null : id === undefined ? undefined : store.projects.find((p) => p.id === id) ? String(id) : false);
+    store.todos = store.todos || [];
+    if (a.type === 'todo.add') {
+      const t = String(a.t || '').trim().slice(0, 160); if (!t) return { error: 'Écrivez la tâche.' };
+      const due = dueOf(a.due), projectId = projOf(a.projectId);
+      if (due === false) return { error: 'Date invalide.' };
+      if (projectId === false) return { error: 'Client introuvable.' };
+      const who = whoOf(a.who) || []; if (!who.length) who.push(user.id);
+      const status = TODO_STATES.includes(a.status) ? a.status : 'todo';
+      const todo = { id: uid('td'), t, who, due: due || null, status, projectId: projectId || null, note: String(a.note || '').slice(0, 2000), urgent: !!a.urgent, by: user.id, at: iso(Date.now()), doneAt: status === 'done' ? iso(Date.now()) : null };
+      store.todos.unshift(todo);
+      if (store.todos.length > 2000) { const keep = store.todos.filter((x) => x.status !== 'done'); store.todos = keep.concat(store.todos.filter((x) => x.status === 'done')).slice(0, 2000); }
+      const p = todo.projectId && store.projects.find((x) => x.id === todo.projectId);
+      return { ok: true, task: todo, notices: todoNotices(store, user, todo, [], p && p.client) };
+    }
+    if (a.type === 'todo.update') {
+      const id = String(a.id || '');
+      if (id.startsWith('i:')) {
+        // Livrable d'un projet : l'état et la date passent par le planning du projet (historique du client compris).
+        const [, pid, iid] = id.split(':'); const p = store.projects.find((x) => x.id === pid);
+        const it = p && p.phases.flatMap((x) => x.items).find((x) => x.id === iid); if (!it) return { error: 'Livrable introuvable.' };
+        const due = dueOf(a.due); if (due === false) return { error: 'Date invalide.' };
+        if (a.status !== undefined || due) {
+          const status = a.status !== undefined ? TO_ITEM[a.status] : it.status; if (!status) return { error: 'État inconnu.' };
+          const r = apply(store, pid, user, { type: 'item.status', iid, status, due: due || undefined }); if (r.error) return r;
+        }
+        const who = whoOf(a.who); let notices = [];
+        if (who) {
+          const before = itemWho(it).map((w) => w[0]), texts = new Map(itemWho(it));
+          const keepClient = itemWho(it).filter((w) => w[0] === 'client');
+          const r = apply(store, pid, user, { type: 'item.meta', iid, who: [...who.map((w) => [w, texts.get(w) || '']), ...keepClient] }); if (r.error) return r;
+          notices = todoNotices(store, user, { id, t: it.t, who, due: it.due, projectId: pid }, before, p.client);
+        }
+        return { ok: true, notices };
+      }
+      const t = store.todos.find((x) => x.id === id); if (!t) return { error: 'Tâche introuvable. Recharger la page.' };
+      const before = t.who.slice();
+      if (a.t !== undefined) { const v = String(a.t).trim().slice(0, 160); if (!v) return { error: 'Écrivez la tâche.' }; t.t = v; }
+      const due = dueOf(a.due); if (due === false) return { error: 'Date invalide.' }; if (due !== undefined) t.due = due;
+      const projectId = projOf(a.projectId); if (projectId === false) return { error: 'Client introuvable.' }; if (projectId !== undefined) t.projectId = projectId;
+      const who = whoOf(a.who); if (who) { if (!who.length) return { error: 'Choisissez au moins une personne.' }; t.who = who; }
+      if (a.note !== undefined) t.note = String(a.note).slice(0, 2000);
+      if (a.urgent !== undefined) t.urgent = !!a.urgent;
+      if (a.status !== undefined) { if (!TODO_STATES.includes(a.status)) return { error: 'État inconnu.' }; if (a.status === 'done' && t.status !== 'done') { t.doneAt = iso(Date.now()); t.doneBy = user.id; } if (a.status !== 'done') t.doneAt = null; t.status = a.status; }
+      t.updatedAt = iso(Date.now());
+      const p = t.projectId && store.projects.find((x) => x.id === t.projectId);
+      return { ok: true, task: t, notices: who ? todoNotices(store, user, t, before, p && p.client) : [] };
+    }
+    if (a.type === 'todo.remove') {
+      const id = String(a.id || ''); if (id.startsWith('i:')) return { error: 'Un livrable se retire depuis le planning du client.' };
+      const n = store.todos.length; store.todos = store.todos.filter((x) => x.id !== id);
+      return n === store.todos.length ? { error: 'Tâche introuvable. Recharger la page.' } : { ok: true };
+    }
+    return { error: 'Action impossible. Recharger la page puis réessayer.' };
+  }
+
   /* Relances automatiques, une seule fois chacune :
      une validation qui attend depuis plus de 3 jours ouvrés, une facture à régler depuis plus de 10 jours.
      Le client reçoit un rappel (dans son registre), l'équipe du projet le voit dans sa boîte de réception. */
@@ -1151,7 +1264,7 @@
   /* Boîte de réception et préférences (par personne).
      « À traiter » : ce qu'un client attend de l'équipe (message, fichier, modifications, demande d'évolution, deal à ouvrir). */
   const TODO_ACTS = new Set(['msg.post', 'file.add', 'val.changes', 'request.add', 'pipedrive', 'review.add', 'proposal.accept', 'proposal.decline', 'pin.add']);
-  const isTodo = (store, n) => { if (!TODO_ACTS.has(n.act)) return false; if (n.act === 'pipedrive') return true; const by = store.users.find((u) => u.id === n.by); return !by || by.role !== 'admin'; };
+  const isTodo = (store, n) => { if (n.act === 'todo.assign') return true; if (!TODO_ACTS.has(n.act)) return false; if (n.act === 'pipedrive') return true; const by = store.users.find((u) => u.id === n.by); return !by || by.role !== 'admin'; };
   function inbox(store, user) { return (store.notifications || []).filter((n) => n.userId === user.id).slice(0, 200).map((n) => ({ ...n, todo: isTodo(store, n) && !n.done })); }
   function doneNotif(store, user, id, undo) { const n = (store.notifications || []).find((x) => x.userId === user.id && x.id === id); if (!n) return { error: 'Notification introuvable.' };
     n.done = !undo; n.read = true;
@@ -1187,5 +1300,5 @@
     return { ok: true, id: p.id, invite };
   }
 
-  return { filesBatch, seed, newProject, OFFERS, OREM, ROLES, REVIEW_AXES, itemWho, itemGo, itemState, phaseState, lateDays, offerOf: (p) => (OFFERS[p.offer] || OFFERS.site).label, apply, addFile, createProject, summary, forUser, nextStep, alerts, canSee, inbox, readNotif, doneNotif, setPrefs, prefsOf, emailsFor, digestFor, loginMail, inviteMail, publicConfig, setSettings, settingsOf, runReminders, FILE_CATS, AGENCY_CATS, HANDOVER, workDaysBetween, reg, replan };
+  return { teamTasks, taskAct, TODO_STATES, filesBatch, seed, newProject, OFFERS, OREM, ROLES, REVIEW_AXES, itemWho, itemGo, itemState, phaseState, lateDays, offerOf: (p) => (OFFERS[p.offer] || OFFERS.site).label, apply, addFile, createProject, summary, forUser, nextStep, alerts, canSee, inbox, readNotif, doneNotif, setPrefs, prefsOf, emailsFor, digestFor, loginMail, inviteMail, publicConfig, setSettings, settingsOf, runReminders, FILE_CATS, AGENCY_CATS, HANDOVER, workDaysBetween, reg, replan };
 });

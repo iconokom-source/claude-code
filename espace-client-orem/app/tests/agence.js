@@ -11,16 +11,16 @@ const errs = [];
     await p.goto(B); await p.fill('#em', email); await p.locator('form[data-form=login]').evaluate((f) => f.requestSubmit());
     await p.waitForSelector('.devcode b', { timeout: 8000 }); await p.fill('#o1', await p.textContent('.devcode b'));
     await p.locator('form[data-form=verify]').evaluate((f) => f.requestSubmit()); await p.waitForSelector('#main'); await p.waitForLoadState('networkidle'); await p.waitForTimeout(250);
-    if (await p.$('.ob')) { await p.keyboard.press('Escape'); await p.waitForTimeout(120); }
+    for (let i = 0; i < 10 && await p.$('.ob'); i++) { await p.keyboard.press('Escape'); await p.waitForTimeout(150); }
     return p;
   }
   const main = (p) => p.locator('#main').innerText();
   // Claire écrit, Hugo demande une évolution (déjà dans les données), Claire dépose un fichier
   const claire = await login('claire@maisonlumen.fr');
-  await claire.click('.side [data-go=messages]'); await claire.fill('#msg-t', 'Pouvez-vous ajouter une page Presse ?'); await claire.locator('form[data-form=msg]').evaluate((f) => f.requestSubmit()); await claire.waitForTimeout(300);
+  await claire.click('.side [data-go=messages]'); await claire.fill('#msg-t', 'Pouvez-vous ajouter une page Presse ?'); await claire.locator('form[data-form=msg]').evaluate((f) => f.requestSubmit()); await claire.waitForSelector('.thread >> text=page Presse');
 
   const hugo0 = await login('hugo@huchet-demorge.fr');
-  await hugo0.click('.side [data-go=messages]'); await hugo0.fill('#msg-t', 'Peut-on ajouter le logo du cabinet en pied de page ?'); await hugo0.locator('form[data-form=msg]').evaluate((f) => f.requestSubmit()); await hugo0.waitForTimeout(300);
+  await hugo0.click('.side [data-go=messages]'); await hugo0.fill('#msg-t', 'Peut-on ajouter le logo du cabinet en pied de page ?'); await hugo0.locator('form[data-form=msg]').evaluate((f) => f.requestSubmit()); await hugo0.waitForSelector('.thread >> text=logo du cabinet');
   const louis = await login('louis@agence-orem.fr');
   const todo = await louis.locator('[data-inbox=todo] .num').innerText(), badge = await louis.locator('.side [data-go=inbox] .badge').innerText();
   ok('Boîte de réception : « À traiter » par défaut, badge = nombre à traiter', (await louis.getAttribute('[data-inbox=todo]', 'aria-pressed')) === 'true' && badge.replace(/\D/g, '') === todo, `${badge} / ${todo}`);
@@ -84,7 +84,7 @@ const errs = [];
   ok('« Ajouter » : types en liste verticale (aria-orientation)', (await louis.getAttribute('.ckinds', 'aria-orientation')) === 'vertical');
   await louis.keyboard.press('Escape');
   const mob = await login('louis@agence-orem.fr', { width: 390, height: 844 });
-  ok('Mobile : 4 onglets, plus d’onglet « Sortir »', (await mob.locator('.tabbar a').count()) === 4 && !(await mob.$('.tabbar [data-go=deconnexion]')));
+  ok('Mobile : 5 onglets dont « Tâches », plus d’onglet « Sortir »', (await mob.locator('.tabbar a').count()) === 5 && !!(await mob.$('.tabbar [data-go=taches]')) && !(await mob.$('.tabbar [data-go=deconnexion]')));
   await mob.click('.tabbar [data-go=reglages]'); await mob.waitForTimeout(150);
   ok('Réglages : « Se déconnecter » et « Déconnecter tous mes appareils »', (await mob.locator('#main [data-act=logout]').count()) === 1 && (await mob.locator('#main [data-act=logout-all]').count()) === 1);
   await mob.click('#main [data-act=logout-all]'); await mob.waitForTimeout(300);

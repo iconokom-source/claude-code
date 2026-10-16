@@ -79,7 +79,7 @@ const log = (event, data = {}) => console.log(JSON.stringify({ at: new Date().to
 let db;
 if (fs.existsSync(DB_FILE)) db = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
 else { db = { ...Core.seed(), sessions: {}, codes: {} }; log('db.created', { file: DB_FILE }); }
-db.sessions ||= {}; db.codes ||= {}; db.notifications ||= []; db.outbox ||= []; db.meta ||= {}; db.webhooks ||= [];
+db.sessions ||= {}; db.codes ||= {}; db.todos ||= []; db.notifications ||= []; db.outbox ||= []; db.meta ||= {}; db.webhooks ||= [];
 let saveTimer = null, dirty = false;
 function flush() {
   saveTimer = null; if (!dirty) return; dirty = false;
@@ -465,6 +465,15 @@ async function handle(req, res) {
   if (p === '/api/me/prefs' && req.method === 'POST') { const r = Core.setPrefs(db, user, await readJson(req)); if (r.ok) save(); return send(res, r.error ? 400 : 200, r); }
   if (p === '/api/outbox' && req.method === 'GET') { if (user.role !== 'admin') return send(res, 403, { error: 'Réservé à l’équipe.' }); return send(res, 200, { enabled: MAIL_ENABLED, items: db.outbox.filter((x) => x.to === user.email || db.users.some((u) => u.email === x.to && u.role !== 'admin')).slice(0, 50) }); }
   if (p === '/api/digest' && req.method === 'POST') { if (user.role !== 'admin') return send(res, 403, { error: 'Réservé à l’équipe.' }); return send(res, 200, { ok: true, sent: sendDigests(true, user) }); }
+  // Tâches de l'équipe : tâches internes et livrables des projets, réservées à l'agence.
+  if (p === '/api/tasks' && req.method === 'GET') { const r = Core.teamTasks(db, user); return send(res, r.error ? 403 : 200, r); }
+  if (p === '/api/tasks' && req.method === 'POST') {
+    if (user.role !== 'admin') return send(res, 403, { error: 'Réservé à l’équipe.' });
+    const r = Core.taskAct(db, user, await readJson(req));
+    if (r.error) return send(res, 400, r);
+    save(); if (r.notices && r.notices.length) deliver(r.notices); log('todo.saved', { user: user.id });
+    return send(res, 200, { ok: true, task: r.task });
+  }
   if (p === '/api/settings' && req.method === 'POST') { const r = Core.setSettings(db, user, await readJson(req)); if (r.ok) save(); return send(res, r.error ? 400 : 200, r); }
   // Tests de la version en ligne : e-mail d'essai à soi-même, et test de connexion de chaque outil (lecture seule).
   if (p === '/api/test/mail' && req.method === 'POST') {
