@@ -17,12 +17,11 @@ const errs = [];
   const main = (p) => p.locator('#main').innerText();
   const claire = await login('claire@maisonlumen.fr');
   // Accueil
-  const bottom = await claire.evaluate(() => Math.max(...[...document.querySelectorAll('#main .next, #main .grid2')].map((e) => e.getBoundingClientRect().bottom)));
-  ok('1440×900 : prochaine étape, « À faire » et « Cette semaine » visibles sans défiler', bottom <= 900, Math.round(bottom) + ' px');
-  ok('Plus de chiffres clés ni de frise répétée sur l’accueil', (await claire.locator('#main .kpis, #main .steps').count()) === 0);
-  const todo = await claire.locator('#td').locator('xpath=../..').innerText();
-  ok('« À faire » ne répète pas la prochaine étape', !/Valider : plan du site/.test(todo), todo.replace(/\n/g, ' '));
-  ok('La prochaine action porte le compte à rebours et l’étape O.R.E.M.', /Mise en ligne dans \d+ jours? · O · Orienter/.test(await claire.locator('.next .meta').innerText()));
+  const bottom = await claire.evaluate(() => Math.max(...[...document.querySelectorAll('#main .cx-ink, #main .cx-kpis')].map((e) => e.getBoundingClientRect().bottom)));
+  ok('1440×900 : prochaine action et les 4 chiffres visibles sans défiler', bottom <= 900, Math.round(bottom) + ' px');
+  ok('Plus d’anciens chiffres clés ni de frise répétée sur l’accueil', (await claire.locator('#main .kpis, #main .steps').count()) === 0);
+  ok('Une seule prochaine action, sans liste « À faire » qui la répète', (await claire.locator('.cx-ink').count()) === 1 && !/Valider : plan du site/i.test(await main(claire)));
+  ok('Le compte à rebours de la mise en ligne et l’étape O.R.E.M. sont sur l’accueil', /Mise en ligne\s*\d+\s*jours?/.test(await claire.locator('.cx-kpis').innerText()) && /Étape 1 sur 4 · Orienter/.test(await claire.locator('.cx-orem').innerText()));
   await claire.screenshot({ path: OUT + '/accueil-1-claire.png' });
   // Navigation
   ok('Navigation client : 7 entrées au plus', (await claire.locator('.side .nav a').count()) <= 7, String(await claire.locator('.side .nav a').count()));
@@ -31,24 +30,23 @@ const errs = [];
   ok('Écran bas (640 px) : pied de barre latérale jamais coupé', fb <= 640, Math.round(fb) + ' px');
   // Fichiers
   await claire.click('.side [data-go=fichiers]'); await claire.waitForTimeout(150);
-  ok('Fichiers et factures : deux onglets', (await claire.locator('[data-ftab]').count()) === 2);
+  ok('Fichiers et factures : une seule page (dépôt, paiements, envois, documents de l’agence)', (await claire.locator('[data-ftab]').count()) === 0 && !!(await claire.$('#drop')) && !!(await claire.$('#pay-h')) && !!(await claire.$('#lv')));
   await claire.setInputFiles('#file-in', { name: 'Photo vitrine.png', mimeType: 'image/png', buffer: require('fs').readFileSync(__dirname + '/../public/assets/logo-black.png') }); await claire.waitForTimeout(600);
-  ok('Miniature de l’image déposée', (await claire.locator('.row', { hasText: 'Photo vitrine.png' }).locator('.ft-img img').count()) === 1);
-  await claire.locator('.row', { hasText: 'Photo vitrine.png' }).locator('[data-act=fview]').click(); await claire.waitForTimeout(300);
+  ok('Miniature de l’image déposée', (await claire.locator('.cx-ft', { hasText: 'Photo vitrine' }).locator('.cx-fth img').count()) === 1);
+  await claire.locator('.cx-ft', { hasText: 'Photo vitrine' }).locator('[data-act=fview]').click(); await claire.waitForTimeout(300);
   ok('Aperçu intégré de l’image', await claire.evaluate(() => { const i = document.querySelector('.fview img'); return !!i && i.naturalWidth > 0; }));
   await claire.keyboard.press('Escape'); await claire.waitForTimeout(100);
   await claire.fill('#f-q', 'vitrine'); await claire.waitForTimeout(150);
-  ok('Recherche dans les fichiers', (await claire.locator('#ft-panel .row').filter({ hasText: 'Charte graphique' }).count()) === 0 && (await claire.locator('.row', { hasText: 'Photo vitrine' }).count()) === 1);
+  ok('Recherche dans les fichiers', (await claire.locator('.cx-ft').filter({ hasText: 'Charte graphique' }).count()) === 0 && (await claire.locator('.cx-ft', { hasText: 'Photo vitrine' }).count()) === 1);
   await claire.fill('#f-q', '');
-  ok('Retrait possible pendant 24 h pour son propre fichier, pas pour un ancien', (await claire.locator('.row', { hasText: 'Photo vitrine.png' }).locator('[data-act=file-remove-own]').count()) === 1 && (await claire.locator('.row', { hasText: 'Charte graphique 2019' }).locator('[data-act=file-remove-own]').count()) === 0);
-  await claire.locator('.row', { hasText: 'Photo vitrine.png' }).locator('[data-act=file-remove-own]').click(); await claire.waitForTimeout(400);
-  ok('Fichier retiré', (await claire.locator('.row', { hasText: 'Photo vitrine.png' }).count()) === 0);
-  await claire.click('[data-ftab=docs]'); await claire.waitForTimeout(150);
-  ok('Onglet « Factures et documents » : factures et IBAN', /F-2026-0187/.test(await main(claire)) && /IBAN/.test(await main(claire)));
+  ok('Retrait possible pendant 24 h pour son propre fichier, pas pour un ancien', (await claire.locator('.cx-ft', { hasText: 'Photo vitrine' }).locator('[data-act=file-remove-own]').count()) === 1 && (await claire.locator('.cx-ft', { hasText: 'Charte graphique 2019' }).locator('[data-act=file-remove-own]').count()) === 0);
+  await claire.locator('.cx-ft', { hasText: 'Photo vitrine' }).locator('[data-act=file-remove-own]').click(); await claire.waitForTimeout(400);
+  ok('Fichier retiré', (await claire.locator('.cx-ft', { hasText: 'Photo vitrine' }).count()) === 0);
+  ok('Paiements sur la même page : factures et IBAN', /F-2026-0187/.test(await main(claire)) && /IBAN/.test(await main(claire)));
   // Bibliothèque dans Maquettes
   const hugo = await login('hugo@huchet-demorge.fr');
   await hugo.click('.side [data-go=maquettes]'); await hugo.waitForTimeout(150);
-  ok('« Maquettes et visuels » contient la bibliothèque', /Bibliothèque/.test(await main(hugo)) && (await hugo.locator('.tile').count()) > 0);
+  ok('« Maquettes et visuels » contient la bibliothèque', /Bibliothèque/.test(await main(hugo)) && (await hugo.locator('.cx-gi').count()) > 0);
   // Cloche et préférences
   const louis = await login('louis@agence-orem.fr');
   await louis.click('.side [data-go=clients]'); await louis.click('.cat[data-mine="0"]'); await louis.click('[data-open=p_lumen]'); await louis.click('#tab-messages');
@@ -65,7 +63,7 @@ const errs = [];
   ok('Préférences du client enregistrées', (await claire.evaluate(async () => (await (await fetch('/api/me')).json()).user.prefs.weekly)) === false);
   // Validation : confirmation, puis annulation dans les 10 s
   await claire.click('.side [data-go=valider]'); await claire.click('[data-act=approve]'); await claire.waitForTimeout(150);
-  ok('Confirmation avant de valider', /feu vert pour « Plan du site »/.test(await main(claire)));
+  ok('Confirmation avant de valider', /feu vert pour «\s?Plan du site\s?»/.test(await main(claire)));
   await claire.click('[data-act=approve-ok]'); await claire.waitForTimeout(300);
   ok('Barre « Annuler » avec compte à rebours', /Annuler\s*\d+\s*s/.test(await claire.locator('#undo').innerText()));
   await claire.click('#undo [data-act=val-undo]'); await claire.waitForTimeout(400);
@@ -80,7 +78,7 @@ const errs = [];
   const dk = await login('julie@cabinet-varenne.fr', { dark: true });
   const hl = await dk.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--hl').trim());
   ok('Mode sombre : accent bleu clair, pas orange', hl.toLowerCase() === '#9fb2ff', hl);
-  ok('Julie : aucun compteur à zéro sur l’accueil', !/\b0\s+(fichier|élément|validation)/.test(await main(dk)));
+  ok('Julie : un chiffre à zéro est toujours expliqué (« Rien pour l’instant », « Il en manque 2 »)', await dk.evaluate(() => [...document.querySelectorAll('.cx-kpi')].filter((k) => /^0\b/.test(k.querySelector('.cx-num').innerText.trim())).every((k) => /Rien pour l’instant|Il en manque|Tout est lu/.test(k.querySelector('.cx-d').innerText))));
   await dk.screenshot({ path: OUT + '/accueil-2-julie-sombre.png' });
   await br.close();
 } catch (e) { R.push('✘ Arrêt : ' + e.message.split('\n')[0]); }

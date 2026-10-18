@@ -37,7 +37,7 @@ const R = []; const ok = (l, v, extra) => R.push(`${v ? '✔' : '✘'} ${l}${!v 
   ok('Changement de vue : focus sur le titre h1 et titre de page « Fichiers »', (await act(c)).startsWith('H1') && /^Fichiers · /.test(await c.title()));
   await c.click('[data-cat=Images]'); await c.waitForTimeout(150);
   ok('Filtre : le focus reste sur le bouton du filtre', /\[data-cat=Images\]/.test(await act(c)), await act(c));
-  await c.click('.side [data-go=accueil]'); await c.waitForTimeout(150);
+  await c.click('.side .help-link[data-go=equipe]'); await c.waitForTimeout(150);
   await c.click('[data-act=qa][data-id=rdv]'); await c.waitForTimeout(150);
   ok('Réponse rapide : focus conservé sur la question', /data-id=rdv/.test(await act(c)), await act(c));
   await c.click('.side [data-go=messages]'); await c.fill('#msg-t', 'Bonjour !'); await c.locator('form[data-form=msg]').evaluate((f) => f.requestSubmit()); await c.waitForTimeout(400);
@@ -46,7 +46,7 @@ const R = []; const ok = (l, v, extra) => R.push(`${v ? '✔' : '✘'} ${l}${!v 
   ok('Message vide : erreur sous le champ au vouvoiement', /Écrivez votre message/.test(await c.textContent('#msg-t-err').catch(() => '')));
   await c.click('.side [data-go=biblio]').catch(() => {}); await c.click('.side [data-go=maquettes]'); await c.waitForTimeout(150);
   const t0 = Date.now(); await c.evaluate(() => document.querySelector('[data-act=copy], [data-act=copytxt]') || null);
-  await c.click('.side [data-go=fichiers]'); await c.click('[data-ftab=docs]'); await c.click('[data-act=copy]'); await c.waitForTimeout(3500);
+  await c.click('.side [data-go=fichiers]'); await c.click('[data-act=copy]'); await c.waitForTimeout(3500);
   ok('Toast encore visible après 3,5 s', await c.evaluate(() => document.getElementById('toast').classList.contains('show')));
 
   // Louis : onglets ARIA et dialogue « Ajouter »

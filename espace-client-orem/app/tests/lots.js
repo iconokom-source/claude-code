@@ -15,7 +15,7 @@ const CLIENT_VIEWS = ['accueil', 'projet', 'valider', 'maquettes', 'messages', '
     if (!keepOb && await p.$('.ob')) { await p.keyboard.press('Escape'); await p.waitForTimeout(150); }
     return p;
   }
-  const go = async (p, v) => { const t = v === 'documents' ? 'fichiers' : v; await p.evaluate((v) => { const a = document.querySelector(`.side [data-go="${v}"]`) || document.querySelector(`[data-go="${v}"]`); a && a.click(); }, t); await p.waitForTimeout(150); if (v === 'documents') { await p.evaluate(() => { const b = document.querySelector('[data-ftab=docs]'); b && b.click(); }); await p.waitForTimeout(150); } };
+  const go = async (p, v) => { const t = v === 'documents' ? 'fichiers' : v; await p.evaluate((v) => { const a = document.querySelector(`.side [data-go="${v}"]`) || document.querySelector(`[data-go="${v}"]`); a && a.click(); }, t); await p.waitForTimeout(150); };
   const main = (p) => p.locator('#main').innerText();
   // Registre : parcourt toutes les vues et relève les phrases dans le mauvais registre.
   async function registre(p, tu) {
@@ -37,13 +37,13 @@ const CLIENT_VIEWS = ['accueil', 'projet', 'valider', 'maquettes', 'messages', '
 
   // 2. O.R.E.M. et une seule source de vérité
   await go(claire, 'projet');
-  const dots = await claire.locator('.phase .dot').allInnerTexts();
-  ok('Page projet : les 4 temps O, R, E, M (lettres affichées)', /O · Orienter/.test(await main(claire)) && /M · Mesurer/.test(await main(claire)), dots.join(','));
-  const planRow = await claire.locator('.deliv .row', { hasText: 'Plan du site' }).innerText();
-  ok('« Plan du site » est « À valider » (et plus « Fait ») tant que Claire n’a pas validé', /À valider/.test(planRow) && !/\bFait\b/.test(planRow), planRow.replace(/\n/g, ' '));
+  const dots = await claire.locator('.cx-gantt .cx-ltr').allInnerTexts();
+  ok('Page projet : les 4 temps O, R, E, M (lettres affichées)', dots.join('') === 'OREM' && /Orienter/.test(await main(claire)) && /Mesurer/.test(await main(claire)), dots.join(','));
+  const planRow = await claire.locator('.cx-deliv li', { hasText: 'Plan du site' }).innerText();
+  ok('« Plan du site » est « À valider » (et plus « Fait ») tant que Claire n’a pas validé', /Voir et valider/.test(planRow) && !/\bFait\b/.test(planRow), planRow.replace(/\n/g, ' '));
   await claire.screenshot({ path: OUT + '/lots-1-projet.png', fullPage: true });
   await go(claire, 'documents');
-  ok('Facture : le PDF est sur la ligne de la facture, plus en double', (await claire.locator('.row', { hasText: 'F-2026-0187' }).count()) === 1 && (await claire.locator('.row', { hasText: 'F-2026-0187' }).locator('text=PDF').count()) === 1);
+  ok('Facture : le PDF est sur la ligne de la facture, plus en double', (await claire.locator('.cx-inv', { hasText: 'F-2026-0187' }).count()) === 1 && (await claire.locator('.cx-inv', { hasText: 'F-2026-0187' }).locator('.cx-iconbtn').count()) === 1 && (await claire.locator('.cx-list li', { hasText: 'Facture F-2026-0187' }).count()) === 0);
 
   // 3. Julie : l'acompte se coche tout seul, pas de case WhatsApp dans l'accueil guidé
   const julie = await login('julie@cabinet-varenne.fr', true);

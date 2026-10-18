@@ -299,14 +299,6 @@
     ].filter(Boolean);
   }
   const SETUP_CHIP = { done: '<span class="chip ok">Fait</span>', sent: '<span class="chip hl">Envoyé, l’équipe vérifie</span>', retry: '<span class="chip warn">À reprendre</span>', todo: '<span class="chip warn">À faire</span>' };
-  function setupCard() {
-    const st = setupSteps(); if (!st.length || st.every((x) => x.st === 'done') || prospect()) return '';
-    const n = st.filter((x) => x.st === 'done' || x.st === 'sent').length;
-    return `<section class="panel setup" aria-labelledby="su-h"><div class="panel-head"><h2 id="su-h">${ic('ok')}Bien démarrer</h2><span class="small muted num">${n} sur ${st.length}</span></div>
-      <p class="muted small" style="margin-top:-6px">Les ${st.length} priorités pour que l’équipe avance sans attendre.</p>
-      <ol class="setup-l">${st.map((x, i) => `<li class="setup-i ${x.st}"><span class="rank">${x.st === 'done' ? ic('check') : String(i + 1).padStart(2, '0')}</span><div class="grow"><div class="title">${esc(x.t)}</div>${SETUP_CHIP[x.st]}${x.k === 'acompte' && x.st !== 'done' ? '<span class="small muted">Se coche tout seul à réception du virement</span>' : ''}</div></li>`).join('')}</ol>
-      <a class="btn btn-primary" href="#demarrer" data-go="demarrer">${st.some((x) => x.st === 'todo' || x.st === 'retry') ? 'Commencer' : 'Voir le détail'} ${ic('arrow')}</a></section>`;
-  }
   function vDemarrer() {
     const p = S.project, st = setupSteps(), C = cfg(), inv = p.invoices.find((i) => /acompte/i.test(i.label));
     const mail = C.webflowInvite || 'louis@agence-orem.fr', by = (t) => (t && t.checkedBy ? ' par ' + esc(who(t.checkedBy).split(' ')[0]) : '');
@@ -341,51 +333,383 @@
     }).join('');
     return `<div class="head"><div><h1>Bien démarrer</h1><p class="lead">${st.length} priorités pour lancer le projet sans attendre</p></div></div>${parts}`;
   }
-  function vAccueil() {
-    const p = S.project, nx = Core.nextStep(p), ph = p.phases[p.phase - 1];
-    const cta = CTA[nx.go], j = daysTo(p.golive);
-    const ctaHtml = nx.go === 'cal' ? `<a class="btn" href="${CALF()}" target="_blank" rel="noopener">Choisir un créneau ${ic('arrow')}</a>` : cta ? `<a class="btn" href="#${cta[1]}" data-go="${cta[1]}">${cta[0]} ${ic('arrow')}</a>` : '';
-    const ready = p.validations.filter((v) => v.status === 'ready'), setupHtml = setupCard(), setupOn = !!setupHtml;
-    // « À faire » : tout ce qui attend le client, sans répéter la prochaine étape affichée au-dessus.
-    const same = (t) => String(t).toLowerCase().replace(/^valider : /, '') === String(nx.title).toLowerCase().replace(/^valider : /, '') || (nx.go === 'valider' && /^valider/i.test(t) && ready.length === 1) || (nx.go === 'cal' && /visio de cadrage/i.test(t)) || (nx.go === 'proposition' && /proposition/i.test(t));
-    const actions = [
-      ...ready.map((v) => ({ t: 'Valider : ' + v.t.toLowerCase(), sub: 'Prêt depuis le ' + fmt(v.readyAt), go: 'valider' })),
-      ...p.missing.map((m) => ({ t: 'Déposer : ' + m.t.toLowerCase(), sub: m.sub, go: 'fichiers' })),
-      ...p.tasks.filter((t) => !t.done && !(setupOn && (t.go === 'demarrer' || t.auto === 'acompte'))).map((t) => ({ t: t.t, tid: t.id, go: t.go, auto: t.auto }))
-    ].filter((a) => !same(a.t));
-    const doneN = p.tasks.filter((t) => t.done).length;
-    let rk = 0;
-    const note = p.note && p.note.text, author = S.team.find((u) => u.id === p.note.by);
-    const meta = prospect() ? 'Avant le démarrage du projet' : [p.offer === 'site' && j >= 0 ? (j ? `Mise en ligne dans ${j} jour${j > 1 ? 's' : ''}` : 'Mise en ligne aujourd’hui') : p.offer !== 'site' && j >= 0 ? `Livraison dans ${j} jour${j > 1 ? 's' : ''}` : '', phName(ph)].filter(Boolean).join(' · ');
-    return `
-    <div class="head"><div><h1 class="brandish">Bonjour ${esc(S.preview || !S.me.name ? p.contactName : S.me.name.split(' ')[0])}</h1><p class="lead">${esc(cap(fmtLong(Date.now())))} · ${esc(p.projet)}</p></div>${clientLogo(p, 'auto', 'head-logo')}</div>
-    <section class="next" aria-labelledby="nx"><div><div class="k">${R('Votre prochaine action', 'Ta prochaine action')}</div><h2 id="nx">${esc(nx.title)}</h2>${nx.text ? `<p>${esc(nx.text)}</p>` : ''}<div class="meta">${esc(meta)}</div></div>${ctaHtml}</section>
-    ${countdown()}
-    ${unreadBanner()}
-    ${setupHtml}
-    <div class="grid2">
-      <section class="panel" aria-labelledby="td">
-        <div class="panel-head"><h2 id="td">${ic('ok')}À faire</h2>${doneN ? `<span class="small muted num">${doneN} déjà fait${doneN > 1 ? 's' : ''}</span>` : ''}</div>
-        <ul class="list plain">${actions.map((a) => a.auto
-          ? `<li class="row"><span class="chip warn">À régler</span><div class="grow"><div class="title">${esc(a.t)}</div><div class="sub">Se coche tout seul à réception du virement.</div></div>${a.go ? `<a class="btn btn-line btn-sm" href="#${a.go}" data-go="${a.go}">Ouvrir</a>` : ''}</li>`
-          : a.tid
-          ? `<li class="row"><button class="check" data-act="task" data-id="${a.tid}" aria-label="Cocher : ${esc(a.t)}" aria-pressed="false"></button><div class="grow"><div class="title">${esc(a.t)}</div></div>${a.go ? (a.go === 'cal' ? `<a class="btn btn-line btn-sm" href="${CALF()}" target="_blank" rel="noopener">Réserver</a>` : `<a class="btn btn-line btn-sm" href="#${a.go}" data-go="${a.go}">Ouvrir</a>`) : ''}</li>`
-          : `<li class="row"><span class="rank">${String(++rk).padStart(2, '0')}</span><div class="grow"><div class="title">${esc(a.t)}</div>${a.sub ? `<div class="sub">${esc(a.sub)}</div>` : ''}</div><a class="btn btn-line btn-sm" href="#${a.go}" data-go="${a.go}">Ouvrir</a></li>`).join('') || `<li class="muted">${R('Rien d’autre à faire de votre côté pour le moment.', 'Rien d’autre à faire de ton côté pour le moment.')}</li>`}</ul>
-      </section>
-      <section class="panel" aria-labelledby="sm">
-        <div class="panel-head"><h2 id="sm">${ic('cal')}Cette semaine</h2>${p.note.at ? `<span class="small muted">Le ${fmt(p.note.at, { day: 'numeric', month: 'long' })}</span>` : ''}</div>
-        ${note ? `<div class="note">${author && IMG[author.photo] ? `<img class="avatar" src="${IMG[author.photo]}" alt="">` : ''}<div><blockquote>${esc(note)}</blockquote><div class="who">${esc(author ? author.name.split(' ')[0] + ', ' + (author.title || '') : '')}</div></div></div>` : `<p class="muted">Le premier point de la semaine arrive ${p.meeting && p.meeting.when ? 'après le rendez-vous' : 'bientôt'}.</p>`}
-        ${p.meeting && p.meeting.when ? `<div class="meet"><span class="ico">${ic('cal')}</span><div class="grow"><div class="title">${esc(p.meeting.title || 'Rendez-vous')}</div><div class="sub">${esc(cap(fmtTime(p.meeting.when)))}</div></div></div>` : ''}
-      </section>
-    </div>
-    ${qaPanel()}`;
+  /* ---------- Espace client v2 (bento) ----------
+     Maquettes validées par Louis : docs/maquettes/client-v2 (cx.css, cx-render.js, captures). CSS portée sous .cx-wrap
+     (ajoutée au #main .wrap dans render() pour ces vues). Une carte encre pour la prochaine action, des chiffres en Trykker,
+     l'avancement O.R.E.M. en bandes ; chaque écran garde ses vraies actions (valider, signer, déposer, écrire, payer). */
+  const CX_VIEWS = ['accueil', 'projet', 'valider', 'fichiers', 'documents', 'messages', 'maquettes', 'biblio'];
+  const CXDAY = 864e5, cxD0 = (d) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x.getTime(); };
+  const cxDays = (d) => Math.round((cxD0(d) - cxD0(Date.now())) / CXDAY);
+  const cxF = (d, o) => new Intl.DateTimeFormat('fr-FR', o).format(new Date(d));
+  const cxHour = (d) => { const x = new Date(d); return x.getHours() + ' h' + (x.getMinutes() ? String(x.getMinutes()).padStart(2, '0') : ''); };
+  const cxRel = (d) => { const n = cxDays(d); return n === 0 ? 'aujourd’hui' : n === 1 ? 'demain' : n === -1 ? 'hier' : 'le ' + fmt(d); }; // « demain », jamais « avant demain »
+  const cxRelC = (d) => cap(cxRel(d));
+  const cxAgo = (d) => { const n = cxDays(d); return n === 0 ? 'Aujourd’hui' : n === -1 ? 'Hier' : fmt(d); };
+  const cxPl = (n, s, pl) => `${n} ${n > 1 ? pl || s + 's' : s}`;
+  const cxMoney = (n) => new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(n || 0);
+  const cxSize = (b) => (!b ? '0 Ko' : b >= 1e9 ? (b / 1e9).toLocaleString('fr-FR', { maximumFractionDigits: 1 }) + ' Go' : b >= 1e6 ? (b / 1e6).toLocaleString('fr-FR', { maximumFractionDigits: b >= 1e8 ? 0 : 1 }) + ' Mo' : Math.max(1, Math.round(b / 1e3)) + ' Ko');
+  const cxMon = (d) => cxF(d, { month: 'short' }).replace('.', '');
+  const cxAnd = (a) => (a.length > 1 ? a.slice(0, -1).join(', ') + ' et ' + a[a.length - 1] : a[0] || '');
+  // Espace insécable avant « : ; ! ? » et après « « », comme dans les maquettes (les données l'oublient parfois).
+  const cxNb = (h) => h.replace(/(?<!&#?\w{1,7})([A-Za-zÀ-ÿ)»])([:;!?])(?=\s|<|$)/g, '$1 $2').replace(/ ([:;!?»])/g, ' $1').replace(/« /g, '« ');
+  const cxRise = '<svg class="cx-rise" aria-hidden="true"><use href="#i-arrow"/></svg>';
+  const cxUser = (id) => S.team.find((u) => u.id === id);
+  const cxFirst = (id) => (id === 'client' ? R('Vous', 'Toi') : id === 'team' ? 'L’équipe Orem' : ((cxUser(id) || { name: who(id) }).name || '').split(' ')[0]);
+  const cxAv = (id, cls = 'cx-av') => {
+    if (id === 'client') return `<span class="cx-you" aria-hidden="true">${esc((S.project.contactName || 'V')[0])}</span>`;
+    if (id === 'team') return '<span class="cx-you cx-team-av" aria-hidden="true">O</span>';
+    const u = cxUser(id); return u && IMG[u.photo] ? `<img class="${cls}" src="${IMG[u.photo]}" alt="">` : `<span class="cx-you" aria-hidden="true">${esc((cxFirst(id) || '?')[0])}</span>`;
+  };
+  const cxLead = () => (S.project.team && S.project.team.lead) || (S.team[0] || {}).id;
+  const cxMembers = () => { const m = (S.project.team && S.project.team.members) || []; const L = (m.length ? m : S.team.map((u) => u.id)).filter((id) => cxUser(id)); const l = cxLead(); return L.sort((a, b) => (a === l ? -1 : b === l ? 1 : 0)); };
+  const cxHead = (h1, sub, right = '') => `<div class="cx-head"><div><h1>${h1}</h1>${sub ? `<p class="cx-sub">${sub}</p>` : ''}</div>${right ? `<div class="cx-head-r">${right}</div>` : ''}</div>`;
+  const cxKpi = (l, icn, num, unit, foot, o = {}) => { const tag = o.go ? 'a' : 'div';
+    return `<${tag} class="cx-kpi ${o.cls || ''}"${o.go ? ` href="#${o.go}" data-go="${o.go}"` : ''}><div class="cx-l"><span>${l}</span><span class="cx-ico">${ic(icn)}</span></div><div class="cx-num m">${num}<small>${unit}</small></div>${o.extra || ''}<div class="cx-d">${foot}</div></${tag}>`; };
+  const cxLastLoom = () => (S.project.messages || []).filter((m) => m.loom && m.fromAgency).sort((a, b) => new Date(b.at) - new Date(a.at))[0];
+  const cxLoomCard = (m) => `<div class="cx-loom"><span class="cx-th"><i>${ic('play')}</i>${m.by === 'team' ? '' : cxAv(m.by, '')}</span><div><b>${esc(m.loom.title)}</b><span>${esc(cxFirst(m.by))} · vidéo${m.loom.duration ? ' de ' + esc(m.loom.duration) : ''}</span></div></div>`;
+  const cxLoomBtn = (m, cls = 'cx-b-glass', label = 'Regarder la vidéo') => `<a class="cx-btn ${cls}" href="${esc(m.loom.url)}" target="_blank" rel="noopener">${ic('play')}${label}<span class="sr"> : ${esc(m.loom.title)} (s’ouvre dans un nouvel onglet)</span></a>`;
+  const cxTeamPill = () => `<span class="cx-pill cx-pill-team"><span class="cx-avs">${cxMembers().map((id) => cxAv(id)).join('')}</span>${R('Votre', 'Ton')} équipe</span>`;
+  const CX_SHORT = { 'Direction artistique et textes': 'DA et textes', 'Maquettes du site': 'Maquettes', 'Réception du site': 'Mise en ligne' };
+  const cxItems = () => S.project.phases.flatMap((ph) => ph.items);
+
+  /* Où en est le projet : les 4 temps O.R.E.M. en bandes proportionnelles, « aujourd'hui », les feux verts en losanges. */
+  function cxOrem() {
+    const p = S.project, n = p.phases.length, G = 6; if (!n) return '';
+    const W = p.phases.map((ph) => Math.max(5, Math.min(18, (cxD0(ph.to) - cxD0(ph.from)) / CXDAY + 1)));
+    const tot = W.reduce((a, b) => a + b, 0), today = cxD0(Date.now());
+    const pos = (d) => { const t = cxD0(d); let acc = 0; for (let i = 0; i < n; i++) { const a = cxD0(p.phases[i].from), b = cxD0(p.phases[i].to) + CXDAY; if (t < b || i === n - 1) { const f = Math.max(0, Math.min(1, (t - a) / Math.max(1, b - a))); return `calc((100% - ${G * (n - 1)}px) * ${((acc + f * W[i]) / tot).toFixed(4)} + ${i * G}px)`; } acc += W[i]; } return '100%'; };
+    const bands = p.phases.map((ph, i) => { const st = phS(ph); return `<div class="cx-band ${st === 'done' ? 'done' : st === 'on' ? 'on' : 'wait'}" style="flex:${W[i]} 1 0"><span class="cx-lt" aria-hidden="true">${esc(ph.letter || i + 1)}</span><span class="cx-btxt"><span class="cx-bn">${esc(ph.t)}</span><span class="cx-bd">${fmt(ph.from)} au ${fmt(ph.to)}</span></span>${st === 'on' ? '<span class="sr"> (en cours)</span>' : st === 'done' ? '<span class="sr"> (terminé)</span>' : ''}</div>`; }).join('');
+    const V = p.validations.filter((v) => v.due), close = (i) => i > 0 && i < V.length && (cxD0(V[i].due) - cxD0(V[i - 1].due)) / CXDAY < 6;
+    const miles = V.map((v, i) => { const cls = v.status === 'approved' ? 'ok' : v.status === 'ready' ? 'now' : '', side = close(i + 1) ? 'al' : close(i) ? 'ar' : '';
+      return `<div class="cx-mile ${cls} ${i === V.length - 1 ? 'end' : ''} ${side}" style="left:${pos(v.due)}"><i></i><b>${esc(CX_SHORT[v.t] || v.t)}</b><span>${v.status === 'ready' ? cxRelC(v.due) + ', ' + cxHour(v.due) : v.status === 'approved' ? 'Validé' : fmt(v.due)}</span></div>`; }).join('');
+    const mlist = V.slice(0, 5).map((v) => `<div class="cx-ml"><span class="cx-chip ${v.status === 'ready' ? 'hl' : v.status === 'approved' ? 'ok' : ''}">${v.status === 'ready' ? cxRelC(v.due) : v.status === 'approved' ? 'Validé' : fmt(v.due)}</span>${esc(v.t)}</div>`).join('');
+    const its = cxItems(), dn = its.filter((it) => itS(it) === 'done').length, cur = p.phases[p.phase - 1] || p.phases[0];
+    const inRange = today >= cxD0(p.phases[0].from) && today <= cxD0(p.phases[n - 1].to);
+    return `<section class="cx-card c-1-13 cx-orem" aria-labelledby="cx-orem-h"><div class="cx-card-h"><h2 id="cx-orem-h">${ic('map')}Où en est ${R('votre', 'ton')} projet</h2><span class="cx-aside cx-hide-s">Étape ${p.phase} sur ${n} · <b>${esc(cur.t)}</b></span></div>
+      <div class="cx-track"><div class="cx-bands">${bands}</div>${inRange ? `<div class="cx-today" style="left:${pos(today)}" aria-hidden="true"><span>Aujourd’hui</span></div>` : ''}</div>
+      <div class="cx-miles" aria-hidden="true">${miles}</div><div class="cx-mlist"><b>${R('Vos', 'Tes')} feux verts</b>${mlist}</div>
+      <div class="cx-orem-ft"><span><b>${cxPl(dn, 'livrable fait', 'livrables faits')}</b> sur ${its.length}</span><div class="cx-pbar thin" role="img" aria-label="${dn} livrables faits sur ${its.length}"><i style="width:${its.length ? (dn / its.length) * 100 : 0}%"></i></div><span class="cx-lg cx-hide-s"><i></i>Fait</span><span class="cx-lg cx-hide-s"><i class="hl"></i>En cours</span><span class="cx-lg cx-hide-s"><i class="w"></i>À venir</span><span class="cx-lg cx-hide-s"><i class="dia"></i>${R('Votre', 'Ton')} feu vert</span></div></section>`;
   }
-  // Compte à rebours : les trois dernières semaines avant la mise en ligne.
-  function countdown() {
-    const p = S.project, j = daysTo(p.golive);
-    if (p.deliveredAt || p.offer !== 'site' || j < 0 || j > 21 || p.phase < 3) return '';
-    const h = Math.max(0, Math.round((new Date(p.golive) - Date.now()) / 36e5));
-    return `<section class="countdown" aria-label="Compte à rebours de la mise en ligne"><div class="cd-n num">${j}<small>${j > 1 ? 'jours' : 'jour'}</small></div><div><div class="k">Mise en ligne</div><strong>${esc(cap(fmtLong(p.golive)))}</strong><span class="small">${j ? `Encore ${h} heures. ` : 'C’est aujourd’hui. '}${R('Votre', 'Ton')} site arrive.</span></div></section>`;
+  /* Bien démarrer (acompte, Webflow, nom de domaine) : une ligne compacte tant qu'il reste quelque chose à faire. */
+  function cxSetup() {
+    const st = setupSteps(); if (!st.length || st.every((x) => x.st === 'done') || prospect()) return '';
+    const n = st.filter((x) => x.st === 'done' || x.st === 'sent').length;
+    return `<section class="cx-card c-1-13 cx-setup" aria-labelledby="su-h"><div class="cx-card-h"><h2 id="su-h">${ic('ok')}Bien démarrer</h2><span class="cx-su-a"><span class="cx-aside">${n} sur ${st.length}</span><a class="cx-btn sm cx-b-ink" href="#demarrer" data-go="demarrer">${st.some((x) => x.st === 'todo' || x.st === 'retry') ? 'Commencer' : 'Voir le détail'} ${ic('arrow')}</a></span></div>
+      <ol class="cx-su">${st.map((x, i) => `<li class="${x.st}"><span class="cx-sn">${x.st === 'done' ? ic('check') + '<span class="sr">Fait : </span>' : i + 1}</span><div class="cx-m"><b>${esc(x.t)}</b>${SETUP_CHIP[x.st]}${x.k === 'acompte' && x.st !== 'done' ? '<small>Se coche tout seul à réception du virement</small>' : ''}</div></li>`).join('')}</ol>
+      </section>`;
+  }
+
+  /* ---------- 1. Accueil pendant le projet ---------- */
+  function vAccueil() {
+    const p = S.project, nx = Core.nextStep(p), ready = p.validations.filter((v) => v.status === 'ready'), signs = toSign(), props = (p.proposals || []).filter((x) => x.status === 'sent');
+    const v = nx.go === 'valider' ? ready[0] : null, pros = prospect(), setupHtml = cxSetup(), setupOn = !!setupHtml, lead = cxLead();
+    // Ce qui attend le client, sans répéter la prochaine action.
+    const same = (t) => String(t).toLowerCase().replace(/^valider : /, '') === String(nx.title).toLowerCase().replace(/^valider : /, '') || (nx.go === 'cal' && /visio de cadrage/i.test(t)) || (nx.go === 'proposition' && /proposition/i.test(t));
+    const tasks = p.tasks.filter((t) => !t.done && !same(t.t) && !(nx.go === 'valider' && /^valider/i.test(t.t) && ready.length === 1));
+    const others = (nx.go === 'valider' ? Math.max(0, ready.length - 1) : ready.length) + signs.length + (nx.go === 'proposition' ? Math.max(0, props.length - 1) : props.length) + p.missing.length + tasks.length;
+    const todo = 1 + others, nDec = ready.length + signs.length + props.length;
+    const last = cxLastLoom(), nextPh = p.phases[p.phase], nIt = nextPh && nextPh.items[0], nWho = nIt && Core.itemWho(nIt).map((w) => w[0]).find((w) => w !== 'client');
+    const cta = nx.go === 'cal' ? `<a class="cx-btn cx-b-light" href="${esc(CALF())}" target="_blank" rel="noopener">${ic('cal')}Choisir un créneau<span class="sr"> (nouvel onglet)</span></a>`
+      : CTA[nx.go] ? `<a class="cx-btn cx-b-light" href="#${CTA[nx.go][1]}" data-go="${CTA[nx.go][1]}">${ic({ valider: 'check', proposition: 'doc', fichiers: 'up' }[nx.go] || 'arrow')}${{ valider: 'Voir et valider', proposition: 'Lire la proposition', fichiers: 'Déposer les fichiers' }[nx.go] || CTA[nx.go][0]}</a>` : '';
+    const ink = `<section class="cx-ink ${pros ? 'c-1-13' : 'c-1-7 cx-r2'}" aria-labelledby="nx"><div class="cx-eyebrow"><span>${R('Votre', 'Ta')} prochaine action${v && v.due ? ' · ' + cxRel(v.due) + ', ' + cxHour(v.due) : ''}</span>${todo > 1 ? `<span class="cx-of">Action 1 sur ${todo}</span>` : ''}</div>
+      <h2 id="nx">${esc(nx.title)}</h2>${nx.text ? `<p>${esc(nx.text)}</p>` : ''}${last ? cxLoomCard(last) : ''}
+      <div class="cx-acts">${cta}${last ? cxLoomBtn(last) : ''}</div>
+      ${nIt && !pros ? `<div class="cx-then">${ic('arrow')}<span>Ensuite : <b>${esc(nIt.t)}</b>${nWho ? `, avec ${esc(cxFirst(nWho))}` : ''}</span></div>` : ''}</section>`;
+    // Les chiffres : mise en ligne, décisions, fichiers ; le 4e est « À régler » seulement si une facture est due.
+    const site = p.offer === 'site', j = Math.max(0, daysTo(p.golive)), span = Math.max(1, Math.round((cxD0(p.golive) - cxD0(p.start || p.phases[0].from)) / CXDAY));
+    const step = Math.ceil(span / 54), nd = Math.ceil(span / step), passed = Math.min(nd, Math.round((span - j) / step));
+    const dots = Array.from({ length: nd }, (_, i) => `<i class="${i < passed ? 'p' : i === passed ? 't' : ''}"></i>`).join('');
+    const clientFiles = p.files.filter((f) => f.from === 'client'), due = p.invoices.filter((i) => i.status === 'due');
+    const mt = p.meeting && p.meeting.when && cxDays(p.meeting.when) >= 0 ? p.meeting : null, un = unread();
+    const v0 = ready.find((x) => x.due);
+    const k4 = due.length ? cxKpi('À régler', 'doc', cxMoney(due.reduce((t, i) => t + i.ttc, 0)), '€', `<span class="cx-trend warn">${ic('cal')}À régler</span>TTC · ${esc(due[0].label)}`, { go: 'documents' })
+      : mt ? cxKpi('Prochain point', 'cal', cxF(mt.when, { day: 'numeric' }), cxF(mt.when, { month: 'short' }), `<span class="cx-trend flat">${esc(cap(cxF(mt.when, { weekday: 'long' })))}, ${cxHour(mt.when)}</span>${esc((mt.title || 'Rendez-vous').replace(/\s*\(.*\)$/, ''))}${lead ? ' avec ' + esc(cxFirst(lead)) : ''}`)
+      : cxKpi('Messages non lus', 'chat', un, un > 1 ? 'messages' : 'message', un ? 'De l’équipe' : 'Tout est lu', { go: 'messages' });
+    const kpis = pros ? '' : `<div class="cx-kpis c-8-13 cx-r2">
+      ${cxKpi(site ? 'Mise en ligne' : 'Livraison', 'globe', j, j > 1 ? 'jours' : 'jour', `Le ${fmt(p.golive, { day: 'numeric', month: 'long' })}`, { extra: `<div class="cx-days" aria-hidden="true">${dots}</div>` })}
+      ${cxKpi('À valider', 'ok', nDec, nDec > 1 ? 'décisions' : 'décision', v0 ? `<span class="cx-trend hl">${ic('cal')}${cxRelC(v0.due)}, ${cxHour(v0.due)}</span>pour le ${esc(v0.t.toLowerCase())}` : nDec ? 'Sans date limite' : 'Rien pour l’instant', { go: 'valider' })}
+      ${cxKpi('Fichiers reçus', 'folder', clientFiles.length, clientFiles.length > 1 ? 'fichiers' : 'fichier', p.missing.length ? `<span class="cx-trend warn">Il en manque ${p.missing.length}</span>` : 'Tout est là', { go: 'fichiers' })}
+      ${k4}</div>`;
+    // Ce qui arrive ensuite : les livrables du même jour pour le même feu vert sont regroupés.
+    const groups = [];
+    for (const it of cxItems().filter((x) => itS(x) === 'wait' && x.due).sort((a, b) => new Date(a.due) - new Date(b.due))) {
+      let g = groups.find((x) => x.k === cxD0(it.due) && x.val === (it.val || ''));
+      if (!g) { if (groups.length >= 3) break; g = { k: cxD0(it.due), val: it.val || '', its: [] }; groups.push(g); }
+      g.its.push(it);
+    }
+    const row = (g) => { const it = g.its[0], ag = [...new Set(g.its.flatMap((x) => Core.itemWho(x).map(([w]) => w)).filter((w) => w !== 'client'))], vv = p.validations.find((x) => x.key === g.val);
+      const t = g.its.length > 1 && vv ? vv.t : it.t, w0 = Core.itemWho(it)[0] || [], txt = Core.reg(w0[1] || '', p.registre);
+      const s = g.its.length > 1 ? `${cxAnd(ag.map(cxFirst))} · ${R('votre', 'ton')} feu vert` : !w0[0] ? '' : w0[0] === 'client' ? txt : `${cxFirst(w0[0])} ${txt}`;
+      return `<li><span class="cx-cal"><small>${cxMon(it.due)}</small><b>${cxF(it.due, { day: 'numeric' })}</b></span><div class="cx-m"><div class="cx-t">${esc(t)}</div>${s ? `<div class="cx-s">${esc(s)}</div>` : ''}</div><span class="cx-avs">${ag.map((w) => cxAv(w)).join('')}</span></li>`; };
+    const meetRow = mt && !k4.includes('Prochain point') ? `<li><span class="cx-cal hl"><small>${cxMon(mt.when)}</small><b>${cxF(mt.when, { day: 'numeric' })}</b></span><div class="cx-m"><div class="cx-t">${esc(mt.title || 'Rendez-vous')}</div><div class="cx-s">${esc(cap(cxF(mt.when, { weekday: 'long' })))}, ${cxHour(mt.when)}${lead ? ' · avec ' + esc(cxFirst(lead)) : ''}</div></div></li>` : '';
+    const ensuite = `<section class="cx-card c-1-5" aria-labelledby="cx-ens-h"><div class="cx-card-h"><h2 id="cx-ens-h">${ic('cal')}Ce qui arrive ensuite</h2></div><ul class="cx-list">${meetRow}${groups.map(row).join('') || (meetRow ? '' : '<li class="cx-s">Rien de prévu pour l’instant.</li>')}</ul></section>`;
+    const equipe = `<section class="cx-card c-5-9" aria-labelledby="cx-team-h"><div class="cx-card-h"><h2 id="cx-team-h">${ic('team')}${R('Votre', 'Ton')} équipe</h2></div><div class="cx-team">
+      ${cxMembers().map((id) => { const u = cxUser(id); return `<div class="cx-person ${id === lead ? 'lead' : ''}">${cxAv(id, '')}<div style="min-width:0"><b>${esc(u.name.split(' ')[0])}${id === lead ? `<span class="cx-chip ink">${R('Votre', 'Ton')} contact</span>` : ''}</b><span>${esc(u.title || '')}</span></div></div>`; }).join('')}</div>
+      <div class="cx-duo"><a class="cx-btn sm cx-b-ink" href="#messages" data-go="messages">${ic('chat')}Écrire</a><a class="cx-btn sm cx-b-soft" href="${esc(CALF())}" target="_blank" rel="noopener">${ic('cal')}Réserver un appel<span class="sr"> (nouvel onglet)</span></a></div></section>`;
+    const lastMsg = (p.messages || []).slice().sort((a, b) => new Date(b.at) - new Date(a.at))[0];
+    const cut = (t, n) => (t.length > n ? t.slice(0, t.lastIndexOf(' ', n - 4)) + '…' : t);
+    const msgs = `<section class="cx-card c-9-13" aria-labelledby="cx-msg-h"><div class="cx-card-h"><h2 id="cx-msg-h">${ic('chat')}Derniers messages</h2>${un ? `<span class="cx-aside">${cxPl(un, 'non lu')}</span>` : ''}</div><div class="cx-thread">
+      ${p.note && p.note.text ? `<div class="cx-msg">${cxAv(p.note.by, '')}<div class="cx-bubble"><div class="cx-who"><b>${esc(cxFirst(p.note.by))}<span class="cx-pin">Épinglé</span></b>${p.note.at ? `<span>${cxAgo(p.note.at)}</span>` : ''}</div>${esc(cut(p.note.text, 120))}</div></div>` : ''}
+      ${lastMsg ? `<div class="cx-msg ${lastMsg.fromAgency ? '' : 'me'}">${lastMsg.fromAgency ? cxAv(lastMsg.by, '') : ''}<div class="cx-bubble"><div class="cx-who"><b>${lastMsg.fromAgency ? esc(cxFirst(lastMsg.by)) : R('Vous', 'Toi')}${lastMsg.readByClient === false ? ' <span class="cx-new"></span><span class="sr">(non lu)</span>' : ''}</b><span>${cxAgo(lastMsg.at)}</span></div>${esc(cut(lastMsg.text, 160))}</div></div>` : ''}
+      ${!lastMsg && !(p.note && p.note.text) ? `<p class="cx-s">Aucun message pour l’instant.</p>` : ''}</div>
+      <a class="cx-reply" href="#messages" data-go="messages"><span>Répondre à l’équipe…</span><i>${ic('arrow')}</i></a></section>`;
+    const tasksCard = tasks.filter((t) => !(setupOn && (t.go === 'demarrer' || t.auto === 'acompte'))).length ? `<section class="cx-card c-1-13" aria-labelledby="td"><div class="cx-card-h"><h2 id="td">${ic('ok')}À faire de ${R('votre', 'ton')} côté</h2></div><ul class="cx-list">${tasks.filter((t) => !(setupOn && (t.go === 'demarrer' || t.auto === 'acompte'))).map((t) => t.auto
+      ? `<li><span class="cx-chip warn">À régler</span><div class="cx-m"><div class="cx-t">${esc(t.t)}</div><div class="cx-s">Se coche tout seul à réception du virement.</div></div>${t.go ? `<a class="cx-btn sm cx-b-soft" href="#${t.go}" data-go="${t.go}">Ouvrir</a>` : ''}</li>`
+      : `<li><button class="check" data-act="task" data-id="${t.id}" aria-label="Cocher : ${esc(t.t)}" aria-pressed="false"></button><div class="cx-m"><div class="cx-t">${esc(t.t)}</div></div>${t.go ? (t.go === 'cal' ? `<a class="cx-btn sm cx-b-soft" href="${esc(CALF())}" target="_blank" rel="noopener">Réserver</a>` : `<a class="cx-btn sm cx-b-soft" href="#${t.go}" data-go="${t.go}">Ouvrir</a>`) : ''}</li>`).join('')}</ul></section>` : '';
+    return cxNb(cxHead(`Bonjour ${esc(S.preview || !S.me.name ? p.contactName : S.me.name.split(' ')[0])}`, `${esc(cap(fmtLong(Date.now())))} · ${esc(p.projet)}`)
+      + `<div class="cx-bento">${ink}${kpis}${setupHtml}${tasksCard}${cxOrem()}${pros ? '' : ensuite}${equipe.replace('c-5-9', pros ? 'c-1-7b' : 'c-5-9')}${msgs.replace('c-9-13', pros ? 'c-7-13' : 'c-9-13')}</div>`);
+  }
+
+  /* ---------- 2. Accueil d'un projet livré (Évolution) ---------- */
+  function vAccueilLivre() {
+    const p = S.project, e = p.evo || {}, site = p.offer === 'site', dom = (p.links.site || '').replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '');
+    const pills = `${p.links.site ? `<a class="cx-pill" href="${esc(p.links.site)}" target="_blank" rel="noopener">${ic('globe')}${esc(dom)}<span class="sr"> (nouvel onglet)</span></a>` : ''}${cxTeamPill()}`;
+    const sub = `${site ? R('Votre', 'Ton') + ' site est en ligne' : 'Projet livré'} depuis le <b>${fmt(p.deliveredAt, { day: 'numeric', month: 'long' })}</b>${evoOn(p) && e.since ? ` · Évolution depuis le ${fmt(e.since, { day: 'numeric', month: 'long' })}` : ''}`;
+    const head = cxHead(`Bonjour ${esc(p.contactName || S.me.name)}`, sub, pills);
+    const pr = (p.proposals || []).find((x) => x.status === 'sent');
+    const ink = (cls) => pr ? `<section class="cx-ink ${cls}" aria-labelledby="nx"><div class="cx-eyebrow"><span>${R('Votre', 'Ta')} prochaine action</span>${pr.validUntil ? `<span class="cx-of">Valable jusqu’au ${fmt(pr.validUntil, { day: 'numeric', month: 'long' })}</span>` : ''}</div>
+        <h2 id="nx">${esc(cap(pr.title.replace(/^Demande : /, '')))}</h2>${pr.intro ? `<p>${esc(pr.intro)}</p>` : ''}
+        <div class="cx-price"><span class="cx-num">${cxMoney(pr.lines.reduce((t, l) => t + l.ht, 0))}<small>€ HT</small></span><span>${pr.quote ? 'Devis ' + esc(pr.quote) : 'Devis'}${pr.sentAt ? `, envoyé le ${fmt(pr.sentAt, { day: 'numeric', month: 'long' })}` : ''}</span></div>
+        <div class="cx-acts"><a class="cx-btn cx-b-light" href="#proposition" data-go="proposition">${ic('doc')}Lire et accepter</a><a class="cx-btn cx-b-glass" href="#messages" data-go="messages">${ic('chat')}Poser une question</a></div></section>`
+      : `<section class="cx-ink ${cls}" aria-labelledby="nx"><div class="cx-eyebrow"><span>En ligne depuis le ${fmt(p.deliveredAt, { day: 'numeric', month: 'long', year: 'numeric' })}</span></div><h2 id="nx">${site ? R('Votre', 'Ton') + ' site est en ligne.' : 'Le projet est livré.'}</h2>${p.next && p.next.text ? `<p>${esc(p.next.text)}</p>` : ''}
+        <div class="cx-acts">${p.links.site ? `<a class="cx-btn cx-b-light" href="${esc(p.links.site)}" target="_blank" rel="noopener">${ic('globe')}Voir le site<span class="sr"> (nouvel onglet)</span></a>` : ''}${cxLastLoom() ? cxLoomBtn(cxLastLoom()) : ''}</div></section>`;
+    const after = `${launchKit()}${reviewPanel()}`;
+    if (!evoOn(p)) {
+      const res = p.results && p.results.stats.length ? `<section class="cx-card c-1-13"><div class="cx-card-h"><h2>${cxRise}Depuis la mise en ligne</h2>${p.results.period ? `<span class="cx-aside">${esc(p.results.period)}</span>` : ''}</div><div class="cx-res">${p.results.stats.slice(0, 6).map(([n, l]) => `<div><span class="cx-num">${esc(String(n).replace(/^~/, ''))}</span><span>${esc(l)}${/^~/.test(n) ? ', en moyenne' : ''}</span></div>`).join('')}</div><p class="cx-note">Chiffres Google Analytics et Search Console</p></section>` : '';
+      return cxNb(head + `<div class="cx-bento">${ink('c-1-13')}${res}</div>`) + after + monthlyReport() + evolutionCard();
+    }
+    const rp = (e.reports || [])[0], hist = (e.reports || []).slice().reverse(), m = e.meeting && e.meeting.when, dur = ((e.meeting && e.meeting.mode) || '').match(/\((\d+) min\)/), open = (e.reschedule || []).find((r) => r.status === 'open');
+    const visio = `<section class="cx-card ${pr ? 'c-8-13' : 'c-1-13'}" aria-labelledby="evm"><div class="cx-card-h"><h2 id="evm">${ic('cal')}Prochaine visio de pilotage</h2>${m && cxDays(m) >= 0 ? `<span class="cx-chip hl">${cxDays(m) ? 'Dans ' + cxPl(cxDays(m), 'jour') : 'Aujourd’hui'}</span>` : ''}</div>
+      ${m ? `<div class="cx-visio"><span class="cx-bigcal" aria-hidden="true"><small>${cxMon(m)}</small><b>${cxF(m, { day: 'numeric' })}</b><em>${cxF(m, { weekday: 'short' }).replace('.', '')}</em></span><div class="cx-dm"><b>${esc(cap(cxF(m, { weekday: 'long', day: 'numeric', month: 'long' })))}</b><span class="cx-when">${cxHour(m)}${dur ? ` · ${dur[1]} min en visio` : ''}</span>On lit les chiffres du mois et on décide des priorités.</div></div>` : '<p class="cx-s">Date à fixer ensemble.</p>'}
+      <div class="cx-visio-ft"><span class="cx-avs">${cxMembers().map((id) => cxAv(id)).join('')}</span><span>Avec ${esc(cxAnd(cxMembers().map(cxFirst)))}</span></div>
+      ${open ? `<p class="cx-note">Demande de changement envoyée le ${fmt(open.at, { day: 'numeric', month: 'long' })} : l’équipe ${R('vous', 'te')} propose un créneau très vite.</p>` : S.rsOpen ? `<form class="cx-rs" data-form="reschedule"><div class="field"><label for="rs-t">Les créneaux qui ${R('vous', 't’')}arrangent</label><textarea id="rs-t" rows="2" placeholder="ex. Mardi ou jeudi matin, la semaine prochaine"></textarea></div><div class="cx-duo"><button class="cx-btn sm cx-b-ink" type="submit">Envoyer à l’équipe</button><button class="cx-btn sm cx-b-soft" type="button" data-act="rs-open">Annuler</button></div></form>` : `<button class="cx-btn sm cx-b-soft" data-act="rs-open" aria-expanded="false">Demander un autre créneau</button>`}</section>`;
+    const num = (s) => Number(String(s).replace(/[\s  ~%]/g, '').replace(',', '.'));
+    const lbl = (r) => cap(cxF(r.month + '-15T12:00:00', { month: 'short' }).replace('.', ''));
+    const serie = (k) => hist.map((r) => num((r.stats[k] || [])[0]));
+    const bars = (k) => { const s = serie(k), mx = Math.max(...s); return s.some(isNaN) || !(mx > 0) ? '' : `<div class="cx-hbars" aria-hidden="true">${s.map((x, i) => `<div class="cx-c ${i === s.length - 1 ? 'on' : ''}"><div class="cx-bar" style="height:${Math.max(4, Math.round((x / mx) * 64))}px"></div><span>${lbl(hist[i])}</span></div>`).join('')}</div>`; };
+    const circles = (k) => { const s = serie(k), mx = Math.max(...s); return s.some(isNaN) || !(mx > 0) ? '' : `<div class="cx-circles" aria-hidden="true">${s.map((x, i) => `<div class="cx-c ${i === s.length - 1 ? 'on' : ''}"><i style="width:${Math.round(68 * Math.sqrt(x / mx))}px;height:${Math.round(68 * Math.sqrt(x / mx))}px">${x}</i><span>${lbl(hist[i])}</span></div>`).join('')}</div>`; };
+    const ladder = (k) => { const s = serie(k); return s.some(isNaN) ? '' : `<div class="cx-ladder" aria-hidden="true">${s.map((x, i) => `<div class="cx-rw ${i === s.length - 1 ? 'on' : ''}"><span>${lbl(hist[i])}</span><span class="cx-rail"><b style="left:${Math.max(0, Math.min(100, 100 - ((x - 1) / 9) * 100)).toFixed(1)}%"></b></span><span class="cx-v">${String(x).replace('.', ',')}</span></div>`).join('')}<div class="cx-rw cx-rw-k"><span></span><span><span>10<sup>e</sup></span><span>1<sup>re</sup> place</span></span><span></span></div></div>`; };
+    const tr = (d) => { if (!d) return ''; const t = String(d).replace(/^gagne /, '+'), down = /^-|perd/.test(t); let [a, b] = t.split(' sur '); if (!b && hist.length > 1) b = cxF(hist[hist.length - 2].month + '-15T12:00:00', { month: 'long' }); return `<span class="cx-trend ${down ? 'flat' : ''}">${down ? '' : cxRise}${esc(a)}</span>${b ? `<span>sur ${esc(b)}</span>` : ''}`; };
+    const icons = ['eye', 'mail', 'globe', 'map'], cols = ['c-1-4', 'c-4-7', 'c-7-10', 'c-10-13'];
+    const stats = rp && rp.stats.length ? `<div class="c-1-13 cx-sec"><h2>${esc(cap(cxF(rp.month + '-15T12:00:00', { month: 'long' })))} en chiffres</h2>${rp.at ? `<span>Bilan reçu le ${fmt(rp.at, { day: 'numeric', month: 'long' })}</span>` : ''}</div>
+      ${rp.stats.slice(0, 4).map(([v, l, d], k) => `<div class="cx-kpi ${rp.stats.length >= 4 ? cols[k] : 'c-1-13'}"><div class="cx-l"><span>${esc(cap(l || ''))}</span><span class="cx-ico">${ic(icons[k])}</span></div><div class="cx-num m">${esc(v)}</div>${/position/i.test(l || '') ? ladder(k) : k === 1 ? circles(k) : bars(k)}<div class="cx-d">${tr(d)}</div></div>`).join('')}` : '';
+    const f = rp && rp.fileId && p.files.find((x) => x.id === rp.fileId), doc = rp && (rp.doc ? asset(rp.doc) : f && API.fileUrl(f)), dname = rp ? `Bilan ${monthName(rp.month)} ${p.client}.pdf`.replace(/[^\wÀ-ſ .-]/g, '') : '';
+    const bilan = `<section class="cx-card c-1-7b" aria-labelledby="cx-bil-h"><div class="cx-card-h"><h2 id="cx-bil-h">${ic('doc')}Le bilan du mois</h2>${rp ? `<span class="cx-aside">${esc(monthName(rp.month))}</span>` : ''}</div>
+      ${rp ? `<p class="cx-rp-title rp-title">${esc(rp.title)}</p>${rp.summary ? `<p class="cx-s">${esc(rp.summary)}</p>` : ''}
+      ${rp.done.length ? `<b class="cx-sub-h">Le travail réalisé</b><ul class="cx-done-l">${rp.done.map(([t, s]) => `<li><i>${ic('check')}</i><div>${esc(t)}${s ? `<small>${esc(s)}</small>` : ''}</div></li>`).join('')}</ul>` : ''}
+      <div class="cx-duo cx-duo-l">${doc ? `<button class="cx-btn sm cx-b-ink" data-act="doc-view" data-src="${esc(doc)}" data-title="${esc('Bilan ' + monthName(rp.month))}">${ic('eye')}Consulter le bilan</button><a class="cx-btn sm cx-b-soft" href="${esc(doc)}" download="${esc(dname)}">${ic('down')}PDF<span class="sr"> du bilan ${esc(monthName(rp.month))}</span></a>` : ''}<a class="cx-link" href="#evolution" data-go="evolution">Bilans précédents ${ic('arrow')}</a></div>` : '<p class="cx-s">Le premier bilan arrive à la fin du premier mois.</p>'}</section>`;
+    const ax = e.axes || [], adone = ax.filter((a) => a.status === 'done').length;
+    const axes = `<section class="cx-card c-7-13" aria-labelledby="cx-ax-h"><div class="cx-card-h"><h2 id="cx-ax-h">${ic('ok')}Les axes du mois</h2>${ax.length ? `<span class="cx-aside">${adone} ${adone > 1 ? 'faits' : 'fait'} sur ${ax.length}</span>` : ''}</div>
+      ${ax.length ? `<div class="cx-pbar" aria-hidden="true">${ax.slice().sort((a, b) => ({ done: 0, on: 1, todo: 2 }[a.status] - { done: 0, on: 1, todo: 2 }[b.status])).map((a) => `<i class="${a.status === 'done' ? '' : a.status === 'on' ? 'hl' : 'hatch'}" style="flex:1"></i>`).join('')}</div>
+      <ul class="cx-axes">${ax.map((a) => `<li class="${a.priority ? 'pri' : ''} ${a.status}">${a.who === 'client' || a.who === 'both' ? cxAv('client', '') : cxAv(a.who, '')}<div style="min-width:0"><div class="cx-t">${a.priority ? '<span class="sr">Priorité du mois : </span>' : ''}${esc(a.t)}</div><div class="cx-s">${esc(axWho(a.who))} · ${a.status === 'done' ? 'fait' : a.due ? 'prévu le ' + fmt(a.due, { day: 'numeric', month: 'long' }) : 'à planifier'}</div></div>${a.status === 'done' ? '<span class="cx-chip ok">Fait</span>' : a.status === 'on' ? '<span class="cx-chip hl">En cours</span>' : '<span class="cx-chip">Prévu</span>'}</li>`).join('')}</ul>` : '<p class="cx-s">Les axes du mois arrivent après la première visio.</p>'}
+      <a class="cx-link" href="#evolution" data-go="evolution">Voir l’espace Évolution ${ic('arrow')}</a></section>`;
+    const r = p.results, pi = r ? r.stats.findIndex(([n]) => /%/.test(n)) : -1, pct = pi >= 0 ? Math.max(0, Math.min(100, parseInt(String(r.stats[pi][0]).replace(/[^\d]/g, ''), 10) || 0)) : null;
+    const resN = ([n, l]) => (/^~/.test(n) ? [n.slice(1), l + ', en moyenne'] : [n, l]);
+    const rest = r ? r.stats.filter((_, i) => i !== pi).slice(0, 3).map(resN) : [];
+    const res = r && r.stats.length ? `<section class="cx-card c-1-7b" aria-labelledby="cx-res-h"><div class="cx-card-h"><h2 id="cx-res-h">${cxRise}Depuis la mise en ligne</h2><span class="cx-aside">Depuis le ${fmt(p.deliveredAt, { day: 'numeric', month: 'long' })}</span></div>
+      ${pct !== null ? `<div class="cx-res-big"><span class="cx-num">${pct}<small>%</small></span><span>${esc(cap(r.stats[pi][1]))}</span></div><div class="cx-dotm" role="img" aria-label="${pct} sur 100">${Array.from({ length: 100 }, (_, i) => `<i class="${i < pct ? 'on' : ''}"></i>`).join('')}</div>` : ''}
+      ${rest.length ? `<div class="cx-res ${pct !== null ? 'cx-res-sep' : ''}">${rest.map(([n, l]) => `<div><span class="cx-num">${esc(n)}</span><span>${esc(l)}</span></div>`).join('')}</div>` : ''}</section>` : '';
+    const months = (e.next || []).length ? `<section class="cx-card ${res ? 'c-7-13' : 'c-1-13'}" aria-labelledby="cx-mo-h"><div class="cx-card-h"><h2 id="cx-mo-h">${ic('map')}Les mois suivants</h2></div><div class="cx-months cx-months-1">${e.next.map(([mo, t]) => `<div><b>${esc(mo)}</b><small>${esc(t)}</small></div>`).join('')}</div></section>` : '';
+    return cxNb(head + `<div class="cx-bento">${pr ? ink('c-1-8') : ''}${visio}${stats}${bilan}${axes}${res}${months}</div>`) + after;
+  }
+
+  /* ---------- 3. Étapes ---------- */
+  function vProjet() {
+    const p = S.project, n = p.phases.length, a = cxD0(p.phases[0].from), b = cxD0(p.phases[n - 1].to) + CXDAY, P = (d) => Math.max(0, Math.min(100, ((cxD0(d) - a) / (b - a)) * 100));
+    const ticks = Array.from({ length: 6 }, (_, i) => a + ((b - a) * i) / 5), today = cxD0(Date.now()), its = cxItems();
+    const rows = p.phases.map((ph) => { const st = phS(ph), keys = [...new Set(ph.items.filter((it) => it.val).map((it) => it.val))];
+      return `<div class="cx-gl"><span class="cx-ltr ${st === 'on' ? 'hl' : ''}" aria-hidden="true">${esc(ph.letter || '')}</span><div><b>${esc(ph.t)}</b><span>${fmt(ph.from)} au ${fmt(ph.to)}</span></div></div>
+      <div class="cx-lane" aria-hidden="true"><div class="cx-gb ${st}" style="left:${P(ph.from)}%;width:${Math.max(2, P(cxD0(ph.to) + CXDAY) - P(ph.from))}%"><span class="cx-gtx">${cxPl(ph.items.length, 'livrable')}</span></div>${keys.map((k) => { const v = p.validations.find((x) => x.key === k); return v && v.due ? `<span class="cx-gdia ${v.status === 'ready' ? 'now' : v.status === 'approved' ? 'ok' : ''}" style="left:${P(v.due)}%" title="${esc(v.t)}"></span>` : ''; }).join('')}</div>`; }).join('');
+    const gantt = `<section class="cx-card c-1-13" aria-labelledby="cx-gt-h"><div class="cx-card-h"><h2 id="cx-gt-h">${ic('cal')}Le planning</h2><span class="cx-aside">Dates indicatives, ajustées ensemble · <i class="cx-dia-k"></i> ${R('votre', 'ton')} feu vert</span></div>
+      <div class="cx-gantt">${rows}<div class="cx-gscale" aria-hidden="true">${ticks.map((t) => `<span>${fmt(t)}</span>`).join('')}</div>
+      ${today >= a && today < b ? `<div class="cx-gtoday" style="left:calc(var(--gl) + (100% - var(--gl)) * ${(P(today) / 100).toFixed(4)})" aria-hidden="true"><span>Aujourd’hui</span></div>` : ''}</div></section>`;
+    const ph = p.phases[p.phase - 1] || p.phases[0], dn = ph.items.filter((it) => itS(it) === 'done').length, nx = p.phases[p.phase], late = Core.lateDays(p, ph);
+    const rv = p.validations.filter((v) => v.status === 'ready');
+    const whoLine = (it) => Core.itemWho(it).map(([id, t]) => { const txt = Core.reg(t || '', p.registre); return `<span>${cxAv(id)}<span>${id === 'client' ? (isAdmin() && !S.preview ? `<b>${esc(p.contactName || 'Client')}</b> : ${esc(txt)}` : `<b>${esc(txt.split(' ')[0])}</b> ${esc(txt.split(' ').slice(1).join(' '))}`) : `<b>${esc(cxFirst(id))}</b> ${esc(txt)}`}</span></span>`; }).join('');
+    const deliv = ph.items.map((it) => { const s = itS(it), v = it.val && p.validations.find((x) => x.key === it.val);
+      const right = s === 'done' ? `<span class="cx-chip ok">Fait</span>${it.due ? `<small>${fmt(it.due)}</small>` : ''}`
+        : s === 'review' ? `<small>${v && v.due ? cxRelC(v.due) + ', ' + cxHour(v.due) : `En attente de ${R('votre', 'ton')} feu vert`}</small><a class="cx-btn sm cx-b-ink" href="#valider" data-go="valider">${ic('check')}Voir et valider<span class="sr"> : ${esc(it.t)}</span></a>`
+        : `<span class="cx-chip">${s === 'on' ? 'En cours' : it.due ? fmt(it.due) : 'Prévu'}</span>${itemLink(it, false).replace('btn btn-line btn-sm', 'cx-btn sm cx-b-soft')}`;
+      return `<li class="${s}"><span class="cx-st" aria-hidden="true">${ic(s === 'done' ? 'check' : s === 'review' ? 'eye' : 'cal')}</span><div style="min-width:0"><div class="cx-t">${esc(it.t)}</div><div class="cx-who">${whoLine(it)}</div></div><div class="cx-r">${right}</div></li>`; }).join('');
+    const now = `<section class="cx-card c-1-9" aria-labelledby="cx-now-h"><div class="cx-phase-now"><div class="cx-pn-l"><span class="cx-chip ${late ? 'warn' : phS(ph) === 'done' ? 'ok' : 'hl'}">${late ? `En retard de ${cxPl(late, 'jour')}` : phS(ph) === 'done' ? 'Terminé' : 'En cours'}</span><span class="cx-big-l" aria-hidden="true">${esc(ph.letter || '')}</span><div><h2 id="cx-now-h" class="cx-now-t">${esc(ph.t)}</h2><p class="cx-s">${esc(Core.reg(ph.txt, p.registre))}</p></div>
+      <div class="cx-pn-ft">${nx ? `<div class="cx-after"><span class="cx-ltr" aria-hidden="true">${esc(nx.letter || '')}</span><div><small>Ensuite, à partir du ${fmt(nx.from, { day: 'numeric', month: 'long' })}</small><b>${esc(nx.t)}</b></div></div>` : ''}
+      <div><div class="cx-pn-n"><span><b>${dn} sur ${ph.items.length}</b> ${dn > 1 ? 'faits' : 'fait'}</span><span>Fin le ${fmt(ph.to, { day: 'numeric', month: 'long' })}</span></div><div class="cx-pbar" aria-hidden="true">${ph.items.map((it) => `<i class="${itS(it) === 'done' ? '' : itS(it) === 'review' ? 'hl' : 'hatch'}" style="flex:1"></i>`).join('')}</div></div></div></div>
+      <ul class="cx-deliv">${deliv}</ul></div></section>`;
+    const ppl = [...cxMembers(), 'client'].map((id) => [id, its.filter((it) => Core.itemWho(it).some(([w]) => w === id))]).filter(([, l]) => l.length);
+    const mine = its.filter((it) => itS(it) !== 'done' && Core.itemWho(it).some(([w]) => w === 'client')).slice(0, 3);
+    const whos = `<section class="cx-card c-9-13" aria-labelledby="cx-who-h"><div class="cx-card-h"><h2 id="cx-who-h">${ic('team')}Qui fait quoi</h2><span class="cx-aside">Sur tout le projet</span></div><div class="cx-whos">
+      ${ppl.map(([id, l]) => `<div class="cx-wr">${cxAv(id)}<b>${esc(cxFirst(id))}</b><span class="cx-n">${l.length}<span class="sr"> livrables</span></span><div class="cx-pdots" aria-hidden="true">${l.map((it) => `<i class="${itS(it) === 'done' ? 'd' : itS(it) === 'review' ? 'r' : ''}"></i>`).join('')}</div></div>`).join('')}</div>
+      ${mine.length ? `<div class="cx-sepb"><b class="cx-sub-h">${R('Vos', 'Tes')} ${mine.length > 1 ? mine.length + ' prochaines actions' : 'prochaine action'}</b><ul class="cx-mini">${mine.map((it) => { const s = itS(it), v = it.val && p.validations.find((x) => x.key === it.val);
+        return `<li><div class="cx-m">${esc(it.t.replace(/ \(.*\)$/, ''))}<small>${esc(Core.reg((Core.itemWho(it).find(([w]) => w === 'client') || [])[1] || '', p.registre))}</small></div><span class="cx-chip ${s === 'review' ? 'hl' : ''}">${s === 'review' && v && v.due ? cxRelC(v.due) : it.due ? fmt(it.due) : 'Prévu'}</span></li>`; }).join('')}</ul></div>` : ''}
+      <div class="cx-lgs"><span class="cx-lg"><i class="r"></i>Fait</span><span class="cx-lg"><i class="hl r"></i>À valider</span><span class="cx-lg"><i class="w r"></i>À venir</span></div></section>`;
+    const L = p.phases.slice(p.phase), cls = L.length === 3 ? ['c-1-5', 'c-5-9', 'c-9-13'] : L.length === 2 ? ['c-1-7b', 'c-7-13'] : ['c-1-13'];
+    const later = L.map((x, i) => `<section class="cx-card ${cls[i]} cx-next-ph" aria-labelledby="cx-ph-${i}"><div class="cx-ph-h"><span class="cx-ltr" aria-hidden="true">${esc(x.letter || '')}</span><div><h2 id="cx-ph-${i}">${esc(x.t)}</h2><span>${fmt(x.from)} au ${fmt(x.to)}</span></div></div><p class="cx-s">${esc(Core.reg(x.txt, p.registre))}</p>
+      <ul class="cx-mini">${x.items.map((it) => `<li><div class="cx-m">${esc(it.t)}<small>${it.due ? fmt(it.due) : 'Prévu'}${it.val ? ` · ${R('votre', 'ton')} feu vert` : ''}</small></div><span class="cx-avs">${Core.itemWho(it).map(([w]) => cxAv(w)).join('')}</span></li>`).join('')}</ul></section>`).join('');
+    const doneP = p.phases.slice(0, p.phase - 1);
+    const past = doneP.length ? `<details class="cx-card c-1-13 cx-past"><summary><span class="cx-card-h"><span class="cx-h2">${ic('ok')}${doneP.length > 1 ? 'Étapes terminées' : 'Étape terminée'}</span><span class="cx-aside">${doneP.map((x) => esc(x.letter || '')).join(' · ')}</span></span></summary>
+      ${doneP.map((x) => `<div class="cx-past-ph"><b>${esc(phName(x))}</b><ul class="cx-mini">${x.items.map((it) => `<li><div class="cx-m">${esc(it.t)}<small>${it.due ? fmt(it.due) : ''}</small></div><span class="cx-chip ${itS(it) === 'done' ? 'ok' : ''}">${itS(it) === 'done' ? 'Fait' : 'En cours'}</span>${itemLink(it, itS(it) === 'done').replace('btn btn-line btn-sm', 'cx-btn sm cx-b-soft')}</li>`).join('')}</ul></div>`).join('')}</details>` : '';
+    return cxNb(cxHead('Étapes', `${n} temps, selon la méthode O.R.E.M. On passe à la suite avec ${R('votre', 'ton')} feu vert.`, `<span class="cx-pill">${ic('map')}<span>Étape <b>${p.phase} sur ${n}</b></span></span>${p.deliveredAt ? `<span class="cx-pill">${ic('globe')}<span>${p.offer === 'site' ? 'En ligne' : 'Livré'} depuis le <b>${fmt(p.deliveredAt, { day: 'numeric', month: 'long' })}</b></span></span>` : `<span class="cx-pill">${ic('globe')}<span>${p.offer === 'site' ? 'Mise en ligne' : 'Livraison'} le <b>${fmt(p.golive, { day: 'numeric', month: 'long' })}</b></span></span>`}`)
+      + `<div class="cx-bento">${gantt}${now}${whos}${later}${past}</div>`) + handoverPanel();
+  }
+
+  /* ---------- 4. À valider ---------- */
+  function vValider() {
+    const p = S.project, ready = p.validations.filter((v) => v.status === 'ready'), signs = toSign(), props = (p.proposals || []).filter((x) => x.status === 'sent');
+    const nDec = ready.length + signs.length + props.length, nOk = p.validations.filter((x) => x.status === 'approved').length, last = cxLastLoom(), its = cxItems();
+    let k = 0;
+    // « Valider le plan du site » : l'article suit le premier mot ; sinon « Je valide ».
+    const valLbl = (t) => { const w = t.split(' ')[0].toLowerCase(), a = { plan: 'le', site: 'le', direction: 'la', réception: 'la', plateforme: 'la', charte: 'la', maquettes: 'les', tests: 'les', pistes: 'les', textes: 'les' }[w]; return a ? `Valider ${a} ${esc(t.charAt(0).toLowerCase() + t.slice(1))}` : 'Je valide'; };
+    const feat = (v) => { k++;
+      const it = its.find((x) => x.val === v.key), maker = it && Core.itemWho(it).map((w) => w[0]).find((w) => w !== 'client');
+      const idx = it ? its.indexOf(it) : -1, nIt = idx >= 0 && its.slice(idx + 1).find((x) => Core.itemWho(x).some(([w]) => w !== 'client')), nPh = nIt && p.phases.find((ph) => ph.items.includes(nIt)), nWho = nIt && Core.itemWho(nIt).map((w) => w[0]).find((w) => w !== 'client');
+      const hrs = v.due ? Math.round((new Date(v.due) - Date.now()) / 36e5) : null;
+      const shot = v.key === 'maquettes' ? (p.assets || []).find((a) => a.kind === 'Maquettes' && a.img) : null;
+      const tree = `<div class="cx-tree" aria-hidden="true"><div class="cx-node root">Accueil</div><div class="cx-hrow">${[2, 1, 3, 2, 2, 1].map((nn, i) => `<div class="cx-col"><div class="cx-node ${i === 2 ? 'hl' : ''}"></div>${Array.from({ length: nn }, () => '<div class="cx-node sub"></div>').join('')}</div>`).join('')}</div></div>`;
+      const ver = (p.versions || [])[0], figma = /figma\.com/.test(v.link || '');
+      const prev = `<div class="cx-prev"><div class="cx-prev-h"><span class="cx-chip">${ic(figma ? 'figma' : 'doc')}${figma ? 'Prototype Figma' : v.link ? 'Livrable en ligne' : 'Aperçu'}${ver && figma ? ' · ' + esc(ver.label) : ''}</span>${v.link ? `<a class="cx-link" href="${esc(v.link)}" target="_blank" rel="noopener">Ouvrir en grand ${ic('arrow')}<span class="sr"> : ${esc(v.t)} (nouvel onglet)</span></a>` : ''}</div>
+        <div class="cx-frame"><div class="cx-fb" aria-hidden="true"><i></i><i></i><i></i><span>${ic('lock')}${esc(p.client)} · ${esc(v.t)}</span></div>${shot ? `<img class="cx-frame-img" src="${esc(asset(shot.img))}" alt="${esc(shot.title)}">` : v.key === 'plan' ? tree : `<div class="cx-frame-e">${ic('doc')}<span>${v.link ? `${R('Ouvrez', 'Ouvre')} le livrable pour le parcourir en grand.` : `L’équipe ${R('vous', 't’')}a présenté ce livrable : ${R('retrouvez', 'retrouve')} le détail dans Messages.`}</span></div>`}</div>
+        ${last ? `<div class="cx-loom cx-loom-l"><span class="cx-th"><i>${ic('play')}</i>${last.by === 'team' ? '' : cxAv(last.by, '')}</span><div><b>${esc(last.loom.title)}</b><span>Par ${esc(cxFirst(last.by))}${last.loom.duration ? ' · ' + esc(last.loom.duration) : ''}</span></div>${cxLoomBtn(last, 'sm cx-b-ink', 'Regarder')}</div>` : ''}</div>`;
+      const acts = S.valForm === v.id
+        ? `<form class="cx-form" data-form="changes" data-id="${esc(v.id)}"><div class="field"><label for="chg-${v.id}">Qu’${R('aimeriez-vous', 'aimerais-tu')} changer ?</label><textarea id="chg-${v.id}" required placeholder="Par exemple : regrouper deux pages, ajouter une page Presse…"></textarea><span class="small muted">L’équipe ${R('vous', 'te')} répond sous 24 h ouvrées.</span></div><div class="cx-acts"><button class="cx-btn cx-b-ink" type="submit">Envoyer ma demande de modifications</button><button class="cx-btn cx-b-line" type="button" data-act="valcancel" data-id="${esc(v.id)}">Annuler</button></div></form>`
+        : S.valConfirm === v.id ? `<div class="cx-confirm" role="group" aria-label="Confirmer la validation"><p><strong>${R('Vous donnez votre', 'Tu donnes ton')} feu vert pour « ${esc(v.t)} » ?</strong> L’équipe passe à la suite.</p><div class="cx-acts"><button class="cx-btn cx-b-ink" data-act="approve-ok" data-id="${esc(v.id)}">${ic('check')}Oui, je valide</button><button class="cx-btn cx-b-line" data-act="approve-cancel" data-id="${esc(v.id)}">Pas encore</button></div></div>`
+        : `<div class="cx-acts"><button class="cx-btn cx-b-ink" data-act="approve" data-id="${esc(v.id)}">${ic('check')}${valLbl(v.t)}</button><button class="cx-btn cx-b-line" data-act="changes" data-id="${esc(v.id)}">Demander des modifications</button></div>`;
+      return `<section class="cx-card cx-val c-1-13" aria-labelledby="val-${esc(v.id)}">${prev}<div class="cx-dec"><span class="cx-chip hl">${nDec > 1 ? `Décision ${k} sur ${nDec} · ` : ''}En attente de ${R('votre', 'ton')} feu vert</span><h2 id="val-${esc(v.id)}">${esc(v.t)}</h2>
+        <p class="cx-dec-p">${esc(Core.reg(v.sub, p.registre))}. Prêt depuis le ${fmt(v.readyAt, { day: 'numeric', month: 'long' })}${maker ? `, préparé par ${esc(cxFirst(maker))}` : ''}.</p>
+        ${hrs !== null && hrs > 0 ? `<div class="cx-count"><span class="cx-num">${hrs}</span><div><b>${hrs > 1 ? 'heures' : 'heure'} pour répondre</b>${cxRelC(v.due)}, ${cxHour(v.due)}</div></div>` : ''}
+        ${nIt ? `<div class="cx-count cx-count-l"><span class="cx-ltr hl" aria-hidden="true">${esc(nPh.letter || '')}</span><div><b>Après ${R('votre', 'ton')} feu vert</b>${esc(nIt.t)}${nWho ? `, avec ${esc(cxFirst(nWho))}` : ''}.</div></div>` : ''}
+        ${acts}<p class="cx-legal">Valider, c’est donner ${R('votre', 'ton')} feu vert écrit pour passer à la suite. Il est enregistré avec la date et l’heure.</p></div></section>`; };
+    const sign = (f) => { k++; const open = S.signOpen === f.id;
+      return `<section class="cx-card c-1-13" aria-labelledby="sg-h-${esc(f.id)}"><div class="cx-sign"><span class="cx-pdf" aria-hidden="true"><b>${esc(((f.name.match(/\.([a-z0-9]+)$/i) || [, 'PDF'])[1]).toUpperCase())}</b></span><div class="cx-m"><span class="cx-chip warn">${nDec > 1 ? `Décision ${k} sur ${nDec} · ` : ''}à signer</span><div class="cx-sign-t" id="sg-h-${esc(f.id)}">${esc(f.sign.label || f.name)}</div><div class="cx-s">${esc(f.name)} · envoyé le ${fmt(f.sign.at, { day: 'numeric', month: 'long' })} par ${esc(cxFirst(f.sign.by))} · signature en ligne en 1 minute</div></div>
+        ${canPreview(f) ? `<button class="cx-btn sm cx-b-soft" type="button" data-act="fview" data-id="${esc(f.id)}">${ic('eye')}Lire<span class="sr"> : ${esc(f.name)}</span></button>` : API.fileUrl(f) ? `<a class="cx-btn sm cx-b-soft" href="${API.fileUrl(f)}">${ic('down')}Télécharger<span class="sr"> : ${esc(f.name)}</span></a>` : ''}${open ? '' : `<button class="cx-btn sm cx-b-ink" data-act="sign-open" data-id="${esc(f.id)}" aria-expanded="false">Signer<span class="sr"> : ${esc(f.sign.label || f.name)}</span></button>`}</div>
+        ${open ? `<form class="cx-form sign-doc" data-form="signdoc" data-id="${esc(f.id)}">${signBox(f.id, 'J’ai lu ce document et je le signe.')}<div class="cx-acts cx-acts-row"><button class="cx-btn cx-b-ink" type="submit">${ic('check')}Signer le document</button><a class="cx-btn cx-b-line" href="#messages" data-go="messages">Poser une question</a><button class="cx-btn cx-b-line" type="button" data-act="sign-close" data-id="${esc(f.id)}">Annuler</button></div></form>` : ''}</section>`; };
+    const prop = (x) => { k++; return `<section class="cx-card c-1-13"><div class="cx-sign"><span class="cx-fico" aria-hidden="true">${ic('doc')}</span><div class="cx-m"><span class="cx-chip warn">${nDec > 1 ? `Décision ${k} sur ${nDec} · ` : ''}à lire</span><div class="cx-sign-t">${esc(x.title)}</div><div class="cx-s">${money(x.lines.reduce((t, l) => t + l.ht, 0))} HT${x.validUntil ? ' · valable jusqu’au ' + fmt(x.validUntil, { day: 'numeric', month: 'long' }) : ''}</div></div><a class="cx-btn sm cx-b-ink" href="#proposition" data-go="proposition">Lire et répondre</a></div></section>`; };
+    const st = (x, i) => { const h = x.history[x.history.length - 1] || {};
+      return `<div class="cx-step ${x.status === 'ready' ? 'now' : x.status === 'approved' ? 'ok' : x.status === 'changes' ? 'chg' : 'lock'}"><span class="cx-sn">${i + 1}</span><b>${esc(x.t)}</b><small>${x.status === 'ready' ? `${ic('cal')}Maintenant` : x.status === 'approved' ? `${ic('check')}Validé le ${fmt(h.at)}` : x.status === 'changes' ? `${ic('chat')}Modifications en cours` : `${ic('lock')}${x.due ? 'Vers le ' + fmt(x.due) : 'Plus tard'}`}</small></div>`; };
+    const steps = p.validations.length ? `<section class="cx-card c-1-13" aria-labelledby="cx-st-h"><div class="cx-card-h"><h2 id="cx-st-h">${ic('ok')}Les feux verts du projet</h2><span class="cx-aside">${nOk} sur ${p.validations.length} ${nOk > 1 ? 'donnés' : 'donné'}</span></div><div class="cx-steps">${p.validations.map(st).join('')}</div>
+      ${p.validations.some((x) => ['approved', 'changes'].includes(x.status)) ? `<div class="cx-sepb"><b class="cx-sub-h">Déjà répondu</b><ul class="cx-list">${p.validations.filter((x) => ['approved', 'changes'].includes(x.status)).map((x) => { const h = x.history[x.history.length - 1] || {};
+        return `<li><span class="cx-chip ${x.status === 'approved' ? 'ok' : 'hl'}">${x.status === 'approved' ? 'Validé' : 'Modifications en cours'}</span><div class="cx-m"><div class="cx-t">${esc(x.t)}</div><div class="cx-s">${x.status === 'approved' ? `Validé par ${esc(h.by === S.me.id ? S.me.name : who(h.by))} le ${fmt(h.at, { day: '2-digit', month: '2-digit' })} à ${fmt(h.at, { hour: '2-digit', minute: '2-digit' }).replace(':', ' h ')}` : 'Modifications demandées le ' + fmt(h.at, { day: 'numeric', month: 'long' }) + (h.comment ? ' : « ' + esc(h.comment) + ' »' : '')}</div></div></li>`; }).join('')}</ul></div>` : ''}</section>` : '';
+    const body = props.map(prop).join('') + ready.map(feat).join('') + signs.map(sign).join('');
+    return cxNb(cxHead('À valider', nDec ? `<b>${cxPl(nDec, 'décision')}</b> ${nDec > 1 ? R('vous attendent', 't’attendent') : R('vous attend', 't’attend')}. On avance avec ${R('votre', 'ton')} feu vert.` : `On avance avec ${R('votre', 'ton')} feu vert.`, p.validations.length ? `<span class="cx-pill">${ic('ok')}${nOk} ${nOk > 1 ? 'feux verts donnés' : 'feu vert donné'} sur ${p.validations.length}</span>` : '')
+      + `<div class="cx-bento">${body || `<div class="cx-card c-1-13 cx-empty-c"><b>Rien à valider pour l’instant.</b><span>On ${R('vous', 'te')} prévient dès que la prochaine étape est prête.</span></div>`}${steps}</div>`);
+  }
+
+  /* ---------- 5. Fichiers et factures (une seule page : dépôt, paiements, envois, volume, documents de l'agence) ---------- */
+  function vFichiers() {
+    const p = S.project, b = p.billing, mine = p.files.filter((f) => f.from === 'client').sort((x, y) => new Date(y.at) - new Date(x.at));
+    const ext = (n) => ((n.match(/\.([a-z0-9]{1,6})$/i) || [, ''])[1] || '').toUpperCase(), base = (n) => n.replace(/\.[a-z0-9]{1,6}$/i, '');
+    const drop = `<section class="cx-drop c-1-8" id="drop" aria-labelledby="dz-h"><label class="cx-dz" for="file-in"><span class="cx-up" aria-hidden="true">${ic('up')}</span><span class="cx-dz-t"><span class="cx-h2" id="dz-h">${R('Glissez vos fichiers ici', 'Glisse tes fichiers ici')}</span><span class="cx-dz-p">${R('Ou cliquez pour choisir.', 'Ou clique pour choisir.')} Photos, vidéos, textes, dossiers entiers. Aucune limite de taille, l’envoi reprend tout seul si la connexion coupe.</span></span><input id="file-in" type="file" multiple class="sr"></label>
+      ${upState()}
+      ${p.missing.length ? `<div class="cx-miss-h"><b>Ce qu’il nous manque</b><span class="cx-chip warn">${cxPl(p.missing.length, 'élément')}</span></div>
+      <div class="cx-miss">${p.missing.map((m) => `<div><span class="cx-fico" aria-hidden="true">${ic('folder')}</span><div class="cx-m"><b>${esc(m.t)}</b>${m.sub ? `<small>${esc(m.sub)}</small>` : ''}</div><label class="cx-btn sm cx-b-ink cx-file-l" for="miss-${m.id}">Déposer<span class="sr"> : ${esc(m.t)}</span><input id="miss-${m.id}" type="file" multiple class="sr" data-missing="${m.id}"></label></div>`).join('')}</div>` : ''}
+      <div class="cx-dir"><label class="cx-btn sm cx-b-soft cx-file-l" for="dir-in">${ic('folder')}Déposer un dossier entier<input id="dir-in" type="file" webkitdirectory multiple class="sr"></label><span>Les sous-dossiers sont conservés.</span></div></section>`;
+    // Paiements : ce qui est réglé, ce qui est dû, et de quoi payer (lien en ligne, IBAN).
+    const paid = p.invoices.filter((i) => i.status === 'paid').reduce((t, i) => t + i.ttc, 0), total = b.totalTTC || p.invoices.reduce((t, i) => t + i.ttc, 0);
+    const dueL = p.invoices.filter((i) => i.status === 'due'), fut = Math.max(0, total - paid), pct = total ? Math.round((paid / total) * 100) : 0, C = 2 * Math.PI * 56;
+    const pdfOf = (i) => i.num && p.files.find((f) => f.from === 'agence' && f.cat === 'Facture' && f.name.includes(i.num));
+    const pdfBtn = (f) => { const url = f && API.fileUrl(f); return !f ? '' : url ? `<a class="cx-iconbtn" href="${url}">${ic('down')}<span class="sr">Télécharger ${esc(f.name)}</span></a>` : `<button class="cx-iconbtn" data-act="toast" data-msg="Fichier d’exemple : rien à télécharger.">${ic('down')}<span class="sr">Télécharger ${esc(f.name)}</span></button>`; };
+    const pay = `<section class="cx-card c-8-13 cx-pay" aria-labelledby="pay-h"><div class="cx-card-h"><h2 id="pay-h">${ic('doc')}Paiements</h2>${b.quote ? `<span class="cx-aside">Devis ${esc(b.quote)}${b.signedAt ? ' signé' : ''}</span>` : ''}</div>
+      ${total ? `<div class="cx-pay-top"><div class="cx-ring" role="img" aria-label="${pct} % réglé"><svg viewBox="0 0 132 132" aria-hidden="true"><circle cx="66" cy="66" r="56" fill="none" stroke="var(--surface-2)" stroke-width="16"/>${pct ? `<circle cx="66" cy="66" r="56" fill="none" stroke="var(--fg)" stroke-width="16" stroke-linecap="round" stroke-dasharray="${(C * pct) / 100} ${C}"/>` : ''}</svg><div><span><b>${pct} %</b><small>réglé</small></span></div></div>
+        <div class="cx-pay-n"><div class="cx-num">${cxMoney(paid)}<small>€ TTC réglés</small></div><div class="cx-s">sur ${cxMoney(total)} € TTC au total${dueL.length ? `<br><b>${cxMoney(dueL.reduce((t, i) => t + i.ttc, 0))} €</b> à régler maintenant` : fut ? `<br>Solde de <b>${cxMoney(fut)} €</b> ${p.deliveredAt ? 'selon les factures à venir' : p.offer === 'site' ? 'à la mise en ligne' : 'à la livraison'}` : ''}</div></div></div>` : ''}
+      ${p.invoices.map((i) => `<div class="cx-inv ${i.status}"><span class="cx-fico" aria-hidden="true">${ic(i.status === 'paid' ? 'check' : 'cal')}</span><div class="cx-m"><b>${esc(i.label)}</b><small>${i.num ? esc(i.num) + ' · ' : ''}${money(i.ht)} HT · ${i.status === 'paid' ? (i.paidAt ? 'réglée le ' + fmt(i.paidAt, { day: 'numeric', month: 'long' }) : 'réglée') : i.status === 'due' ? (i.num ? 'référence à indiquer sur le virement' : 'à régler') : `sera envoyée ${p.offer === 'site' ? 'à la mise en ligne' : 'à la livraison'}`}</small></div><div class="cx-inv-r"><div class="cx-amt">${cxMoney(i.ttc)} €<span class="sr"> TTC</span></div>${i.status === 'paid' ? '<span class="cx-chip ok">Réglée</span>' : i.status === 'due' ? '<span class="cx-chip warn">À régler</span>' : '<span class="cx-chip">À venir</span>'}</div>${i.status === 'due' && i.payUrl ? `<a class="cx-btn sm cx-b-ink" href="${esc(i.payUrl)}" target="_blank" rel="noopener">Payer en ligne</a>` : ''}${pdfBtn(pdfOf(i))}</div>`).join('') || '<p class="cx-s">Aucune facture pour le moment.</p>'}
+      <div class="cx-duo"><button class="cx-btn sm cx-b-soft" data-act="copy">${ic('copy')}Copier l’IBAN</button></div>
+      <p class="cx-bank">${esc(cfg().holder || '')}${cfg().bank ? ' · ' + esc(cfg().bank) : ''}<br>IBAN <span id="iban" class="num">${esc(cfg().iban || '')}</span>${cfg().bic ? ` · BIC <span class="num">${esc(cfg().bic)}</span>` : ''}</p></section>`;
+    // Les envois du client : vignettes filtrables, aperçu, téléchargement, retrait pendant 24 h.
+    const cats = ['Tous', ...Core.FILE_CATS], count = (c) => (c === 'Tous' ? mine.length : mine.filter((f) => f.cat === c).length), q = (S.fq || '').toLowerCase();
+    const shown = (S.cat === 'Tous' || !S.cat ? mine : mine.filter((f) => f.cat === S.cat)).filter((f) => !q || f.name.toLowerCase().includes(q));
+    const inner = (n) => (n.match(/\((\d+) fichiers\)/) || [, 0])[1];
+    const tile = (f) => { const url = API.fileUrl(f), own = !S.preview && f.by === S.me.id && Date.now() - new Date(f.at) < 864e5, kd = kindOf(f);
+      const im = f.thumb ? asset(f.thumb) : url && kd === 'image' && !/\.svg$/i.test(f.name) ? url + '?inline=1' : '', th = im ? `<img src="${esc(im)}" alt="" loading="lazy">` : ic({ video: 'play', image: 'eye', link: 'figma' }[kd] || 'doc');
+      return `<div class="cx-ft"><div class="cx-fth ${kd === 'video' && !im ? 'vid' : ''}" aria-hidden="true">${th}${ext(f.name) ? `<span class="cx-ext">${esc(ext(f.name))}</span>` : ''}${f.fresh ? '<span class="cx-chip ok cx-newf">Envoyé</span>' : ''}</div><b style="overflow-wrap:anywhere">${esc(base(f.name).replace(/\s*\(\d+ fichiers\)/, ''))}</b><small class="num">${f.folder ? `${esc(f.folder.replace(/\//g, ' › '))} · ` : ''}${inner(f.name) ? inner(f.name) + ' fichiers · ' : ''}${f.size ? cxSize(f.size) + ' · ' : ''}${fmt(f.at)}</small>
+        <div class="cx-ft-a">${canPreview(f) ? `<button class="cx-iconbtn" data-act="fview" data-id="${esc(f.id)}">${ic('eye')}<span class="sr">Aperçu de ${esc(f.name)}</span></button>` : ''}${url ? `<a class="cx-iconbtn" href="${url}">${ic('down')}<span class="sr">Télécharger ${esc(f.name)}</span></a>` : `<button class="cx-iconbtn" data-act="toast" data-msg="Fichier d’exemple : rien à télécharger.">${ic('down')}<span class="sr">Télécharger ${esc(f.name)}</span></button>`}${own ? `<button class="cx-iconbtn" data-act="file-remove-own" data-id="${esc(f.id)}" aria-label="Retirer ${esc(f.name)} (possible pendant 24 h)" title="Retirer (possible pendant 24 h)">×</button>` : ''}</div></div>`; };
+    const envois = `<section class="cx-card c-1-8" aria-labelledby="mf"><div class="cx-card-h cx-wrap-h"><h2 id="mf">${ic('up')}${R('Vos', 'Tes')} envois</h2>${mine.length ? `<div class="cx-tabs" role="group" aria-label="Filtrer par type">${cats.filter((c) => c === 'Tous' || count(c) || S.cat === c).map((c) => `<button data-cat="${c}" aria-pressed="${(S.cat || 'Tous') === c}">${c} <em>${count(c)}</em></button>`).join('')}</div>` : ''}</div>
+      ${mine.length > 3 ? `<div class="field cx-search"><label class="sr" for="f-q">Rechercher un fichier</label><input id="f-q" type="search" placeholder="Rechercher un fichier" value="${esc(S.fq || '')}" data-fsearch="1"></div>` : ''}
+      ${shown.length ? `<div class="cx-ftiles">${shown.map(tile).join('')}</div>` : `<p class="cx-s">${q ? 'Aucun fichier ne correspond à « ' + esc(S.fq) + ' ».' : 'Aucun fichier ici pour l’instant.'}</p>`}
+      ${mine.some((f) => f.by === S.me.id && Date.now() - new Date(f.at) < 864e5) ? `<p class="cx-note">${R('Vous pouvez', 'Tu peux')} retirer un fichier déposé par erreur pendant 24 heures (bouton ×).</p>` : ''}</section>`;
+    const tot = mine.reduce((t, f) => t + (f.size || 0), 0);
+    const vc = Core.FILE_CATS.map((c) => [c, mine.filter((f) => f.cat === c)]).map(([c, l]) => [c, l, l.reduce((t, f) => t + (f.size || 0), 0)]).filter(([, l]) => l.length).sort((x, y) => y[2] - x[2]);
+    const totTxt = cxSize(tot), [tn, tu] = [totTxt.replace(/\s.*$/, ''), totTxt.replace(/^\S+\s/, '')];
+    const vol = `<section class="cx-card c-8-13" aria-labelledby="cx-vol-h"><div class="cx-card-h"><h2 id="cx-vol-h">${ic('folder')}Déjà reçu</h2></div>
+      ${mine.length ? `<div class="cx-num">${tn}<small>${tu} au total</small></div><div class="cx-stack" aria-hidden="true">${vc.map(([, , s], i) => `<i class="k${Math.min(3, i + 1)}" style="flex:${Math.max(s, 1)} 1 0"></i>`).join('')}</div>
+      <ul class="cx-vleg">${vc.map(([c, l, s], i) => `<li><i class="k${Math.min(3, i + 1)}"></i><span>${c}</span><small>${cxPl(l.length, 'fichier')}</small><b>${cxSize(s)}</b></li>`).join('')}</ul>` : `<p class="cx-s">Rien reçu pour l’instant. ${R('Vos', 'Tes')} fichiers apparaîtront ici.</p>`}</section>`;
+    const linked = new Set(p.invoices.map(pdfOf).filter(Boolean).map((f) => f.id)), ag = p.files.filter((f) => f.from === 'agence' && f.cat !== 'Bibliothèque' && !linked.has(f.id)).sort((x, y) => new Date(y.at) - new Date(x.at));
+    const agRow = (f) => { const url = API.fileUrl(f), signed = f.sign && f.sign.status === 'signed';
+      return `<li><span class="cx-fico ${f.sign && !signed ? 'sig' : ''}" aria-hidden="true">${ic(f.url && !url ? 'figma' : 'doc')}</span><div class="cx-m"><div class="cx-t" style="overflow-wrap:anywhere">${esc(base(f.name))}</div><div class="cx-s num">${esc(f.cat)} · ${fmt(f.at)}${ext(f.name) ? ' · ' + esc(ext(f.name)) : f.url ? ' · Figma' : ''}${f.size ? ' · ' + cxSize(f.size) : ''}</div></div>
+        ${signed ? (API.proofUrl(p.id, f.id) ? `<a class="cx-chip ok" href="${API.proofUrl(p.id, f.id)}" target="_blank" rel="noopener" title="Voir le certificat de signature">Signé le ${fmt(f.sign.signedAt)}</a>` : `<span class="cx-chip ok">Signé le ${fmt(f.sign.signedAt)}</span>`) : f.sign ? `<span class="cx-chip warn">À signer</span><a class="cx-btn sm cx-b-ink" href="#valider" data-go="valider">Signer<span class="sr"> : ${esc(f.name)}</span></a>` : ''}
+        ${canPreview(f) ? `<button class="cx-iconbtn" data-act="fview" data-id="${esc(f.id)}">${ic('eye')}<span class="sr">Aperçu de ${esc(f.name)}</span></button>` : ''}
+        ${f.url && !url ? `<a class="cx-btn sm cx-b-soft" href="${esc(f.url)}" target="_blank" rel="noopener">Ouvrir<span class="sr"> ${esc(f.name)}</span></a>` : url ? `<a class="cx-iconbtn" href="${url}">${ic('down')}<span class="sr">Télécharger ${esc(f.name)}</span></a>` : `<button class="cx-iconbtn" data-act="toast" data-msg="Fichier d’exemple : rien à télécharger.">${ic('down')}<span class="sr">Télécharger ${esc(f.name)}</span></button>`}</li>`; };
+    const agence = `<section class="cx-card c-1-13" aria-labelledby="lv"><div class="cx-card-h"><h2 id="lv">${ic('doc')}Remis par l’agence</h2>${ag.length ? `<span class="cx-aside">${cxPl(ag.length, 'document')}</span>` : ''}</div>
+      ${ag.length ? `<ul class="cx-list">${ag.map(agRow).join('')}</ul>` : '<p class="cx-s">Les maquettes, devis et documents de l’agence apparaîtront ici.</p>'}</section>`;
+    return cxNb(cxHead('Fichiers et factures', `Ce que ${R('vous nous envoyez', 'tu nous envoies')} et ce que l’agence ${R('vous', 'te')} remet`, zipBtn('cx-btn sm cx-b-ink'))
+      + `<div class="cx-bento">${drop}${pay}${envois}${vol}${agence}</div>`);
+  }
+  function vDocuments() { return vFichiers(); }
+
+  /* ---------- 6. Messages ---------- */
+  function vMessages() {
+    const p = S.project, list = (p.messages || []).slice().sort((a, b) => new Date(a.at) - new Date(b.at)), lead = cxLead();
+    let lastDay = '';
+    const vid = (m) => `<a class="cx-vid" href="${esc(m.loom.url)}" target="_blank" rel="noopener"><span class="cx-vth" aria-hidden="true"><i>${ic('play')}</i>${m.loom.duration ? `<em>${esc(m.loom.duration)}</em>` : ''}</span><span class="cx-m"><b>${esc(m.loom.title)}</b><span>Vidéo de ${esc(cxFirst(m.by))} · s’ouvre dans Loom</span></span></a>`;
+    const thread = list.map((m) => { const dl = cap(cxF(m.at, { weekday: 'long', day: 'numeric', month: 'long' })), sep = dl !== lastDay ? `<div class="cx-day"><span>${cxAgo(m.at) === 'Hier' || cxAgo(m.at) === 'Aujourd’hui' ? cxAgo(m.at) : dl}</span></div>` : ''; lastDay = dl;
+      const mine = !m.fromAgency, u = cxUser(m.by);
+      return sep + `<div class="cx-msg ${mine ? 'me' : ''}">${mine ? '' : cxAv(m.by, '')}<div class="cx-bubble"><div class="cx-who"><b>${mine ? R('Vous', 'Toi') : esc(cxFirst(m.by))}${u && u.title ? `<span class="cx-role">${esc(u.title.split(/ et |,/)[0])}</span>` : ''}${m.readByClient === false && !mine ? '<span class="cx-chip hl cx-nw">Nouveau</span>' : ''}</b><span>${cxHour(m.at)}</span></div><p>${esc(m.text)}</p>${m.loom ? vid(m) : ''}</div></div>`; }).join('');
+    const vids = list.filter((m) => m.loom).reverse(), rv = p.validations.find((v) => v.status === 'ready'), rvIt = rv && cxItems().find((x) => x.val === rv.key), rvWho = rvIt && Core.itemWho(rvIt).map((w) => w[0]).find((w) => w !== 'client');
+    const ctx = rv ? `<div class="cx-ctx"><span class="cx-fico" aria-hidden="true">${ic('ok')}</span><div class="cx-m"><b>${esc(rv.t)} : ${R('votre', 'ton')} feu vert est attendu</b><small>${rv.due ? cxRelC(rv.due) + ', ' + cxHour(rv.due) : 'Prêt depuis le ' + fmt(rv.readyAt)}${rvWho ? ' · préparé par ' + esc(cxFirst(rvWho)) : ''}</small></div><a class="cx-btn sm cx-b-ink" href="#valider" data-go="valider">Voir et valider</a></div>` : '';
+    const note = p.note && p.note.text ? `<div class="cx-pinned"><span class="cx-pin">Épinglé</span><div><b>Le mot de ${esc(cxFirst(p.note.by))}</b>${p.note.at ? ` · ${cxAgo(p.note.at).toLowerCase()}` : ''}<p>${esc(p.note.text)}</p></div></div>` : '';
+    const compose = `<form class="cx-compose" data-form="msg"><label class="sr" for="msg-t">${R('Votre', 'Ton')} message</label><textarea id="msg-t" class="cx-field" placeholder="${R('Écrivez votre message', 'Écris ton message')}…" rows="3"></textarea>
+      <div class="cx-cbar"><small>Toute l’équipe lit la conversation et ${R('vous', 'te')} répond sous 24 h ouvrées.</small><button class="cx-btn sm cx-b-ink" type="submit">Envoyer ${ic('arrow')}</button></div></form>`;
+    const conv = `<section class="cx-card c-1-8 cx-conv ${vids.length ? 'cx-r2' : ''}" aria-labelledby="cx-conv-h"><div class="cx-card-h"><h2 id="cx-conv-h">${ic('chat')}Conversation</h2><span class="cx-aside">${cxPl(list.length, 'message')}<span class="cx-show-s"> · réponse sous 24 h ouvrées</span></span></div>${note}
+      <div class="cx-thread thread" tabindex="0" role="log" aria-label="Conversation">${thread || `<p class="cx-s">Aucun message pour l’instant. ${R('Écrivez', 'Écris')} ci-dessous : l’équipe répond sous 24 h ouvrées.</p>`}</div>${ctx}${compose}</section>`;
+    const topics = (u) => (u.contact || []).map((t) => t.replace(/,? et les bilans mensuels$/, ''));
+    const whom = `<section class="cx-card c-8-13" aria-labelledby="cx-whom-h"><div class="cx-card-h"><h2 id="cx-whom-h">${ic('team')}À qui écrire</h2></div><div class="cx-whom">
+      ${cxMembers().map((id) => { const u = cxUser(id); return `<div class="cx-wm ${id === lead ? 'lead' : ''}">${cxAv(id, '')}<div class="cx-m"><b>${esc(cxFirst(id))}${id === lead ? `<span class="cx-chip ink">${R('Votre', 'Ton')} contact</span>` : ''}</b><small>${esc(u.title || '')}</small>${topics(u).length ? `<ul>${topics(u).map((t) => `<li>${esc(t)}</li>`).join('')}</ul>` : ''}${u.wa ? `<a class="cx-link" href="${esc(u.wa)}" target="_blank" rel="noopener">${ic('chat')}WhatsApp</a>` : ''}</div></div>`; }).join('')}</div>
+      <div class="cx-duo"><a class="cx-btn sm cx-b-soft" href="${esc(CALF())}" target="_blank" rel="noopener">${ic('cal')}Réserver un appel<span class="sr"> (nouvel onglet)</span></a></div></section>`;
+    const vidCard = vids.length ? `<section class="cx-card c-8-13" aria-labelledby="cx-vids-h"><div class="cx-card-h"><h2 id="cx-vids-h">${ic('play')}Vidéos de l’équipe</h2><span class="cx-aside">${cxPl(vids.length, 'vidéo')}</span></div><ul class="cx-list">
+      ${vids.map((m) => `<li><span class="cx-vth sm" aria-hidden="true"><i>${ic('play')}</i></span><div class="cx-m"><a class="cx-t cx-a" href="${esc(m.loom.url)}" target="_blank" rel="noopener">${esc(m.loom.title)}<span class="sr"> (s’ouvre dans Loom)</span></a><div class="cx-s">${esc(cxFirst(m.by))} · ${fmt(m.at)}${m.loom.duration ? ' · ' + esc(m.loom.duration) : ''}</div></div>${m.readByClient === false ? '<span class="cx-chip hl">À regarder</span>' : ''}</li>`).join('')}</ul></section>` : '';
+    return cxNb(cxHead('Messages', 'Les messages et les vidéos de l’équipe, au même endroit', `<span class="cx-pill cx-hide-s">${ic('chat')}<span>Réponse sous <b>24 h ouvrées</b></span></span>`)
+      + `<div class="cx-bento">${conv}${whom}${vidCard}</div>`);
+  }
+
+  /* ---------- 7. Maquettes et visuels (la bibliothèque est une section de la page) ---------- */
+  function vMaquettes() { return maquettesBody() + biblioBody(); }
+  function maquettesBody() {
+    const p = S.project, L = p.links || {}, V = p.versions || [], last = V[0], rep = p.phases.find((x) => x.letter === 'R');
+    const screens = (p.assets || []).filter((a) => a.kind === 'Maquettes' && a.img), pins = p.pins || [];
+    const sub = p.deliveredAt ? `Les maquettes validées et les visuels de ${R('votre', 'ta')} marque, prêts à réutiliser` : 'En direct depuis Figma, toujours la dernière version';
+    if (!L.figma && !L.proto) return cxNb(cxHead('Maquettes et visuels', p.offer === 'site' ? 'Les écrans du site, en direct depuis Figma' : p.offer === 'da' ? 'Les pistes et l’identité, en direct depuis Figma' : 'Les documents de travail, en direct depuis Figma')
+      + `<div class="cx-bento"><div class="cx-card c-1-13 cx-empty-c">${ic('figma')}<b>${p.offer === 'da' ? 'Les pistes créatives arrivent' : 'Les maquettes arrivent'} avec l’étape « Représenter »${rep ? ', vers le ' + fmt(rep.from, { day: 'numeric', month: 'long' }) : ''}</b><span>Dès que ${esc(((S.team.find((u) => /design|création/i.test(u.title || '')) || S.team[0] || { name: 'l’équipe' }).name || '').split(' ')[0])} commence le design, ${R('vous les verrez', 'tu les verras')} ici en direct, sans compte Figma.</span></div></div>`);
+    const vm = p.validations.find((x) => x.key === 'maquettes'), okAt = vm && vm.status === 'approved' ? (vm.history.find((h) => h.action === 'approved') || {}).at : null;
+    const okList = p.validations.filter((x) => ['plan', 'da', 'maquettes', 'pistes', 'charte'].includes(x.key) && x.status === 'approved').map((x) => ({ t: x.t, at: (x.history.find((h) => h.action === 'approved') || {}).at })).filter((x) => x.at);
+    const url = L.proto || L.figma, embed = !API.demo && !screens.length;
+    const hero = `<section class="cx-card c-1-8 cx-hero" aria-labelledby="cx-hero-h"><div class="cx-card-h"><h2 id="cx-hero-h">${ic('figma')}La maquette cliquable</h2>${last ? `<span class="cx-chip hl">${esc(last.label)} · dernière version</span>` : ''}</div>
+      ${embed ? `<div class="cx-shot cx-shot-embed"><iframe src="${figmaEmbed(url)}" title="Maquettes Figma" allowfullscreen loading="lazy"></iframe></div>` : `<a class="cx-shot" href="${esc(url)}" target="_blank" rel="noopener">${screens[0] ? `<img src="${esc(asset(screens[0].img))}" alt="">` : ''}<span class="cx-shot-c"><span class="cx-play" aria-hidden="true">${ic('play')}</span><b>Parcourir comme sur le vrai site</b><span>S’ouvre dans un nouvel onglet, sans compte Figma</span></span></a>`}
+      <div class="cx-hero-ft"><div class="cx-m"><b>${esc(last ? last.t : 'Maquettes')}</b><small>${okAt ? `${R('Votre', 'Ton')} feu vert le ${fmt(okAt, { day: 'numeric', month: 'long' })}` : last ? 'Publiée le ' + fmt(last.at, { day: 'numeric', month: 'long' }) : ''}</small></div>${L.proto ? `<a class="cx-btn sm cx-b-ink" href="${esc(L.proto)}" target="_blank" rel="noopener">${ic('play')}Parcourir<span class="sr"> la maquette cliquable (nouvel onglet)</span></a>` : ''}${L.figma ? `<a class="cx-btn sm cx-b-soft" href="${esc(L.figma)}" target="_blank" rel="noopener">${ic('figma')}Ouvrir dans Figma<span class="sr"> (nouvel onglet)</span></a>` : ''}</div></section>`;
+    const versions = `<section class="cx-card c-8-13" aria-labelledby="cx-ver-h"><div class="cx-card-h"><h2 id="cx-ver-h">${ic('doc')}Versions</h2>${V.length ? '<span class="cx-aside">La plus récente en premier</span>' : ''}</div>
+      ${V.length ? `<ol class="cx-vers">${V.map((v, i) => `<li class="${i ? '' : 'on'}"><span class="cx-vl">${esc(v.label)}</span><div class="cx-m"><b>${esc(v.t)}</b><small>${fmt(v.at, { day: 'numeric', month: 'long' })}${!i && okAt ? ` · validée le ${fmt(okAt, { day: 'numeric', month: 'long' })}` : i ? ' · version précédente' : ' · dernière version'}</small></div>${v.url ? `<a class="cx-btn sm cx-b-line" href="${esc(v.url)}" target="_blank" rel="noopener">Ouvrir<span class="sr"> ${esc(v.label)} (nouvel onglet)</span></a>` : ''}</li>`).join('')}</ol>` : '<p class="cx-s">Chaque nouvelle version publiée par l’équipe apparaîtra ici.</p>'}
+      ${okList.length ? `<div class="cx-oks"><b>${R('Vos', 'Tes')} feux verts sur le design</b>${okList.map((x) => `<div><i>${ic('check')}</i><span>${esc(x.t)}</span><small>${fmt(x.at)}</small></div>`).join('')}</div>` : ''}
+      <p class="cx-note">Chaque version reste consultable : ${R('vous voyez', 'tu vois')} ce qui a changé d’une étape à l’autre.</p></section>`;
+    const shots = screens.length ? `<section class="cx-card c-1-9" aria-labelledby="cx-scr-h"><div class="cx-card-h cx-wrap-h"><h2 id="cx-scr-h">${ic('eye')}Les écrans</h2><span class="cx-aside">${R('Cliquez', 'Clique')} sur un écran, puis sur l’endroit à commenter</span></div><div class="cx-screens">
+      ${screens.map((a) => { const nP = pins.filter((x) => x.img === a.img).length; return `<div class="cx-scr"><div class="cx-scr-i" data-act="zoom" data-pin="1" data-src="${esc(a.img)}" data-title="${esc(a.title)}"><img src="${esc(asset(a.img))}" alt="" loading="lazy"><span class="cx-chip">${nP ? cxPl(nP, 'commentaire') : 'Aucun commentaire'}</span></div><div class="cx-scr-b"><div class="cx-m"><b>${esc(a.title)}</b><small>${a.by ? 'Par ' + esc(cxFirst(a.by)) : ''}${last ? (a.by ? ' · ' : '') + esc(last.label) : ''}</small></div><button class="cx-btn sm cx-b-soft" data-act="zoom" data-pin="1" data-src="${esc(a.img)}" data-title="${esc(a.title)}">${ic('chat')}Commenter<span class="sr"> : ${esc(a.title)}</span></button></div></div>`; }).join('')}</div></section>` : '';
+    const open = pins.filter((x) => x.status === 'open').length, designer = ((S.team.find((u) => /design|création/i.test(u.title || '')) || S.team[0] || { name: 'l’équipe' }).name || '').split(' ')[0];
+    const comments = `<section class="cx-card ${shots ? 'c-9-13' : 'c-1-13'}" aria-labelledby="cx-com-h"><div class="cx-card-h"><h2 id="cx-com-h">${ic('chat')}Commentaires</h2>${pins.length ? `<span class="cx-aside">${open} en cours</span>` : ''}</div>
+      ${pins.length ? `<ul class="cx-list">${pins.map((x) => `<li><span class="cx-chip ${x.status === 'open' ? 'warn' : 'ok'}">${x.status === 'open' ? 'En cours' : 'Traité'}</span><div class="cx-m"><div class="cx-t">${esc(x.text)}</div><div class="cx-s">${esc(who(x.by))} · ${fmt(x.at)}${x.version ? ' · ' + esc(x.version) : ''}</div></div></li>`).join('')}</ul>`
+        : `<div class="cx-empty"><span class="cx-pinmark" aria-hidden="true">1</span><b>Aucun commentaire pour l’instant</b><span>Une épingle sur l’écran, un mot, et ${esc(designer)} le reçoit. Elle reste visible jusqu’à ce qu’elle soit traitée.</span></div>`}
+      ${screens.length ? `<ol class="cx-tips"><li><i>1</i>${R('Ouvrez', 'Ouvre')} un écran</li><li><i>2</i>${R('Cliquez', 'Clique')} là où quelque chose ${R('vous', 'te')} gêne</li><li><i>3</i>${R('Écrivez', 'Écris')} ${R('votre', 'ta')} remarque, on la traite</li></ol>` : `<ol class="cx-tips"><li><i>1</i>${R('Ouvrez la maquette cliquable et cliquez', 'Ouvre la maquette cliquable et clique')} comme sur le vrai site</li><li><i>2</i>${R('Notez ce qui vous gêne', 'Note ce qui te gêne')}, écran par écran</li><li><i>3</i>${R('Validez ou demandez', 'Valide ou demande')} des modifications dans « À valider »</li></ol>`}</section>`;
+    return cxNb(cxHead('Maquettes et visuels', sub) + `<div class="cx-bento">${hero}${versions}${shots}${comments}</div>`);
+  }
+  function vBiblio() { S.toBiblio = true; return vMaquettes(); }
+  const dlName = (a) => (S.project.client + ' ' + a.title).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^\w]+/g, '-').replace(/^-|-$/g, '').toLowerCase() + (a.fileId || /^data:image\/png|\.png$/.test(asset(a.img).slice(0, 40)) ? '.png' : '.jpg');
+  function biblioBody() {
+    const p = S.project, A = (p.assets || []).filter((a) => a.kind !== 'Maquettes'), B = p.brand || {};
+    const kinds = ['Tout', ...new Set(A.map((a) => a.kind))], k = S.bk && kinds.includes(S.bk) ? S.bk : 'Tout', shown = k === 'Tout' ? A : A.filter((a) => a.kind === k);
+    if (!A.length && !(B.colors || []).length) return '<div id="biblio"></div>';
+    const zip = A.some((a) => a.fileId) && API.exportUrl(p.id) ? `<a class="cx-btn sm cx-b-ink" href="${API.exportUrl(p.id, 'biblio')}" download>${ic('down')}Tout télécharger (ZIP)</a>` : '';
+    const gallery = A.length ? `<section class="cx-card c-1-13" aria-labelledby="bib-h"><div class="cx-card-h cx-wrap-h"><h2 id="bib-h">${ic('folder')}Bibliothèque</h2><div class="cx-bib-a"><div class="cx-tabs" role="group" aria-label="Filtrer la bibliothèque">${kinds.map((x) => `<button data-bk="${esc(x)}" aria-pressed="${k === x}">${esc(x)} <em>${x === 'Tout' ? A.length : A.filter((a) => a.kind === x).length}</em></button>`).join('')}</div>${zip}</div></div>
+      <p class="cx-note cx-note-t">Les visuels du projet, libres d’usage pour ${R('votre', 'ta')} communication : site, LinkedIn, présentations.</p>
+      <div class="cx-gal">${shown.map((a, i) => `<figure class="cx-gi ${i === 0 && shown.length > 2 ? 'big' : ''}">${a.img ? `<div class="cx-gimg" data-act="zoom" data-src="${esc(a.img)}" data-title="${esc(a.title)}"><img src="${esc(asset(a.img))}" alt="${esc(a.title)}" loading="lazy"><span class="cx-chip">${esc(a.kind)}</span></div>` : ''}
+        <figcaption><div class="cx-m"><b>${esc(a.title)}</b><small>${a.img ? 'Image haute définition' : esc(a.kind)}</small></div>${a.img ? `<button class="cx-iconbtn" data-act="zoom" data-src="${esc(a.img)}" data-title="${esc(a.title)}">${ic('eye')}<span class="sr">Agrandir : ${esc(a.title)}</span></button><a class="cx-iconbtn" href="${esc(asset(a.img))}" download="${esc(dlName(a))}">${ic('down')}<span class="sr">Télécharger ${esc(a.title)}</span></a>` : ''}${a.url ? `<a class="cx-btn sm cx-b-soft" href="${esc(a.url)}" target="_blank" rel="noopener">Ouvrir<span class="sr"> ${esc(a.title)}</span></a>` : ''}</figcaption></figure>`).join('')}</div></section>` : '';
+    const colors = (B.colors || []).length ? `<section class="cx-card ${(B.fonts || []).length ? 'c-1-8' : 'c-1-13'}" aria-labelledby="cx-col-h"><div class="cx-card-h"><h2 id="cx-col-h">${ic('eye')}Couleurs de la marque</h2><span class="cx-aside">${R('Cliquez', 'Clique')} pour copier</span></div><div class="cx-sws">${B.colors.map(([nm, h]) => `<button class="cx-sw" data-act="copytxt" data-txt="${esc(h)}"><i style="background:${esc(h)}"></i><b>${esc(nm)}</b><span>${esc(h)}</span><span class="sr"> : copier le code</span></button>`).join('')}</div></section>` : '';
+    const fonts = (B.fonts || []).length ? `<section class="cx-card ${colors ? 'c-8-13' : 'c-1-13'}" aria-labelledby="cx-typo-h"><div class="cx-card-h"><h2 id="cx-typo-h">${ic('doc')}Typographies</h2></div><ul class="cx-list">${B.fonts.map(([r, d]) => `<li><span class="cx-aa" aria-hidden="true">Aa</span><div class="cx-m"><div class="cx-t">${esc(r)}</div><div class="cx-s">${esc(d)}</div></div></li>`).join('')}</ul></section>` : '';
+    return cxNb(`<div class="cx-bento" id="biblio">${gallery}${colors}${fonts}</div>`);
   }
   const cap = (s) => (s ? s[0].toUpperCase() + s.slice(1) : s);
 
@@ -447,22 +771,6 @@
     if (g === 'demarrer' && !p.tasks.some((t) => t.go === 'demarrer')) return '';
     return `<a class="btn btn-line btn-sm" href="#${g}" data-go="${g}">${GO_LBL[g] || 'Ouvrir'}<span class="sr"> : ${esc(it.t)}</span></a>`;
   }
-  function vProjet() {
-    const p = S.project;
-    return `
-    <div class="head"><div><h1>Étapes</h1><p class="lead">${esc(p.projet)} · ${esc(Core.offerOf(p))}</p></div><span class="chip hl">${esc(phName(p.phases[p.phase - 1]))}</span></div>
-    <p class="muted" style="max-width:62ch;margin-top:-12px">${p.phases.length} étapes, selon la méthode O.R.E.M. : Orienter, Représenter, Exécuter, Mesurer. On ne passe à l’étape suivante qu’avec ${R('votre', 'ton')} feu vert. Les dates sont indicatives : on les ajuste ensemble.</p>
-    <section class="panel"><ol class="phases">
-    ${p.phases.map((ph, i) => { const st = phS(ph);
-      const late = Core.lateDays(p, ph);
-      return `<li class="phase"><div class="rail"><span class="dot ${st}" aria-hidden="true">${st === 'done' ? ic('check') : esc(ph.letter || ph.n)}</span>${i < p.phases.length - 1 ? '<span class="line"></span>' : ''}</div>
-      <div class="phase-body"><div class="phase-top"><h2 style="font-size:19px">${esc(phName(ph))}</h2>${late ? `<span class="chip warn">En retard de ${late} jour${late > 1 ? 's' : ''}</span>` : PHASE_CHIP[st]}<span class="small muted num">${fmt(ph.from)} au ${fmt(ph.to)}</span></div>
-      <p>${esc(Core.reg(ph.txt, S.project.registre))}</p>
-      ${ph.items.length ? `<div class="deliv">${ph.items.map((it) => { const is = itS(it); return `<div class="row it-row"><div class="grow"><div class="title" style="font-weight:400">${esc(it.t)}</div><div class="sub">${is === 'done' ? '' : is === 'review' ? `Prêt, en attente de ${R('votre', 'ton')} feu vert` : 'Prévu vers le ' + fmt(it.due, { day: 'numeric', month: 'long' })}</div>${whoHtml(it)}</div><div class="it-a">${is === 'review' ? `<a href="#valider" data-go="valider">${ITEM_CHIP.review}</a>` : ITEM_CHIP[is] || ''}${itemLink(it, is === 'done')}</div></div>`; }).join('')}</div>` : ''}
-      </div></li>`; }).join('')}
-    </ol></section>
-    ${handoverPanel()}`;
-  }
 
   /* ---------- Proposition (avant signature, ou devis d'évolution) ---------- */
   function vProposition() {
@@ -505,97 +813,8 @@
       ['pointerup', 'pointercancel', 'pointerleave'].forEach((t) => c.addEventListener(t, () => { on = false; }));
     });
   }
-  function signSection() {
-    const L = toSign(); if (!L.length) return '';
-    return `<section class="panel" aria-labelledby="ts-h"><div class="panel-head"><h2 id="ts-h">${ic('doc')}${L.length > 1 ? 'Documents à signer' : 'Document à signer'}</h2></div>
-      ${L.map((f) => `<form class="form sign-doc" data-form="signdoc" data-id="${esc(f.id)}"><div class="row" style="border-top:0">${fileThumb(f)}<div class="grow"><div class="title">${esc(f.sign.label || f.name)}</div><div class="sub">${esc(f.name)} · envoyé le ${fmt(f.sign.at, { day: 'numeric', month: 'long' })} par ${esc(who(f.sign.by).split(' ')[0])}</div></div>
-        ${canPreview(f) ? `<button class="btn btn-line btn-sm" type="button" data-act="fview" data-id="${esc(f.id)}">${ic('eye')}Lire le document</button>` : API.fileUrl(f) ? `<a class="btn btn-line btn-sm" href="${API.fileUrl(f)}">${ic('down')}Télécharger</a>` : ''}</div>
-        ${signBox(f.id, 'J’ai lu ce document et je le signe.')}
-        <div class="inline"><button class="btn btn-primary" type="submit">${ic('check')}Signer le document</button><a class="btn btn-line" href="#messages" data-go="messages">Poser une question</a></div></form>`).join('')}</section>`;
-  }
-  function vValider() {
-    const p = S.project;
-    const ready = p.validations.filter((v) => v.status === 'ready');
-    const done = p.validations.filter((v) => ['approved', 'changes'].includes(v.status));
-    const later = p.validations.filter((v) => v.status === 'wait');
-    const card = (v) => {
-      const form = S.valForm === v.id
-        ? `<form class="field" data-form="changes" data-id="${esc(v.id)}"><label for="chg-${v.id}">Qu’${R('aimeriez-vous', 'aimerais-tu')} changer ?</label><textarea id="chg-${v.id}" required placeholder="Par exemple : regrouper deux pages, ajouter une page Presse…"></textarea><span class="small muted">L’équipe ${R('vous', 'te')} répond sous 24 h ouvrées.</span><div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-primary" type="submit">Envoyer ma demande de modifications</button><button class="btn btn-line" type="button" data-act="valcancel" data-id="${esc(v.id)}">Annuler</button></div></form>`
-        : S.valConfirm === v.id ? `<div class="confirm" role="group" aria-label="Confirmer la validation"><p><strong>${R('Vous donnez votre', 'Tu donnes ton')} feu vert pour « ${esc(v.t)} » ?</strong> L’équipe passe à la suite.</p><div class="acts"><button class="btn btn-primary" data-act="approve-ok" data-id="${esc(v.id)}">${ic('check')}Oui, je valide</button><button class="btn btn-line" data-act="approve-cancel" data-id="${esc(v.id)}">Pas encore</button></div></div>`
-           : `<div class="acts"><button class="btn btn-primary" data-act="approve" data-id="${esc(v.id)}">${ic('check')}Je valide</button><button class="btn btn-line" data-act="changes" data-id="${esc(v.id)}">Demander des modifications</button></div>
-           <p class="small muted">Valider, c’est donner ${R('votre', 'ton')} feu vert écrit pour passer à la suite. Il est enregistré avec la date et l’heure.</p>`;
-      return `<section class="panel valcard"><div><span class="chip warn">En attente de ${R('votre', 'ta')} validation</span></div>
-        <h2>${esc(v.t)}</h2><p class="muted">${esc(Core.reg(v.sub, S.project.registre))}. Prêt depuis le ${fmt(v.readyAt, { day: 'numeric', month: 'long' })}.</p>
-        ${v.link ? `<a class="link" href="${esc(v.link)}" target="_blank" rel="noopener">Ouvrir le livrable ${ic('arrow', 'width:14px;height:14px;vertical-align:-2px')}</a>` : ''}
-        ${form}</section>`;
-    };
-    return `
-    <div class="head"><div><h1>À valider</h1><p class="lead">On avance avec ${R('votre', 'ton')} feu vert</p></div></div>
-    ${signSection()}
-    ${propsOnly() ? `<section class="panel"><div class="panel-head"><h2>${ic('doc')}${propsOnly() > 1 ? 'Propositions' : 'Proposition'} à lire</h2></div><ul class="list plain">${p.proposals.filter((x) => x.status === 'sent').map((x) => `<li class="row"><div class="grow"><div class="title">${esc(x.title)}</div><div class="sub">${money(x.lines.reduce((t, l) => t + l.ht, 0))} HT · valable jusqu’au ${fmt(x.validUntil, { day: 'numeric', month: 'long' })}</div></div><a class="btn btn-primary btn-sm" href="#proposition" data-go="proposition">Lire et répondre</a></li>`).join('')}</ul></section>` : ''}
-    ${ready.map(card).join('') || propsSent() || toSign().length ? ready.map(card).join('') : `<div class="empty">Rien à valider pour l’instant. On ${R('vous', 'te')} prévient dès que la prochaine étape est prête.</div>`}
-    ${done.length ? `<section class="panel"><div class="panel-head"><h2>${ic('ok')}Déjà répondu</h2></div><div class="list">${done.map((v) => { const h = v.history[v.history.length - 1] || {};
-      return `<div class="row"><span class="ico ${v.status === 'approved' ? 'ok' : ''}">${ic(v.status === 'approved' ? 'ok' : 'chat')}</span><div class="grow"><div class="title">${esc(v.t)}</div><div class="sub">${v.status === 'approved' ? `Validé par ${esc(h.by === S.me.id ? S.me.name : who(h.by))} le ${fmt(h.at, { day: '2-digit', month: '2-digit' })} à ${fmt(h.at, { hour: '2-digit', minute: '2-digit' }).replace(':', ' h ')}` : 'Modifications demandées le ' + fmt(h.at, { day: 'numeric', month: 'long' }) + (h.comment ? ' : « ' + esc(h.comment) + ' »' : '')}</div></div>${v.status === 'approved' ? '<span class="chip ok">Validé</span>' : '<span class="chip hl">Modifications en cours</span>'}</div>`; }).join('')}</div></section>` : ''}
-    ${later.length ? `<section class="panel"><div class="panel-head"><h2>${ic('lock')}Les prochaines validations</h2></div><div class="list">${later.map((v) => `<div class="row"><span class="ico">${ic('lock')}</span><div class="grow"><div class="title">${esc(v.t)}</div><div class="sub">${esc(Core.reg(v.sub, S.project.registre))}</div></div><span class="small muted num" style="text-align:right">Vers le ${fmt(v.due)}</span></div>`).join('')}</div></section>` : ''}`;
-  }
 
-  function vFichiers() {
-    const p = S.project;
-    const mine = p.files.filter((f) => f.from === 'client');
-    const cats = ['Tous', ...Core.FILE_CATS];
-    const q = (S.fq || '').toLowerCase();
-    const shown = (S.cat === 'Tous' ? mine : mine.filter((f) => f.cat === S.cat)).filter((f) => !q || f.name.toLowerCase().includes(q));
-    const tab = S.ftab === 'docs' ? 'docs' : 'mine';
-    const tabs = `<div class="tabs" role="tablist" aria-label="Fichiers">${[['mine', 'Fichiers'], ['docs', 'Devis et factures']].map(([k, l]) => `<button role="tab" id="ft-${k}" aria-controls="ft-panel" aria-selected="${tab === k}" tabindex="${tab === k ? 0 : -1}" data-ftab="${k}">${l}${k === 'docs' && p.invoices.some((x) => x.status === 'due') ? '<span class="badge">1<span class="sr"> à régler</span></span>' : ''}</button>`).join('')}</div>`;
-    if (tab === 'docs') return `<div class="head"><div><h1>Fichiers et factures</h1><p class="lead">Devis, factures et paiement</p></div>${zipBtn()}</div>${tabs}<div role="tabpanel" id="ft-panel" aria-labelledby="ft-docs" class="tabpanel">${docsBody()}</div>`;
-    const count = (c) => (c === 'Tous' ? mine.length : mine.filter((f) => f.cat === c).length);
-    const delivs = p.files.filter((f) => f.from === 'agence' && f.cat === 'Livrable');
-    return `
-    <div class="head"><div><h1>Fichiers et factures</h1><p class="lead">Ce que ${R('vous nous envoyez', 'tu nous envoies')} et ce que l’agence ${R('vous', 'te')} remet</p></div>${zipBtn()}</div>${tabs}<div role="tabpanel" id="ft-panel" aria-labelledby="ft-mine" class="tabpanel">
-    <label class="drop" id="drop" for="file-in">
-      <span class="ico hl">${ic('up')}</span>
-      <strong>${R('Glissez vos fichiers ici, ou cliquez pour choisir', 'Glisse tes fichiers ici, ou clique pour choisir')}</strong>
-      <span class="small muted">Photos, vidéos, textes, logos, et même des dossiers entiers : aucune limite de taille. Si la connexion coupe, l’envoi reprend tout seul.</span>
-      ${upState()}
-      <input id="file-in" type="file" multiple class="sr">
-    </label>
-    <div class="drop-more"><label class="btn btn-line btn-sm" for="dir-in">${ic('folder')}${'Déposer un dossier entier'}</label><input id="dir-in" type="file" webkitdirectory multiple class="sr"><span class="small muted">Les sous-dossiers sont conservés.</span></div>
-    ${p.missing.length ? `<section class="panel" aria-labelledby="mq"><div class="panel-head"><h2 id="mq">${ic('alert')}Ce qu’il nous manque</h2><span class="small muted">${p.missing.length} élément${p.missing.length > 1 ? 's' : ''}</span></div>
-      ${p.missing.map((m) => `<div class="ask"><span class="ico">${ic('folder')}</span><div style="flex:1;min-width:0"><div style="font-weight:500">${esc(m.t)}</div>${m.sub ? `<div class="small muted">${esc(m.sub)}</div>` : ''}</div><label class="btn btn-line btn-sm" for="miss-${m.id}">Déposer</label><input id="miss-${m.id}" type="file" multiple class="sr" data-missing="${m.id}"></div>`).join('')}</section>` : ''}
-    <section class="panel" aria-labelledby="mf">
-      <div class="panel-head"><h2 id="mf">${ic('up')}${R('Vos envois', 'Tes envois')}</h2><span class="small muted num">${mine.length} fichier${mine.length > 1 ? 's' : ''}</span></div>
-      <div class="cats" role="group" aria-label="Filtrer par type" style="grid-template-columns:repeat(auto-fit,minmax(110px,1fr))">${cats.filter((c) => c === 'Tous' || count(c) || S.cat === c).map((c) => `<button class="cat" data-cat="${c}" aria-pressed="${S.cat === c}"><strong>${c}</strong><span class="small muted num">${count(c)}</span></button>`).join('')}</div>
-      ${mine.length > 3 ? `<div class="field" style="margin-top:14px"><label class="sr" for="f-q">Rechercher un fichier</label><input id="f-q" type="search" placeholder="Rechercher un fichier" value="${esc(S.fq || '')}" data-fsearch="1"></div>` : ''}
-      <div class="list" style="margin-top:18px">${shown.map(fileRow).join('') || `<p class="muted">${q ? 'Aucun fichier ne correspond à « ' + esc(S.fq) + ' ».' : 'Aucun fichier ici pour l’instant.'}</p>`}</div>
-      ${mine.some((f) => f.by === S.me.id && Date.now() - new Date(f.at) < 864e5) ? `<p class="hint">${R('Vous pouvez', 'Tu peux')} retirer un fichier déposé par erreur pendant 24 heures (bouton ×).</p>` : ''}
-    </section>
-    <section class="panel" aria-labelledby="lv"><div class="panel-head"><h2 id="lv">${ic('figma')}Livrables de l’agence</h2></div>
-      <div class="list">${delivs.map(fileRow).join('') || '<p class="muted">Les maquettes et documents de l’agence apparaîtront ici.</p>'}</div></section></div>`;
-  }
 
-  function vDocuments() { S.ftab = 'docs'; return vFichiers(); }
-  function docsBody() {
-    const p = S.project, b = p.billing;
-    const paid = p.invoices.filter((i) => i.status === 'paid').reduce((s, i) => s + i.ttc, 0);
-    const pdfOf = (i) => i.num && p.files.find((f) => f.from === 'agence' && f.cat === 'Facture' && f.name.includes(i.num));
-    const linked = new Set(p.invoices.map(pdfOf).filter(Boolean).map((f) => f.id));
-    const docs = p.files.filter((f) => f.from === 'agence' && !['Livrable', 'Bibliothèque'].includes(f.cat) && !linked.has(f.id));
-    const pdfBtn = (f) => { const url = f && API.fileUrl(f); return !f ? '' : url ? `<a class="btn btn-line btn-sm" href="${url}">${ic('down')}PDF<span class="sr"> ${esc(f.name)}</span></a>` : `<button class="btn btn-line btn-sm" data-act="toast" data-msg="Fichier d’exemple : rien à télécharger.">${ic('down')}PDF<span class="sr"> ${esc(f.name)}</span></button>`; };
-    const st = { paid: '<span class="chip ok">Payée</span>', due: '<span class="chip warn">À régler</span>', future: '<span class="chip idle">À venir</span>' };
-    const dueInv = p.invoices.filter((i) => i.status === 'due');
-    const payCard = dueInv.length ? `<section class="pay" aria-labelledby="pay-h"><div><div class="k" id="pay-h">À régler</div><div class="money num">${money(dueInv.reduce((t, i) => t + i.ttc, 0))} TTC</div><div class="small">${dueInv.map((i) => esc(i.label) + (i.num ? ' · référence <strong class="num">' + esc(i.num) + '</strong> à indiquer sur le virement' : '')).join('<br>')}</div></div>
-      <div class="pay-a">${dueInv.filter((i) => i.payUrl).map((i) => `<a class="btn btn-primary" href="${esc(i.payUrl)}" target="_blank" rel="noopener">Payer en ligne</a>`).join('')}<button class="btn btn-line" data-act="copy">${ic('copy')}Copier l’IBAN</button></div></section>` : '';
-    return `${payCard}
-    <div class="grid2">
-      <section class="panel"><div class="small muted">Montant du projet</div><div class="money num" style="margin-top:6px">${money(b.totalHT)} HT</div><div class="small muted num">${money(b.totalTTC)} TTC${b.quote ? ' · devis ' + esc(b.quote) : ''}${b.signedAt ? ' signé le ' + fmt(b.signedAt) : ''}</div></section>
-      <section class="panel"><div class="small muted">Déjà réglé</div><div class="money num" style="margin-top:6px">${money(paid)} TTC</div><div class="small muted num">Reste ${money(Math.max(0, b.totalTTC - paid))} TTC</div></section>
-    </div>
-    <section class="panel"><div class="panel-head"><h2>${ic('doc')}Factures</h2></div><div class="list">${p.invoices.map((i) => `<div class="row"><span class="ico ${i.status === 'paid' ? 'ok' : ''}">${ic('doc')}</span><div class="grow"><div class="title">${esc(i.label)}${i.num ? ' ' + esc(i.num) : ''}</div><div class="sub num">${money(i.ht)} HT · ${money(i.ttc)} TTC${i.status === 'paid' && i.paidAt ? ' · réglée le ' + fmt(i.paidAt) : i.status === 'future' ? ' · envoyée à la livraison' : ''}</div></div>${st[i.status] || ''}${i.status === 'due' && i.payUrl ? `<a class="btn btn-primary btn-sm" href="${esc(i.payUrl)}" target="_blank" rel="noopener">Payer en ligne</a>` : ''}${pdfBtn(pdfOf(i))}</div>`).join('') || '<p class="muted">Aucune facture pour le moment.</p>'}</div></section>
-    <section class="panel"><div class="panel-head"><h2>${ic('down')}Devis, contrat et RIB</h2></div><div class="list">${docs.map(fileRow).join('') || '<p class="muted">Le devis signé et les autres documents apparaîtront ici.</p>'}</div></section>
-    <section class="panel"><div class="panel-head"><h2>${ic('copy')}Coordonnées bancaires</h2><span class="small muted">Banque ${esc(cfg().bank)}</span></div>
-      <dl class="kv"><dt>Titulaire</dt><dd>${esc(cfg().holder)}, ${esc(cfg().address)}</dd><dt>IBAN</dt><dd id="iban">${esc(cfg().iban)}</dd><dt>BIC</dt><dd>${esc(cfg().bic)}</dd></dl>
-      <div class="copy" style="margin-top:16px"><button class="btn btn-line btn-sm" data-act="copy">${ic('copy')}Copier l’IBAN</button></div></section>`;
-  }
 
   function vEquipe() {
     return `
@@ -609,16 +828,11 @@
       ${['site', 'evolution'].includes(S.project.offer) ? `<details><summary>Le site m’appartient-il ?</summary><p>Oui. Le site est hébergé sur ${R('votre', 'ton')} propre compte Webflow : ${R('vous en êtes propriétaire et restez libre de changer de prestataire', 'tu en es propriétaire et restes libre de changer de prestataire')}.</p></details>` : ''}
       <details><summary>Où déposer un fichier très lourd ?</summary><p>Dans l’onglet Fichiers, sans limite de taille : ${R('glissez-y', 'glisse-y')} même un dossier entier, ses sous-dossiers sont conservés. Si la connexion coupe, l’envoi reprend tout seul ; ${R('gardez', 'garde')} simplement la page ouverte jusqu’à la fin.</p></details>
       <details><summary>Comment me reconnecter ?</summary><p>Sur la page de connexion, ${R('saisissez votre', 'saisis ton')} e-mail : un lien et un code arrivent en quelques secondes. Pas de mot de passe à retenir.</p></details>
-    </section>`;
+    </section>
+    ${qaPanel()}`;
   }
 
 
-  function unreadBanner() {
-    const n = unread(); if (!n) return '';
-    const m = (S.project.messages || []).filter((x) => x.readByClient === false).sort((a, b) => new Date(b.at) - new Date(a.at))[0];
-    const u = person(m.by);
-    return `<a class="newmsg" href="#messages" data-go="messages">${IMG[u.photo] ? `<img class="avatar" src="${IMG[u.photo]}" alt="">` : u.team ? `<span class="avatar ph team" aria-hidden="true"><img src="${IMG.logo}" alt=""></span>` : ''}<span class="grow"><strong>${esc(u.team ? u.name : u.name.split(' ')[0])} ${m.loom ? R('vous a envoyé une vidéo', 't\u2019a envoyé une vidéo') : R('vous a écrit', 't\u2019a écrit')}</strong><span>${esc(m.loom ? m.loom.title + (m.loom.duration ? ' · ' + m.loom.duration : '') : m.text)}</span></span><span class="btn btn-primary btn-sm">${m.loom ? ic('play') + 'Regarder' : 'Lire'}</span></a>`;
-  }
   /* ---------- Chiffres clés ---------- */
   const daysTo = (d) => Math.ceil((new Date(d).setHours(0, 0, 0, 0) - new Date().setHours(0, 0, 0, 0)) / 864e5);
   function kpisAdmin() {
@@ -743,56 +957,6 @@
     return `<div class="msg ${mine ? 'mine' : ''}">${!mine ? (IMG[u.photo] ? `<img class="avatar" src="${IMG[u.photo]}" alt="">` : `<span class="avatar ph${u.team ? ' team' : ''}">${u.team ? `<img src="${IMG.logo}" alt="">` : esc((u.name || '?')[0])}</span>`) : ''}
       <div class="bubble"><div class="meta-l"><strong>${esc(mine ? R('Vous', 'Toi') : u.team ? u.name : (u.name || '').split(' ')[0])}</strong><span>${esc(fmt(m.at, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }))}</span>${m.readByClient === false && !mine ? '<span class="chip hl">Nouveau</span>' : ''}</div>
       <p>${esc(m.text)}</p>${m.loom ? videoCard(m) : ''}</div></div>`;
-  }
-
-  /* ---------- Maquettes ---------- */
-  function vMaquettes() { return maquettesBody() + `<div id="biblio">${biblioBody()}</div>`; }
-  function maquettesBody() {
-    const p = S.project, L = p.links || {};
-    const rep = p.phases.find((x) => x.letter === 'R');
-    const shots = (p.assets || []).filter((a) => a.img && a.kind === 'Maquettes').slice(0, 4);
-    if (!L.figma && !L.proto) return `<div class="head"><div><h1>Maquettes et visuels</h1><p class="lead">${p.offer === 'site' ? 'Les écrans du site, en direct depuis Figma' : p.offer === 'da' ? 'Les pistes et l’identité, en direct depuis Figma' : 'Les documents de travail, en direct depuis Figma'}</p></div></div>
-      <div class="empty big">${ic('figma')}<strong>${p.offer === 'da' ? 'Les pistes créatives arrivent' : 'Les maquettes arrivent'} avec l’étape « Représenter »${rep ? ', vers le ' + fmt(rep.from, { day: 'numeric', month: 'long' }) : ''}</strong><span>Dès que ${esc(((S.team.find((u) => /design|création/i.test(u.title || '')) || S.team[0] || { name: 'l’équipe' }).name || '').split(' ')[0])} commence le design, ${R('vous les verrez', 'tu les verras')} ici en direct, sans compte Figma.</span></div>`;
-    return `<div class="head"><div><h1>Maquettes et visuels</h1><p class="lead">En direct depuis Figma, toujours la dernière version</p></div>
-      <div class="head-actions">${L.proto ? `<a class="btn btn-primary" href="${esc(L.proto)}" target="_blank" rel="noopener">${ic('play')}Parcourir la maquette cliquable</a>` : ''}${L.figma ? `<a class="btn btn-line" href="${esc(L.figma)}" target="_blank" rel="noopener">${ic('figma')}Ouvrir dans Figma</a>` : ''}</div></div>
-      ${!API.demo && (L.proto || L.figma) ? `<section class="panel flush"><div class="figma-frame"><iframe src="${figmaEmbed(L.proto || L.figma)}" title="Maquettes Figma" allowfullscreen loading="lazy"></iframe></div></section>` : ''}
-      ${API.demo || shots.length ? `<section class="panel"><div class="panel-head"><h2>${ic('eye')}${API.demo ? 'Aperçu des écrans' : 'Commenter un écran'}</h2><span class="aside">La maquette cliquable s’ouvre dans un nouvel onglet, sans compte Figma</span></div>
-          ${shots.length ? `<p class="small muted" style="margin-bottom:12px">${R('Cliquez sur un écran, puis sur l’endroit à commenter', 'Clique sur un écran, puis sur l’endroit à commenter')}.</p><div class="shots">${shots.map((a) => `<button class="shot" data-act="zoom" data-pin="1" data-src="${esc(a.img)}" data-title="${esc(a.title)}"><img src="${esc(asset(a.img))}" alt="${esc(a.title)}" loading="lazy"><span>${esc(a.title)}</span></button>`).join('')}</div>` : '<p class="muted">Les captures des écrans apparaîtront ici.</p>'}</section>` : ''}
-      ${(p.versions || []).length ? `<section class="panel"><div class="panel-head"><h2>${ic('figma')}Versions</h2><span class="aside">La plus récente en premier</span></div><ul class="list plain">${p.versions.map((v, i) => `<li class="row"><span class="chip ${i ? 'idle' : 'hl'}">${esc(v.label)}</span><div class="grow"><div class="title">${esc(v.t)}</div><div class="sub">${fmt(v.at, { day: 'numeric', month: 'long' })}${i ? '' : ' · dernière version'}</div></div><a class="btn btn-line btn-sm" href="${esc(v.url)}" target="_blank" rel="noopener">Ouvrir<span class="sr"> ${esc(v.label)}</span></a></li>`).join('')}</ul></section>` : ''}
-      ${pinsPanel()}
-      <section class="panel"><div class="panel-head"><h2>${ic('chat')}Comment donner ${R('votre', 'ton')} avis</h2></div>
-        <div class="tips"><div><span class="rank">01</span><p>${R('Ouvrez la maquette cliquable et cliquez', 'Ouvre la maquette cliquable et clique')} comme sur le vrai site.</p></div><div><span class="rank">02</span><p>${R('Notez ce qui vous gêne', 'Note ce qui te gêne')}, écran par écran.</p></div><div><span class="rank">03</span><p>${R('Validez ou demandez', 'Valide ou demande')} des modifications dans « À valider ».</p></div></div></section>`;
-  }
-
-  /* ---------- Messages ---------- */
-  function vMessages() {
-    const p = S.project;
-    const list = (p.messages || []).slice().sort((a, b) => new Date(a.at) - new Date(b.at));
-    const videos = list.filter((m) => m.loom).reverse();
-    return `<div class="head"><div><h1>Messages</h1><p class="lead">Les messages et les vidéos de l’équipe, au même endroit</p></div></div>
-      ${videos.length > 1 ? `<p class="small muted">${videos.length} vidéos de l’équipe dans la conversation, la plus récente en bas.</p>` : ''}
-      <section class="panel"><div class="panel-head"><h2>${ic('chat')}Conversation</h2><span class="aside">Réponse sous 24 h ouvrées</span></div>
-        <div class="thread" tabindex="0" role="log" aria-label="Conversation">${list.map(msgBubble).join('') || `<p class="muted">Aucun message pour l’instant. ${R('Écrivez', 'Écris')} ci-dessous : l’équipe répond sous 24 h ouvrées.</p>`}</div>
-        <form class="compose" data-form="msg"><label class="sr" for="msg-t">${R('Votre', 'Ton')} message</label><textarea id="msg-t" placeholder="${R('Écrivez votre message', 'Écris ton message')}…" rows="2"></textarea><button class="btn btn-primary" type="submit">Envoyer</button></form>
-      </section>`;
-  }
-
-  /* ---------- Bibliothèque ---------- */
-  function vBiblio() { S.toBiblio = true; return vMaquettes(); }
-  const dlName = (a) => (S.project.client + ' ' + a.title).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w]+/g, '-').replace(/^-|-$/g, '').toLowerCase() + (a.fileId || /^data:image\/png|\.png$/.test(asset(a.img).slice(0, 40)) ? '.png' : '.jpg');
-  function biblioBody() {
-    const p = S.project, A = (p.assets || []).filter((a) => a.kind !== 'Maquettes');
-    const kinds = ['Tout', ...new Set(A.map((a) => a.kind))];
-    const k = S.bk && kinds.includes(S.bk) ? S.bk : 'Tout';
-    const shown = k === 'Tout' ? A : A.filter((a) => a.kind === k);
-    if (!A.length && !(p.brand && p.brand.colors.length)) return '';
-    return `<section class="panel" aria-labelledby="bib-h"><div class="panel-head"><h2 id="bib-h">${ic('folder')}Bibliothèque</h2><span class="aside">Les visuels du projet, libres d’usage pour ${R('votre', 'ta')} communication</span></div>
-      ${A.some((a) => a.fileId) && API.exportUrl(p.id) ? `<div class="inline"><a class="btn btn-line btn-sm" href="${API.exportUrl(p.id, 'biblio')}" download>${ic('down')}Tout télécharger (ZIP)</a></div>` : ''}
-      ${A.length ? `<div class="cats" role="group" aria-label="Filtrer la bibliothèque">${kinds.map((x) => `<button class="cat" data-bk="${esc(x)}" aria-pressed="${k === x}"><strong>${esc(x)}</strong><span class="num">${x === 'Tout' ? A.length : A.filter((a) => a.kind === x).length}</span></button>`).join('')}</div>
-      <div class="gallery">${shown.map((a) => `<article class="tile">${a.img ? `<button class="tile-img" data-act="zoom" data-src="${esc(a.img)}" data-title="${esc(a.title)}" aria-label="Agrandir : ${esc(a.title)}"><img src="${esc(asset(a.img))}" alt="" loading="lazy"></button>` : ''}
-        <div class="tile-b"><span class="chip idle">${esc(a.kind)}</span><strong>${esc(a.title)}</strong><div class="tile-a">${a.img ? `<a class="btn btn-line btn-sm" href="${esc(asset(a.img))}" download="${esc(dlName(a))}" aria-label="Télécharger ${esc(a.title)}">${ic('down')}Télécharger</a>` : ''}${a.url ? `<a class="btn btn-line btn-sm" href="${esc(a.url)}" target="_blank" rel="noopener">Ouvrir</a>` : ''}</div></div></article>`).join('')}</div>`
-      : ''}</section>
-      ${p.brand && p.brand.colors.length ? `<section class="panel"><div class="panel-head"><h2>${ic('eye')}Couleurs de la marque</h2><span class="aside">${R('Cliquez', 'Clique')} pour copier</span></div><div class="swatches">${p.brand.colors.map(([n, h]) => `<button class="sw" data-act="copytxt" data-txt="${h}"><i style="background:${h}"></i><strong>${esc(n)}</strong><span class="num">${h}</span></button>`).join('')}</div></section>` : ''}`;
   }
 
   /* ---------- Boîte à outils ---------- */
@@ -931,35 +1095,7 @@
               </div>` : ''}</article>`; }).join('') || '<p class="muted">Le premier bilan arrive à la fin du premier mois.</p>'}</div></section>
       ${(e.next || []).length ? `<section class="panel" aria-labelledby="nx-h"><div class="panel-head"><h2 id="nx-h">${ic('cal')}Les mois suivants</h2></div><div class="months">${e.next.map(([m, t]) => `<div><strong>${esc(m)}</strong><p>${esc(t)}</p></div>`).join('')}</div></section>` : ''}`;
   }
-  /* ---------- Accueil d'un projet livré ---------- */
-  function vAccueilLivre() {
-    const p = S.project, last = (p.messages || []).filter((m) => m.fromAgency && m.loom).sort((a, b) => new Date(b.at) - new Date(a.at))[0];
-    const author = S.team.find((u) => u.id === p.note.by);
-    return `<div class="head"><div><h1 class="brandish">Bonjour ${esc(p.contactName || S.me.name)}</h1><p class="lead">${esc(cap(fmtLong(Date.now())))} · ${esc(p.projet)}</p></div>${clientLogo(p, 'auto', 'head-logo')}</div>
-      ${evoOn(p) ? evoMeeting(p, true) + evoHome(p) : `<section class="next live"><div><div class="k"><span class="pulse"></span>En ligne depuis le ${fmt(p.deliveredAt, { day: 'numeric', month: 'long', year: 'numeric' })}</div><h2>${p.offer === 'site' ? R('Votre', 'Ton') + ' site est en ligne.' : 'Le projet est livré.'}</h2><p>${esc(p.next.text || '')}</p></div>
-        ${p.links.site ? `<a class="btn" href="${esc(p.links.site)}" target="_blank" rel="noopener">Voir le site ${ic('arrow')}</a>` : ''}</section>`}
-      ${!evoOn(p) && p.results ? `<div class="kpis">${p.results.stats.map(([v, l]) => `<div class="kpi"><span class="v num">${esc(v)}</span><span class="l">${esc(l)}</span></div>`).join('')}</div><p class="steps-foot" style="margin-top:-8px">${esc(p.results.period)} · chiffres Google Analytics et Search Console</p>` : ''}
-      ${propsOnly() ? `<a class="newmsg" href="#proposition" data-go="proposition"><span class="grow"><strong>${R('Une proposition vous attend', 'Une proposition t’attend')}</strong><span>${esc(p.proposals.find((x) => x.status === 'sent').title)}</span></span><span class="btn btn-primary btn-sm">Lire</span></a>` : ''}
-      ${launchKit()}
-      ${evoOn(p) ? '' : monthlyReport() + evolutionCard()}
-      <div class="grid2">
-        ${last ? `<section class="panel"><div class="panel-head"><h2>${ic('play')}Dernière vidéo de l’équipe</h2><a href="#messages" data-go="messages">Tous les messages</a></div><p style="margin-bottom:12px">${esc(last.text)}</p>${last.loom ? videoCard(last) : ''}</section>` : ''}
-        <section class="panel"><div class="panel-head"><h2>${ic('cal')}Cette semaine</h2></div>
-          ${p.note.text ? `<div class="note">${author && IMG[author.photo] ? `<img class="avatar" src="${IMG[author.photo]}" alt="">` : ''}<div><blockquote>${esc(p.note.text)}</blockquote><div class="who">${esc(author ? author.name.split(' ')[0] : '')}</div></div></div>` : ''}
-          ${!evoOn(p) && p.meeting && p.meeting.when ? `<div class="meet"><span class="ico">${ic('cal')}</span><div class="grow"><div class="title">${esc(p.meeting.title)}</div><div class="sub">${esc(cap(fmtTime(p.meeting.when)))}</div></div></div>` : ''}</section>
-      </div>
-      <section class="panel"><div class="panel-head"><h2>${ic('folder')}Tout ce qu’on a construit ensemble</h2></div>
-        <div class="quick">${[(p.tools || []).includes('teaser') ? ['tool:teaser', 'Fiche de présentation', 'Présenter un bien en 2 minutes', 'doc'] : ['outils', 'Boîte à outils', 'Kit de marque, signature…', 'plus'], ['maquettes', 'Maquettes et visuels', 'Le fichier Figma et le prototype', 'figma'], ['biblio', 'Bibliothèque', `${(p.assets || []).filter((a) => a.kind !== 'Maquettes').length} visuels à télécharger`, 'folder'], ['fichiers', 'Fichiers', 'Guide Webflow, accès, bilans', 'doc']].map(([g, t, d, i]) => `<a class="qcard" href="#${g.replace('tool:', '')}" ${g.startsWith('tool:') ? `data-tool="${g.slice(5)}"` : `data-go="${g}"`}><span class="ico hl">${ic(i)}</span><strong>${t}</strong><span>${esc(d)}</span></a>`).join('')}</div></section>
-      ${reviewPanel()}
-      ${qaPanel()}`;
-  }
 
-  function evoHome(p) {
-    const e = p.evo, rp = (e.reports || [])[0], ax = (e.axes || []).filter((a) => a.status !== 'done');
-    return `<div class="grid2">
-      <section class="panel"><div class="panel-head"><h2>${ic('doc')}Dernier bilan</h2><a href="#evolution" data-go="evolution">Tous les bilans</a></div>${rp ? `<div class="k-sm">${esc(monthName(rp.month))}</div><p class="rp-title">${esc(rp.title)}</p>${rp.summary ? `<p class="muted small" style="margin-top:6px">${esc(rp.summary)}</p>` : ''}` : '<p class="muted">Le premier bilan arrive à la fin du premier mois.</p>'}</section>
-      <section class="panel"><div class="panel-head"><h2>${ic('ok')}Axes en cours</h2><a href="#evolution" data-go="evolution">Voir le détail</a></div><ul class="list plain">${ax.slice(0, 3).map((a) => `<li class="row"><div class="grow"><div class="title">${esc(a.t)}</div><div class="sub">${esc(axWho(a.who))}${a.due ? ' · ' + fmt(a.due, { day: 'numeric', month: 'long' }) : ''}</div></div>${AX_CHIP[a.status]}</li>`).join('') || '<li class="muted">Tout est fait pour ce mois-ci.</li>'}</ul></section></div>`;
-  }
   function monthlyReport() {
     const rp = (S.project.reports || [])[0]; if (!rp) return '';
     const mName = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' }).format(new Date(rp.month + '-15'));
@@ -1087,7 +1223,7 @@
       <section class="panel" style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between"><div style="flex:1 1 260px;min-width:0"><div class="panel-head" style="margin:0"><h2>${ic('lock')}Archiver l’espace</h2></div><p class="muted" style="margin-top:4px">Le client garde l’accès en lecture seule : fichiers, factures et bibliothèque restent téléchargeables.</p></div>
         <div class="inline">${zipBtn()}${p.archivedAt ? `<button class="btn btn-line" data-act="unarchive">Désarchiver</button>` : `<button class="btn btn-line" data-act="archive">Archiver</button>`}</div></section>`;
   }
-  const zipBtn = () => { const u = API.exportUrl(S.project.id); return u ? `<a class="btn btn-line" href="${u}" download>${ic('down')}Tout télécharger (ZIP)</a>` : `<button class="btn btn-line" data-act="toast" data-msg="Dans la démo, il n’y a pas de fichiers réels à exporter.">${ic('down')}Tout télécharger (ZIP)</button>`; };
+  const zipBtn = (cls = 'btn btn-line') => { const u = API.exportUrl(S.project.id); return u ? `<a class="${cls}" href="${u}" download>${ic('down')}Tout télécharger (ZIP)</a>` : `<button class="${cls}" data-act="toast" data-msg="Dans la démo, il n’y a pas de fichiers réels à exporter.">${ic('down')}Tout télécharger (ZIP)</button>`; };
   const lines = (t, n) => String(t || '').split('\n').map((l) => l.split('|').map((x) => x.trim())).filter((l) => l[0]).map((l) => l.slice(0, n));
 
   /* Agrandissement d'une image */
@@ -1952,6 +2088,7 @@
       const V = { accueil: () => (S.project.deliveredAt ? vAccueilLivre() : vAccueil()), proposition: vProposition, demarrer: vDemarrer, evolution: vEvolution, preferences: vPreferences, projet: vProjet, valider: vValider, maquettes: vMaquettes, messages: vMessages, fichiers: vFichiers, documents: vDocuments, outils: vOutils, biblio: vBiblio, equipe: vEquipe, plus: vPlus };
       if (!V[S.view]) S.view = 'accueil';
       if (wrap) wrap.innerHTML = wrapHtml(V[S.view]()); else root.innerHTML = shell(V[S.view]()) + bellPop() + (S.ob ? onboarding() : '') + lightbox() + filePreview() + docPreview();
+      const w1 = root.querySelector('#main .wrap'); if (w1) w1.classList.toggle('cx-wrap', CX_VIEWS.includes(S.view));
     } else {
       const V = { inbox: vInbox, taches: vTaches, reglages: vReglages, clients: vClients, nouveau: vNouveau, admin: vAdmin };
       if (!V[S.view] || (S.view === 'admin' && !S.project)) S.view = 'inbox';
@@ -1983,7 +2120,7 @@
   async function go(v) {
     if (v === 'deconnexion') return logout();
     // Rubriques regroupées : Documents est un onglet de Fichiers, la Bibliothèque une section de Maquettes.
-    if (!isAdmin() || S.preview) { if (v === 'documents') { S.ftab = 'docs'; v = 'fichiers'; } else if (v === 'fichiers') S.ftab = S.ftab === 'docs' && S.view === 'fichiers' ? 'docs' : 'mine'; if (v === 'biblio') { S.toBiblio = true; v = 'maquettes'; } }
+    if (!isAdmin() || S.preview) { if (v === 'documents') { S.toPay = true; v = 'fichiers'; } if (v === 'biblio') { S.toBiblio = true; v = 'maquettes'; } }
     S.bellOpen = false;
     if (v === 'compose') return openCompose();
     if (v === 'inbox' && isAdmin()) { await loadInbox(); await loadProjects(); }
@@ -1995,7 +2132,7 @@
     // Messages lus avant l'affichage : un second rendu effacerait ce que le client commence à écrire.
     if (v === 'messages' && S.project && !isAdmin() && unread() && !S.preview) { try { await API.action(S.project.id, { type: 'msg.read' }); const r = await API.project(S.project.id); S.project = r.project; } catch {} }
     S.view = v; S.valForm = null; S.tool = v === 'outils' ? S.tool : null; render(true);
-    if (S.toBiblio) { S.toBiblio = false; const b = document.getElementById('biblio'); if (b) { b.scrollIntoView({ block: 'start' }); const h = b.querySelector('h2'); if (h) { h.setAttribute('tabindex', '-1'); h.focus({ preventScroll: true }); } } }
+    for (const [k, id] of [['toBiblio', 'biblio'], ['toPay', 'pay-h']]) { if (!S[k]) continue; S[k] = false; const b = document.getElementById(id); if (b) { b.scrollIntoView({ block: 'start' }); const h = b.matches('h2') ? b : b.querySelector('h2'); if (h) { h.setAttribute('tabindex', '-1'); h.focus({ preventScroll: true }); } } }
   }
   async function enter() {
     const r = await API.me(); S.me = r.user; S.team = r.team || []; S.config = r.config || {};
@@ -2124,7 +2261,6 @@
     const g = e.target.closest('[data-go]'); if (g) { e.preventDefault(); return go(g.dataset.go); }
     const o = e.target.closest('[data-open]'); if (o) return openProject(o.dataset.open);
     const cn = e.target.closest('[data-cnotif]'); if (cn) { const n = (S.inbox || []).find((x) => x.id === cn.dataset.cnotif); try { await API.readNotif(n.id); } catch {} n.read = true; S.bellOpen = false; return go((n.go && n.go.view) || 'accueil'); }
-    const ft = e.target.closest('[data-ftab]'); if (ft) { S.ftab = ft.dataset.ftab; return render(false, true); }
     if (S.bellOpen && !e.target.closest('#bell-pop, [data-act=bell]')) { S.bellOpen = false; render(); }
     const nt = e.target.closest('[data-notif]'); if (nt) { const n = S.inbox.find((x) => x.id === nt.dataset.notif); try { await API.readNotif(n.id); } catch {} n.read = true; if (n.go && n.go.view === 'taches') { S.tk = { ...tkState(), edit: n.tid || null }; return go('taches'); } await openProject(n.projectId); S.tab = (n.go && n.go.tab) || 'pilotage'; render(true); if (S.tab === 'messages') markAgencyRead(); return; }
     const ib = e.target.closest('[data-inbox]'); if (ib) { S.inboxFilter = ib.dataset.inbox; return render(false, true); }
@@ -2146,6 +2282,8 @@
       case 'approve-ok': { S.valConfirm = null; if (await act({ type: 'val.approve', vid: id })) { S.view = 'valider'; render(); celebrate(); undoBar(id); } break; }
       case 'val-undo': { clearTimeout(undoBar.t); $('#undo') && $('#undo').remove(); if (await act({ type: 'val.undo', vid: id }, 'Validation annulée. Rien n’a été envoyé à l’équipe.')) render(); break; }
       case 'fview': S.fview = id; render(); break;
+      case 'sign-open': S.signOpen = id; render(); { const c = document.getElementById('sg-ok-' + id); c && c.focus(); } break;
+      case 'sign-close': S.signOpen = null; render(); { const b = document.querySelector(`[data-act=sign-open][data-id="${CSS.escape(id)}"]`); b && b.focus(); } break;
       case 'fview-close': if (e.target.closest('video, iframe, img, a')) return; S.fview = null; S.docView = null; render(); break;
       case 'doc-view': S.docView = { src: a.dataset.src, title: a.dataset.title }; render(); break;
       case 'testmail': { a.disabled = true; try { const r = await API.testMail(id); toast(r.sent ? `E-mail envoyé depuis ${r.from} à ${S.me.email}. Regardez votre boîte de réception.` : `Non envoyé : ${r.error || 'envoi désactivé'}`); } catch (err) { toast(err.message); } a.disabled = false; try { S.outbox = await API.outbox(); render(false, true); } catch {} break; }

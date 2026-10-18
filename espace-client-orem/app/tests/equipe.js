@@ -39,9 +39,9 @@ const ok = (label, v) => R.push(`${v ? '✔' : '✘'} ${label}`);
   await clem.click('.compose-card button[type=submit]'); await clem.waitForTimeout(500);
   // 5. Claire voit la vidéo + le visuel
   await claire.reload(); await claire.waitForSelector('#main'); await claire.waitForTimeout(300);
-  ok('Claire voit le bandeau « Clément vous a envoyé une vidéo »', /Clément vous a envoyé une vidéo/.test(await claire.locator('.newmsg').innerText().catch(() => '')));
+  ok('Claire voit la vidéo de Clément sur son accueil (carte « prochaine action ») et le message non lu', /Direction artistique\s*Clément · vidéo/.test(await claire.locator('.cx-ink .cx-loom').innerText().catch(() => '')) && /Clément[\s\S]*non lu/.test(await claire.locator('#cx-msg-h >> xpath=../..').innerText().catch(() => '')));
   await claire.click('.side [data-go=maquettes]'); await claire.waitForTimeout(300);
-  const imgOk = await claire.evaluate(() => { const i = [...document.querySelectorAll('.tile img')].find((x) => x.closest('.tile').innerText.includes('Planche')); return i ? i.naturalWidth > 0 : false; });
+  const imgOk = await claire.evaluate(() => { const i = [...document.querySelectorAll('.cx-gi img')].find((x) => x.closest('.cx-gi').innerText.includes('Planche')); return i ? i.naturalWidth > 0 : false; });
   ok('Le visuel ajouté par Clément s’affiche dans la bibliothèque de Claire', imgOk);
   const ob2 = await outbox(clem);
   ok('Claire reçoit un e-mail pour la vidéo', ob2.some((m) => m.startsWith('claire@')));

@@ -15,7 +15,7 @@ const errs = [];
     return p;
   }
   const main = (p) => p.locator('#main').innerText();
-  const go = async (p, v) => { if (v === 'documents') { await p.click('.side [data-go=fichiers]'); await p.waitForTimeout(150); await p.click('[data-ftab=docs]'); } else if (v === 'proposition') { await p.click('.side [data-go=valider]'); await p.waitForTimeout(150); await p.click('#main [data-go=proposition]'); } else await p.click(`.side [data-go="${v}"]`); await p.waitForTimeout(200); };
+  const go = async (p, v) => { if (v === 'documents') { await p.click('.side [data-go=fichiers]'); await p.waitForTimeout(150); } else if (v === 'proposition') { await p.click('.side [data-go=valider]'); await p.waitForTimeout(150); await p.click('#main [data-go=proposition]'); } else await p.click(`.side [data-go="${v}"]`); await p.waitForTimeout(200); };
 
   // 1. Inès accepte sa proposition en ligne
   const ines = await login('ines@domaine-des-vergers.fr');
@@ -51,14 +51,14 @@ const errs = [];
   const hugo = await login('hugo@huchet-demorge.fr');
   await go(hugo, 'maquettes');
   ok('Versions V2 puis V1', /V2[\s\S]*Maquettes finales[\s\S]*V1/.test(await main(hugo)));
-  await hugo.click('.shot >> nth=0'); await hugo.waitForSelector('.lb .pin-area');
+  await hugo.click('.cx-scr button[data-act=zoom] >> nth=0'); await hugo.waitForSelector('.lb .pin-area');
   const box = await hugo.locator('.pin-area img').boundingBox();
   await hugo.mouse.click(box.x + box.width * 0.3, box.y + box.height * 0.4); await hugo.waitForSelector('#pin-t');
   await hugo.fill('#pin-t', 'Le titre est un peu petit ici.'); await hugo.locator('form[data-form=pin]').evaluate((f) => f.requestSubmit()); await hugo.waitForTimeout(400);
   ok('Commentaire épinglé à l’endroit cliqué (pastille 1)', (await hugo.locator('.lb .pin').count()) === 1 && /Le titre est un peu petit/.test(await hugo.locator('.lb').innerText()));
   await hugo.screenshot({ path: OUT + '/waouh-2-pin.png' });
   await hugo.keyboard.press('Escape'); await hugo.waitForTimeout(150);
-  ok('Liste des commentaires sur la page Maquettes', /Commentaires sur les écrans/.test(await main(hugo)) && /En cours/.test(await main(hugo)));
+  ok('Liste des commentaires sur la page Maquettes', /Commentaires\s+1 en cours/.test(await main(hugo)) && /En cours/.test(await main(hugo)));
   await go(louis, 'clients'); await louis.click('.cat[data-mine="0"]'); await louis.click('[data-open=p_huchet]'); await louis.click('#tab-liens'); await louis.waitForTimeout(150);
   await louis.click('[data-act=pin-resolve]'); await louis.waitForTimeout(300);
   ok('Louis marque le commentaire comme traité', /Traité/.test(await louis.locator('#tabpanel').innerText()));
@@ -68,7 +68,7 @@ const errs = [];
   await louis.selectOption('#a-phase', '3'); await louis.waitForTimeout(500);
   await louis.click('#tab-acces'); await louis.fill('#p-g', new Date(Date.now() + 10 * 864e5).toISOString().slice(0, 10)); await louis.locator('form[data-form=infos]').evaluate((f) => f.requestSubmit()); await louis.waitForTimeout(300);
   await go(claire, 'accueil');
-  ok('Compte à rebours : « 10 jours » avant la mise en ligne', /10\s*jours/i.test(await claire.locator('.countdown').innerText().catch(() => '')));
+  ok('Compte à rebours : « 10 jours » avant la mise en ligne', /Mise en ligne\s*10\s*jours/i.test(await claire.locator('.cx-kpis').innerText().catch(() => '')));
   await claire.screenshot({ path: OUT + '/waouh-3-compte-a-rebours.png' });
   await louis.click('#tab-liens'); await louis.fill('#lk-o', 'https://ancien.maisonlumen.fr'); await louis.locator('form[data-form=links]').evaluate((f) => f.requestSubmit()); await louis.waitForTimeout(300);
   await louis.click('#tab-pilotage'); await louis.selectOption('#a-phase', '3'); await louis.waitForTimeout(500);
@@ -83,7 +83,8 @@ const errs = [];
   ok('Accueil guidé : vidéo de bienvenue de Théophile', (await julie.locator('.ob .ob-video iframe[title="Bienvenue dans votre espace"], .ob .ob-video .video-card').count()) === 1);
   ok('Accueil guidé : prénoms sous les photos', (await julie.locator('.ob .face figcaption').count()) >= 2);
   await julie.keyboard.press('Escape'); await julie.waitForTimeout(150);
-  ok('Sans clé d’API : « Réponses rapides », pas de champ libre', /Réponses rapides/.test(await main(julie)) && !(await julie.$('#ask-q')));
+  await julie.click('.side .help-link[data-go=equipe]'); await julie.waitForTimeout(250);
+  ok('Sans clé d’API : « Réponses rapides » (Équipe et aide), pas de champ libre', /Réponses rapides/.test(await main(julie)) && !(await julie.$('#ask-q')));
 
   await br.close();
 } catch (e) { R.push('✘ Arrêt : ' + e.message.split('\n')[0]); }
