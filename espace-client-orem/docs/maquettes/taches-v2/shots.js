@@ -1,4 +1,4 @@
-/* Captures de la maquette v2 dans le vrai cadre de l'app (serveur local 3123, données d'exemple). */
+/* Captures de la maquette v2 dans le vrai cadre de l'app (serveur local, BASE ou 3123, données d'exemple). */
 const { chromium } = require('playwright'); const fs = require('fs'), path = require('path');
 const DIR = __dirname, OUT = path.join(DIR, 'captures'); fs.mkdirSync(OUT, { recursive: true });
 const css = fs.readFileSync(path.join(DIR, 'tk.css'), 'utf8'), js = fs.readFileSync(path.join(DIR, 'tk-render.js'), 'utf8');
@@ -7,7 +7,7 @@ const css = fs.readFileSync(path.join(DIR, 'tk.css'), 'utf8'), js = fs.readFileS
   async function shot(name, w, h, o = {}, theme) {
     const ctx = await br.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 2, locale: 'fr-FR', bypassCSP: true, colorScheme: theme || 'light' });
     const p = await ctx.newPage(); const errs = []; p.on('pageerror', (e) => errs.push(e.message));
-    await p.goto('http://127.0.0.1:3123'); await p.fill('#em', 'louis@agence-orem.fr'); await p.locator('form[data-form=login]').evaluate((f) => f.requestSubmit());
+    await p.goto(process.env.BASE || 'http://127.0.0.1:3123'); await p.fill('#em', 'louis@agence-orem.fr'); await p.locator('form[data-form=login]').evaluate((f) => f.requestSubmit());
     await p.waitForSelector('.devcode b'); await p.fill('#o1', await p.textContent('.devcode b')); await p.locator('form[data-form=verify]').evaluate((f) => f.requestSubmit());
     await p.waitForSelector('#main'); await p.waitForTimeout(300);
     await p.evaluate(() => document.querySelector('[data-go=taches]').click()); await p.waitForSelector('.tk-bar');
