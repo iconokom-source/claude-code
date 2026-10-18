@@ -428,6 +428,7 @@
   .cx-prev .cx-link{font-size:0;gap:0}
   .cx-prev .cx-link svg{width:18px;height:18px}
   .cx-person.lead{flex-wrap:wrap}
+  .cx-person.lead > div{flex:1 1 calc(100% - 64px)}
   .cx-person.lead .cx-chip{margin-left:60px}
 }
 .cx-mlist{display:none;flex-direction:column;gap:8px}
@@ -436,3 +437,4 @@
 .cx-gb.on .cx-gm{background:#fff;box-shadow:0 0 0 2px #fff}
 .cx-gb.wait .cx-gm{background:var(--surface);box-shadow:0 0 0 2px var(--field)}
 .cx-gb .cx-gtx{position:relative;z-index:1}
+.cx-vol i.k3 b{background:var(--surface);padding:2px 8px;border-radius:8px}
