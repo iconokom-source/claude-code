@@ -112,7 +112,7 @@ La clé Brevo est dans le coffre Notion. Le domaine d'envoi doit être authentif
 
 ## 8. Fin de projet (lot 4)
 
-- **Mise en ligne** (onglet « Mise en ligne » de la fiche client) : fixe la date, passe les trois premiers temps en « Terminé », ouvre « Mesurer », bascule l'accueil du client sur le projet livré et lui envoie un e-mail. La validation « Réception du site » sert de procès-verbal ; l'onglet signale si elle manque. Résultats, marque, outils et vidéos de formation s'y renseignent.
+- **Mise en ligne** (onglet « Mise en ligne » de la fiche client) : fixe la date, passe les trois premiers temps en « Terminé », ouvre « Mesurer », bascule l'accueil du client sur le projet livré et lui envoie un e-mail. La validation « Mise en ligne » (ancien libellé « Réception du site ») sert de procès-verbal ; l'onglet signale si elle manque. Résultats, marque, outils et vidéos de formation s'y renseignent.
 - **Checklist de remise** (accès Webflow, sources Figma, guide, formation, Analytics) visible par le client sur « Mon projet ».
 - **Avis** demandé sur l'accueil du client 7 jours après la mise en ligne ; à partir de 4 sur 5, proposition de le publier sur Google (lien dans Réglages). Le témoignage n'est publiable qu'avec l'accord explicite du client.
 - **Archivage** : l'espace reste consultable en lecture seule. **Export ZIP** (récapitulatif + fichiers) pour le client comme pour l'agence.

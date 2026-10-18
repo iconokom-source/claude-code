@@ -20,7 +20,7 @@ const errs = [];
   const bottom = await claire.evaluate(() => Math.max(...[...document.querySelectorAll('#main .cx-ink, #main .cx-kpis')].map((e) => e.getBoundingClientRect().bottom)));
   ok('1440×900 : prochaine action et les 4 chiffres visibles sans défiler', bottom <= 900, Math.round(bottom) + ' px');
   ok('Plus d’anciens chiffres clés ni de frise répétée sur l’accueil', (await claire.locator('#main .kpis, #main .steps').count()) === 0);
-  ok('Une seule prochaine action, sans liste « À faire » qui la répète', (await claire.locator('.cx-ink').count()) === 1 && !/Valider : plan du site/i.test(await main(claire)));
+  ok('Une seule prochaine action, sans liste « À faire » qui la répète', (await claire.locator('.cx-ink').count()) === 1 && !/Valider\s: plan du site/i.test(await main(claire)));
   ok('Le compte à rebours de la mise en ligne et l’étape O.R.E.M. sont sur l’accueil', /Mise en ligne\s*\d+\s*jours?/.test(await claire.locator('.cx-kpis').innerText()) && /Étape 1 sur 4 · Orienter/.test(await claire.locator('.cx-orem').innerText()));
   await claire.screenshot({ path: OUT + '/accueil-1-claire.png' });
   // Navigation

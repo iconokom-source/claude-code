@@ -79,6 +79,8 @@ const log = (event, data = {}) => console.log(JSON.stringify({ at: new Date().to
 let db;
 if (fs.existsSync(DB_FILE)) db = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
 else { db = { ...Core.seed(), sessions: {}, codes: {} }; log('db.created', { file: DB_FILE }); }
+// Le dernier feu vert s'appelle « Mise en ligne » (ancien libellé « Réception du site »).
+(db.projects || []).forEach((p) => (p.validations || []).forEach((v) => { if (v.key === 'pv' && v.t === 'Réception du site') v.t = 'Mise en ligne'; }));
 db.sessions ||= {}; db.codes ||= {}; db.todos ||= []; db.notifications ||= []; db.outbox ||= []; db.meta ||= {}; db.webhooks ||= [];
 let saveTimer = null, dirty = false;
 function flush() {

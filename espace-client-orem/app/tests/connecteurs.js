@@ -101,7 +101,7 @@ const mock = http.createServer((req, res) => {
     const bm = list.filter((p) => p.client === 'Boulangerie Martin');
     ok('Un seul espace « Boulangerie Martin », en brouillon, chef de projet Théophile', bm.length === 1 && bm[0].draft && bm[0].team.lead === 'u_theo', JSON.stringify(bm.map((p) => [p.draft, p.team])));
     const pid = bm[0].id;
-    ok('Théophile est prévenu dans sa boîte de réception', (await (await session('theophile@agence-orem.fr')).call('/api/inbox')).body.items.some((n) => /Deal gagné dans Pipedrive : Boulangerie Martin/.test(n.text)));
+    ok('Théophile est prévenu dans sa boîte de réception', (await (await session('theophile@agence-orem.fr')).call('/api/inbox')).body.items.some((n) => /Affaire gagnée dans Pipedrive\s: Boulangerie Martin/.test(n.text)));
     const draft = await louis.project(pid);
     ok('Contact récupéré dans Pipedrive (Marie, marie@boulangerie-martin.fr), pas encore d’accès client', draft.draft.email === 'marie@boulangerie-martin.fr' && draft.contactName === 'Marie' && draft.billing.totalHT === 5400);
     ok('Le registre n’est jamais deviné : ouverture refusée sans tu/vous', /tutoiement/.test((await louis.act(pid, { type: 'project.confirm', offer: 'site' })).body.error || ''));

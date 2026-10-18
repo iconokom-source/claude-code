@@ -40,7 +40,7 @@ const errs = [];
   const louis = await login('louis@agence-orem.fr');
   await go(louis, 'clients'); await louis.click('.cat[data-mine="0"]'); await louis.click('[data-open=p_lumen]'); await louis.click('#tab-demandes'); await louis.waitForTimeout(150);
   await louis.locator('.row', { hasText: 'page Presse' }).locator('[data-act=prop-from]').click(); await louis.waitForTimeout(200);
-  ok('« Proposer un devis » : le formulaire est prérempli depuis la demande', /page Presse/.test(await louis.inputValue('#pp-l')) && /Demande : contenu/.test(await louis.inputValue('#pp-t')));
+  ok('« Proposer un devis » : le formulaire est prérempli depuis la demande', /page Presse/.test(await louis.inputValue('#pp-l')) && /Demande\s: contenu/.test(await louis.inputValue('#pp-t')));
   await louis.fill('#pp-l', 'Page Presse (maquette et intégration) | 600'); await louis.click('form[data-form=proposal] button[value=send]'); await louis.waitForTimeout(500);
   await claire.reload(); await claire.waitForSelector('#main'); await claire.waitForTimeout(200);
   ok('Claire voit la proposition à valider (badge « À valider »)', /\d/.test(await claire.locator('.side [data-go=valider] .badge').innerText()));

@@ -28,7 +28,7 @@
         items: [['Création du compte Webflow', 23], ['Construction du site', 31], ['Tests du site', 34, 'site'], ['Mise en ligne et remise des accès', 36, 'pv'], ['Formation Webflow (visio)', 38]] },
       { d: [39, 70], txt: 'On mesure les résultats et on améliore ce qui {vous |t’}apporte des clients.',
         items: [['Bilan à 30 jours', 66], ['Proposition d’évolution', 70]] }
-    ], validations: [['plan', 'Plan du site', 'Les pages du site et leur organisation', 8], ['da', 'Direction artistique et textes', 'Couleurs, typographies, style et ton', 14], ['maquettes', 'Maquettes du site', 'Le feu vert pour construire le site', 21], ['site', 'Tests du site', 'Le site complet, à tester avant sa mise en ligne', 34], ['pv', 'Réception du site', 'Le site est livré tel que prévu', 36]] },
+    ], validations: [['plan', 'Plan du site', 'Les pages du site et leur organisation', 8], ['da', 'Direction artistique et textes', 'Couleurs, typographies, style et ton', 14], ['maquettes', 'Maquettes du site', 'Le feu vert pour construire le site', 21], ['site', 'Tests du site', 'Le site complet, à tester avant sa mise en ligne', 34], ['pv', 'Mise en ligne', 'Le site est livré tel que prévu', 36]] },
     da: { label: 'Direction artistique', phases: [
       { d: [0, 7], txt: 'On comprend {votre|ta} marque, {vos|tes} clients et ce qui {vous|te} distingue.',
         items: [['Devis signé', -3], ['Atelier de marque (1 h 30)', 3], ['Synthèse et plateforme de marque', 7, 'plateforme']] },
@@ -72,7 +72,7 @@
     'Création du compte Webflow': [[[K, '{Vous créez|Tu crées} l’espace Webflow de l’entreprise'], [L, 'vérifie l’accès']], 'demarrer'],
     'Construction du site': [[[L, 'construit le site sur Webflow'], [T, 'intègre les textes et le référencement']], 'projet'],
     'Tests du site': [[[L, 'prépare le site pour {vos|tes} tests'], [K, '{Vous testez|Tu testes} le site et {notez|notes} {vos|tes} retours']], 'valider'],
-    'Mise en ligne et remise des accès': [[[L, 'met le site en ligne et {vous|te} remet les accès'], [K, '{Vous validez|Tu valides} la réception']], 'valider'],
+    'Mise en ligne et remise des accès': [[[L, 'met le site en ligne et {vous|te} remet les accès'], [K, '{Vous validez|Tu valides} la mise en ligne']], 'valider'],
     'Formation Webflow (visio)': [[[L, 'anime la formation'], [K, '{Vous choisissez|Tu choisis} le créneau']], 'cal'],
     'Bilan à 30 jours': [[[T, 'lit les chiffres et prépare les recommandations'], [L, 'fait le point technique']], 'documents'],
     'Proposition d’évolution': [[[T, 'propose les priorités'], [K, '{Vous choisissez|Tu choisis} ce qu’on fait évoluer']], 'proposition'],
@@ -726,7 +726,7 @@
         // Mise en ligne : les trois premiers temps sont terminés, on entre dans « Mesurer ».
         if (action.undo) { project.deliveredAt = null; project.phase = Math.min(project.phase, project.phases.length - 1); log(project, user, 'a annulé la mise en ligne'); break; }
         const pv = project.validations.find((x) => x.key === 'pv');
-        if (pv && pv.status !== 'approved' && !String(action.force || '').trim()) return { error: 'La réception du site (procès-verbal) n’est pas encore validée par le client. Demandez-la, ou indiquez pourquoi livrer sans.' };
+        if (pv && pv.status !== 'approved' && !String(action.force || '').trim()) return { error: 'La mise en ligne (procès-verbal de réception) n’est pas encore validée par le client. Demandez-la, ou indiquez pourquoi livrer sans.' };
         const when = action.when && validDate(action.when) ? iso(action.when) : now;
         if (pv && pv.status !== 'approved') project.deliveredWithoutPv = { at: now, by: user.id, reason: String(action.force).slice(0, 300) };
         project.deliveredAt = when; project.golive = when; project.phase = project.phases.length;

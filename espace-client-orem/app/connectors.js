@@ -7,7 +7,7 @@ const crypto = require('node:crypto');
 const Core = require('./public/core.js');
 
 const CONNECTORS = {
-  pipedrive: { label: 'Pipedrive', env: ['PIPEDRIVE_API_KEY', 'PIPEDRIVE_WEBHOOK_SECRET'], does: 'Deal gagné : l’espace client est préparé tout seul, il reste à choisir l’offre et le registre' },
+  pipedrive: { label: 'Pipedrive', env: ['PIPEDRIVE_API_KEY', 'PIPEDRIVE_WEBHOOK_SECRET'], does: 'Affaire gagnée : l’espace client est préparé tout seul, il reste à choisir l’offre et le registre' },
   abby: { label: 'Abby', env: ['ABBY_API_KEY'], does: 'Import du devis signé et des factures, avec leur PDF' },
   qonto: { label: 'Qonto', env: ['QONTO_LOGIN', 'QONTO_SECRET_KEY'], does: 'Virements reçus : factures passées en « Payée » et client remercié' },
   google: { label: 'Google (Drive, Analytics, Search Console)', env: ['GOOGLE_SERVICE_ACCOUNT_JSON'], does: 'Copie des fichiers reçus dans le Drive du client, bilan mensuel GA4 et Search Console' },
@@ -66,7 +66,7 @@ async function pipedriveHook(body, headers, db, env, ctx) {
   const p = db.projects.find((x) => x.id === r.id);
   p.source = { pipedrive: id }; p.draft = { from: 'Pipedrive', at: new Date().toISOString(), email: String(email).toLowerCase(), name: person.first_name || person.name || '' };
   const notices = db.users.filter((u) => u.role === 'admin').map((u) => ({ id: 'n_' + crypto.randomBytes(8).toString('hex'), userId: u.id, projectId: p.id, client: p.client, type: 'requests', act: 'pipedrive',
-    text: `Deal gagné dans Pipedrive : ${p.client}. L’espace est prêt, il reste à choisir l’offre et le registre.`, by: owner.id, at: new Date().toISOString(), read: false, go: { view: 'admin', tab: 'pilotage' } }));
+    text: `Affaire gagnée dans Pipedrive : ${p.client}. L’espace est prêt, il reste à choisir l’offre et le registre.`, by: owner.id, at: new Date().toISOString(), read: false, go: { view: 'admin', tab: 'pilotage' } }));
   db.notifications = db.notifications || []; db.notifications.unshift(...notices);
   stamp(db, 'pipedrive', `espace préparé : ${p.client}`);
   return { ok: true, summary: 'espace préparé : ' + p.client, projectId: p.id, notices };

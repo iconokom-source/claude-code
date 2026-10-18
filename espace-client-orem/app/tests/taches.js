@@ -44,7 +44,7 @@ const noScroll = (p) => p.evaluate(() => document.documentElement.scrollWidth <=
   ok('La pastille retire le filtre', !(await louis.$('.tk-filter')));
   // Cocher, annuler, cocher
   await louis.click('.tk-panel [data-tkdone=td2]'); await louis.waitForTimeout(200);
-  ok('Cocher : « Faite : … » avec « Annuler »', /Faite : Relancer les prospects du salon/.test(await louis.locator('.tk-undo').innerText()));
+  ok('Cocher : « Faite : … » avec « Annuler »', /Faite\s: Relancer les prospects du salon/.test(await louis.locator('.tk-undo').innerText()));
   await louis.click('[data-act=tkundo]'); await louis.waitForTimeout(400);
   ok('Annuler : rien n’est envoyé, la tâche reste à faire', (await tasks(louis)).find((t) => t.id === 'td2').status === 'todo' && !(await louis.$('.tk-undo')));
   await louis.click('.tk-focus [data-tkdone=td2]'); await louis.waitForTimeout(5800);
@@ -75,7 +75,7 @@ const noScroll = (p) => p.evaluate(() => document.documentElement.scrollWidth <=
   ok('Touche N : curseur dans la saisie rapide', await louis.evaluate(() => document.activeElement && document.activeElement.id === 'tk-q'));
   // Théophile reçoit la tâche
   const theo = await login('theophile@agence-orem.fr');
-  ok('Théophile la trouve dans « À traiter » : « Louis t’a confié : … »', /Louis t’a confié : « Préparer les textes de la page Contact »/.test(await theo.locator('#main').innerText()));
+  ok('Théophile la trouve dans « À traiter » : « Louis t’a confié : … »', /Louis t’a confié\s:\s«\sPréparer les textes de la page Contact\s»/.test(await theo.locator('#main').innerText()));
   await theo.locator('[data-notif]', { hasText: 'page Contact' }).first().click(); await theo.waitForSelector('.tk-drawer #tkd-t');
   ok('Un clic ouvre la tâche dans le panneau', (await theo.inputValue('#tkd-t')) === 'Préparer les textes de la page Contact');
   // Mobile 390 et 320

@@ -54,7 +54,7 @@ const R = []; const ok = (l, v, x) => R.push(`${v ? '✔' : '✘'} ${l}${!v && x
   ok('Dossier : les sous-dossiers sont conservés', files.some((f) => f.name === 'claire.jpg' && f.folder === 'Photos atelier/Portraits') && files.some((f) => f.name === 'facade.jpg' && f.folder === 'Photos atelier'), JSON.stringify(files.filter((f) => f.folder).map((f) => f.folder + '/' + f.name)));
   ok('Dossier : les fichiers système (.DS_Store) sont ignorés', !files.some((f) => f.name === '.DS_Store'));
   const notes = db().notifications.slice(0, db().notifications.length - before).filter((n) => n.userId === 'u_louis');
-  ok('Dossier : une seule notification pour Louis', notes.length === 1 && /dossier « Photos atelier » \(2 fichiers/.test(notes[0].text), JSON.stringify(notes.map((n) => n.text)));
+  ok('Dossier : une seule notification pour Louis', notes.length === 1 && /dossier «\sPhotos atelier\s» \(2 fichiers/.test(notes[0].text), JSON.stringify(notes.map((n) => n.text)));
   ok('Liste : le dossier s’affiche sur chaque fichier', /Photos atelier › Portraits/.test(await claire.locator('#main').innerText()));
   // 4. Export ZIP64 de l'espace, relu par deux outils
   const louis = await login('louis@agence-orem.fr');

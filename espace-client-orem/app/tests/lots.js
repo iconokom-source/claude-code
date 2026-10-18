@@ -68,7 +68,7 @@ const CLIENT_VIEWS = ['accueil', 'projet', 'valider', 'maquettes', 'messages', '
 
   // 5. Louis met en ligne Maison Lumen
   await go(louis, 'clients'); await louis.click('.cat[data-mine="0"]'); await louis.click('[data-open=p_lumen]'); await louis.waitForTimeout(300); await louis.selectOption('#a-phase', '3'); await louis.waitForTimeout(500); await louis.click('[data-tab=livraison]'); await louis.waitForTimeout(200);
-  ok('Onglet « Mise en ligne » avec l’alerte du procès-verbal non validé', /Réception du site/.test(await main(louis)));
+  ok('Onglet « Mise en ligne » avec l’alerte du procès-verbal non validé', /procès-verbal \(«\sMise en ligne\s»\)/.test(await main(louis)));
   await louis.fill('#dl-s', 'https://www.maisonlumen.fr'); if (await louis.$('#dl-f')) await louis.fill('#dl-f', 'Réception validée par téléphone'); await louis.locator('form[data-form=deliver]').evaluate((f) => f.requestSubmit()); await louis.waitForTimeout(500);
   ok('Mise en ligne faite côté agence', /Site en ligne depuis le/.test(await main(louis)));
   await louis.fill('#rs-p', 'Depuis la mise en ligne'); await louis.fill('#rs-s', '12 | demandes de devis\n3 400 | visiteurs'); await louis.locator('form[data-form=results]').evaluate((f) => f.requestSubmit()); await louis.waitForTimeout(300);
@@ -94,7 +94,7 @@ const CLIENT_VIEWS = ['accueil', 'projet', 'valider', 'maquettes', 'messages', '
   ok('Avis de Hugo enregistré (5 sur 5)', /Merci pour ton avis/.test(await main(hugo)));
   await hugo.screenshot({ path: OUT + '/lots-4-avis.png', fullPage: true });
   await go(louis, 'inbox'); await louis.waitForTimeout(200);
-  ok('Louis voit l’avis de Hugo dans sa boîte de réception', /Hugo a laissé un avis : 5\/5/.test(await main(louis)));
+  ok('Louis voit l’avis de Hugo dans sa boîte de réception', /Hugo a laissé un avis\s:\s5\/5/.test(await main(louis)));
 
   // 7. Réglages de l'agence : lien d'avis Google
   await go(louis, 'reglages'); await louis.fill('#st-r', 'https://g.page/r/orem-exemple/review'); await louis.locator('form[data-form=settings]').evaluate((f) => f.requestSubmit()); await louis.waitForTimeout(300);
