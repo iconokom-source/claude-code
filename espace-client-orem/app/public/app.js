@@ -10,6 +10,8 @@
   const D = (d) => (d ? new Date(d) : null);
   // L'année n'est ajoutée que si la date n'est pas dans l'année en cours.
   const fmt = (d, o = { day: 'numeric', month: 'short' }) => { if (!d) return ''; const x = D(d); if (isNaN(x)) return ''; const opt = !o.year && o.month && x.getFullYear() !== new Date().getFullYear() ? { ...o, year: 'numeric' } : o; const out = new Intl.DateTimeFormat('fr-FR', opt).format(x); return o.day === 'numeric' && o.month && x.getDate() === 1 ? out.replace(/^(\D*)1(\s)/, '$11er$2') : out; };
+  const fmtDT = (d) => fmt(d, { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }).replace(/(\d):00\b/, '$1 h').replace(/(\d):(\d\d)\b/, '$1 h $2');
+  const fmtH = (d) => fmt(d, { hour: 'numeric', minute: '2-digit' }).replace(/:00$/, ' h').replace(':', ' h ');
   const fmtLong = (d) => fmt(d, { weekday: 'long', day: 'numeric', month: 'long' });
   const fmtTime = (d) => fmt(d, { weekday: 'long', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }).replace(/(\d):00\b/, '$1 h').replace(':', ' h ');
   const money = (n) => new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 2 }).format(n || 0).replace(/ /g, ' ') + ' €';
@@ -231,7 +233,7 @@
       card = `<div class="pcard"><strong>${S.projects.length} espace${S.projects.length > 1 ? 's' : ''} client${S.projects.length > 1 ? 's' : ''}</strong><span class="small">${waiting ? waiting + ' attend' + (waiting > 1 ? 'ent' : '') + ' une action de l’agence' : 'Rien en attente côté agence'}</span></div>`;
     } else {
       const dots = p.phases.map((x) => `<i class="${phS(x) === 'wait' ? '' : phS(x)}"></i>`).join('');
-      card = `<div class="pcard">${clientLogo(p, 'dark', 'pc-logo') || `<strong>${esc(p.client)}</strong>`}<span class="small">${p.archivedAt ? 'Espace archivé' : prospect() ? 'Proposition à lire' : p.deliveredAt ? (p.offer === 'site' ? 'Site en ligne · ' : 'Livré · ') + esc(phName(p.phases[p.phases.length - 1])) : esc(phName(p.phases[p.phase - 1]))}</span><div class="pdots">${dots}<span>${p.phase}/${p.phases.length}</span></div></div>`;
+      card = `<div class="pcard">${clientLogo(p, 'dark', 'pc-logo') || `<strong>${esc(p.client)}</strong>`}<span class="small">${p.archivedAt ? 'Espace archivé' : prospect() ? 'Proposition à lire' : p.deliveredAt ? (p.offer === 'site' ? 'Site en ligne · ' : 'Livré · ') + esc(phName(p.phases[p.phases.length - 1])) : esc(phName(p.phases[p.phase - 1]))}</span><div class="pdots">${dots}${prospect() ? '' : `<span>${p.phase}/${p.phases.length}</span>`}</div></div>`;
     }
     const meImg = S.me.photo && IMG[S.me.photo] && !S.preview ? `<img src="${IMG[S.me.photo]}" alt="">` : esc(((S.preview ? p.contactName : S.me.name) || '?')[0]);
     return `${S.preview ? `<div class="preview-bar">${ic('eye', 'width:18px;height:18px')}<span>Aperçu de l’espace de ${esc(p.client)}, tel que le client le voit</span><button data-act="endpreview">Quitter l’aperçu</button></div>` : ''}
@@ -388,7 +390,7 @@
     return `<section class="cx-card c-1-13 cx-orem" aria-labelledby="cx-orem-h"><div class="cx-card-h"><h2 id="cx-orem-h">${ic('map')}${pros ? 'Le déroulé proposé' : `Où en est ${R('votre', 'ton')} projet`}</h2><span class="cx-aside cx-hide-s">${pros ? 'Dates indicatives, recalées à la signature' : `Étape ${p.phase} sur ${n} · <b>${esc(cur.t)}</b>`}</span></div>
       <div class="cx-track"><div class="cx-bands">${bands}</div>${inRange ? `<div class="cx-today" style="left:${pos(today)}" aria-hidden="true"><span>Aujourd’hui</span></div>` : ''}</div>
       <div class="cx-miles" aria-hidden="true">${miles}</div><div class="cx-mlist"><b>${R('Vos', 'Tes')} feux verts</b>${mlist}</div>
-      <div class="cx-orem-ft">${pros ? `<span><b>${cxPl(its.length, 'livrable', 'livrables')}</b> et ${cxPl(V.length, 'feu vert', 'feux verts')} de ${R('votre', 'ta')} part</span><span class="cx-pbar thin" aria-hidden="true" style="visibility:hidden"></span>` : `<span><b>${cxPl(dn, 'livrable fait', 'livrables faits')}</b> sur ${its.length}</span><div class="cx-pbar thin" role="img" aria-label="${dn} livrables faits sur ${its.length}"><i style="width:${its.length ? (dn / its.length) * 100 : 0}%"></i></div>`}<span class="cx-lg cx-hide-s"><i></i>Fait</span><span class="cx-lg cx-hide-s"><i class="hl"></i>En cours</span><span class="cx-lg cx-hide-s"><i class="w"></i>À venir</span><span class="cx-lg cx-hide-s"><i class="dia"></i>${R('Votre', 'Ton')} feu vert</span></div></section>`;
+      <div class="cx-orem-ft">${pros ? `<span><b>${cxPl(its.length, 'livrable', 'livrables')}</b> et ${cxPl(V.length, 'feu vert', 'feux verts')} de ${R('votre', 'ta')} part</span><span class="cx-pbar thin" aria-hidden="true" style="visibility:hidden"></span>` : `<span><b>${cxPl(dn, 'livrable fait', 'livrables faits')}</b> sur ${its.length}</span><div class="cx-pbar thin" role="img" aria-label="${dn} livrables faits sur ${its.length}"><i style="width:${its.length ? (dn / its.length) * 100 : 0}%"></i></div>`}${pros ? '' : '<span class="cx-lg cx-hide-s"><i></i>Fait</span><span class="cx-lg cx-hide-s"><i class="hl"></i>En cours</span>'}<span class="cx-lg cx-hide-s"><i class="w"></i>À venir</span><span class="cx-lg cx-hide-s"><i class="dia"></i>${R('Votre', 'Ton')} feu vert</span></div></section>`;
   }
   /* Bien démarrer (acompte, Webflow, nom de domaine) : une ligne compacte tant qu'il reste quelque chose à faire. */
   function cxSetup() {
@@ -587,7 +589,7 @@
       return `<div class="cx-step ${x.status === 'ready' ? 'now' : x.status === 'approved' ? 'ok' : x.status === 'changes' ? 'chg' : 'lock'}"><span class="cx-sn">${i + 1}</span><b>${esc(x.t)}</b><small>${x.status === 'ready' ? `${ic('cal')}Maintenant` : x.status === 'approved' ? `${ic('check')}Validé le ${fmt(h.at)}` : x.status === 'changes' ? `${ic('chat')}Modifications en cours` : `${ic('lock')}${x.due ? 'Vers le ' + fmt(x.due) : 'Plus tard'}`}</small></div>`; };
     const steps = p.validations.length ? `<section class="cx-card c-1-13" aria-labelledby="cx-st-h"><div class="cx-card-h"><h2 id="cx-st-h">${ic('ok')}Les feux verts du projet</h2><span class="cx-aside">${nOk} sur ${p.validations.length} ${nOk > 1 ? 'donnés' : 'donné'}</span></div><div class="cx-steps">${p.validations.map(st).join('')}</div>
       ${p.validations.some((x) => ['approved', 'changes'].includes(x.status)) ? `<div class="cx-sepb"><b class="cx-sub-h">Déjà répondu</b><ul class="cx-list">${p.validations.filter((x) => ['approved', 'changes'].includes(x.status)).map((x) => { const h = x.history[x.history.length - 1] || {};
-        return `<li><span class="cx-chip ${x.status === 'approved' ? 'ok' : 'hl'}">${x.status === 'approved' ? 'Validé' : 'Modifications en cours'}</span><div class="cx-m"><div class="cx-t">${esc(x.t)}</div><div class="cx-s">${x.status === 'approved' ? `Validé par ${esc(h.by === S.me.id ? S.me.name : who(h.by))} le ${fmt(h.at, { day: '2-digit', month: '2-digit' })} à ${fmt(h.at, { hour: '2-digit', minute: '2-digit' }).replace(':', ' h ')}` : 'Modifications demandées le ' + fmt(h.at, { day: 'numeric', month: 'long' }) + (h.comment ? ' : « ' + esc(h.comment) + ' »' : '')}</div></div></li>`; }).join('')}</ul></div>` : ''}</section>` : '';
+        return `<li><span class="cx-chip ${x.status === 'approved' ? 'ok' : 'hl'}">${x.status === 'approved' ? 'Validé' : 'Modifications en cours'}</span><div class="cx-m"><div class="cx-t">${esc(x.t)}</div><div class="cx-s">${x.status === 'approved' ? `Validé par ${esc(h.by === S.me.id ? S.me.name : who(h.by))} le ${fmt(h.at, { day: 'numeric', month: 'long' })} à ${fmtH(h.at)}` : 'Modifications demandées le ' + fmt(h.at, { day: 'numeric', month: 'long' }) + (h.comment ? ' : « ' + esc(h.comment) + ' »' : '')}</div></div></li>`; }).join('')}</ul></div>` : ''}</section>` : '';
     const body = props.map(prop).join('') + ready.map(feat).join('') + signs.map(sign).join('');
     return cxNb(cxHead('À valider', nDec ? `<b>${cxPl(nDec, 'décision')}</b> ${nDec > 1 ? R('vous attendent', 't’attendent') : R('vous attend', 't’attend')}. On avance avec ${R('votre', 'ton')} feu vert.` : `On avance avec ${R('votre', 'ton')} feu vert.`, p.validations.length ? `<span class="cx-pill">${ic('ok')}${nOk} ${nOk > 1 ? 'feux verts donnés' : 'feu vert donné'} sur ${p.validations.length}</span>` : '')
       + `<div class="cx-bento">${body || `<div class="cx-card c-1-13 cx-empty-c"><b>Rien à valider pour l’instant.</b><span>On ${R('vous', 'te')} prévient dès que la prochaine étape est prête.</span></div>`}${steps}</div>`);
@@ -819,7 +821,7 @@
   function vEquipe() {
     return `
     <div class="head"><div><h1>Équipe et aide</h1><p class="lead">Une question ? On répond sous 24 h ouvrées</p></div><button class="btn btn-line" data-act="obopen">${ic('play')}Revoir la visite guidée</button></div>
-    <div class="team">${S.team.map((u) => `<section class="panel person">${IMG[u.photo] ? `<img src="${IMG[u.photo]}" alt="">` : ''}<div><h2 class="person-n">${esc(u.name)}</h2><div class="role-t">${esc(u.title || '')}</div>${(u.contact || []).length ? `<div class="contact-for"><span class="k">${R('Contactez', 'Contacte')} ${esc(u.name.split(' ')[0])} pour</span><ul>${u.contact.map((c) => `<li>${esc(c)}</li>`).join('')}</ul></div>` : ''}${u.phone ? `<div class="small muted num" style="margin-top:4px">${esc(u.phone)}</div>` : ''}</div>${u.wa ? `<a class="btn btn-line btn-sm" href="${u.wa}" target="_blank" rel="noopener">${ic('chat')}WhatsApp</a>` : `<a class="btn btn-line btn-sm" href="#messages" data-go="messages">${ic('chat')}Message</a>`}</section>`).join('')}</div>
+    <div class="team">${S.team.map((u) => `<section class="panel person">${IMG[u.photo] ? `<img src="${IMG[u.photo]}" alt="">` : ''}<div><h2 class="person-n">${esc(u.name)}</h2><div class="role-t">${esc(u.title || '')}</div>${(u.contact || []).length ? `<div class="contact-for"><span class="k">${R('Contactez', 'Contacte')} ${esc(u.name.split(' ')[0])} pour</span><ul>${u.contact.map((c) => `<li>${esc(c)}</li>`).join('')}</ul></div>` : ''}${u.phone ? `<div class="small num" style="margin-top:4px"><a class="tel" href="tel:${esc(u.phone.replace(/[^\d+]/g, '').replace(/^0/, '+33'))}"><span class="sr">Appeler ${esc(u.name.split(' ')[0])} au </span>${esc(u.phone)}</a></div>` : ''}</div>${u.wa ? `<a class="btn btn-line btn-sm" href="${u.wa}" target="_blank" rel="noopener">${ic('chat')}WhatsApp</a>` : `<a class="btn btn-line btn-sm" href="#messages" data-go="messages">${ic('chat')}Message</a>`}</section>`).join('')}</div>
     <section class="panel" style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between">
       <div style="min-width:0;flex:1 1 280px"><h2>Besoin d’en parler de vive voix ?</h2><p class="muted" style="margin-top:6px">${R('Réservez', 'Réserve')} une visio de 30 minutes quand ${R('vous voulez', 'tu veux')}.</p></div>
       <a class="btn btn-primary" href="${CALF()}" target="_blank" rel="noopener">${ic('cal')}Réserver une visio</a></section>
@@ -944,7 +946,7 @@
   const unread = () => (S.project ? (S.project.messages || []).filter((m) => m.readByClient === false).length : 0);
   const TEAMP = { id: 'team', name: 'L’équipe Orem', photo: 'logo-o', team: true };
   const person = (id) => (id === 'team' ? TEAMP : null) || S.team.find((u) => u.id === id) || { name: S.people[id] || (S.project && S.project.contactName) || '', photo: null };
-  const loomId = (u) => { const m = String(u || '').match(/loom\.com\/(?:share|embed)\/([a-z0-9]+)/i); return m ? m[1] : null; };
+  const loomId = (u) => { const m = String(u || '').match(/loom\.com\/(?:share|embed)\/([a-f0-9]{20,})/i); return m ? m[1] : null; }; // un vrai identifiant Loom : 32 caractères hexadécimaux
   const figmaEmbed = (u) => 'https://www.figma.com/embed?embed_host=orem&url=' + encodeURIComponent(u);
 
   function videoCard(m) {
@@ -955,7 +957,7 @@
   function msgBubble(m) {
     const u = person(m.by), mine = !m.fromAgency;
     return `<div class="msg ${mine ? 'mine' : ''}">${!mine ? (IMG[u.photo] ? `<img class="avatar" src="${IMG[u.photo]}" alt="">` : `<span class="avatar ph${u.team ? ' team' : ''}">${u.team ? `<img src="${IMG.logo}" alt="">` : esc((u.name || '?')[0])}</span>`) : ''}
-      <div class="bubble"><div class="meta-l"><strong>${esc(mine ? R('Vous', 'Toi') : u.team ? u.name : (u.name || '').split(' ')[0])}</strong><span>${esc(fmt(m.at, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }))}</span>${m.readByClient === false && !mine ? '<span class="chip hl">Nouveau</span>' : ''}</div>
+      <div class="bubble"><div class="meta-l"><strong>${esc(mine ? R('Vous', 'Toi') : u.team ? u.name : (u.name || '').split(' ')[0])}</strong><span>${esc(fmtDT(m.at))}</span>${m.readByClient === false && !mine ? '<span class="chip hl">Nouveau</span>' : ''}</div>
       <p>${esc(m.text)}</p>${m.loom ? videoCard(m) : ''}</div></div>`;
   }
 
@@ -1258,12 +1260,12 @@
   }
   function tDemandes() {
     const p = S.project, R0 = p.requests || [];
-    return `<section class="panel"><div class="panel-head"><h2>${ic('plus')}Demandes d’évolution</h2><span class="aside">${R0.filter((r) => r.status === 'Nouveau').length} nouvelle${R0.filter((r) => r.status === 'Nouveau').length > 1 ? 's' : ''}</span></div><div class="list">${R0.map((r) => `<div class="row"><div class="grow"><div class="title">${esc(r.type)} · ${esc(r.priority)}</div><div class="sub">${esc(r.text)}</div><div class="sub">${esc(who(r.by))} · ${fmt(r.at, { day: 'numeric', month: 'long' })}</div></div>
+    return `<section class="panel"><div class="panel-head"><h2>${ic('plus')}Demandes d’évolution</h2><span class="aside">${((n) => (n ? n + ' nouvelle' + (n > 1 ? 's' : '') : 'Aucune nouvelle'))(R0.filter((r) => r.status === 'Nouveau').length)}</span></div><div class="list">${R0.map((r) => `<div class="row"><div class="grow"><div class="title">${esc(r.type)} · ${esc(r.priority)}</div><div class="sub">${esc(r.text)}</div><div class="sub">${esc(who(r.by))} · ${fmt(r.at, { day: 'numeric', month: 'long' })}</div></div>
         ${r.status !== 'Fait' && !(p.proposals || []).some((x) => x.from === r.id) ? `<button class="btn btn-line btn-sm" data-act="prop-from" data-id="${esc(r.id)}">Proposer un devis</button>` : (p.proposals || []).some((x) => x.from === r.id) ? '<span class="chip hl">Devis envoyé</span>' : ''}<label class="sr" for="ow-${r.id}">Pris en charge par</label><select id="ow-${r.id}" data-owner="${esc(r.id)}" style="width:auto"><option value="">Personne</option>${S.team.map((u) => `<option value="${u.id}" ${r.owner === u.id ? 'selected' : ''}>${esc(u.name.split(' ')[0])}</option>`).join('')}</select><label class="sr" for="rq-${r.id}">Statut de la demande</label><select id="rq-${r.id}" data-req="${esc(r.id)}" style="width:auto">${['Nouveau', 'Proposé', 'En cours', 'Fait'].map((x) => `<option value="${x}" ${r.status === x ? 'selected' : ''}>${x === 'Proposé' ? 'Devis envoyé' : x}</option>`).join('')}</select></div>`).join('') || '<p class="muted">Aucune demande.</p>'}</div></section>`;
   }
   function msgBubbleAdmin(m) {
     const u = person(m.by), agency = !!m.fromAgency;
-    return `<div class="msg ${agency ? 'mine' : ''}">${!agency ? `<span class="avatar ph">${esc((u.name || '?')[0])}</span>` : ''}<div class="bubble"><div class="meta-l"><strong>${esc(agency ? (u.name || '').split(' ')[0] : (S.people[m.by] || S.project.contactName))}</strong><span>${esc(fmt(m.at, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }))}</span>${m.readByAgency === false ? '<span class="chip warn">Nouveau</span>' : ''}${agency && m.readByClient === false ? '<span class="chip idle">Pas encore lu</span>' : agency ? '<span class="chip ok">Lu</span>' : ''}</div><p>${esc(m.text)}</p>${m.loom ? videoCard(m) : ''}</div></div>`;
+    return `<div class="msg ${agency ? 'mine' : ''}">${!agency ? `<span class="avatar ph">${esc((u.name || '?')[0])}</span>` : ''}<div class="bubble"><div class="meta-l"><strong>${esc(agency ? (u.name || '').split(' ')[0] : (S.people[m.by] || S.project.contactName))}</strong><span>${esc(fmtDT(m.at))}</span>${m.readByAgency === false ? '<span class="chip warn">Nouveau</span>' : ''}${agency && m.readByClient === false ? '<span class="chip idle">Pas encore lu</span>' : agency ? '<span class="chip ok">Lu</span>' : ''}</div><p>${esc(m.text)}</p>${m.loom ? videoCard(m) : ''}</div></div>`;
   }
   function tLiens() {
     const L = S.project.links || {};
@@ -1852,11 +1854,11 @@
     const a = Core.alerts(p), days = (d) => Math.max(0, -daysTo(d)), since = (d) => (days(d) ? `depuis ${days(d)} jour${days(d) > 1 ? 's' : ''}` : 'depuis aujourd’hui');
     const ag = [a.newFiles && [`${a.newFiles} fichier${a.newFiles > 1 ? 's' : ''} à récupérer`, 'fichiers'], a.newMessages && [`${a.newMessages} message${a.newMessages > 1 ? 's' : ''} sans réponse`, 'messages'], a.changes && ['Modifications demandées', 'validations'], a.requests && [`${a.requests} demande${a.requests > 1 ? 's' : ''} sur le site`, 'demandes']].filter(Boolean);
     const ready = p.validations.filter((v) => v.status === 'ready'), due = p.invoices.filter((i) => i.status === 'due');
-    const cl = [...ready.map((v) => `${v.t} : à valider ${since(v.readyAt)}`), ...p.missing.slice(0, 2).map((m) => `${m.t} : fichier attendu`), ...due.map((i) => `${i.label} : à régler${i.date ? ' ' + since(i.date) : ''}`)];
+    const cl = [...ready.map((v) => `${v.t} : à valider ${since(v.readyAt)}`), ...p.missing.slice(0, 2).map((m) => `${m.t} : fichier attendu`), ...due.map((i) => `${i.label} : à régler${i.date ? ' ' + since(i.date) : ''}`), ...(p.proposals || []).filter((x) => x.status === 'sent').map((x) => `Proposition « ${x.title} » à accepter${x.sentAt ? ' ' + since(x.sentAt) : ''}`), ...p.files.filter((f) => f.sign && f.sign.status === 'requested').map((f) => `« ${f.name} » à signer`)];
     return `<section class="band" aria-label="État du projet">
       <div><div class="k">L’agence</div>${ag.length ? ag.map(([t, tab]) => `<button class="linklike" data-tab="${tab}">${esc(t)}</button>`).join('') : '<span class="muted">Rien à traiter</span>'}</div>
       <div><div class="k">${esc(p.contactName || 'Le client')}</div>${cl.length ? cl.map((t) => `<span>${esc(t)}</span>`).join('') : '<span class="muted">Rien en attente</span>'}${ready.length || p.missing.length ? `<button class="btn btn-line btn-sm" data-act="remind">${ic('mail')}Relancer</button>` : ''}</div>
-      <div><div class="k">Échéance</div><span>${p.deliveredAt ? 'En ligne depuis le ' + fmt(p.deliveredAt, { day: 'numeric', month: 'long' }) : `${p.offer === 'site' ? 'Mise en ligne' : 'Livraison'} ${daysTo(p.golive) >= 0 ? 'J-' + daysTo(p.golive) : 'dépassée de ' + -daysTo(p.golive) + ' j'}, le ${fmt(p.golive, { day: 'numeric', month: 'long' })}`}</span></div>
+      <div><div class="k">Échéance</div><span>${p.deliveredAt ? 'En ligne depuis le ' + fmt(p.deliveredAt, { day: 'numeric', month: 'long' }) : `${p.offer === 'site' ? 'Mise en ligne' : 'Livraison'} ${daysTo(p.golive) > 0 ? 'dans ' + daysTo(p.golive) + ' jour' + (daysTo(p.golive) > 1 ? 's' : '') : daysTo(p.golive) === 0 ? 'aujourd’hui' : 'en retard de ' + -daysTo(p.golive) + ' jour' + (-daysTo(p.golive) > 1 ? 's' : '')}, le ${fmt(p.golive, { day: 'numeric', month: 'long' })}`}</span></div>
     </section>`;
   }
   const GO_OPTS = [['accueil', 'Aucun bouton'], ['cal', 'Prise de rendez-vous'], ['valider', 'À valider'], ['fichiers', 'Fichiers'], ['projet', 'Étapes'], ['documents', 'Devis et factures'], ['equipe', 'Équipe et aide']];
@@ -1896,24 +1898,24 @@
         <input type="date" data-itemdate="${esc(it.id)}" value="${dayKey(it.due)}" aria-label="Date prévue : ${esc(it.t)}"></div>`).join('')}</details>`).join('')}</section>
     <div class="grid2">
       <section class="panel"><div class="panel-head"><h2>${ic('ok')}Actions du client</h2></div>
-        <div class="list">${p.tasks.map((t) => `<div class="row"><span class="check ${t.done ? 'done' : ''}">${t.done ? ic('check') : ''}</span><div class="grow">${esc(t.t)}</div><button class="x" data-act="task-remove" data-id="${esc(t.id)}" aria-label="Retirer">×</button></div>`).join('') || '<p class="small muted">Aucune action manuelle. Les validations et fichiers manquants s’ajoutent tout seuls.</p>'}</div>
+        <div class="list">${p.tasks.map((t) => `<div class="row"><span class="check ${t.done ? 'done' : ''}">${t.done ? ic('check') : ''}</span><div class="grow">${esc(t.t)}</div><button class="x" data-act="task-remove" data-id="${esc(t.id)}" aria-label="Retirer « ${esc(t.t)} »">×</button></div>`).join('') || '<p class="small muted">Aucune action manuelle. Les validations et fichiers manquants s’ajoutent tout seuls.</p>'}</div>
         <form class="inline" data-form="task" style="margin-top:12px"><input id="a-task" type="text" placeholder="ex. Valider les textes de la page Contact" aria-label="Nouvelle action"><button class="btn btn-line btn-sm" type="submit">Ajouter</button></form></section>
       <section class="panel"><div class="panel-head"><h2>${ic('folder')}Fichiers attendus</h2></div>
-        <div class="list">${p.missing.map((m) => `<div class="row"><div class="grow"><div class="title" style="font-weight:400">${esc(m.t)}</div>${m.sub ? `<div class="sub">${esc(m.sub)}</div>` : ''}</div><button class="x" data-act="missing-remove" data-id="${esc(m.id)}" aria-label="Retirer">×</button></div>`).join('') || '<p class="small muted">Rien n’est attendu.</p>'}</div>
+        <div class="list">${p.missing.map((m) => `<div class="row"><div class="grow"><div class="title" style="font-weight:400">${esc(m.t)}</div>${m.sub ? `<div class="sub">${esc(m.sub)}</div>` : ''}</div><button class="x" data-act="missing-remove" data-id="${esc(m.id)}" aria-label="Retirer « ${esc(m.t)} »">×</button></div>`).join('') || '<p class="small muted">Rien n’est attendu.</p>'}</div>
         <form class="form" data-form="missing" style="margin-top:12px;gap:8px"><input id="a-mi" type="text" placeholder="ex. Plan d’accès en PDF" aria-label="Fichier attendu"><input id="a-ms" type="text" placeholder="Précision (facultatif)" aria-label="Précision"><div><button class="btn btn-line btn-sm" type="submit">Ajouter</button></div></form></section>
     </div>`;
   }
   function tValidations() {
     const p = S.project;
     const chip = { wait: '<span class="chip idle">Pas encore demandée</span>', ready: '<span class="chip hl">Chez le client</span>', approved: '<span class="chip ok">Validé</span>', changes: '<span class="chip warn">Modifications demandées</span>' };
-    const label = { approved: 'a validé', changes: 'a demandé des modifications', requested: 'validation demandée', reset: 'remise en attente' };
+    const label = { approved: 'a validé', changes: 'a demandé des modifications', requested: 'a demandé la validation', reset: 'a remis en attente' };
     return p.validations.map((v) => `<section class="panel form">
       <div class="panel-head" style="margin:0"><h2>${esc(v.t)}</h2>${chip[v.status]}</div>
       <p class="small muted" style="margin-top:-8px">${esc(Core.reg(v.sub, p.registre))} · prévue vers le ${fmt(v.due)}</p>
       <form class="inline" data-form="valreq" data-id="${esc(v.id)}"><input type="url" id="vl-${v.id}" value="${esc(v.link)}" placeholder="Lien à regarder (Figma, prévisualisation Webflow…)" aria-label="Lien pour ${esc(v.t)}">
         <button class="btn btn-primary btn-sm" type="submit">${v.status === 'ready' ? 'Mettre à jour' : v.status === 'changes' ? 'Redemander la validation' : 'Demander la validation'}</button>
         ${v.status !== 'wait' ? `<button class="btn btn-line btn-sm" type="button" data-act="valreset" data-id="${esc(v.id)}">Remettre en attente</button>` : ''}</form>
-      ${v.history.length ? `<div class="hist">${v.history.slice().reverse().map((h) => `<div>${fmt(h.at, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })} · ${esc(who(h.by))} ${label[h.action] || ''}${h.comment ? ` : <q>${esc(h.comment)}</q>` : ''}</div>`).join('')}</div>` : ''}
+      ${v.history.length ? `<div class="hist">${v.history.slice().reverse().map((h) => `<div>${fmtDT(h.at)} · ${esc(who(h.by))} ${label[h.action] || ''}${h.comment ? ` : <q>${esc(h.comment)}</q>` : ''}</div>`).join('')}</div>` : ''}
     </section>`).join('');
   }
   function tFichiers() {
@@ -1965,7 +1967,7 @@
     const p = S.project;
     return `${teamPanel()}
     <section class="panel"><div class="panel-head"><h2>${ic('team')}Personnes qui ont accès</h2></div>
-      <div class="list">${S.access.map((u) => `<div class="row"><span class="ico">${ic('mail')}</span><div class="grow"><div class="title">${esc(u.name)}</div><div class="sub">${esc(u.email)} · ${u.lastLoginAt ? 'connecté le ' + fmt(u.lastLoginAt, { day: 'numeric', month: 'long' }) : u.invitedAt ? 'invité le ' + fmt(u.invitedAt, { day: 'numeric', month: 'long' }) + ', pas encore connecté' : 'pas encore invité'}</div></div>${p.draft ? '' : `<button class="btn btn-line btn-sm" data-act="reinvite" data-id="${esc(u.id)}">${u.invitedAt ? 'Renvoyer l’invitation' : 'Inviter'}</button>`}<button class="x" data-act="user-remove" data-id="${esc(u.id)}" aria-label="Retirer l’accès de ${esc(u.email)}">×</button></div>`).join('') || '<p class="muted">Personne pour l’instant.</p>'}</div>
+      <div class="list">${S.access.map((u) => `<div class="row"><span class="ico">${ic('mail')}</span><div class="grow"><div class="title">${esc(u.name)}</div><div class="sub">${esc(u.email)} · ${u.lastLoginAt ? 'dernière connexion le ' + fmt(u.lastLoginAt, { day: 'numeric', month: 'long' }) : u.invitedAt ? 'invitation envoyée le ' + fmt(u.invitedAt, { day: 'numeric', month: 'long' }) + ', pas encore de connexion' : 'invitation pas encore envoyée'}</div></div>${p.draft ? '' : `<button class="btn btn-line btn-sm" data-act="reinvite" data-id="${esc(u.id)}">${u.invitedAt ? 'Renvoyer l’invitation' : 'Inviter'}</button>`}<button class="x" data-act="user-remove" data-id="${esc(u.id)}" aria-label="Retirer l’accès de ${esc(u.email)}">×</button></div>`).join('') || '<p class="muted">Personne pour l’instant.</p>'}</div>
       <form class="inline" data-form="user" style="margin-top:14px"><input id="u-n" type="text" placeholder="Prénom" aria-label="Prénom" style="flex:0 1 140px"><input id="u-e" type="email" placeholder="adresse@client.fr" aria-label="E-mail"><button class="btn btn-line btn-sm" type="submit">Donner l’accès</button></form>
       <p class="small muted" style="margin-top:10px">Chaque personne se connecte avec son e-mail : un lien et un code à 6 chiffres, sans mot de passe ni compte Google.</p></section>
     ${logoPanel()}
@@ -2022,7 +2024,7 @@
   }
   function tActivite() {
     const p = S.project;
-    return `<section class="panel"><div class="list">${p.activity.map((a) => `<div class="row"><div class="grow"><div class="title" style="font-weight:400"><strong style="font-weight:500">${esc(who(a.by))}</strong> ${esc(a.text)}</div><div class="sub">${fmt(a.at, { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}</div></div>${a.seen === false ? '<span class="chip warn">Nouveau</span>' : ''}</div>`).join('') || '<p class="muted">Aucune activité.</p>'}</div></section>`;
+    return `<section class="panel"><div class="list">${p.activity.map((a) => `<div class="row"><div class="grow"><div class="title" style="font-weight:400"><strong style="font-weight:500">${esc(who(a.by))}</strong> ${esc(a.text)}</div><div class="sub">${fmt(a.at, { day: 'numeric', month: 'long' })}, ${fmtH(a.at)}</div></div>${a.seen === false ? '<span class="chip warn">Nouveau</span>' : ''}</div>`).join('') || '<p class="muted">Aucune activité.</p>'}</div></section>`;
   }
 
   /* ---------- Connexion ---------- */

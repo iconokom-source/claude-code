@@ -59,7 +59,7 @@ const errs = [];
 
   // Fiche client : bandeau d'état, relance, demandes, enregistrement automatique
   await louis.click('[data-open=p_lumen]'); await louis.waitForTimeout(200);
-  ok('Fiche : bandeau d’état (agence, client depuis X jours, échéance)', /à valider depuis 2 jours/.test(await louis.locator('.band').innerText()) && /Mise en ligne J-/.test(await louis.locator('.band').innerText()));
+  ok('Fiche : bandeau d’état (agence, client depuis X jours, échéance « dans N jours »)', /à valider depuis 2 jours/.test(await louis.locator('.band').innerText()) && /Mise en ligne dans \d+ jours?, le /.test(await louis.locator('.band').innerText()));
   await louis.click('.band [data-act=remind]'); await louis.waitForTimeout(400);
   await claire.reload(); await claire.waitForSelector('#main'); await claire.waitForTimeout(200);
   const ob = await louis.evaluate(async () => (await (await fetch('/api/outbox')).json()).items.map((m) => m.to + ' | ' + m.html));

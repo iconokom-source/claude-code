@@ -73,7 +73,7 @@ const errs = [];
   const obx = await louis.evaluate(async () => (await (await fetch('/api/outbox')).json()).items.map((m) => m.subject));
   ok('Rien n’est parti à l’équipe pour cette validation annulée', !inb.some((t) => /Claire a validé/.test(t)) && !obx.some((t) => /a validé/.test(t)), JSON.stringify(obx.slice(0, 3)));
   await claire.click('[data-act=approve]'); await claire.click('[data-act=approve-ok]'); await claire.waitForTimeout(300);
-  ok('« Validé par Claire le jj/mm à hh h mm »', /Validé par Claire le \d{2}\/\d{2} à \d{2} h \d{2}/.test(await main(claire)), (await main(claire)).match(/Validé[^\n]*/g));
+  ok('« Validé par Claire le 18 octobre à 17 h 32 »', /Validé par Claire le \d{1,2}(er)? [a-zéû]+ à \d{1,2} h( \d{2})?\b/.test(await main(claire)), (await main(claire)).match(/Validé[^\n]*/g));
   // Mode sombre : accent sémantique bleu, l'orange réservé aux alertes
   const dk = await login('julie@cabinet-varenne.fr', { dark: true });
   const hl = await dk.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--hl').trim());

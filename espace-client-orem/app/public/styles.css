@@ -256,7 +256,7 @@ textarea:focus,input:focus,select:focus{outline:2px solid var(--hl);outline-offs
 .person h3,.person .person-n{font-size:var(--t-lg)}
 .person .role-t{font-size:var(--t-sm);color:var(--muted)}
 .person .btn{margin-top:auto;align-self:flex-start}
-details{border-top:1px solid var(--line);padding:16px 0}
+details{border-top:1px solid var(--line);padding:6px 0}
 details:first-of-type{border-top:0;padding-top:0}
 details:last-of-type{padding-bottom:0}
 summary{cursor:pointer;font-weight:500;list-style:none;display:flex;justify-content:space-between;gap:12px;align-items:center;min-height:44px}
@@ -279,7 +279,7 @@ label{font-size:var(--t-sm);font-weight:500}
 .field{display:flex;flex-direction:column;gap:8px;min-width:0}
 .form{display:flex;flex-direction:column;gap:16px}
 .form .line{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
-input[type=search],input[type=email],input[type=text],input[type=password],input[type=url],input[type=number],input[type=date],input[type=datetime-local],select{min-height:46px;border:1px solid var(--field);border-radius:12px;background:var(--surface);padding:0 14px;font-size:var(--t-md);min-width:0;width:100%}
+input[type=search],input[type=email],input[type=text],input[type=password],input[type=url],input[type=number],input[type=date],input[type=datetime-local],input[type=month],input[type=time],input[type=tel],select{min-height:46px;border:1px solid var(--field);border-radius:12px;background:var(--surface);padding:0 14px;font-size:var(--t-md);min-width:0;width:100%}
 .radio{display:flex;gap:18px;flex-wrap:wrap}
 .radio label{font-weight:400;font-size:var(--t-md);display:flex;gap:8px;align-items:center}
 .inline{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
@@ -593,7 +593,7 @@ h1:focus{outline:none}
   .toast{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
   .thread{max-height:none;overflow:visible}
   .sheet{min-height:calc(100dvh - 64px)}
-  input[type=search],input[type=email],input[type=text],input[type=url],input[type=number],input[type=date],input[type=datetime-local],select,textarea{font-size:16px}
+  input[type=search],input[type=email],input[type=text],input[type=url],input[type=number],input[type=date],input[type=datetime-local],input[type=month],input[type=time],input[type=tel],select,textarea{font-size:16px}
 }
 @media (pointer:coarse){
   .btn-sm,.x,.icon-btn,.cat,.tabs [role=tab],.qa-chips button{min-height:44px;min-width:44px}
@@ -2048,3 +2048,15 @@ fieldset.field legend{font-weight:500;margin-bottom:6px;padding:0}
 .tk-wrap .tk-focus :is(button,a,[tabindex]):focus-visible{outline-color:#f4f4f6}
 /* Titres qui reçoivent le focus après un changement de vue : pas d'anneau (le lecteur d'écran annonce le titre) */
 :is(h1,h2,h3)[tabindex="-1"]:focus{outline:none}
+/* Onglets de la fiche client : sur grand écran, ils passent à la ligne au lieu d'être coupés (« Activit… ») */
+@media (min-width:861px){.tabs{flex-wrap:wrap;overflow-x:visible}.tabs button{padding:0 11px}}
+/* Champs fichier visibles : bouton aux couleurs de l'app */
+input[type=file]:not(.sr){font:inherit;font-size:var(--t-sm);color:var(--muted);max-width:100%}
+input[type=file]:not(.sr)::file-selector-button{font:inherit;font-weight:500;color:var(--fg);background:var(--surface-2);border:0;border-radius:999px;min-height:40px;padding:0 16px;margin-right:12px;cursor:pointer}
+input[type=file]:not(.sr)::file-selector-button:hover{background:var(--line)}
+/* Lignes avec une croix « Retirer » ou une flèche : la croix et la flèche restent sur la ligne, même à 320 px */
+@media (max-width:420px){ .panel .list .row:has(> .x:last-child):not(:has(> .btn)),.panel .list .row.linkrow{flex-wrap:nowrap} .panel .list .row:has(> .x:last-child):not(:has(> .btn)) .grow,.panel .list .row.linkrow .grow{flex-basis:0;min-width:0} }
+/* « Plus » (mobile) : Mode sombre et Se déconnecter ont l'allure des autres lignes */
+button.row.linkrow{width:100%;border:0;background:none;font:inherit;color:inherit;text-align:left;cursor:pointer}
+a.tel{color:var(--muted);text-decoration:underline;text-underline-offset:3px;display:inline-block;min-height:24px;padding-block:2px}
+a.tel:hover{color:var(--hl)}
