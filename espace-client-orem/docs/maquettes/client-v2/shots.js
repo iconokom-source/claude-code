@@ -1,17 +1,21 @@
-/* Captures de la maquette « Espace client » v2 dans le vrai cadre de l'app (serveur local 3123, données d'exemple).
-   Lancer : NODE_PATH=$(npm root -g) CHROMIUM=/opt/pw-browsers/chromium-1194/chrome-linux/chrome node shots.js [filtre] */
+/* Captures de la maquette « Espace client » v2 dans le vrai cadre de l'app (serveur local, données d'exemple).
+   Lancer : BASE=http://127.0.0.1:3123 NODE_PATH=$(npm root -g) CHROMIUM=/opt/pw-browsers/chromium-1194/chrome-linux/chrome node shots.js [filtre] */
 const { chromium } = require('playwright'); const fs = require('fs'), path = require('path');
 const DIR = __dirname, OUT = path.join(DIR, 'captures'); fs.mkdirSync(OUT, { recursive: true });
 const css = fs.readFileSync(path.join(DIR, 'cx.css'), 'utf8'), js = fs.readFileSync(path.join(DIR, 'cx-render.js'), 'utf8');
-const only = process.argv[2];
+const only = process.argv[2], BASE = process.env.BASE || 'http://127.0.0.1:3123';
 (async () => {
-  const br = await chromium.launch({ executablePath: process.env.CHROMIUM });
+  const br = await chromium.launch({ executablePath: process.env.CHROMIUM }); const SESS = {};
   async function shot(name, email, view, screen, w, h, theme) {
     if (only && !name.includes(only)) return;
-    const ctx = await br.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 2, locale: 'fr-FR', bypassCSP: true, colorScheme: theme || 'light' });
+    const ctx = await br.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 2, locale: 'fr-FR', bypassCSP: true, colorScheme: theme || 'light', storageState: SESS[email] });
     const p = await ctx.newPage(); const errs = []; p.on('pageerror', (e) => errs.push(e.message));
-    await p.goto('http://127.0.0.1:3123'); await p.fill('#em', email); await p.locator('form[data-form=login]').evaluate((f) => f.requestSubmit());
-    await p.waitForSelector('.devcode b'); await p.fill('#o1', await p.textContent('.devcode b')); await p.locator('form[data-form=verify]').evaluate((f) => f.requestSubmit());
+    await p.goto(BASE);
+    if (!SESS[email]) { // une seule connexion par compte (limite de connexions du serveur)
+      await p.fill('#em', email); await p.locator('form[data-form=login]').evaluate((f) => f.requestSubmit());
+      await p.waitForSelector('.devcode b'); await p.fill('#o1', await p.textContent('.devcode b')); await p.locator('form[data-form=verify]').evaluate((f) => f.requestSubmit());
+      await p.waitForSelector('#main'); SESS[email] = await ctx.storageState();
+    }
     await p.waitForSelector('#main'); await p.waitForTimeout(500);
     for (let i = 0; i < 4; i++) if (await p.$('.ob')) { await p.keyboard.press('Escape'); await p.waitForTimeout(250); }
     await p.evaluate((v) => { const a = document.querySelector(`[data-go=${v}]`); if (a) a.click(); }, view); await p.waitForTimeout(400);
@@ -44,5 +48,8 @@ const only = process.argv[2];
   await shot('6-accueil-projet-mobile', L, 'accueil', 'accueil', 390, 844);
   await shot('7-a-valider-mobile', L, 'valider', 'valider', 390, 844);
   await shot('8-accueil-projet-sombre', L, 'accueil', 'accueil', 1440, 900, 'dark');
+  await shot('9-messages-bureau', L, 'messages', 'messages', 1440, 900);
+  await shot('10-maquettes-visuels-bureau', HU, 'maquettes', 'maquettes', 1440, 900);
+  await shot('11-messages-mobile', L, 'messages', 'messages', 390, 844);
   await br.close();
 })().catch((e) => { console.error(e); process.exit(1); });
