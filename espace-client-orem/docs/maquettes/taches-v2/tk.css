@@ -302,3 +302,9 @@
 }
 .tk-fab{display:none}
 @media (max-width:860px){.tk-fab{display:grid;place-items:center;position:fixed;right:16px;bottom:calc(84px + env(safe-area-inset-bottom,0px));width:56px;height:56px;border-radius:50%;background:var(--cta);color:var(--on-cta);box-shadow:0 8px 24px rgba(0,0,18,.25);z-index:80;border:0}.tk-fab svg{width:22px;height:22px}.tk-wrap{padding-bottom:72px}}
+/* Décisions de Louis (18/10) : titres de page en Trykker, onglet actif en pilule blanche partout. */
+.tk-head h1{font-family:var(--serif);font-weight:400;font-size:40px;line-height:1.1;letter-spacing:-.02em}
+@container (max-width:599px){ .tk-head h1{font-size:32px} }
+.side .nav a[aria-current="page"]{background:#f4f4f6;color:#000012;font-weight:500}
+.side .nav a[aria-current="page"] svg{color:#000012}
+.side .nav a[aria-current="page"] .badge{background:#000012;color:#f4f4f6}
