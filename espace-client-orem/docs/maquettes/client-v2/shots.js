@@ -7,7 +7,7 @@ const only = process.argv[2], BASE = process.env.BASE || 'http://127.0.0.1:3123'
 (async () => {
   const br = await chromium.launch({ executablePath: process.env.CHROMIUM }); const SESS = {};
   async function shot(name, email, view, screen, w, h, theme) {
-    if (only && !name.includes(only)) return;
+    if (only && !name.startsWith(only)) return;
     const ctx = await br.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 2, locale: 'fr-FR', bypassCSP: true, colorScheme: theme || 'light', storageState: SESS[email] });
     const p = await ctx.newPage(); const errs = []; p.on('pageerror', (e) => errs.push(e.message));
     await p.goto(BASE);
@@ -36,7 +36,10 @@ const only = process.argv[2], BASE = process.env.BASE || 'http://127.0.0.1:3123'
     await p.setViewportSize({ width: w, height: Math.max(h, hh) }); await p.waitForTimeout(400);
     await p.screenshot({ path: path.join(OUT, name + '.png') });
     const sw = await p.evaluate(() => [document.documentElement.scrollWidth, window.innerWidth, [...document.querySelectorAll('.cx-wrap *')].filter((e) => e.scrollWidth > e.clientWidth + 1 && getComputedStyle(e).overflow === 'visible' && e.clientWidth > 0).slice(0, 5).map((e) => e.className)]);
-    console.log(name, sw[0] <= sw[1] ? 'ok largeur' : 'DÉBORDE ' + sw[0], JSON.stringify(sw[2]), errs.join(' | '));
+    // Relecture automatique du texte affiché : espace avant « : ; ! ? », tirets longs, mots proscrits, tilde.
+    const txt = await p.evaluate(() => document.querySelector('.cx-wrap').innerText);
+    const fautes = [...txt.matchAll(/\S{0,12}[^\s\u00a0\u202f\d][:;!?](?=\s|$)|—|–|~|\bsuivi\b|\bstudio\b|[Aa]vant demain/g)].map((m) => m[0]);
+    console.log(name, sw[0] <= sw[1] ? 'ok largeur' : 'DÉBORDE ' + sw[0], JSON.stringify(sw[2]), fautes.length ? 'TEXTE : ' + JSON.stringify(fautes) : 'texte ok', errs.join(' | '));
     await ctx.close();
   }
   const L = 'claire@maisonlumen.fr', HU = 'hugo@huchet-demorge.fr';
@@ -51,5 +54,6 @@ const only = process.argv[2], BASE = process.env.BASE || 'http://127.0.0.1:3123'
   await shot('9-messages-bureau', L, 'messages', 'messages', 1440, 900);
   await shot('10-maquettes-visuels-bureau', HU, 'maquettes', 'maquettes', 1440, 900);
   await shot('11-messages-mobile', L, 'messages', 'messages', 390, 844);
+  await shot('12-accueil-facture-due-bureau', 'julie@cabinet-varenne.fr', 'accueil', 'accueil', 1440, 900); // variante : une facture est à régler
   await br.close();
 })().catch((e) => { console.error(e); process.exit(1); });
