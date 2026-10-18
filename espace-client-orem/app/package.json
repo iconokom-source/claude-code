@@ -1,0 +1,14 @@
+{
+  "name": "espace-client-orem",
+  "private": true,
+  "description": "Espace client de l'agence Orem (local uniquement tant que Louis n'a pas validé).",
+  "scripts": {
+    "start": "node server.js",
+    "demo": "node build-demo.js",
+    "test": "sh tests/tout.sh"
+  },
+  "engines": { "node": ">=20" },
+  "optionalDependencies": {
+    "@anthropic-ai/sdk": "0.134.0"
+  }
+}
