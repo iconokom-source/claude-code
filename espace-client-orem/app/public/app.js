@@ -1177,76 +1177,334 @@
         : `<div class="empty big" style="border:0">${ic('ok')}<strong>${f === 'todo' ? 'Rien à traiter' : 'Rien ici'}</strong><span>${f === 'todo' ? 'Les messages, fichiers, demandes de modifications et demandes sur le site des clients arriveront ici' + (S.me.notify && S.me.notify.email !== 'off' ? ', et par e-mail selon vos réglages' : '') + '.' : 'Aucune notification avec ces filtres.'}</span></div>`}</section>`;
   }
 
-  /* ---------- Équipe : tâches ----------
-     Comme « Programme & Livrables » dans Notion, mais pour toute l'équipe et tous les clients :
-     les tâches internes et les livrables des projets, par personne, par échéance et par état. */
-  const TK_STATES = [['todo', 'Pas commencé'], ['doing', 'En cours'], ['done', 'Fait']];
-  const tkState = () => ({ who: 'me', client: '', items: true, layout: 'list', edit: null, ...(S.tk || {}) });
+  /* ---------- Équipe : tâches (v2, bento) ----------
+     Maquettes validées par Louis : docs/maquettes/taches-v2. Comme « Programme & Livrables » dans Notion, pour toute
+     l'équipe et tous les clients : une carte encre « Focus » sur la prochaine tâche, 4 chiffres qui filtrent la liste,
+     la charge de chacun en points, les 14 prochains jours, l'avancement par client, une saisie rapide
+     (@personne, demain, #client, !) et une liste où l'on coche d'un clic (annulable 5 s). */
+  const TK_STATES = [['todo', 'Pas commencé'], ['doing', 'En cours'], ['done', 'Faite']];
+  const tkState = () => ({ who: 'me', client: '', kind: 'all', layout: 'list', when: '', edit: null, focus: 0, more: {}, showDone: false, ...(S.tk || {}) });
   async function loadTasks() { try { S.tasks = (await API.tasks()).tasks; } catch { S.tasks = []; } }
-  const dayStart = (d = new Date()) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x.getTime(); };
-  function tkWhen(t) {
-    if (!t.due) return 'none';
-    const d = dayStart(t.due), today = dayStart(), wk = today + (7 - ((new Date().getDay() + 6) % 7)) * 864e5;
-    return d < today ? 'late' : d === today ? 'today' : d < wk ? 'week' : 'later';
+  const TKX = '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+  const tkPl = (n, s, p) => `${n} ${n > 1 ? p : s}`;
+  const DAYMS = 864e5, tkD0 = (d) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x.getTime(); };
+  function tkCal() { const today = tkD0(Date.now()), dow = (new Date(today).getDay() + 6) % 7; return { today, sunday: today + (6 - dow) * DAYMS, monday: today - dow * DAYMS }; }
+  const tkBand = (t, c = tkCal()) => (!t.due ? 4 : tkD0(t.due) < c.today ? 0 : tkD0(t.due) === c.today ? 1 : tkD0(t.due) <= c.sunday ? 2 : 3);
+  const tkOpen = (t) => t.status !== 'done' && !t.review;
+  const myUrgent = () => (S.tasks || []).filter((t) => tkOpen(t) && t.who.includes(S.me.id) && tkBand(t) <= 1 && t.due).length;
+  const tkUser = (id) => (S.team || []).find((u) => u.id === id);
+  const tkFirst = (id) => { const u = tkUser(id); return u ? u.name.split(' ')[0] : ''; };
+  const tkAv = (id) => { const u = tkUser(id); return u && IMG[u.photo] ? `<img class="av" src="${IMG[u.photo]}" alt="">` : `<span class="av" aria-hidden="true"></span>`; };
+  const tkAvs = (ids) => `<span class="avs" title="${esc(ids.map(tkFirst).join(', '))}"><span class="sr">${esc(ids.map(tkFirst).join(', '))}</span>${ids.slice(0, 2).map(tkAv).join('')}${ids.length > 2 ? `<span class="more" aria-hidden="true">+${ids.length - 2}</span>` : ''}</span>`;
+  const tkCap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+  const tkStepLetter = (t) => (t.step ? 'OREM'[Number((t.step.match(/Étape (\d)/) || [])[1] || 1) - 1] || 'O' : '');
+  const tkStepName = (t) => (t.step ? (t.step.split('·')[1] || '').trim() : '');
+  const tkRelDay = (d, c = tkCal()) => { const n = Math.round((tkD0(d) - c.today) / DAYMS); return n === 0 ? 'aujourd’hui' : n === 1 ? 'demain' : tkD0(d) <= c.sunday ? fmt(d, { weekday: 'long' }) : fmt(d, { weekday: 'short', day: 'numeric' }); };
+  const tkDoneIn = (t, from, to) => t.status === 'done' && ((t.doneAt && tkD0(t.doneAt) >= from && tkD0(t.doneAt) < to) || (!t.doneAt && t.due && tkD0(t.due) >= from && tkD0(t.due) < to));
+  function tkDue(t, c = tkCal()) {
+    if (t.status === 'done') return ['none', t.doneAt ? 'Faite le ' + fmt(t.doneAt, { day: 'numeric', month: 'short' }) : 'Faite'];
+    if (!t.due) return ['none', 'Sans date'];
+    const d = tkD0(t.due), n = Math.round((c.today - d) / DAYMS);
+    if (n > 0) return ['late', `${n} j de retard`];
+    if (n === 0) return ['today', 'Aujourd’hui'];
+    if (n === -1) return ['', 'Demain'];
+    if (d <= c.sunday) return ['', tkCap(fmt(t.due, { weekday: 'short', day: 'numeric' }))];
+    return ['', fmt(t.due, { day: 'numeric', month: 'short' })];
   }
-  const myUrgent = () => (S.tasks || []).filter((t) => t.status !== 'done' && t.who.includes(S.me.id) && ['late', 'today'].includes(tkWhen(t))).length;
-  const firstName = (id) => { const u = (S.team || []).find((x) => x.id === id); return u ? u.name.split(' ')[0] : ''; };
-  function tkList() {
-    const k = tkState();
-    return (S.tasks || []).filter((t) => (k.who === 'all' || t.who.includes(k.who === 'me' ? S.me.id : k.who))
-      && (!k.client || (k.client === 'interne' ? !t.projectId : t.projectId === k.client)) && (k.items || t.kind === 'task'));
+  const tkMeta = (t) => (t.kind === 'item'
+    ? `<span class="orem" title="${esc(t.step)}" aria-hidden="true">${tkStepLetter(t)}</span><span class="tx">${esc(t.client)} · ${esc(t.step || '')}</span>`
+    : `<span class="tx">${esc(t.client || 'Interne')}${t.note ? ` · ${esc(t.note)}` : ''}</span>`);
+  const tkCheck = (t) => (t.review
+    ? `<span class="ck wait" title="En attente de la validation du client"><i>${ic('cal')}</i></span>`
+    : `<button class="ck ${t.status}" data-tkdone="${esc(t.id)}" aria-label="${t.status === 'done' ? `Faite. Remettre « ${esc(t.t)} » à faire` : `${t.status === 'doing' ? 'En cours. ' : ''}Marquer « ${esc(t.t)} » comme faite`}"><i>${t.status === 'done' ? ic('check') : ''}</i></button>`);
+  const tkUrg = (t) => (t.urgent && t.status !== 'done' ? '<b class="chip bad sm">Urgent</b>' : '');
+  /* Portée (personne, client, type) puis filtre « when » pour la liste seulement. */
+  function tkScope() {
+    const k = tkState(), mine = (t) => k.who === 'all' || t.who.includes(k.who === 'me' ? S.me.id : k.who);
+    return (S.tasks || []).filter((t) => mine(t) && (!k.client || (k.client === 'interne' ? !t.projectId : t.projectId === k.client)) && (k.kind === 'all' || t.kind === k.kind));
   }
-  function tkForm(t) {
-    const item = t && t.kind === 'item', id = t ? t.id : 'new', d = t && t.due ? new Date(t.due) : null;
-    const dv = d ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` : '';
-    const who = t ? t.who : [tkState().who === 'all' || tkState().who === 'me' ? S.me.id : tkState().who];
-    const pid = t ? t.projectId : (tkState().client && tkState().client !== 'interne' ? tkState().client : '');
-    return `<form class="panel form tk-form" data-form="teamtask" data-id="${esc(id)}" aria-label="${t ? 'Modifier la tâche' : 'Nouvelle tâche'}">
-      ${item ? `<p class="small muted">Livrable de ${esc(t.client)} · ${esc(t.step)}. Le titre se change dans le planning du client.</p><h3 class="tk-ftitle">${esc(t.t)}</h3>`
-        : `<div class="field"><label for="tk-t">Tâche</label><input id="tk-t" type="text" maxlength="160" value="${esc(t ? t.t : '')}" placeholder="Ex. : relancer le devis, préparer le bilan du mois" required></div>`}
-      <fieldset class="field tk-people"><legend>Personnes</legend><div class="inline">${(S.team || []).map((u) => `<label class="tk-person"><input type="checkbox" name="tk-w" value="${esc(u.id)}" ${who.includes(u.id) ? 'checked' : ''}> ${esc(u.name.split(' ')[0])}</label>`).join('')}</div></fieldset>
-      <div class="line"><div class="field"><label for="tk-d">Échéance</label><input id="tk-d" type="date" value="${dv}"></div>
-        <div class="field"><label for="tk-s">État</label><select id="tk-s">${TK_STATES.map(([v, l]) => `<option value="${v}" ${(t ? t.status : 'todo') === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
-        ${item ? '' : `<div class="field"><label for="tk-p">Client</label><select id="tk-p"><option value="">Aucun (tâche interne)</option>${(S.projects || []).filter((p) => !p.archivedAt).map((p) => `<option value="${esc(p.id)}" ${pid === p.id ? 'selected' : ''}>${esc(p.client)}</option>`).join('')}</select></div>`}</div>
-      ${item ? '' : `<div class="field"><label for="tk-n">Note <span class="muted">(facultatif)</span></label><textarea id="tk-n" rows="2" maxlength="2000">${esc(t ? t.note || '' : '')}</textarea></div>
-      <label class="tk-urgent"><input type="checkbox" id="tk-u" ${t && t.urgent ? 'checked' : ''}> Urgent</label>`}
-      <div class="inline"><button class="btn btn-primary" type="submit">${t ? 'Enregistrer' : 'Ajouter la tâche'}</button><button class="btn btn-line" type="button" data-act="tkcancel">Annuler</button>
-        ${item ? `<button class="btn btn-line" type="button" data-act="tkopen" data-id="${esc(t.projectId)}">${ic('map')}Ouvrir le planning de ${esc(t.client)}</button>` : t ? `<button class="btn btn-line danger" type="button" data-act="tkdel" data-id="${esc(t.id)}">Supprimer</button>` : ''}</div></form>`;
+  function tkWhenOk(t, w, c) {
+    if (!w) return true;
+    if (w === 'today') return tkOpen(t) && tkBand(t, c) === 1;
+    if (w === 'late') return tkOpen(t) && tkBand(t, c) === 0;
+    if (w === 'next') return tkOpen(t) && t.due && tkD0(t.due) > c.today && tkD0(t.due) <= c.today + 7 * DAYMS;
+    if (w === 'done') return tkDoneIn(t, c.monday, c.today + DAYMS);
+    if (w.startsWith('day:')) return tkOpen(t) && t.due && tkD0(t.due) === Number(w.slice(4));
+    return true;
   }
-  function tkRow(t) {
-    const w = tkWhen(t), k = tkState(), late = w === 'late' && t.status !== 'done';
-    const sub = [t.client || 'Interne', t.kind === 'item' ? t.step : '', t.due ? (late ? 'en retard, prévu le ' : 'pour le ') + fmt(t.due, { weekday: 'short', day: 'numeric', month: 'short' }) : 'sans échéance'].filter(Boolean).join(' · ');
-    if (k.edit === t.id) return `<li class="tk-item">${tkForm(t)}</li>`;
-    return `<li class="tk-item"><div class="tk-row ${t.status === 'done' ? 'done' : ''} ${late ? 'late' : ''}">
-      <label class="sr" for="tks-${esc(t.id)}">État de « ${esc(t.t)} »</label>
-      <select id="tks-${esc(t.id)}" class="tk-state s-${t.status}" data-tkstate="${esc(t.id)}">${TK_STATES.map(([v, l]) => `<option value="${v}" ${t.status === v ? 'selected' : ''}>${l}</option>`).join('')}</select>
-      <button class="tk-main" data-tkedit="${esc(t.id)}"><span class="title">${esc(t.t)}${t.urgent && t.status !== 'done' ? ' <span class="chip bad">Urgent</span>' : ''}${t.kind === 'item' ? ' <span class="chip idle">Livrable</span>' : ''}${t.review ? ' <span class="chip hl">Chez le client</span>' : ''}</span><span class="sub">${esc(sub)}</span>${t.note ? `<span class="sub tk-note">${esc(t.note)}</span>` : ''}<span class="sr">, modifier</span></button>
-      <span class="tk-who" aria-label="Personnes : ${esc(t.who.map(firstName).join(', '))}">${t.who.map((id) => `<span class="tk-ini" title="${esc(firstName(id))}" aria-hidden="true">${esc(firstName(id).slice(0, 1))}</span>`).join('')}</span></div></li>`;
+  const TK_WHEN_LBL = { today: 'Aujourd’hui', late: 'En retard', next: '7 prochains jours', done: 'Faites cette semaine' };
+  const tkWhenLbl = (w) => (w.startsWith('day:') ? tkCap(fmt(Number(w.slice(4)), { weekday: 'long', day: 'numeric', month: 'long' })) : TK_WHEN_LBL[w] || '');
+  function tkFocusQueue(scope, c) {
+    return scope.filter(tkOpen).sort((a, b) => tkBand(a, c) - tkBand(b, c) || (b.urgent ? 1 : 0) - (a.urgent ? 1 : 0) || (b.status === 'doing') - (a.status === 'doing') || (a.due ? new Date(a.due) : 9e15) - (b.due ? new Date(b.due) : 9e15));
+  }
+  function tkRow(t, c) {
+    const [cl, l] = tkDue(t, c);
+    return `<li class="tk-r ${t.status} ${cl === 'late' ? 'late' : ''} ${S.tk && S.tk.flash === t.id ? 'is-flash' : ''}">${tkCheck(t)}<button class="tk-m" data-tkedit="${esc(t.id)}"><span class="k-t">${tkUrg(t)}<span>${esc(t.t)}</span></span><span class="s">${tkMeta(t)}</span><span class="sr">, modifier</span></button>${t.review ? '<span class="chip hl sm">Chez le client</span>' : `<span class="due ${cl}">${l}</span>`}${tkAvs(t.who)}</li>`;
+  }
+  function tkCard(t, c) {
+    const [cl, l] = tkDue(t, c);
+    const ft = t.review ? '<span class="chip hl sm">Chez le client</span>' : t.status === 'done' ? (t.doneAt ? `<span class="due none">${l}</span>` : '<span></span>') : `<span class="due ${cl}">${l}</span>`;
+    return `<div class="tk-card2 ${t.status}">${tkUrg(t)}<div class="hd">${tkCheck(t)}<button class="k-t" data-tkedit="${esc(t.id)}">${esc(t.t)}</button></div><div class="s">${tkMeta(t)}</div><div class="k-ft">${ft}${tkAvs(t.who)}</div></div>`;
   }
   function vTaches() {
-    const k = tkState(), list = tkList(), open = list.filter((t) => t.status !== 'done'), done = list.filter((t) => t.status === 'done');
-    const order = (a, b) => (a.due ? new Date(a.due) : 9e15) - (b.due ? new Date(b.due) : 9e15) || (b.urgent ? 1 : 0) - (a.urgent ? 1 : 0);
-    const groups = [['late', 'En retard'], ['today', 'Aujourd’hui'], ['week', 'Cette semaine'], ['later', 'Plus tard'], ['none', 'Sans échéance']]
-      .map(([g, l]) => [g, l, open.filter((t) => tkWhen(t) === g).sort(order)]).filter((x) => x[2].length);
-    const people = [['me', 'Mes tâches'], ['all', 'Toute l’équipe'], ...(S.team || []).filter((u) => u.id !== S.me.id).map((u) => [u.id, u.name.split(' ')[0]])];
-    const count = (w) => (S.tasks || []).filter((t) => t.status !== 'done' && (w === 'all' || t.who.includes(w === 'me' ? S.me.id : w))).length;
-    const lateN = open.filter((t) => tkWhen(t) === 'late').length;
-    const body = k.layout === 'board'
-      ? `<div class="tk-board">${TK_STATES.map(([v, l]) => { const col = list.filter((t) => t.status === v).sort(order); return `<section class="panel tk-col"><h2 class="tk-colh">${l} <span class="num">${col.length}</span></h2><ul class="list plain">${col.map(tkRow).join('') || '<li class="muted small">Rien ici.</li>'}</ul></section>`; }).join('')}</div>`
-      : `${groups.map(([g, l, ts]) => `<section class="panel tk-group ${g}"><h2 class="tk-gh">${l} <span class="num">${ts.length}</span></h2><ul class="list plain">${ts.map(tkRow).join('')}</ul></section>`).join('')
-        || `<section class="panel"><div class="empty big" style="border:0">${ic('ok')}<strong>Rien à faire ici</strong><span>Ajoutez une tâche, ou changez de personne ou de client.</span></div></section>`}
-        ${done.length ? `<details class="panel tk-done"><summary><strong>Fait</strong> <span class="num">${done.length}</span> <span class="muted small">(30 derniers jours)</span></summary><ul class="list plain">${done.sort((a, b) => new Date(b.doneAt || b.due || 0) - new Date(a.doneAt || a.due || 0)).map(tkRow).join('')}</ul></details>` : ''}`;
-    return `<div class="head"><div><h1>Tâches de l’équipe</h1><p class="lead">Les tâches internes et les livrables de tous les clients, au même endroit${lateN ? ` · <strong class="tk-latecount">${lateN} en retard</strong>` : ''}</p></div>
-      <div class="head-actions"><button class="btn btn-primary" data-act="tknew">${ic('plus')}Nouvelle tâche</button></div></div>
-      ${k.edit === 'new' ? tkForm(null) : ''}
-      <div class="inbox-bar tk-bar"><div class="cats" role="group" aria-label="Personne">${people.map(([w, l]) => `<button class="cat" data-tkwho="${esc(w)}" aria-pressed="${k.who === w}"><strong>${esc(l)}</strong><span class="num">${count(w)}</span></button>`).join('')}</div>
-        <div class="inline filters"><label class="sr" for="tk-fc">Client</label><select id="tk-fc" data-tkfilter="client"><option value="">Tous les clients</option><option value="interne" ${k.client === 'interne' ? 'selected' : ''}>Interne (sans client)</option>${(S.projects || []).filter((p) => !p.archivedAt).map((p) => `<option value="${esc(p.id)}" ${k.client === p.id ? 'selected' : ''}>${esc(p.client)}</option>`).join('')}</select>
-          <label class="tk-check"><input type="checkbox" id="tk-fi" data-tkfilter="items" ${k.items ? 'checked' : ''}> Livrables des projets</label>
-          <div class="cats" role="group" aria-label="Affichage"><button class="cat" data-tklayout="list" aria-pressed="${k.layout === 'list'}">Liste</button><button class="cat" data-tklayout="board" aria-pressed="${k.layout === 'board'}">Tableau</button></div></div></div>
-      ${body}`;
+    const k = tkState(), c = tkCal(), all = S.tasks || [], scope = tkScope(), open = scope.filter(tkOpen);
+    const late = open.filter((t) => tkBand(t, c) === 0), tod = open.filter((t) => tkBand(t, c) === 1);
+    const next7 = open.filter((t) => t.due && tkD0(t.due) > c.today && tkD0(t.due) <= c.today + 7 * DAYMS).sort((a, b) => new Date(a.due) - new Date(b.due));
+    const doneWeek = scope.filter((t) => tkDoneIn(t, c.monday, c.today + DAYMS)), lastWeek = scope.filter((t) => tkDoneIn(t, c.monday - 7 * DAYMS, c.monday)).length;
+    const who = k.who;
+    // En-tête
+    const people = [['me', 'Moi', tkAv(S.me.id)], ['all', 'Équipe', `<span class="grp">${ic('team')}</span>`], ...(S.team || []).filter((u) => u.id !== S.me.id).map((u) => [u.id, tkFirst(u.id), tkAv(u.id)])];
+    const cnt = (w) => all.filter((t) => tkOpen(t) && (w === 'all' || t.who.includes(w === 'me' ? S.me.id : w))).length;
+    const head = `<div class="tk-head"><div class="k-tt"><h1>Tâches de l’équipe</h1><p class="lead"><b>${tkCap(fmt(c.today, { weekday: 'long', day: 'numeric', month: 'long' }))}</b> · Tâches internes et livrables de tous les clients</p></div>
+      <button class="btn btn-primary" data-act="tknew">${ic('plus')}Nouvelle tâche</button>
+      <div class="tk-people" role="group" aria-label="Afficher les tâches de">${people.map(([w, l, a]) => `<button data-tkwho="${esc(w)}" aria-pressed="${who === w}">${a}<span class="k-lbl">${esc(l)}</span><span class="num"><span class="sr"> : </span>${cnt(w)}<span class="sr"> ${cnt(w) > 1 ? 'tâches ouvertes' : 'tâche ouverte'}</span></span></button>`).join('')}</div></div>`;
+    // Saisie rapide
+    const quick = `<form class="tk-quick" data-form="tkquick" autocomplete="off">${ic('plus')}<label class="sr" for="tk-q">Ajouter une tâche</label><input id="tk-q" name="tk-q" placeholder="Ajouter une tâche" aria-describedby="tk-prev"><span class="k-ex" aria-hidden="true">Ex.&nbsp;: Relancer le devis <b>@théo</b> <b>demain</b> <b>#Lumen</b> <b>!</b></span><kbd title="Raccourci clavier" aria-hidden="true">N</kbd><button class="btn btn-primary btn-sm k-add" type="submit">Ajouter</button></form><div class="tk-preview" id="tk-prev" aria-live="polite"></div>`;
+    // Focus
+    const fq = tkFocusQueue(scope, c), fi = Math.min(k.focus || 0, Math.max(0, fq.length - 1)), f = fq[fi];
+    const fTop = !f ? '' : (() => { const b = tkBand(f, c), n = f.due ? Math.round((c.today - tkD0(f.due)) / DAYMS) : 0; return (b === 0 ? `En retard de ${tkPl(n, 'jour', 'jours')}` : b === 1 ? 'Pour aujourd’hui' : !f.due ? 'Sans échéance' : 'Pour ' + tkRelDay(f.due, c)) + (f.urgent ? ' · Urgent' : ''); })();
+    const fMeta = !f ? '' : f.kind === 'item' ? `<span class="orem" aria-hidden="true">${tkStepLetter(f)}</span>${esc(f.client)} · ${esc(tkStepName(f))}` : esc(f.client || 'Interne');
+    const forWho = who === 'me' || who === 'all' ? '' : ` de ${tkFirst(who)}`;
+    const focus = `<section class="tk-focus b-focus" aria-label="Prochaine tâche${esc(forWho)}">${f ? `<div class="k-top"><span>${fTop}</span><span class="k-nav">${fq.length > 1 ? `<span class="of">${fi + 1} sur ${fq.length}</span><button class="nx" data-act="tkfocusnext" aria-label="Tâche suivante">${ic('arrow')}</button>` : ''}</span></div>
+      <button class="k-ft" data-tkedit="${esc(f.id)}">${esc(f.t)}</button><div class="k-meta"><span class="k-c">${fMeta}</span>${tkAvs(f.who)}</div>
+      <div class="k-acts"><button class="b1" data-tkdone="${esc(f.id)}">${ic('check')}C’est fait</button>${f.status === 'todo' ? `<button class="b2" data-tkstart="${esc(f.id)}">Commencer</button>` : ''}</div>`
+      : `<div class="k-top"><span>Tout est à jour</span></div><div class="k-ft">${scope.some((t) => t.review && t.status !== 'done') ? 'Tout le reste est chez les clients.' : 'Rien ne vous attend. Belle journée.'}</div><div class="k-acts"><button class="b2" data-act="tkquickfocus">Ajouter une tâche</button></div>`}</section>`;
+    // Chiffres
+    const maxLate = late.length ? Math.max(...late.map((t) => Math.round((c.today - tkD0(t.due)) / DAYMS))) : 0;
+    const urg = tod.filter((t) => t.urgent).length;
+    const kpi = (w, l, v, unit, d, cls = '') => `<button class="tk-kpi" data-tkwhen="${w}" aria-pressed="${k.when === w}"><span class="k-l">${l}</span><span class="k-v ${v === 0 ? 'zero' : cls}">${v}<small>${unit}</small></span><span class="k-d">${d}</span><span class="sr">. Filtrer la liste</span></button>`;
+    const kpis = `<div class="b-kpis">${kpi('today', 'Aujourd’hui', tod.length, 'à faire', tod.length ? (urg ? `dont ${tkPl(urg, 'urgente', 'urgentes')}` : 'Aucune urgente') : 'Aucune échéance')}
+      ${kpi('late', 'En retard', late.length, late.length > 1 ? 'tâches' : 'tâche', late.length ? (late.length > 1 ? `Le plus ancien&nbsp;: ${tkPl(maxLate, 'jour', 'jours')}` : `Depuis ${tkPl(maxLate, 'jour', 'jours')}`) : 'Aucun retard', 'bad')}
+      ${kpi('next', '7 prochains jours', next7.length, 'à venir', next7.length ? `Prochaine&nbsp;: ${tkRelDay(next7[0].due, c)}` : 'Rien de prévu')}
+      ${kpi('done', 'Cette semaine', doneWeek.length, doneWeek.length > 1 ? 'faites' : 'faite', `Semaine passée&nbsp;: ${lastWeek}`)}</div>`;
+    // Qui porte quoi (toujours toute l'équipe, sans les filtres client et type)
+    const load = `<section class="tk-card tk-load b-load" aria-labelledby="tk-load-h"><h2 id="tk-load-h">Qui porte quoi</h2><div class="rows">${(S.team || []).map((u) => {
+      const ts = all.filter((t) => t.who.includes(u.id)), o2 = ts.filter(tkOpen);
+      const lt = o2.filter((t) => tkBand(t, c) === 0).length, dg = o2.filter((t) => t.status === 'doing' && tkBand(t, c) !== 0).length, td = o2.length - lt - dg;
+      const rev = ts.filter((t) => t.review && t.status !== 'done').length;
+      const dots = [...Array(lt).fill('late'), ...Array(dg).fill('doing'), ...Array(td).fill('todo')];
+      const on = who === u.id || (who === 'me' && u.id === S.me.id);
+      return `<button class="r" data-tkwho="${u.id === S.me.id ? 'me' : esc(u.id)}" aria-pressed="${on}">${tkAv(u.id)}<span class="n">${esc(tkFirst(u.id))}${rev ? `<span class="cl">+ ${rev} chez le client</span>` : ''}</span><span class="k-t" aria-hidden="true">${o2.length}</span><span class="dots" aria-hidden="true">${dots.slice(0, 30).map((x) => `<i class="d-${x}"></i>`).join('')}</span><span class="sr">${esc(tkFirst(u.id))} : ${tkPl(o2.length, 'tâche ouverte', 'tâches ouvertes')}, dont ${lt} en retard et ${dg} en cours. Afficher ses tâches</span></button>`;
+    }).join('')}</div><div class="legend" aria-hidden="true"><span><i class="d-late"></i>En retard</span><span><i class="d-doing"></i>En cours</span><span><i class="d-todo"></i>Pas commencé</span></div></section>`;
+    // 14 jours
+    const days = [...Array(14)].map((_, i) => c.today + i * DAYMS), per = (d) => open.filter((t) => t.due && tkD0(t.due) === d).length;
+    const mx = Math.max(1, late.length, ...days.map(per)), total = days.reduce((s, d) => s + per(d), 0);
+    const bar = (n) => (n ? `<span class="val">${n}</span><span class="k-bar" style="height:${Math.max(10, Math.round(n / mx * 80))}px"></span>` : '<span class="zero"></span>');
+    const daysC = `<section class="tk-card tk-days b-days" aria-labelledby="tk-days-h"><h2 id="tk-days-h">Les 14 prochains jours <span class="aside">${total ? tkPl(total, 'échéance', 'échéances') : 'Aucune échéance'}</span></h2><div class="bars">
+      ${late.length ? `<button class="c late" data-tkwhen="late" aria-pressed="${k.when === 'late'}" aria-label="${tkPl(late.length, 'tâche', 'tâches')} en retard">${bar(late.length)}<span class="k-lb"><b>Retard</b>&nbsp;</span></button><span class="sep"></span>` : ''}
+      ${days.map((d, i) => { const wd = new Date(d).getDay(), n = per(d); return `<button class="c ${i === 0 ? 'today' : ''} ${wd % 6 === 0 ? 'we' : ''}" data-tkwhen="day:${d}" aria-pressed="${k.when === 'day:' + d}" ${i === 0 ? 'aria-current="date"' : ''} aria-label="${esc(tkCap(fmt(d, { weekday: 'long', day: 'numeric', month: 'long' })))} : ${tkPl(n, 'tâche', 'tâches')}">${bar(n)}<span class="k-lb" aria-hidden="true"><b>${i === 0 ? 'Auj.' : 'DLMMJVS'[wd]}</b>${new Date(d).getDate()}</span></button>`; }).join('')}</div></section>`;
+    // Par client
+    const clients = [...new Map(scope.map((t) => [t.projectId || 'interne', t.client || 'Interne'])).entries()].map(([id, name]) => { const ts = scope.filter((t) => (t.projectId || 'interne') === id); const dn = ts.filter((t) => t.status === 'done').length, lt = ts.filter((t) => tkOpen(t) && tkBand(t, c) === 0).length; return { id, name, n: ts.length, dn, lt, open: ts.length - dn }; }).sort((a, b) => b.open - a.open);
+    const clientsC = `<section class="tk-card tk-clients b-clients" aria-labelledby="tk-cl-h"><h2 id="tk-cl-h">Par client</h2>${clients.length ? `<ul>${clients.slice(0, 5).map((x) => `<li><button class="k-cb" data-tkclient="${esc(x.id)}" aria-pressed="${k.client === x.id}"><span class="k-top"><span class="nm">${esc(x.name)}</span><span>${x.lt ? `<em>${x.lt} en retard</em> · ` : ''}${x.dn} / ${x.n} ${x.dn > 1 ? 'faites' : 'faite'}</span></span><span class="pbar" aria-hidden="true"><i style="width:${x.n ? x.dn / x.n * 100 : 0}%"></i>${x.lt ? `<i class="k-l" style="width:${Math.max(4, x.lt / x.n * 100)}%"></i>` : ''}</span></button></li>`).join('')}</ul>${clients.length > 5 ? `<p class="k-more">et ${tkPl(clients.length - 5, 'autre', 'autres')} dans le filtre client</p>` : ''}` : '<p class="muted small">Aucune tâche liée à un client.</p>'}</section>`;
+    // Liste
+    const order = (a, b) => (b.urgent ? 1 : 0) - (a.urgent ? 1 : 0) || (a.due ? new Date(a.due) : 9e15) - (b.due ? new Date(b.due) : 9e15);
+    const tomorrow = c.today + DAYMS;
+    const gOf = (t) => (t.review && t.status !== 'done' ? 'review' : t.status === 'done' ? 'done' : !t.due ? 'none' : tkD0(t.due) < c.today ? 'late' : tkD0(t.due) === c.today ? 'today' : tkD0(t.due) === tomorrow ? 'tomorrow' : tkD0(t.due) <= c.sunday ? 'week' : tkD0(t.due) <= c.sunday + 7 * DAYMS ? 'next' : 'later');
+    const list = scope.filter((t) => tkWhenOk(t, k.when, c));
+    const G = [['late', 'En retard'], ['today', 'Aujourd’hui'], ['tomorrow', 'Demain'], ['week', 'Cette semaine'], ['next', 'Semaine prochaine'], ['later', 'Plus tard'], ['none', 'Sans échéance'], ['review', 'Chez le client']];
+    const groups = G.map(([g, l]) => [g, l, list.filter((t) => gOf(t) === g).sort(order)]).filter((x) => x[2].length);
+    const base = who === 'all' ? 'Toute l’équipe' : who === 'me' ? 'Toutes vos tâches' : 'Tâches de ' + tkFirst(who);
+    const filt = k.when ? `<button class="tk-filter" data-tkwhen="" aria-label="Retirer le filtre ${esc(tkWhenLbl(k.when))}">${esc(tkWhenLbl(k.when))} ${TKX}</button>` : '';
+    const tools = `<div class="tk-listhead"><h2 id="tk-list-h" tabindex="-1">${base}${filt}</h2><div class="tk-tools"><label class="sr" for="tk-fc">Client</label><select id="tk-fc" class="pill-sel" data-tkfilter="client"><option value="">Tous les clients</option><option value="interne" ${k.client === 'interne' ? 'selected' : ''}>Interne (sans client)</option>${(S.projects || []).filter((p) => !p.archivedAt).map((p) => `<option value="${esc(p.id)}" ${k.client === p.id ? 'selected' : ''}>${esc(p.client)}</option>`).join('')}</select>
+      <div class="seg" role="group" aria-label="Type">${[['all', 'Tout'], ['task', 'Interne'], ['item', 'Livrables']].map(([v, l]) => `<button data-tkkind="${v}" aria-pressed="${k.kind === v}">${l}</button>`).join('')}</div>
+      <div class="seg" role="group" aria-label="Affichage">${[['list', 'Liste'], ['board', 'Tableau']].map(([v, l]) => `<button data-tklayout="${v}" aria-pressed="${k.layout === v}">${l}</button>`).join('')}</div></div></div>`;
+    const doneList = scope.filter((t) => t.status === 'done').sort((a, b) => new Date(b.doneAt || b.due || 0) - new Date(a.doneAt || a.due || 0));
+    const empty = !(S.tasks || []).length ? `<div class="tk-empty"><span class="ok">${ic('check')}</span><div><b>Aucune tâche pour le moment</b><p>Écrivez votre première tâche dans le champ au-dessus. Exemple : « Préparer le bilan d’octobre @théo vendredi ».</p></div></div>`
+      : k.when || k.client || k.kind !== 'all' ? `<div class="tk-empty"><span class="ok">${ic('check')}</span><div><b>${k.when === 'late' ? 'Plus aucun retard' : 'Rien avec ces filtres'}</b><p>${k.when === 'late' ? 'Tout ce qui était en retard est fait.' : 'Changez de personne, de client ou de filtre.'}</p></div><button class="btn btn-line btn-sm" data-act="tkclear">Effacer les filtres</button></div>`
+      : `<div class="tk-empty"><span class="ok">${ic('check')}</span><div><b>Tout est fait</b><p>Les tâches terminées sont rangées dans « Faites ».</p></div></div>`;
+    const more = (g, ts, n) => (ts.length > n && !(k.more || {})[g] ? `<button class="tk-more" data-tkmore="${g}">${ts.length - n > 1 ? `Afficher les ${ts.length - n} autres` : 'Afficher l’autre tâche'}</button>` : '');
+    const cut = (g, ts, n) => ((k.more || {})[g] ? ts : ts.slice(0, n));
+    const listHtml = `<div class="tk-panel">${groups.length ? groups.map(([g, l, ts]) => `<div class="tk-g"><h3 class="tk-gh ${g === 'late' ? 'late' : ''}">${l} <span class="num">${ts.length}</span></h3><ul class="tk-ul" role="list">${cut(g, ts, 6).map((t) => tkRow(t, c)).join('')}</ul>${more(g, ts, 6)}</div>`).join('') : k.when === 'done' ? '' : empty}
+      ${k.when === 'done' ? `<div class="tk-g"><ul class="tk-ul" role="list">${list.map((t) => tkRow(t, c)).join('') || '<li class="tk-none">Rien de fini cette semaine pour l’instant.</li>'}</ul></div>` : k.when || !doneList.length ? '' : `<div class="tk-g"><button class="tk-donebtn" data-act="tkshowdone" aria-expanded="${!!k.showDone}"><span class="tk-gh">Faites <span class="num">${doneList.length}</span></span><span class="k-s">30 derniers jours</span><span class="k-chev">${k.showDone ? 'Masquer' : 'Afficher'}</span></button>${k.showDone ? `<ul class="tk-ul" role="list">${doneList.map((t) => tkRow(t, c)).join('')}</ul>` : ''}</div>`}</div>`;
+    const doneRecent = scope.filter((t) => t.status === 'done' && (t.doneAt || t.due) && tkD0(t.doneAt || t.due) >= c.today - 7 * DAYMS && tkWhenOk(t, k.when === 'done' ? 'done' : '', c));
+    const inWhen = (t) => tkWhenOk(t, k.when === 'done' ? '' : k.when, c);
+    const cols = [['Pas commencé', 'todo', scope.filter((t) => t.status === 'todo' && !t.review && inWhen(t))], ['En cours', 'doing', scope.filter((t) => t.status === 'doing' && !t.review && inWhen(t))], ['Chez le client', 'review', scope.filter((t) => t.review && t.status !== 'done' && !k.when)], ['Faites (7 jours)', 'done', doneRecent]];
+    const board = `<div class="tk-board">${cols.map(([l, cl, ts]) => `<section class="tk-col" aria-label="${l}"><h3><i class="h-${cl}" aria-hidden="true"></i>${l} <span class="num">${ts.length}</span></h3>${cut('b' + cl, ts.sort(order), 6).map((t) => tkCard(t, c)).join('') || '<p class="tk-none">Rien ici pour l’instant.</p>'}${more('b' + cl, ts, 6)}</section>`).join('')}</div>`;
+    return `${head}${quick}<div class="tk-bento">${focus}${kpis}${load}${daysC}${clientsC}</div>${tools}${k.layout === 'board' ? board : listHtml}${tkUndoBar()}<button class="tk-fab" data-act="tknew" aria-label="Nouvelle tâche">${ic('plus')}</button>`;
   }
+  /* Saisie rapide : @personne, échéance (aujourd'hui, demain, lundi, 15/11, dans 3 jours…), #client, ! urgent, // note. */
+  const tkNorm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  function tkParse(raw) {
+    const c = tkCal(), out = { who: [], due: null, dueLbl: '', projectId: undefined, client: '', urgent: false, note: '', errors: [], choices: [] };
+    let s = String(raw || '');
+    const ni = s.indexOf('//'); if (ni >= 0) { out.note = s.slice(ni + 2).trim(); s = s.slice(0, ni); }
+    const team = S.team || [];
+    s = s.replace(/(^|\s)@([\p{L}\-]+)/gu, (m, sp, name) => {
+      const n = tkNorm(name);
+      if (n === 'moi') { out.who.push(S.me.id); return sp; }
+      if (n === 'equipe' || n === 'tous') { team.forEach((u) => out.who.push(u.id)); return sp; }
+      const hits = team.filter((u) => tkNorm(u.name.split(' ')[0]).startsWith(n) || (n === 'theo' && /^theo/.test(tkNorm(u.name))) || (n === 'clem' && /^clem/.test(tkNorm(u.name))));
+      if (hits.length === 1) { out.who.push(hits[0].id); return sp; }
+      out.errors.push(`Personne inconnue : @${name}`); return m;
+    });
+    s = s.replace(/(^|\s)#([\p{L}\d\-]+)/gu, (m, sp, name) => {
+      const n = tkNorm(name).replace(/-/g, ' ');
+      if (n === 'interne') { out.projectId = ''; out.client = 'Interne'; return sp; }
+      const ps = (S.projects || []).filter((p) => !p.archivedAt), hits = ps.filter((p) => tkNorm(p.client).split(/[\s\-']+/).some((w) => w.startsWith(n)) || tkNorm(p.client).startsWith(n));
+      if (hits.length === 1) { out.projectId = hits[0].id; out.client = hits[0].client; return sp; }
+      if (hits.length > 1) { out.choices = hits.map((p) => ({ id: p.id, client: p.client })); return sp; }
+      out.errors.push(`Client inconnu : #${name}`); return m;
+    });
+    s = s.replace(/(^|\s)!(urgent|!)?(?=\s|$)/giu, (m, sp) => { out.urgent = true; return sp; });
+    const set = (t, lbl) => { if (!out.due) { out.due = t; out.dueLbl = lbl; } };
+    const WD = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+    const MO = ['janv', 'fevr', 'mars', 'avr', 'mai', 'juin', 'juil', 'aout', 'sept', 'oct', 'nov', 'dec'];
+    const rules = [
+      [/(^|\s)(aujourd'hui|aujourd’hui|auj|ce soir)(?=\s|$)/iu, () => c.today],
+      [/(^|\s)(apres-demain|après-demain)(?=\s|$)/iu, () => c.today + 2 * DAYMS],
+      [/(^|\s)(demain|dem)(?=\s|$)/iu, () => c.today + DAYMS],
+      [/(^|\s)(semaine pro(chaine)?|sem pro)(?=\s|$)/iu, () => c.sunday + DAYMS],
+      [/(^|\s)fin du mois(?=\s|$)/iu, () => { const d = new Date(c.today); return new Date(d.getFullYear(), d.getMonth() + 1, 0).getTime(); }],
+      [/(^|\s)dans (\d{1,3}) ?(j|jours?|sem|semaines?)(?=\s|$)/iu, (m) => c.today + Number(m[2]) * (/^s/i.test(m[3]) ? 7 : 1) * DAYMS],
+      [/(^|\s)(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?(?=\s|$)/u, (m) => { const y0 = new Date(c.today).getFullYear(); let y = m[4] ? Number(m[4].length === 2 ? '20' + m[4] : m[4]) : y0; let d = new Date(y, Number(m[3]) - 1, Number(m[2])).getTime(); if (!m[4] && d < c.today) d = new Date(y + 1, Number(m[3]) - 1, Number(m[2])).getTime(); return isNaN(d) ? null : d; }],
+      [/(^|\s)(\d{1,2}) (janv(?:ier)?|f[ée]vr(?:ier)?|mars|avr(?:il)?|mai|juin|juil(?:let)?|ao[uû]t|sept(?:embre)?|oct(?:obre)?|nov(?:embre)?|d[ée]c(?:embre)?)\.?(?=\s|$)/iu, (m) => { const mi = MO.findIndex((x) => tkNorm(m[3]).startsWith(x)); const y0 = new Date(c.today).getFullYear(); let d = new Date(y0, mi, Number(m[2])).getTime(); if (d < c.today) d = new Date(y0 + 1, mi, Number(m[2])).getTime(); return d; }],
+      [/(^|\s)(lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche|lun|mar|mer|jeu|ven|sam|dim)(?=\s|$)/iu, (m) => { const n = tkNorm(m[2]); const wd = WD.findIndex((x) => x.startsWith(n)); const cur = new Date(c.today).getDay(); let diff = (wd - cur + 7) % 7; if (diff === 0) diff = 7; return c.today + diff * DAYMS; }]
+    ];
+    for (const [re, fn] of rules) { const m = s.match(re); if (m && !out.due) { const d = fn(m); if (d) { set(d, ''); s = s.replace(re, m[1]); } } }
+    out.t = s.replace(/\s+/g, ' ').trim();
+    if (out.due) out.dueLbl = tkCap(tkRelDay(out.due, c)) + (Math.round((out.due - c.today) / DAYMS) > 1 ? ', ' + fmt(out.due, { weekday: 'short', day: 'numeric', month: 'short' }) : '');
+    return out;
+  }
+  function tkPreview(raw) {
+    const box = $('#tk-prev'); if (!box) return;
+    const add = root.querySelector('.tk-quick'); if (add) add.classList.toggle('typing', !!String(raw).trim());
+    if (!String(raw).trim()) { box.innerHTML = ''; return; }
+    const p = tkParse(raw), k = tkState();
+    const who = p.who.length ? [...new Set(p.who)] : null;
+    const chips = [];
+    chips.push(who ? who.map((id) => `<span class="pc">${tkAv(id)}${esc(tkFirst(id))}</span>`).join('') : `<span class="pc np dim">${k.who !== 'me' && k.who !== 'all' ? esc(tkFirst(k.who)) : 'Vous'} (par défaut)</span>`);
+    if (p.due) chips.push(`<span class="pc np">${ic('cal')}${esc(p.dueLbl)}</span>`);
+    if (p.client) chips.push(`<span class="pc"><span class="orem">#</span>${esc(p.client)}</span>`);
+    if (p.urgent) chips.push('<span class="pc np urg">Urgent</span>');
+    if (p.note) chips.push('<span class="pc np">Note</span>');
+    p.choices.forEach((x) => chips.push(`<button type="button" class="pc np" data-tkpick="${esc(x.id)}">${esc(x.client)}</button>`));
+    p.errors.forEach((e) => chips.push(`<span class="pc np warn">${esc(e)}</span>`));
+    box.innerHTML = chips.join('') + '<span class="k-hint">Entrée pour ajouter · Maj + Entrée pour les détails</span>';
+  }
+  /* Panneau latéral : nouvelle tâche ou modification, rendu hors de la page (dialogue modal). */
+  function tkDrawer() {
+    const k = tkState(); if (!k.edit || S.view !== 'taches' || clientMode()) return '';
+    const isNew = k.edit === 'new', t = isNew ? null : (S.tasks || []).find((x) => x.id === k.edit); if (!isNew && !t) return '';
+    const d = (isNew ? k.draft : null) || {}, item = t && t.kind === 'item', c = tkCal();
+    const who = t ? t.who : d.who && d.who.length ? d.who : [k.who !== 'me' && k.who !== 'all' ? k.who : S.me.id];
+    const dueV = (ms) => { if (!ms) return ''; const x = new Date(ms); return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`; };
+    const due = t ? dueV(t.due && new Date(t.due).getTime()) : dueV(d.due);
+    const status = t ? t.status : 'todo', pid = t ? t.projectId || '' : d.projectId !== undefined ? d.projectId : k.client && k.client !== 'interne' ? k.client : '';
+    const lateN = t && t.due && t.status !== 'done' && tkD0(t.due) < c.today ? Math.round((c.today - tkD0(t.due)) / DAYMS) : 0;
+    const mon = c.today + (((1 - new Date(c.today).getDay() + 7) % 7) || 7) * DAYMS;
+    return `<div class="tk-veil" data-act="tkclose"></div><aside class="tk-drawer tk-wrap" role="dialog" aria-modal="true" aria-labelledby="tkd-h"><form class="tk-dform" data-form="tkedit" data-id="${esc(k.edit)}">
+      <div class="hd"><h2 id="tkd-h">${isNew ? 'Nouvelle tâche' : 'Modifier la tâche'}</h2><button type="button" class="k-x" data-act="tkclose" aria-label="Fermer">${TKX}</button></div>
+      <div class="bd">${item ? `<p class="small muted">Livrable de ${esc(t.client)} · ${esc(t.step || '')}. Le titre se change dans le planning du client.</p><h3 class="ttl ro">${esc(t.t)}</h3>${t.review ? '<p class="k-hint2">Le client n’a pas encore validé ce livrable.</p>' : ''}`
+        : `<label class="sr" for="tkd-t">Que faut-il faire ?</label><textarea id="tkd-t" class="ttl" rows="2" maxlength="160" placeholder="Que faut-il faire ?">${esc(t ? t.t : d.t || '')}</textarea>`}
+        <fieldset class="k-fs"><legend class="lab">État</legend><div class="st3">${TK_STATES.map(([v, l]) => `<label class="${status === v ? 'on' : ''}"><input type="radio" class="sr" name="tkd-s" value="${v}" ${status === v ? 'checked' : ''}><span class="ck ${v}"><i>${v === 'done' ? ic('check') : ''}</i></span>${l}</label>`).join('')}</div></fieldset>
+        <fieldset class="k-fs"><legend class="lab">Personnes</legend><div class="k-row">${(S.team || []).map((u) => `<label class="pp ${who.includes(u.id) ? 'on' : ''}"><input type="checkbox" class="sr" name="tkd-w" value="${esc(u.id)}" ${who.includes(u.id) ? 'checked' : ''}>${tkAv(u.id)}${esc(tkFirst(u.id))}<span class="tick" aria-hidden="true">${ic('check')}</span></label>`).join('')}</div></fieldset>
+        <div><label class="lab" for="tkd-d">Échéance</label><div class="k-row">${[['Aujourd’hui', c.today], ['Demain', c.today + DAYMS], ['Lundi', mon], ['Sans date', 0]].map(([l, ms]) => `<button type="button" class="pp np ${dueV(ms) === due ? 'on' : ''}" data-tkdue="${dueV(ms)}">${l}</button>`).join('')}</div><input id="tkd-d" type="date" class="k-date" value="${due}">${lateN ? `<p class="k-hint2 bad">En retard de ${tkPl(lateN, 'jour', 'jours')}</p>` : ''}</div>
+        ${item ? '' : `<div><label class="lab" for="tkd-p">Client</label><select id="tkd-p" class="k-sel"><option value="">Aucun (tâche interne)</option>${(S.projects || []).filter((p) => !p.archivedAt).map((p) => `<option value="${esc(p.id)}" ${pid === p.id ? 'selected' : ''}>${esc(p.client)}</option>`).join('')}</select></div>
+        <label class="k-sw">Urgent <input type="checkbox" id="tkd-u" class="sr" ${(t ? t.urgent : d.urgent) ? 'checked' : ''}><i aria-hidden="true"></i></label>
+        <div><label class="lab" for="tkd-n">Note <span class="muted">(facultatif)</span></label><textarea id="tkd-n" class="k-note" rows="3" maxlength="2000" placeholder="Un détail utile pour la personne qui s’en charge">${esc(t ? t.note || '' : d.note || '')}</textarea></div>`}</div>
+      <div class="k-ft"><button class="btn btn-primary" type="submit">${isNew ? 'Ajouter la tâche' : 'Enregistrer'}</button><button type="button" class="btn btn-line" data-act="tkclose">Annuler</button>
+        ${item ? `<button type="button" class="del k-open" data-act="tkopen" data-id="${esc(t.projectId)}">Ouvrir le planning</button>` : t ? (k.confirmDel ? `<span class="k-confirm">Supprimer définitivement ? <button type="button" class="del" data-act="tkdel" data-id="${esc(t.id)}">Oui</button><button type="button" class="del k-no" data-act="tkdelno">Non</button></span>` : `<button type="button" class="del" data-act="tkdelask">Supprimer</button>`) : ''}</div></form></aside>`;
+  }
+  /* Changement d'état annulable 5 s : appliqué tout de suite à l'écran, envoyé au serveur à la fin du délai. */
+  function tkUndoBar() { const u = S.tkUndo; return u ? `<div class="undo tk-undo" role="status"><span>${esc(u.msg)}</span><button class="btn btn-sm" data-act="tkundo">Annuler</button></div>` : ''; }
+  async function tkFlush() {
+    const u = S.tkUndo; if (!u) return; clearTimeout(u.timer); S.tkUndo = null;
+    try { await API.task(u.body); } catch (err) { toast(err.message); }
+    await loadTasks(); if (S.view === 'taches') render(false, true);
+  }
+  async function tkSetStatus(id, status) {
+    if (S.tkUndo) await tkFlush();
+    const t = (S.tasks || []).find((x) => x.id === id); if (!t || t.review) return;
+    const prev = { status: t.status, doneAt: t.doneAt };
+    t.status = status; t.doneAt = status === 'done' ? new Date().toISOString() : null;
+    const msg = status === 'done' ? `Faite : ${t.t}` : status === 'doing' ? `En cours : ${t.t}` : `Remise à faire : ${t.t}`;
+    S.tkUndo = { id, prev, msg, body: { type: 'todo.update', id, status }, timer: setTimeout(tkFlush, 5000) };
+    render(false, true);
+    const b = root.querySelector('[data-act=tkundo]'); if (b && document.activeElement === document.body) b.focus({ preventScroll: true });
+  }
+  function tkUndo() {
+    const u = S.tkUndo; if (!u) return; clearTimeout(u.timer); S.tkUndo = null;
+    const t = (S.tasks || []).find((x) => x.id === u.id); if (t) Object.assign(t, u.prev);
+    render(false, true); toast('Annulé.');
+  }
+  window.addEventListener('pagehide', () => { const u = S.tkUndo; if (u) { clearTimeout(u.timer); S.tkUndo = null; try { fetch('/api/tasks', { method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json', 'X-Orem': '1' }, body: JSON.stringify(u.body) }); } catch {} } });
   async function tkSave(body, msg) {
-    try { await API.task(body); await loadTasks(); if (msg) toast(msg); render(); return true; } catch (err) { toast(err.message); return false; }
+    try { const r = await API.task(body); await loadTasks(); if (msg) toast(msg); return r || true; } catch (err) { toast(err.message); return false; }
+  }
+  function tkGoList() { const h = $('#tk-list-h'); if (h) { h.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' }); h.focus({ preventScroll: true }); } }
+  /* Gestionnaires (appelés par les écouteurs délégués de la page). */
+  /* Synchrone : attendre ici empêcherait les autres clics d'annuler l'action par défaut du navigateur. */
+  function tkClick(e) {
+    if (S.view !== 'taches' || clientMode()) return false;
+    const g = (sel) => e.target.closest(sel);
+    let el;
+    if ((el = g('[data-tkdone]'))) { const t = (S.tasks || []).find((x) => x.id === el.dataset.tkdone); if (t) tkSetStatus(t.id, t.status === 'done' ? 'todo' : 'done'); return true; }
+    if ((el = g('[data-tkstart]'))) { tkSetStatus(el.dataset.tkstart, 'doing'); return true; }
+    if ((el = g('[data-tkwho]'))) { S.tk = { ...tkState(), who: el.dataset.tkwho, focus: 0 }; render(false, true); return true; }
+    if ((el = g('[data-tkwhen]'))) { const w = el.dataset.tkwhen; S.tk = { ...tkState(), when: tkState().when === w ? '' : w }; render(false, true); if (S.tk.when) tkGoList(); return true; }
+    if ((el = g('[data-tkclient]'))) { const v = el.dataset.tkclient; S.tk = { ...tkState(), client: tkState().client === v ? '' : v }; render(false, true); if (S.tk.client) tkGoList(); return true; }
+    if ((el = g('[data-tkkind]'))) { S.tk = { ...tkState(), kind: el.dataset.tkkind }; render(false, true); return true; }
+    if ((el = g('[data-tklayout]'))) { S.tk = { ...tkState(), layout: el.dataset.tklayout }; render(false, true); return true; }
+    if ((el = g('[data-tkmore]'))) { const k = tkState(); S.tk = { ...k, more: { ...(k.more || {}), [el.dataset.tkmore]: true } }; render(false, true); return true; }
+    if ((el = g('[data-tkedit]'))) { S.tkOpener = el.dataset.tkedit; S.tk = { ...tkState(), edit: el.dataset.tkedit, confirmDel: false, draft: null }; render(); return true; }
+    if ((el = g('[data-tkpick]'))) { const inp = $('#tk-q'), p = (S.projects || []).find((x) => x.id === el.dataset.tkpick); if (inp && p) { inp.value = inp.value.replace(/(^|\s)#[\p{L}\d\-]+/u, '$1#' + p.client.split(' ').pop()); tkPreview(inp.value); inp.focus(); } return true; }
+    if ((el = g('[data-tkdue]'))) { const i = $('#tkd-d'); if (i) i.value = el.dataset.tkdue; root.querySelectorAll('[data-tkdue]').forEach((b) => b.classList.toggle('on', b === el)); return true; }
+    const a = g('[data-act]'); if (!a) return false;
+    switch (a.dataset.act) {
+      case 'tkclose': { const was = tkState().edit; S.tk = { ...tkState(), edit: null, confirmDel: false, draft: null }; render(); const b = was && was !== 'new' ? root.querySelector(`[data-tkedit="${CSS.escape(was)}"]`) : $('[data-act=tknew]'); if (b) b.focus(); return true; }
+      case 'tkdelask': S.tk = { ...tkState(), confirmDel: true }; render(); const y = root.querySelector('[data-act=tkdel]'); if (y) y.focus(); return true;
+      case 'tkdelno': S.tk = { ...tkState(), confirmDel: false }; render(); return true;
+      case 'tkundo': tkUndo(); return true;
+      case 'tkfocusnext': { const k = tkState(); S.tk = { ...k, focus: (k.focus || 0) + 1 >= tkFocusQueue(tkScope(), tkCal()).length ? 0 : (k.focus || 0) + 1 }; render(false, true); const n = root.querySelector('[data-act=tkfocusnext]'); if (n) n.focus(); return true; }
+      case 'tkquickfocus': { const q = $('#tk-q'); if (q) q.focus(); return true; }
+      case 'tkshowdone': S.tk = { ...tkState(), showDone: !tkState().showDone }; render(false, true); return true;
+      case 'tkclear': S.tk = { ...tkState(), when: '', client: '', kind: 'all' }; render(false, true); return true;
+    }
+    return false;
+  }
+  async function tkSubmit(f) {
+    if (f.dataset.form === 'tkquick') {
+      const inp = $('#tk-q'), raw = inp ? inp.value : '', p = tkParse(raw);
+      if (!raw.trim()) { if (inp) inp.focus(); return true; }
+      if (!p.t) { toast('Écrivez la tâche avant les raccourcis.'); return true; }
+      const k = tkState(), who = p.who.length ? [...new Set(p.who)] : [k.who !== 'me' && k.who !== 'all' ? k.who : S.me.id];
+      const body = { type: 'todo.add', t: p.t, who, due: p.due ? new Date(p.due + 9 * 3600e3).toISOString() : '', projectId: p.projectId !== undefined ? p.projectId : k.client && k.client !== 'interne' ? k.client : '', urgent: p.urgent, note: p.note };
+      const r = await tkSave(body, null);
+      if (r) {
+        const others = who.filter((w) => w !== S.me.id).map(tkFirst);
+        toast('Tâche ajoutée' + (others.length ? ` pour ${others.join(' et ')}` : '') + (p.due ? `, ${tkRelDay(p.due)}` : '') + '.' + (others.length ? (others.length > 1 ? ' Les personnes sont prévenues.' : ' La personne est prévenue.') : ''));
+        S.tk = { ...tkState(), flash: r.task && r.task.id }; render(false, true);
+        const q = $('#tk-q'); if (q) { q.value = ''; q.focus(); }
+        setTimeout(() => { if (S.tk) S.tk.flash = null; }, 1600);
+      }
+      return true;
+    }
+    if (f.dataset.form === 'tkedit') {
+      const id = f.dataset.id, isNew = id === 'new', item = id.startsWith('i:');
+      const v = (sel) => { const x = f.querySelector(sel); return x ? x.value.trim() : ''; };
+      const who = [...f.querySelectorAll('[name=tkd-w]:checked')].map((x) => x.value);
+      if (!who.length) { toast('Choisissez au moins une personne.'); return true; }
+      if (!item && !v('#tkd-t')) { fieldError('tkd-t', 'Écrivez la tâche.'); return true; }
+      const st = f.querySelector('[name=tkd-s]:checked'), dd = v('#tkd-d');
+      const body = { type: isNew ? 'todo.add' : 'todo.update', who, status: st ? st.value : 'todo' };
+      if (!isNew) body.id = id;
+      if (dd) body.due = dd + 'T09:00:00'; else if (!item) body.due = '';
+      if (!item) Object.assign(body, { t: v('#tkd-t'), projectId: v('#tkd-p'), note: v('#tkd-n'), urgent: !!(f.querySelector('#tkd-u') || {}).checked });
+      const r = await tkSave(body, isNew ? (who.some((w) => w !== S.me.id) ? 'Tâche ajoutée. Les personnes concernées sont prévenues.' : 'Tâche ajoutée.') : 'Tâche enregistrée.');
+      if (r) { const was = id; S.tk = { ...tkState(), edit: null, draft: null, flash: isNew && r.task ? r.task.id : was }; render(); const b = root.querySelector(`[data-tkedit="${CSS.escape(isNew && r.task ? r.task.id : was)}"]`); if (b) b.focus(); setTimeout(() => { if (S.tk) S.tk.flash = null; }, 1600); }
+      return true;
+    }
+    return false;
+  }
+  function tkKey(e) {
+    if (S.view !== 'taches' || clientMode() || !S.me) return false;
+    const tag = (e.target.tagName || '').toLowerCase(), typing = ['input', 'textarea', 'select'].includes(tag) || e.target.isContentEditable;
+    if (e.target.id === 'tk-q' && e.key === 'Enter' && e.shiftKey) { e.preventDefault(); const p = tkParse(e.target.value); S.tk = { ...tkState(), edit: 'new', draft: p }; render(); return true; }
+    if (e.key === 'Escape' && tkState().edit) { e.preventDefault(); const b = root.querySelector('.tk-drawer [data-act=tkclose]'); if (b) b.click(); return true; }
+    if (typing || e.ctrlKey || e.metaKey || e.altKey || dialogOpen()) return false;
+    if (e.key === 'n' || e.key === 'N') { e.preventDefault(); if (e.shiftKey) { S.tk = { ...tkState(), edit: 'new', draft: null }; render(); } else { const q = $('#tk-q'); if (q) q.focus(); } return true; }
+    if (e.key === 'Escape' && tkState().when) { S.tk = { ...tkState(), when: '' }; render(false, true); return true; }
+    return false;
   }
 
   /* ---------- Équipe : réglages ---------- */
@@ -1668,7 +1926,7 @@
   const root = $('#root');
   /* Focus : on retrouve l'élément actif après chaque rendu (par id ou par ses attributs data-*),
      on enferme le focus dans un dialogue ouvert et on le rend au déclencheur à la fermeture. */
-  const KEYS = ['data-tkwho', 'data-tklayout', 'data-tkedit', 'data-tkstate', 'data-go', 'data-act', 'data-id', 'data-tab', 'data-cat', 'data-bk', 'data-inbox', 'data-mine', 'data-ckind', 'data-tool', 'data-notif', 'data-open', 'data-item', 'data-itemdate', 'data-inv', 'data-req', 'data-handover', 'data-mail', 'data-tz'];
+  const KEYS = ['data-tkwho', 'data-tklayout', 'data-tkedit', 'data-tkdone', 'data-tkstart', 'data-tkwhen', 'data-tkclient', 'data-tkkind', 'data-tkmore', 'data-tkdue', 'data-go', 'data-act', 'data-id', 'data-tab', 'data-cat', 'data-bk', 'data-inbox', 'data-mine', 'data-ckind', 'data-tool', 'data-notif', 'data-open', 'data-item', 'data-itemdate', 'data-inv', 'data-req', 'data-handover', 'data-mail', 'data-tz'];
   function keyOf(el) {
     if (!el || el === document.body || !root.contains(el)) return null;
     if (el.id) return '#' + CSS.escape(el.id);
@@ -1679,7 +1937,7 @@
     if (f) return `[data-form="${CSS.escape(f.dataset.form)}"]${f.dataset.id ? `[data-id="${CSS.escape(f.dataset.id)}"]` : ''} ${el.tagName.toLowerCase()}${el.type ? `[type="${CSS.escape(el.type)}"]` : ''}`;
     return null;
   }
-  const dialogOpen = () => !!(S.ob || S.zoom || S.compose || S.mailView || S.fview || S.docView);
+  const dialogOpen = () => !!(S.ob || S.zoom || S.compose || S.mailView || S.fview || S.docView || (S.view === 'taches' && S.tk && S.tk.edit && !clientMode()));
   const TITLES = { evolution: 'Évolution', demarrer: 'Bien démarrer', preferences: 'Mes notifications', proposition: 'Proposition', accueil: 'Accueil', projet: 'Étapes', valider: 'À valider', maquettes: 'Maquettes', messages: 'Messages', fichiers: 'Fichiers', documents: 'Devis et factures', outils: 'Boîte à outils', biblio: 'Bibliothèque', equipe: 'Équipe et aide', plus: 'Plus', inbox: 'Boîte de réception', taches: 'Tâches de l’équipe', reglages: 'Réglages', clients: 'Clients', nouveau: 'Nouvel espace client' };
   let wasDialog = false;
   /* onlyMain : seule la zone principale change (filtre, question rapide) ; la barre latérale et le reste ne sont pas reconstruits. */
@@ -1697,7 +1955,8 @@
     } else {
       const V = { inbox: vInbox, taches: vTaches, reglages: vReglages, clients: vClients, nouveau: vNouveau, admin: vAdmin };
       if (!V[S.view] || (S.view === 'admin' && !S.project)) S.view = 'inbox';
-      if (wrap) wrap.innerHTML = wrapHtml(V[S.view]()); else root.innerHTML = shell(V[S.view]()) + composer() + mailPreview();
+      if (wrap) wrap.innerHTML = wrapHtml(V[S.view]()); else root.innerHTML = shell(V[S.view]()) + composer() + mailPreview() + tkDrawer();
+      const w2 = root.querySelector('#main .wrap'); if (w2) w2.classList.toggle('tk-wrap', S.view === 'taches');
     }
     const where = !S.me ? 'Connexion' : S.view === 'admin' && S.project ? S.project.client : S.view === 'outils' && S.tool ? (TOOLS[S.tool] || [])[1] : TITLES[S.view];
     document.title = (where ? where + ' · ' : '') + 'Espace client Orem';
@@ -1830,8 +2089,7 @@
   function copyHtml(h, ok) { try { navigator.clipboard.write([new ClipboardItem({ 'text/html': new Blob([h], { type: 'text/html' }), 'text/plain': new Blob([h.replace(/<[^>]+>/g, ' ')], { type: 'text/plain' }) })]).then(() => toast(ok), () => copyText(h, ok)); } catch { copyText(h, ok); } }
   document.addEventListener('change', async (e) => {
     const t = e.target;
-    if (t.matches('[data-tkstate]')) { const task = (S.tasks || []).find((x) => x.id === t.dataset.tkstate); await tkSave({ type: 'todo.update', id: t.dataset.tkstate, status: t.value }, t.value === 'done' ? `Fait : ${task ? task.t : 'tâche'}.` : null); return; }
-    if (t.matches('[data-tkfilter]')) { S.tk = { ...tkState(), [t.dataset.tkfilter]: t.type === 'checkbox' ? t.checked : t.value }; render(false, true); return; }
+    if (t.matches('[data-tkfilter]')) { S.tk = { ...tkState(), [t.dataset.tkfilter]: t.value, focus: 0 }; render(false, true); return; }
     if (t.matches('[data-cproject]')) { S.compose.projectId = t.value; S.compose.full = t.value ? (await API.project(t.value)).project : null; render(); return; }
     if (t.id === 'c-file' && t.files.length) { composeFiles([...t.files]); t.value = ''; return; }
     if (t.dataset.logo && t.files.length) { const f = t.files[0]; t.value = '';
@@ -1862,9 +2120,7 @@
     if (t.name === 'rv-s') { S.rvScore = Number(t.value); const txt = ($('#rv-t') || {}).value, pub = ($('#rv-p') || {}).checked; render(); if ($('#rv-t')) { $('#rv-t').value = txt || ''; $('#rv-p').checked = !!pub; } const r = document.querySelector(`[name=rv-s][value="${S.rvScore}"]`); r && r.focus(); }
   });
   document.addEventListener('click', async (e) => {
-    const tw = e.target.closest('[data-tkwho]'); if (tw) { S.tk = { ...tkState(), who: tw.dataset.tkwho }; return render(false, true); }
-    const tly = e.target.closest('[data-tklayout]'); if (tly) { S.tk = { ...tkState(), layout: tly.dataset.tklayout }; return render(false, true); }
-    const te = e.target.closest('[data-tkedit]'); if (te) { S.tk = { ...tkState(), edit: te.dataset.tkedit }; render(); const f = $('#tk-t') || $('#tk-d'); if (f) f.focus(); return; }
+    if (tkClick(e)) return;
     const g = e.target.closest('[data-go]'); if (g) { e.preventDefault(); return go(g.dataset.go); }
     const o = e.target.closest('[data-open]'); if (o) return openProject(o.dataset.open);
     const cn = e.target.closest('[data-cnotif]'); if (cn) { const n = (S.inbox || []).find((x) => x.id === cn.dataset.cnotif); try { await API.readNotif(n.id); } catch {} n.read = true; S.bellOpen = false; return go((n.go && n.go.view) || 'accueil'); }
@@ -1894,7 +2150,6 @@
       case 'doc-view': S.docView = { src: a.dataset.src, title: a.dataset.title }; render(); break;
       case 'testmail': { a.disabled = true; try { const r = await API.testMail(id); toast(r.sent ? `E-mail envoyé depuis ${r.from} à ${S.me.email}. Regardez votre boîte de réception.` : `Non envoyé : ${r.error || 'envoi désactivé'}`); } catch (err) { toast(err.message); } a.disabled = false; try { S.outbox = await API.outbox(); render(false, true); } catch {} break; }
       case 'tknew': S.tk = { ...tkState(), edit: 'new' }; render(); ($('#tk-t') || {}).focus && $('#tk-t').focus(); break;
-      case 'tkcancel': { const was = tkState().edit; S.tk = { ...tkState(), edit: null }; render(); const b = was && was !== 'new' ? root.querySelector(`[data-tkedit="${CSS.escape(was)}"]`) : $('[data-act=tknew]'); if (b) b.focus(); break; }
       case 'tkopen': S.tk = { ...tkState(), edit: null }; await openProject(id); S.tab = 'pilotage'; render(true); break;
       case 'tkdel': { const t = (S.tasks || []).find((x) => x.id === id); if (!confirm(`Supprimer la tâche « ${t ? t.t : ''} » ?`)) break; S.tk = { ...tkState(), edit: null }; await tkSave({ type: 'todo.remove', id }, 'Tâche supprimée.'); break; }
       case 'ccheck': { a.disabled = true; const old = a.textContent; a.textContent = 'Test…'; try { const r = await API.check(id); toast((r.ok ? 'Connexion réussie. ' : 'Échec. ') + r.message); } catch (err) { toast(err.message); } a.disabled = false; a.textContent = old; break; }
@@ -1983,6 +2238,7 @@
   document.addEventListener('submit', async (e) => {
     const f = e.target.closest('[data-form]'); if (!f) return;
     e.preventDefault();
+    if (f.dataset.form === 'tkquick' || f.dataset.form === 'tkedit') { tkSubmit(f); return; }
     const v = (id) => ($('#' + id) ? $('#' + id).value.trim() : '');
     switch (f.dataset.form) {
       case 'linkauth': { try { await API.linkAuth(S.linkToken); S.linkToken = null; await enter(); } catch (err) { S.linkToken = null; render(); toast(err.message); } break; }
@@ -2088,20 +2344,6 @@
         try { const r = await API.ask(S.project.id, q); S.askA = r.answer || R('Je ne trouve pas la réponse dans le projet. Écrivez à l’équipe depuis Messages, elle répond sous 24 h ouvrées.', 'Je ne trouve pas la réponse dans le projet. Écris à l’équipe depuis Messages, elle répond sous 24 h ouvrées.'); } catch (err) { S.askA = err.message; }
         render(false, true); break; }
       case 'cprefs': if (await act({ type: 'user.prefs', mail: $('#cp-mail').checked, weekly: $('#cp-week').checked }, 'Préférences enregistrées.')) { S.me.prefs = { mail: $('#cp-mail') ? $('#cp-mail').checked : true, weekly: $('#cp-week') ? $('#cp-week').checked : true }; } break;
-      case 'teamtask': {
-        const id = f.dataset.id, isNew = id === 'new', item = id.startsWith('i:');
-        const who = [...f.querySelectorAll('[name=tk-w]:checked')].map((x) => x.value);
-        if (!who.length) { toast('Choisissez au moins une personne.'); break; }
-        if (!item && !v('tk-t')) return fieldError('tk-t', 'Écrivez la tâche.');
-        const body = { type: isNew ? 'todo.add' : 'todo.update', who, due: v('tk-d') ? v('tk-d') + 'T09:00:00' : '', status: v('tk-s') };
-        if (!isNew) body.id = id;
-        if (!item) Object.assign(body, { t: v('tk-t'), projectId: v('tk-p'), note: v('tk-n'), urgent: !!($('#tk-u') || {}).checked });
-        if (item && !body.due) delete body.due;
-        S.tk = { ...tkState(), edit: null };
-        if (await tkSave(body, isNew ? (who.some((w) => w !== S.me.id) ? 'Tâche ajoutée. Les personnes concernées sont prévenues.' : 'Tâche ajoutée.') : 'Tâche enregistrée.')) { const b = !isNew && root.querySelector(`[data-tkedit="${CSS.escape(id)}"]`); if (b) b.focus(); }
-        else { S.tk = { ...tkState(), edit: id }; render(); }
-        break;
-      }
       case 'settings': try { const r = await API.settings({ booking: v('st-b'), training: v('st-t'), reviewUrl: v('st-r'), welcomeLoom: v('st-w'), cgvUrl: v('st-g'), holder: v('st-h'), bank: v('st-k'), address: v('st-a'), iban: v('st-i'), bic: v('st-c') }); S.config = r.settings; render(); toast('Réglages de l’agence enregistrés.'); } catch (err) { toast(err.message); } break;
       case 'infos': act({ type: 'project.update', client: v('p-c'), projet: v('p-p'), contactName: v('p-ct'), golive: v('p-g') || undefined, registre: (f.querySelector('[name=p-r]:checked') || {}).value }, 'Infos enregistrées.'); break;
     }
@@ -2126,7 +2368,9 @@
     if (!S.bellOpen || !e.target.closest || !e.target.closest('#bell-pop, [data-act=bell]')) return;
     setTimeout(() => { const a = document.activeElement; if (S.bellOpen && a && a !== document.body && !a.closest('#bell-pop, [data-act=bell]')) { S.bellOpen = false; render(); } }, 0);
   });
+  document.addEventListener('input', (e) => { if (e.target && e.target.id === 'tk-q') tkPreview(e.target.value); });
   document.addEventListener('keydown', (e) => {
+    if (tkKey(e)) return;
     if (S.zoom && e.target.closest && e.target.closest('.pin-area') && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
       e.preventDefault(); const k = S.zoom.kb || { x: 50, y: 50 }, d = e.shiftKey ? 2 : 10;
       if (e.key === 'ArrowLeft') k.x -= d; if (e.key === 'ArrowRight') k.x += d; if (e.key === 'ArrowUp') k.y -= d; if (e.key === 'ArrowDown') k.y += d;
