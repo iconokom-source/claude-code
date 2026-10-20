@@ -14,7 +14,7 @@ Mémoire de travail du skill `site-orem`. À lire en début de session, à mettr
 | Date | Fiche | Ce qui a changé | Avant → après | Sauvegarde | Statut |
 |---|---|---|---|---|---|
 | 2026-10-20 | P-15 étape 1 | Retrait du préchargement `fetchpriority=high` du logo animé du footer (head Accueil + Lille) | Accueil LCP 10,5 → 16,2 s ; Lille 10,7 → 15,6 s (pire) | `sauvegardes/2026-10-20-P-15-1/` | **annulé** : tests 32/32 OK mais mesure dégradée ; sous-domaine restauré à l'identique, production jamais touchée |
-| 2026-10-20 | P-15 logo | Logo animé du footer remplacé (asset `6ad79fd27ff729f4861857c7`, 560 px, 398 Ko au lieu de 1 279 Ko, même animation) + retrait du préchargement sur Accueil et Lille | mesure en cours | `sauvegardes/2026-10-20-P-15-logo/` + `sauvegardes/2026-10-20-P-15-1/avant-head-*.html` | appliqué (sous-domaine), tests en cours |
+| 2026-10-20 | P-15 logo | Logo animé du footer remplacé (asset `6ad79fd27ff729f4861857c7`, 560 px, 398 Ko au lieu de 1 279 Ko, même animation) + retrait du préchargement sur Accueil et Lille | poids −0,8 à −1,6 Mo/page ; LCP Accueil 11,7→9,6 s, Lille 11,9→10,4 s, Mentions 10,7→6,1 s, Réalisations 20,6→17,1 s | `sauvegardes/2026-10-20-P-15-logo/` + `sauvegardes/2026-10-20-P-15-1/avant-head-*.html` | **en production** le 2026-10-20 ; tests 32/32 sur agence-orem.fr après publication |
 | — | P-15 vidéo | Vidéo `footer_gradiant` réencodée plus légère (option 3a, même rendu) | — | — | à faire |
 | — | P-15 reveal | Footer reveal réglé en natif (sticky dans le Designer), suppression du CSS et du JS correspondants | — | — | à faire |
 | — | P-16 | Observateurs DOM permanents (DragScrollCasesV4…) | — | — | à valider |
