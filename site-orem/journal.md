@@ -6,13 +6,16 @@ Mémoire de travail du skill `site-orem`. À lire en début de session, à mettr
 
 - Site : Orem — `6a7582303b9ddd4a77302cc8` — agence-orem.fr
 - Version du MCP Webflow vue en dernier : 2.2.0 (2026-10-20)
-- Audit complet : **phases A à C faites le 2026-10-20** (MCP, lecture seule) ; **phase D (mesure réelle) en attente** de l'ouverture réseau ; 7 scripts hébergés appliqués non lus (CDN bloqué)
+- Audit complet : **phases A à C faites le 2026-10-20** (MCP, lecture seule) ; **phase D (mesure) faite le 2026-10-20** : 42–51/100 mobile, LCP 10–20 s ; à refaire après autorisation de `d3e54v103j8qbb.cloudfront.net` (jQuery), `client.axept.io`, `www.clarity.ms`, `www.google-analytics.com`, `www.google.com`
 - Dernier rapport : `site-orem/audits/audit-2026-10-20.md` · code de référence : `site-orem/audits/code-2026-10-20/`
 
 ## Modifications
 
 | Date | Fiche | Ce qui a changé | Avant → après | Sauvegarde | Statut |
 |---|---|---|---|---|---|
+| — | P-15 | Footer fixe : logo animé 1,3 Mo + vidéo 2,2 Mo chargés partout (cause n° 1) | — | — | à valider |
+| — | P-16 | Observateurs DOM permanents (DragScrollCasesV4…) | — | — | à valider |
+| — | P-17 | Vidéos JS en preload auto (OffreHeroVideo, visuels) | — | — | à valider |
 | — | P-01 | Réalisations/Membres : masquage + redirection JS (SEO) | — | — | à valider |
 | — | P-02 | Préchargement de toutes les pages projets | — | — | à valider |
 | — | P-03 | Couleur navbar calculée au scroll | — | — | à valider |
