@@ -14,7 +14,9 @@ Mémoire de travail du skill `site-orem`. À lire en début de session, à mettr
 | Date | Fiche | Ce qui a changé | Avant → après | Sauvegarde | Statut |
 |---|---|---|---|---|---|
 | 2026-10-20 | P-15 étape 1 | Retrait du préchargement `fetchpriority=high` du logo animé du footer (head Accueil + Lille) | Accueil LCP 10,5 → 16,2 s ; Lille 10,7 → 15,6 s (pire) | `sauvegardes/2026-10-20-P-15-1/` | **annulé** : tests 32/32 OK mais mesure dégradée ; sous-domaine restauré à l'identique, production jamais touchée |
-| — | P-15 suite | Étapes 2 à 4 : alléger le logo animé, vidéo footer à l'approche, footer non fixe | — | — | à valider |
+| 2026-10-20 | P-15 logo | Logo animé du footer remplacé (asset `6ad79fd27ff729f4861857c7`, 560 px, 398 Ko au lieu de 1 279 Ko, même animation) + retrait du préchargement sur Accueil et Lille | mesure en cours | `sauvegardes/2026-10-20-P-15-logo/` + `sauvegardes/2026-10-20-P-15-1/avant-head-*.html` | appliqué (sous-domaine), tests en cours |
+| — | P-15 vidéo | Vidéo `footer_gradiant` réencodée plus légère (option 3a, même rendu) | — | — | à faire |
+| — | P-15 reveal | Footer reveal réglé en natif (sticky dans le Designer), suppression du CSS et du JS correspondants | — | — | à faire |
 | — | P-16 | Observateurs DOM permanents (DragScrollCasesV4…) | — | — | à valider |
 | — | P-17 | Vidéos JS en preload auto (OffreHeroVideo, visuels) | — | — | à valider |
 | — | P-01 | Réalisations/Membres : masquage + redirection JS (SEO) | — | — | à valider |

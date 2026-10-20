@@ -38,14 +38,14 @@ for (const path of pages) {
         horizontalOverflow: document.documentElement.scrollWidth > window.innerWidth + 1,
         brokenImages: [...document.images].filter((i) => i.complete && i.naturalWidth === 0 && i.loading !== 'lazy').map((i) => i.src).slice(0, 5),
         modalTriggers: document.querySelectorAll('[data-modal-trigger]').length,
-        footerLogoInDom: !!document.querySelector('img[src*="logo-orem-anime-transparent-hq"]'),
+        footerLogoInDom: !!document.querySelector('.footer img[src*="logo-orem-anime"]'),
       };
     });
     // Scroll jusqu'en bas pour déclencher footer, vidéos et animations, puis remonter
     await page.evaluate(async () => { for (let y = 0; y < document.documentElement.scrollHeight; y += 600) { window.scrollTo(0, y); await new Promise((r) => setTimeout(r, 60)); } });
     await page.waitForTimeout(1200);
     const footerAfterScroll = await page.evaluate(() => {
-      const img = document.querySelector('img[src*="logo-orem-anime-transparent-hq"]');
+      const img = document.querySelector('.footer img[src*="logo-orem-anime"]');
       return img ? { loaded: img.complete && img.naturalWidth > 0 } : null;
     });
     await page.evaluate(() => window.scrollTo(0, 0));
@@ -64,7 +64,7 @@ for (const path of pages) {
       await page.waitForTimeout(800);
       modal.closed = await page.evaluate(() => !document.querySelector('[data-project-modal]')?.classList.contains('is-open'));
     }
-    report.push({ path, width, status: res.status(), ...checks, footerAfterScroll, modal, preloadsLogoEarly: requests.slice(0, 15).some((u) => u.includes('logo-orem-anime-transparent-hq')), errors });
+    report.push({ path, width, status: res.status(), ...checks, footerAfterScroll, modal, preloadsLogoEarly: requests.slice(0, 15).some((u) => u.includes("logo-orem-anime")), errors });
     await ctx.close();
   }
 }
