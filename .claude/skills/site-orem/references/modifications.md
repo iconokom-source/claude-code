@@ -46,8 +46,14 @@ Pour un lot risqué, demander en plus à l'utilisateur de créer une sauvegarde 
 2. `element_snapshot_tool` sur les éléments touchés si le Designer est ouvert.
 3. Publier sur le **sous-domaine Webflow uniquement** (`publish_site` avec `publishToWebflowSubdomain: true`, `customDomains: []`). Prévenir avant : cela publie aussi les autres changements en attente sur le sous-domaine.
 4. Playwright sur `orem.webflow.io` pour chaque page concernée : captures à 1440 / 991 / 767 / 390 px comparées aux captures de référence, erreurs console, comportement (clic, survol, scroll, animation, formulaire, widget), requêtes réseau.
-5. Mesurer : Lighthouse avant / après sur les mêmes pages, même réglage, médiane de trois passages.
-6. Si quelque chose ne va pas : restaurer immédiatement depuis la sauvegarde, republier le sous-domaine, et expliquer.
+5. **Tests de fonctionnement**, sur chaque page touchée et sur chaque page qui partage le code ou le composant modifié (un code global touche toutes les pages) :
+   - la page s'affiche entièrement, sans zone vide, sans débordement, sans erreur console nouvelle ;
+   - navigation : menu, menu déroulant des offres, menu mobile, liens ;
+   - ce qui dépend de la modification : animations, carrousels, modale projets (ouverture, navigation, fermeture, bouton retour), slider d'avis, vidéos, filtres du blog, formulaires (envoi de test seulement si l'utilisateur l'accepte), CTA et widget de prise de rendez-vous, bandeau cookies ;
+   - comparaison visuelle avec les captures de référence aux 4 largeurs.
+   Écrire ces tests en script Playwright réutilisable (`site-orem/tests/`) pour les relancer à chaque modification.
+6. Mesurer : Lighthouse avant / après sur les mêmes pages, même réglage, médiane de trois passages.
+7. **Si quelque chose ne marche pas complètement** : chercher la cause et corriger, puis retester tout le point 5. Si la correction n'aboutit pas rapidement, restaurer exactement l'état d'avant depuis la sauvegarde, republier le sous-domaine, revérifier qu'il est revenu à l'identique, et expliquer ce qui a bloqué. Ne jamais terminer une session avec un état cassé ou à moitié appliqué.
 
 ## 6. Montrer le résultat et demander la mise en production
 
@@ -59,7 +65,7 @@ Captures : <chemins>
 Publier en production (agence-orem.fr) ?
 ```
 
-Publier en production seulement sur un « oui » pour cette publication. Après publication, recontrôler rapidement le domaine réel (une capture, console, un clic sur le CTA principal).
+Publier en production seulement sur un « oui » pour cette publication. Juste après, relancer les tests du point 5 sur agence-orem.fr (pages touchées + accueil). Au moindre problème : restaurer depuis la sauvegarde et republier immédiatement, puis analyser sur le sous-domaine, jamais en direct sur le site public.
 
 ## 7. Consigner
 
