@@ -47,6 +47,6 @@ Statuts : à valider · validé · appliqué (sous-domaine) · en production · 
 ## Notes
 
 - 2026-10-20 : tests de fonctionnement réutilisables dans `site-orem/tests/fonctionnel.mjs` (8 pages × 4 largeurs, modale, footer, erreurs JS). Les erreurs « Dropped events » viennent d'Axeptio quand `api.axept.io` est bloqué par le réseau de la session : ignorées.
-- 2026-10-20 : demande de Théophile pour P-01 : garder visuellement la modale, mais pages réalisations/membres référençables.
+- 2026-10-20 : demande de Théophile pour P-01 : garder visuellement la modale, mais pages réalisations/membres référençables. **Décision : option 1** — la page modèle affiche elle-même le panneau « modale » par-dessus la vraie grille des réalisations (composant `case-section` / liste CMS native) ; plus de masquage ni de redirection ; à la fermeture, URL → `/realisations`. Même principe pour les membres (section équipe d'À propos). Maquette sur une seule réalisation sur orem.webflow.io avant généralisation.
 
 - 2026-10-20 : création du skill. Constat initial : ≈ 81 Ko de code global inline chargé sur toutes les pages (head ≈ 35 Ko dont 34 blocs `<style>`, footer ≈ 46 Ko dont 15 `<script>`), 4 scripts appliqués au site, 31 scripts enregistrés dont beaucoup de versions anciennes. Le réseau de la session cloud refusait alors `agence-orem.fr` (403 du proxy) : à autoriser pour mesurer.
