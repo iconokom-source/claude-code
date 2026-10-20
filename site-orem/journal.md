@@ -19,7 +19,8 @@ Mémoire de travail du skill `site-orem`. À lire en début de session, à mettr
 | — | P-15 reveal | Footer reveal réglé en natif (sticky dans le Designer), suppression du CSS et du JS correspondants | — | — | à faire |
 | — | P-16 | Observateurs DOM permanents (DragScrollCasesV4…) | — | — | à valider |
 | — | P-17 | Vidéos JS en preload auto (OffreHeroVideo, visuels) | — | — | à valider |
-| — | P-01 | Réalisations/Membres : masquage + redirection JS (SEO) | — | — | à valider |
+| 2026-10-20 | P-01 maquette | Pages Réalisations référençables : plus de masquage/redirection ; panneau « modale » natif par-dessus menu + case-section + footer ; le script global de la modale prend le relais au `load` | SEO : 15/15 pages lisibles (1 h1, canonique, pas de redirection) ; erreur JS en arrivée directe 3/6 en prod → 0/6 ; flèches en arrivée directe 9/15 (comme en prod) | `sauvegardes/2026-10-20-P-01/` | **sous-domaine uniquement** ; en attente : lien « Current Réalisations » à poser dans le Designer (liste cachée) pour les 6 projets absents de l'accueil |
+| — | P-01 membres | Même principe pour `/membres/…` | — | — | à faire |
 | — | P-02 | Préchargement de toutes les pages projets | — | — | à valider |
 | — | P-03 | Couleur navbar calculée au scroll | — | — | à valider |
 | — | P-04 | Footer reveal en JS | — | — | à valider |
