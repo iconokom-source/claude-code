@@ -13,7 +13,7 @@ Mémoire de travail du skill `site-orem`. À lire en début de session, à mettr
 
 | Date | Fiche | Ce qui a changé | Avant → après | Sauvegarde | Statut |
 |---|---|---|---|---|---|
-| 2026-10-20 | P-15 étape 1 | Retrait du préchargement `fetchpriority=high` du logo animé du footer (head Accueil + Lille) | mesure en cours | `sauvegardes/2026-10-20-P-15-1/` | appliqué (sous-domaine), tests 32/32 OK |
+| 2026-10-20 | P-15 étape 1 | Retrait du préchargement `fetchpriority=high` du logo animé du footer (head Accueil + Lille) | Accueil LCP 10,5 → 16,2 s ; Lille 10,7 → 15,6 s (pire) | `sauvegardes/2026-10-20-P-15-1/` | **annulé** : tests 32/32 OK mais mesure dégradée ; sous-domaine restauré à l'identique, production jamais touchée |
 | — | P-15 suite | Étapes 2 à 4 : alléger le logo animé, vidéo footer à l'approche, footer non fixe | — | — | à valider |
 | — | P-16 | Observateurs DOM permanents (DragScrollCasesV4…) | — | — | à valider |
 | — | P-17 | Vidéos JS en preload auto (OffreHeroVideo, visuels) | — | — | à valider |
@@ -45,6 +45,8 @@ Statuts : à valider · validé · appliqué (sous-domaine) · en production · 
 |---|---|---|---|
 
 ## Notes
+
+- 2026-10-20 : leçon P-15 étape 1 — tant que le logo animé du footer est chargé au départ et reste l'élément LCP, retirer son préchargement retarde le LCP. Ne traiter le logo qu'avec la suppression de son chargement initial (étapes 1 + 2 ensemble).
 
 - 2026-10-20 : tests de fonctionnement réutilisables dans `site-orem/tests/fonctionnel.mjs` (8 pages × 4 largeurs, modale, footer, erreurs JS). Les erreurs « Dropped events » viennent d'Axeptio quand `api.axept.io` est bloqué par le réseau de la session : ignorées.
 - 2026-10-20 : demande de Théophile pour P-01 : garder visuellement la modale, mais pages réalisations/membres référençables. **Décision : option 1** — la page modèle affiche elle-même le panneau « modale » par-dessus la vraie grille des réalisations (composant `case-section` / liste CMS native) ; plus de masquage ni de redirection ; à la fermeture, URL → `/realisations`. Même principe pour les membres (section équipe d'À propos). Maquette sur une seule réalisation sur orem.webflow.io avant généralisation.
