@@ -13,7 +13,8 @@ Mémoire de travail du skill `site-orem`. À lire en début de session, à mettr
 
 | Date | Fiche | Ce qui a changé | Avant → après | Sauvegarde | Statut |
 |---|---|---|---|---|---|
-| — | P-15 | Footer fixe : logo animé 1,3 Mo + vidéo 2,2 Mo chargés partout (cause n° 1) | — | — | à valider |
+| 2026-10-20 | P-15 étape 1 | Retrait du préchargement `fetchpriority=high` du logo animé du footer (head Accueil + Lille) | mesure en cours | `sauvegardes/2026-10-20-P-15-1/` | appliqué (sous-domaine), tests 32/32 OK |
+| — | P-15 suite | Étapes 2 à 4 : alléger le logo animé, vidéo footer à l'approche, footer non fixe | — | — | à valider |
 | — | P-16 | Observateurs DOM permanents (DragScrollCasesV4…) | — | — | à valider |
 | — | P-17 | Vidéos JS en preload auto (OffreHeroVideo, visuels) | — | — | à valider |
 | — | P-01 | Réalisations/Membres : masquage + redirection JS (SEO) | — | — | à valider |
@@ -44,5 +45,8 @@ Statuts : à valider · validé · appliqué (sous-domaine) · en production · 
 |---|---|---|---|
 
 ## Notes
+
+- 2026-10-20 : tests de fonctionnement réutilisables dans `site-orem/tests/fonctionnel.mjs` (8 pages × 4 largeurs, modale, footer, erreurs JS). Les erreurs « Dropped events » viennent d'Axeptio quand `api.axept.io` est bloqué par le réseau de la session : ignorées.
+- 2026-10-20 : demande de Théophile pour P-01 : garder visuellement la modale, mais pages réalisations/membres référençables.
 
 - 2026-10-20 : création du skill. Constat initial : ≈ 81 Ko de code global inline chargé sur toutes les pages (head ≈ 35 Ko dont 34 blocs `<style>`, footer ≈ 46 Ko dont 15 `<script>`), 4 scripts appliqués au site, 31 scripts enregistrés dont beaucoup de versions anciennes. Le réseau de la session cloud refusait alors `agence-orem.fr` (403 du proxy) : à autoriser pour mesurer.
