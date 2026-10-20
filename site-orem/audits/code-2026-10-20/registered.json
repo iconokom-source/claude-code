@@ -1,0 +1,258 @@
+{
+ "registeredScripts": [
+  {
+   "id": "choixcarouselenginev9",
+   "canCopy": true,
+   "displayName": "ChoixCarouselEngineV9",
+   "hostedLocation": "https://cdn.prod.website-files.com/6a7582303b9ddd4a77302cc8%2F689e5ba67671442434f3ca35%2F6aa6ff3469371b8589617890%2Fchoixcarouselenginev9-1.0.0.js",
+   "createdOn": "2026-09-13T19:53:24.582Z",
+   "version": "1.0.0"
+  },
+  {
+   "id": "choixcarouselenginev8",
+   "canCopy": true,
+   "displayName": "ChoixCarouselEngineV8",
+   "hostedLocation": "https://cdn.prod.website-files.com/6a7582303b9ddd4a77302cc8%2F689e5ba67671442434f3ca35%2F6aa6f279e123cf1559aeb0b5%2Fchoixcarouselenginev8-1.0.0.js",
+   "createdOn": "2026-09-13T18:59:05.831Z",
+   "version": "1.0.0"
+  },
+  {
+   "id": "choixcarouselenginev7",
+   "canCopy": true,
+   "displayName": "ChoixCarouselEngineV7",
+   "hostedLocation": "https://cdn.prod.website-files.com/6a7582303b9ddd4a77302cc8%2F689e5ba67671442434f3ca35%2F6aa6f106989e4f49d2f38dcb%2Fchoixcarouselenginev7-1.0.0.js",
+   "createdOn": "2026-09-13T18:52:54.508Z",
+   "version": "1.0.0"
+  },
+  {
+   "id": "choixcarouselenginev6",
+   "canCopy": true,
+   "displayName": "ChoixCarouselEngineV6",
+   "hostedLocation": "https://cdn.prod.website-files.com/6a7582303b9ddd4a77302cc8%2F689e5ba67671442434f3ca35%2F6aa6f061d58172f2e928051a%2Fchoixcarouselenginev6-1.0.0.js",
+   "createdOn": "2026-09-13T18:50:09.967Z",
+   "version": "1.0.0"
+  },
+  {
+   "id": "offreherovideo",
+   "canCopy": true,
+   "displayName": "OffreHeroVideo",
+   "hostedLocation": "https://cdn.prod.website-files.com/6a7582303b9ddd4a77302cc8%2F689e5ba67671442434f3ca35%2F6aa17d3ebe07e34f4129c3ec%2Foffreherovideo-1.0.0.js",
+   "createdOn": "2026-09-09T15:37:34.821Z",
+   "version": "1.0.0"
+  },
+  {
+   "id": "ctabuttonactions",
+   "canCopy": true,
+   "displayName": "CtaButtonActions",
+   "hostedLocation": "https://cdn.prod.website-files.com/6a7582303b9ddd4a77302cc8%2F689e5ba67671442434f3ca35%2F6aa176e2fb802c8b9bc101fd%2Fctabuttonactions-1.1.0.js",
+   "createdOn": "2026-09-09T15:10:26.084Z",
+   "version": "1.1.0"
+  },
+  {
+   "id": "ctabuttonactions",
+   "canCopy": true,
+   "displayName": "CtaButtonActions",
+   "hostedLocation": "https://cdn.prod.website-files.com/6a7582303b9ddd4a77302cc8%2F689e5ba67671442434f3ca35%2F6aa168b4f7f8d847344718e3%2Fctabuttonactions-1.0.0.js",
+   "createdOn": "2026-09-09T14:09:56.954Z",
+   "version": "1.0.0"
+  },
+  {
+   "id": "dragscrollcasesv4",
+   "canCopy": true,
+   "displayName": "DragScrollCasesV4",
+   "hostedLocation": "https://cdn.prod.website-files.com/6a7582303b9ddd4a77302cc8%2F689e5ba67671442434f3ca35%2F6a992e87e3be6a8b513e200f%2Fdragscrollcasesv4-1.0.0.js",
+   "createdOn": "2026-09-03T08:23:35.817Z",
+   "version": "1.0.0"
+  },
+  {
+   "id": "dragscrollcasesv3",
+   "canCopy": true,
+   "displayName": "DragScrollCasesV3",
+   "hostedLocation": "https://cdn.prod.website-files.com/6a7582303b9ddd4a77302cc8%2F689e5ba67671442434f3ca35%2F6a986b4e40e17a2d70d6aad4%2Fdragscrollcasesv3-1.0.0.js",
+   "createdOn": "2026-09-02T18:30:38.674Z",
+   "version": "1.0.0"
+  },
+  {
+   "id": "dragscrollcasesv2",
+   "canCopy": true,
+   "displayName": "DragScrollCasesV2",
+   "hostedLocation": "https://cdn.prod.website-files.com/6a7582303b9ddd4a77302cc8%2F689e5ba67671442434f3ca35%2F6a986a51882091d0b3f0293c%2Fdragscrollcasesv2-1.0.0.js",
+   "createdOn": "2026-09-02T18:26:25.612Z",
+   "version": "1.0.0"
+  },
+  {
+   "id": "dragscrollcases",
+   "canCopy": true,
+   "displayName": "DragScrollCases",
+   "hostedLocation": "https://cdn.prod.website-files.com/6a7582303b9ddd4a77302cc8%2F689e5ba67671442434f3ca35%2F6a9858a4c71a573e1fe3b5f5%2Fdragscrollcases-1.0.0.js",
+   "createdOn": "2026-09-02T17:11:00.295Z",
+   "version": "1.0.0"
+  },
+  {
+   "id": "staggerrevealv5",
+   "canCopy": true,
+   "displayName": "StaggerRevealV5",
+   "hostedLocation": "https://cdn.prod.website-files.com/6a7582303b9ddd4a77302cc8%2F689e5ba67671442434f3ca35%2F6a985472ae7886155b5fad03%2Fstaggerrevealv5-1.0.0.js",
+   "createdOn": "2026-09-02T16:53:06.308Z",
+   "version": "1.0.0"
+  },
+  {
+   "id": "blogcategoryauthorfilterv5",
+   "canCopy": true,
+   "displayName": "BlogCategoryAuthorFilterV5",
+   "hostedLocation": "https://cdn.prod.website-files.com/6a7582303b9ddd4a77302cc8%2F689e5ba67671442434f3ca35%2F6a9852b6e2ebda2e4e1e37ef%2Fblogcategoryauthorfilterv5-1.0.0.js",
+   "createdOn": "2026-09-02T16:45:42.809Z",
+   "version": "1.0.0"
+  },
+  {
+   "id": "staggerrevealv4",
+   "canCopy": true,
+   "displayName": "StaggerRevealV4",
+   "hostedLocation": "https://cdn.prod.website-files.com/6a7582303b9ddd4a77302cc8%2F689e5ba67671442434f3ca35%2F6a9851f3438f2bc8736cb006%2Fstaggerrevealv4-1.0.0.js",
+   "createdOn": "2026-09-02T16:42:27.301Z",
+   "version": "1.0.0"
+  },
+  {
+   "id": "choixcarouselenginev5",
+   "canCopy": true,
+   "displayName": "ChoixCarouselEngineV5",
+   "hostedLocation": "https://cdn.prod.website-files.com/6a7582303b9ddd4a77302cc8%2F689e5ba67671442434f3ca35%2F6a9850ddda732a57b7734ac9%2Fchoixcarouselenginev5-1.0.0.js",
+   "createdOn": "2026-09-02T16:37:49.455Z",
+   "version": "1.0.0"
+  },
+  {
+   "id": "choixcarouselenginev4",
+   "canCopy": true,
+   "displayName": "ChoixCarouselEngineV4",
+   "hostedLocation": "https://cdn.prod.website-files.com/6a7582303b9ddd4a77302cc8%2F689e5ba67671442434f3ca35%2F6a984f96e2ebda2e4e1da38e%2Fchoixcarouselenginev4-1.0.0.js",
+   "createdOn": "2026-09-02T16:32:22.460Z",
+   "version": "1.0.0"
+  },
+  {
+   "id": "choixcarouselenginev3",
+   "canCopy": true,
+   "displayName": "ChoixCarouselEngineV3",
+   "hostedLocation": "https://cdn.prod.website-files.com/6a7582303b9ddd4a77302cc8%2F689e5ba67671442434f3ca35%2F6a984f6ea484fdd60615f12c%2Fchoixcarouselenginev3-1.0.0.js",
+   "createdOn": "2026-09-02T16:31:42.831Z",
+   "version": "1.0.0"
+  },
+  {
+   "id": "blogcategoryauthorfilterv4",
+   "canCopy": true,
+   "displayName": "BlogCategoryAuthorFilterV4",
+   "hostedLocation": "https://cdn.prod.website-files.com/6a7582303b9ddd4a77302cc8%2F689e5ba67671442434f3ca35%2F6a9821e0628625a78a0ff249%2Fblogcategoryauthorfilterv4-1.0.0.js",
+   "createdOn": "2026-09-02T13:17:20.777Z",
+   "version": "1.0.0"
+  },
+  {
+   "id": "blogcategoryauthorfilterv3",
+   "canCopy": true,
+   "displayName": "BlogCategoryAuthorFilterV3",
+   "hostedLocation": "https://cdn.prod.website-files.com/6a7582303b9ddd4a77302cc8%2F689e5ba67671442434f3ca35%2F6a982077ea6b3ed96b078395%2Fblogcategoryauthorfilterv3-1.0.0.js",
+   "createdOn": "2026-09-02T13:11:19.255Z",
+   "version": "1.0.0"
+  },
+  {
+   "id": "blogcategoryauthorfilterv2",
+   "canCopy": true,
+   "displayName": "BlogCategoryAuthorFilterV2",
+   "hostedLocation": "https://cdn.prod.website-files.com/6a7582303b9ddd4a77302cc8%2F689e5ba67671442434f3ca35%2F6a981f86e3cf212c9b715852%2Fblogcategoryauthorfilterv2-1.0.0.js",
+   "createdOn": "2026-09-02T13:07:18.183Z",
+   "version": "1.0.0"
+  },
+  {
+   "id": "blogcategoryauthorfilter",
+   "canCopy": true,
+   "displayName": "BlogCategoryAuthorFilter",
+   "hostedLocation": "https://cdn.prod.website-files.com/6a7582303b9ddd4a77302cc8%2F689e5ba67671442434f3ca35%2F6a9817404546326607928566%2Fblogcategoryauthorfilter-1.0.0.js",
+   "createdOn": "2026-09-02T12:32:00.628Z",
+   "version": "1.0.0"
+  },
+  {
+   "id": "finsweetattributes",
+   "canCopy": true,
+   "displayName": "FinsweetAttributes",
+   "hostedLocation": "https://cdn.jsdelivr.net/npm/@finsweet/attributes@2/attributes.js",
+   "integrityHash": "sha384-xUNsiuzyRX1VYBNfbdrbjkq3Ti55JX/QAqCx7D88OakMPmepdkAsMj8bv1aa5fsj",
+   "createdOn": "2026-09-02T12:24:37.413Z",
+   "version": "2.0.0"
+  },
+  {
+   "id": "finsweetloaderblog",
+   "canCopy": true,
+   "displayName": "FinsweetLoaderBlog",
+   "hostedLocation": "https://cdn.prod.website-files.com/6a7582303b9ddd4a77302cc8%2F689e5ba67671442434f3ca35%2F6a9814be34c1be26b43dfd33%2Ffinsweetloaderblog-1.0.0.js",
+   "createdOn": "2026-09-02T12:21:18.383Z",
+   "version": "1.0.0"
+  },
+  {
+   "id": "logomarqueefix",
+   "canCopy": true,
+   "displayName": "LogoMarqueeFix",
+   "hostedLocation": "https://cdn.prod.website-files.com/6a7582303b9ddd4a77302cc8%2F689e5ba67671442434f3ca35%2F6a981016887238e120577261%2Flogomarqueefix-1.0.0.js",
+   "createdOn": "2026-09-02T12:01:26.774Z",
+   "version": "1.0.0"
+  },
+  {
+   "id": "choixcarouselenginev2",
+   "canCopy": true,
+   "displayName": "ChoixCarouselEngineV2",
+   "hostedLocation": "https://cdn.prod.website-files.com/6a7582303b9ddd4a77302cc8%2F689e5ba67671442434f3ca35%2F6a98086b3b5d828a7c61bb56%2Fchoixcarouselenginev2-1.0.0.js",
+   "createdOn": "2026-09-02T11:28:43.011Z",
+   "version": "1.0.0"
+  },
+  {
+   "id": "choixcarouselengine",
+   "canCopy": true,
+   "displayName": "ChoixCarouselEngine",
+   "hostedLocation": "https://cdn.prod.website-files.com/6a7582303b9ddd4a77302cc8%2F689e5ba67671442434f3ca35%2F6a97ecaf8ce71e90b321c65f%2Fchoixcarouselengine-1.0.0.js",
+   "createdOn": "2026-09-02T09:30:23.964Z",
+   "version": "1.0.0"
+  },
+  {
+   "id": "showreeltabs",
+   "canCopy": true,
+   "displayName": "ShowreelTabs",
+   "hostedLocation": "https://cdn.prod.website-files.com/6a7582303b9ddd4a77302cc8%2F689e5ba67671442434f3ca35%2F6a97ecafd232f96a965191af%2Fshowreeltabs-1.0.0.js",
+   "createdOn": "2026-09-02T09:30:23.720Z",
+   "version": "1.0.0"
+  },
+  {
+   "id": "staggerrevealv3",
+   "canCopy": true,
+   "displayName": "StaggerRevealV3",
+   "hostedLocation": "https://cdn.prod.website-files.com/6a7582303b9ddd4a77302cc8%2F689e5ba67671442434f3ca35%2F6a97eb685f6963e0d1a2febb%2Fstaggerrevealv3-1.0.0.js",
+   "createdOn": "2026-09-02T09:24:56.861Z",
+   "version": "1.0.0"
+  },
+  {
+   "id": "staggerrevealv2",
+   "canCopy": true,
+   "displayName": "StaggerRevealV2",
+   "hostedLocation": "https://cdn.prod.website-files.com/6a7582303b9ddd4a77302cc8%2F689e5ba67671442434f3ca35%2F6a97eab0a3476f168c6c1b27%2Fstaggerrevealv2-1.0.0.js",
+   "createdOn": "2026-09-02T09:21:52.170Z",
+   "version": "1.0.0"
+  },
+  {
+   "id": "staggerreveal",
+   "canCopy": true,
+   "displayName": "StaggerReveal",
+   "hostedLocation": "https://cdn.prod.website-files.com/6a7582303b9ddd4a77302cc8%2F689e5ba67671442434f3ca35%2F6a97ea4fe5ecafc708d01836%2Fstaggerreveal-1.0.0.js",
+   "createdOn": "2026-09-02T09:20:15.889Z",
+   "version": "1.0.0"
+  },
+  {
+   "id": "footerrevealoffset",
+   "canCopy": true,
+   "displayName": "FooterRevealOffset",
+   "hostedLocation": "https://cdn.prod.website-files.com/6a7582303b9ddd4a77302cc8%2F689e5ba67671442434f3ca35%2F6a967debc11a779053a2a819%2Ffooterrevealoffset-1.0.0.js",
+   "createdOn": "2026-09-01T07:25:31.307Z",
+   "version": "1.0.0"
+  }
+ ],
+ "pagination": {
+  "limit": 100,
+  "offset": 0,
+  "total": 31
+ }
+}

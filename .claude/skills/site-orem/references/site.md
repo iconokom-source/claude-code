@@ -61,6 +61,12 @@ Les SEO des pages modèles sont branchés sur des champs CMS (`seo-titre`, `seo-
 - **Scripts enregistrés** : 31, dont de nombreuses versions mortes (`ChoixCarouselEngine` → V9, `StaggerReveal` → V5, `BlogCategoryAuthorFilter` → V5, `DragScrollCases` → V4…), plus `FinsweetAttributes`, `FinsweetLoaderBlog`, `ShowreelTabs`, `FooterRevealOffset`. Vérifier lesquels sont appliqués au niveau des pages avant de conclure qu'un script est mort.
 - Code au niveau des pages et embeds HTML dans les pages : à inventorier pendant l'audit.
 
-## Conventions du site
+## Conventions du site (relevées le 2026-10-20)
 
-À compléter pendant l'audit : système de classes (Client First ou autre), collections de variables, composants principaux (navbar, footer, CTA…), attributs `data-*` utilisés par le JS, breakpoints réellement stylés.
+- **Classes** : 749, système de combo-classes nommées par valeur (`image` + `100%` + `cover`, `primary-text` + `54px` + `blanc`, `secondary-text` + `14px` + `60`). Pas Client First : réutiliser ce système, ne pas en introduire un autre.
+- **Structure** : `page-wrapper` > `main-wrapper` + `footer` ; navbar `.navbar-logo-left-container.shadow-three` (classes JS `nav-on-light` / `nav-on-dark`).
+- **Composants** : header (0 instance), footer, footer-404, menu-404, new-menu-container, Animation Button CTA (15), avis-section, case-section, case-section-lille, faq-section, logo-client, logo-client (couleur), embed-modale.
+- **Animations** : IX2 (ancien moteur) + JS maison ; aucune interaction IX3.
+- **Polices** : aucune police hébergée → Google Fonts via Webflow.
+- **Attributs `data-*` utilisés par le JS** : `data-modal-trigger`, `data-project-root`, `data-project-modal(-overlay|-dialog|-content|-close)`, `data-bg-holder`, `data-dot-holder`, `data-shadow-holder`, `data-carousel="bg"`, `data-partner-row|arrow|photo`, `data-reading-time`, `data-cookie-consent`, `data-size`, `data-type`, `data-video`, `data-reveal-dir`. Ne jamais les retirer d'un élément sans vérifier le script qui les lit.
+- **Modale projets** : les liens `/realisations/<slug>` et `/membres/<slug>` s'ouvrent dans une modale qui charge la page par `fetch` ; les pages modèles redirigent vers `/?p=` et `/a-propos?p=` (voir P-01).
