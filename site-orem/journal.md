@@ -46,6 +46,8 @@ Statuts : à valider · validé · appliqué (sous-domaine) · en production · 
 
 ## Notes
 
+- 2026-10-20 : consigne de Théophile — **réduire le code, pas en ajouter ; natif Webflow au maximum.** Un script de chargement différé du footer (1,7 Ko) avait été préparé et testé en injection locale, il a été abandonné avant tout envoi à Webflow.
+
 - 2026-10-20 : leçon P-15 étape 1 — tant que le logo animé du footer est chargé au départ et reste l'élément LCP, retirer son préchargement retarde le LCP. Ne traiter le logo qu'avec la suppression de son chargement initial (étapes 1 + 2 ensemble).
 
 - 2026-10-20 : tests de fonctionnement réutilisables dans `site-orem/tests/fonctionnel.mjs` (8 pages × 4 largeurs, modale, footer, erreurs JS). Les erreurs « Dropped events » viennent d'Axeptio quand `api.axept.io` est bloqué par le réseau de la session : ignorées.
