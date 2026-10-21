@@ -3,7 +3,7 @@
 import { chromium } from 'playwright-core';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
-const base = 'https://orem.webflow.io';
+const base = process.env.BASE || 'https://orem.webflow.io';
 const newHead = fs.readFileSync('head-v2.html','utf8');
 const width = +(process.argv[2]||1440); const mobile = width<500;
 const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--no-sandbox'] });
