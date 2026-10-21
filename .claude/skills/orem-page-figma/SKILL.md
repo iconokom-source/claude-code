@@ -8,6 +8,7 @@ description: Conçoit une nouvelle page du site Orem directement dans le fichier
 Fichier : **Orem** `aVKI9kfuXoWvQsiRsajLXD` (https://www.figma.com/design/aVKI9kfuXoWvQsiRsajLXD/Orem), onglet **Site** (`2028:1326`).
 
 Exemples validés par Louis : `/secteurs/hotellerie` (nœud `3815:1702`) et `/secteurs/medias` (`3836:1747`).
+Pages construites ensuite sur le même modèle (octobre 2026) : `/secteurs/cabinets-rh` (`3859:8759`, x 5900), `/secteurs/esn` (`3859:9355`, x 7600), `/secteurs/sante` (`3859:6960`, x 11300), `/secteurs/coachs-formateurs` (`3859:8140`, x 13000), `/secteurs/associations-collectivites` (`3859:9970`, x 14700), `/secteurs/production-audiovisuelle` (`3859:7554`, x 16400), `/secteurs/agences-communication` (`3859:11051`, x 18100). La colonne x = 9600 est réservée aux frames `sources-visuels/*` ; une nouvelle page se place à x = 19800, puis + 1700.
 
 ## Les quatre règles de Louis
 
@@ -71,7 +72,8 @@ Pièges déjà rencontrés (et réglés dans `helpers.js`) :
 - le composant `animation-cta` est un bouton en verre invisible sur fond clair : pilule noire « ↳ » à la place ;
 - « ↗ » s'affiche en carré bleu (glyphe absent) : utiliser « → » ;
 - le clone du bandeau de logos du site est vide : utiliser les logos importés (`logoStrip`) ;
-- les images ne s'importent qu'avec un `imageHash` déjà présent dans le fichier.
+- les images ne s'importent qu'avec un `imageHash` déjà présent dans le fichier ;
+- le MCP Figma a un **quota d'environ 200 appels par jour** (partagé entre agents) : regrouper les opérations dans peu d'appels `use_figma`, et faire le point sur ce qui existe avant de reprendre après une coupure, pour ne rien dupliquer.
 
 ### 6. Finitions et contrôle
 - `typoPass(ROOT)` sur la page (espaces insécables, flèches).

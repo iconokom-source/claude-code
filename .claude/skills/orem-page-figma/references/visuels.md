@@ -23,7 +23,8 @@ grep -oE 'https://cdn\.prod\.website-files\.com/[^" ,]+\.(avif|webp|jpg|png)' ca
 ```
 
 Les noms utiles : `miniature-<client>` (vignette de cas, 16:10), `image-case-<client>-1..3` (carrés 600 px), `visuel-<client>-NN` (mockups, collages), `logo-<client>` et `logo-<client>-blanc`.
-Le texte de la page (contexte, solution, chiffres) se récupère en retirant les balises : c'est la **seule** source autorisée pour les chiffres de résultat.
+Le texte de la page (contexte, solution, chiffres) est **rendu en JavaScript** : `curl` ne renvoie que la nav. Le lire avec Playwright (`document.body.innerText`, le corps de l'étude suit « Gérer mes cookies ») ; on récupère au passage les URL des images (`img.currentSrc`) et le lien « Visiter le site web ». C'est la **seule** source autorisée pour les chiffres de résultat.
+Étude de cas pas encore publiée (ex. Sleepee by tim, octobre 2026) : lire le brouillon dans le CMS Webflow du site Orem (collection Réalisations, lecture seule, ne rien publier), et capturer le nouveau site sur son URL de préproduction `*.webflow.io` (masquer le badge « Made in Webflow »), jamais l'ancien site en ligne. Le lien vers l'étude est à activer à la publication.
 
 Convertir en JPG (AVIF n'est pas accepté par l'import) puis faire une planche contact pour choisir :
 
@@ -142,3 +143,22 @@ Mettre les logos du secteur en tête du bandeau.
 | Espace client (capture mobile) | a023fbadcf96fa2623f1437e39f203d6c8bdb97b |
 
 Pour un nouveau secteur, compléter ce fichier avec les nouveaux hash (et pousser la mise à jour du skill).
+
+### Pages secteurs d'octobre 2026 (frames `sources-visuels/<secteur>` à x = 9600)
+
+Chaque frame contient toutes les images importées, nommées. Principaux hash :
+
+| Secteur (frame) | Capture desktop accueil | Capture mobile accueil | Mockup principal | Logo (FIT) |
+|---|---|---|---|---|
+| RH, Concilium (`3859:8124`) | 29e61b021f351f5fcd0d7d4fa528360112c33956 | 43eaa103fc88e71fa553e4c3cccd279808ffa451 | 02e83546c4a8e97e06764bb31cff17ea5020d8b1 (recomposé, l'étude n'a que des visuels de marque) | — |
+| ESN, Logical Conseils (`3859:6943`) | 1ae693702cb2a18ad24d351449bde94e6e73b1d9 | 1d9f2ab3bdb06714350ddfcab3046655e6486ddb | visuel-6 578db7f509d1c5ab3767d5b90d6992a31c21cbf5 | 754ff7d2d2febb112fe1465dc4b4253693e31a81 |
+| Santé, Sleepee by tim (`3859:2702`) | 743d00de9f818bf7ae37279cd9724cb73fa475f6 (préproduction) | 0496a8446e4a13c5cb8ec4d55c160bbe82ccf543 | a-bonus 60fe8c595b507f9e77a6acdff2805390a965d222 | 0c13be4f52889d506d55382a6f4ea6c1c9a37e44 |
+| Coachs, SforSales (`3859:2725`) | 5cf5674810d0c9ac314095f16261d8fd20fa7fec | f6c5ef08f4c590cb30be6eb415f9b4353f280af4 | b-bonus 85f46d2b982c56850ee87c78513b61798f8a6762 | 69cf9cbb6010b280650caf98ae0f1441a217a7a6 |
+| Coachs, Dipita (`3859:2725`) | 35e3b51e47174c1f17af6a533d3497cb46c936b9 | 8a0b0dff5e310914397e5db3a7d08383b68b9a05 | 04 86edc627a510a954bccb7ffbe44c6b81a99ba5eb | e69cf133a4bdccf5d440327b1f4f2c58c12cbe7d (rond ; ne pas utiliser 64bc527e…, logo d'une université) |
+| Associations, Les Ombres (`3859:8710`) | 774f1e769f66a47afdac5cb96d868e8837aaac1a | 44e48e400ef76d6426a0f8a01aa037c9985684a1 | 04 8ad21329e688e9039ac5e6817f4c27472ccf7154 | 515f5cca96c890961227411faf8e02f763bba469 |
+| Associations, Impulsions (`3859:8710`) | 02144dd7dc861d50dc4be00c68674a3d59c781dc | f9b1e1b8fcd9105f9fbbeaad29c06689cf0184c8 | 04-v2 08188f68f8c4ca20be028eb234c0e66fb270dbe2 | 95f47f39112cb2502424e0c1bfaa502ec8f3f8ac |
+| Production, Dim Sum (`3859:8744`) | 21289a637373259287bb63b0d1be50bf293c0230 | dfed7dc823a315aad372d410455b0fdcc56dc44b | visuel-4 c9a523971755a08edebc673dc7075a8c0f6c11bc | 42d1c176f47e35801d1a3fd4b712fedaa0e9f3f7 |
+| Agences, 24 Degrés (`3859:9926`) | b31a49e53989fd5e01753cb3f8647c1954bd7f3c | 1c6d50159686e6ba9f9aa4c3908bbf95ef029fc0 | b-bonus d19897263831eeb80772abbe3af3f723fd05b5ba | — |
+| Agences, Orem (`3859:9926`) | aecc4b40af7dacd6b6d1dbd047e2424637002194 | 3edb013469cec679c33c3866ba2ab9d2430e0bb8 | 9c43bdd54060cdb2c9bf4a85a46bca1595d47ba3 (recomposé, l'étude n'a pas de mockup de site) | — |
+
+Portrait d'avis Mathéo Lamblin (JUWA) : c2d647fc4407bc8ebf451ab26f43bf42188a90eb.
