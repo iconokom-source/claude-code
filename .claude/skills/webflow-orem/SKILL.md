@@ -25,6 +25,7 @@ MCP Webflow (`mcp__Webflow__*`, à charger via `ToolSearch` `+Webflow` si absent
 - Premier appel de la session : `webflow_guide_tool` (une fois), puis réutiliser le `session_id` renvoyé et un `agent_id` constant.
 - `pageId` : toujours un **id de page**, jamais un id de collection (les templates CMS ont leur propre id de page, voir `pages.md`).
 - Les outils `designer_tool`, `element_snapshot_tool`, `asset_tool` exigent que Louis ait le Designer ouvert avec l'app MCP Bridge lancée. Sinon : travailler avec les outils `data_*`, et demander à Louis d'ouvrir le Designer seulement si une vérification visuelle est indispensable.
+- L'API limite le débit (erreurs 429) : regrouper les actions dans un même appel (`actions[]`), limiter `get_all_elements` avec `depth`, puis cibler par `query_elements`. En cas de 429, attendre et réessayer une fois.
 - Analytics : `data_analyze_tool` (pages qui performent) avant de proposer une nouvelle page SEO, si l'entitlement le permet.
 
 ## Règles non négociables
@@ -67,7 +68,11 @@ Reformuler la demande en une ligne : type (page SEO locale / page service / sect
 Liste des sections dans l'ordre, pour chacune : « composant X » / « structure copiée de <page>#<id> » / « nouveau : <raison> ». Liste des classes **nouvelles** (idéalement aucune) et du code custom (idéalement aucun). SEO prévu (title, meta, H1, slug, JSON-LD). Puis exécuter sans attendre si rien de destructif.
 
 ### 4. Construire
-- **Nouvelle page SEO** : `data_pages_tool > create_page` avec `duplicateOf` = la page modèle (ex. `/agence-web-lille` `6ac61124af8e2047b4ff8271`), `draft: true`, nouveau `slug`, `seo`, `openGraph`. Puis remplacer les textes (`set_text`), images (`set_image_asset`), filtres CMS, props de composants. C'est la voie la plus native et la plus sûre : structure et classes identiques garanties. Voir le « Gabarit page SEO locale » dans `sections.md`.
+- **Nouvelle page SEO locale** (« Agence web {Ville} ») : suivre la procédure en 11 étapes de `sections.md` §3.2. En bref : `data_pages_tool > create_page` avec `duplicateOf: 6ac61124af8e2047b4ff8271` (`/agence-web-lille`), `draft: true`, slug `agence-web-{ville}` ; puis réécrire par leur id le H1, l'intro, la section locale et la FAQ (`set_text`, `set_image_asset`) ; adapter les méta et le JSON-LD (`@graph` ProfessionalService + FAQPage + BreadcrumbList, adresse réelle de Lille, jamais d'adresse inventée) ; ajouter le maillage. La duplication garantit une structure et des classes identiques. Le contenu local (hero, section locale, FAQ) doit être substantiel et unique, car le reste de la page est commun à l'accueil.
+  - **Arbitrage en attente** : le filtrage local repose sur des switches propres à Lille (`afficher-sur-agence-web-lille` dans Réalisations et FAQ) et sur le composant `case-section-lille`. Avant la 2ᵉ ville, proposer à Louis un champ unique « Pages locales » (MultiReference ou Option) au lieu d'un switch et d'un composant par ville. Ne pas multiplier les switches sans son accord.
+  - Les filtres et tris des Collection Lists ne sont pas modifiables par l'API : quand une étape l'exige, donner à Louis la manipulation exacte à faire dans le Designer.
+- **Nouvelle page service** : créer un **item CMS Offres** (collection `6a9138262200aeae4011d357`, template `/offres/[slug]`), pas une page statique (`sections.md` §3.3).
+- **Nouvel article** : item CMS Articles, en renseignant `title-tag`, `meta-description` et l'alt de `image-de-couverture`.
 - **Nouvelle section sur une page existante** : insérer d'abord les instances de composants (`data_component_builder` / `insert_component_instance`) ; sinon construire avec `data_element_builder` en appliquant les classes existantes (styles créés **avant** les éléments si un combo manque). `data_whtml_builder` seulement pour un bloc de texte riche complexe, et sans CSS si les classes existent.
 - **Items CMS** : `create_collection_items` (brouillon), slugs exacts, références remplies des deux côtés, alt des images.
 - Nommer les éléments dans le Navigator (`set_display_name`) quand c'est une div structurante, pour ne plus créer de `Div` anonymes.
@@ -85,6 +90,11 @@ Liste des sections dans l'ordre, pour chacune : « composant X » / « structure
 ## Dette connue (ne pas aggraver, corriger si on passe dessus avec l'accord de Louis)
 
 Résumé ; détails et priorités dans chaque référence (« Problèmes détectés »).
+- Toutes les images sont en `loading="lazy"`, y compris celles du hero (LCP) : passer l'image du hero en `eager` sur les pages qu'on crée ou qu'on touche.
+- La prop `Title` de `case-section` et `case-section-lille` n'est reliée à aucun élément : le H2 reste « Ne vous fiez plus aux apparences… » partout. À câbler avant de s'y fier.
+- La FAQ n'est un composant relié que sur l'accueil ; sur Lille, sur le template Offres et sur /realisations, ce sont des copies déliées. Les sections Offres, Méthode et Logos sont aussi copiées : en faire des composants avant de les reproduire une 3ᵉ fois.
+- Titres mal balisés : 15 H2 « Voir le cas d'étude » sur /realisations, H1 de 14 px sur /contact, H1 hors sujet sur /blog, H2 rendu avant le H1 sur le template Réalisations.
+- `/agence-web-lille` n'est liée que depuis le footer.
 - Templates Membres : `html { visibility:hidden }` + redirection JS vers `/a-propos` alors que les fiches sont dans le sitemap → à remplacer par une 301 native ou sortir les fiches du sitemap.
 - Code custom site-wide lourd (bascule de couleur du menu par sondage toutes les 150 ms, dégradés héros recalculés en JS, carrousel « Ce que nous faisons » possiblement chargé deux fois, CSS/JS de réalisations copiés sur des pages qui n'en ont pas besoin).
 - 229 couleurs en dur, collections de variables Typography / Numbers / Radius inutilisées.
