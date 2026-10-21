@@ -26,12 +26,14 @@ Exemples validés par Louis : `/secteurs/hotellerie` (nœud `3815:1702`) et `/se
   - `references/sections.md` : sections existantes à ne pas refaire, sections inventées validées, banque d'idées, règles CMS ;
   - `references/visuels.md` : récupération et import des visuels, hash déjà présents, chiffres réels ;
   - `references/helpers.js` : boîte à outils à coller en tête de chaque script `use_figma` ;
+  - `references/seo.md` : ordre de page, mots-clés, format des enjeux et de la FAQ, maillage, fiche SEO (règles de l'expert SEO) ;
   - `references/controle-qualite.md` : liste de contrôle avant de rendre.
 - Règles de rédaction et vocabulaire Orem : celles du skill `orem-da` (vouvoiement, pas de tiret long, pas de « suivi », « agence » jamais « studio », offres O.R.E.M., chiffres officiels, CTA iClosed). Aucun prix sur une page du site.
 
 ## Déroulé
 
 ### 1. Comprendre la trame
+Confronter la trame à l'ordre de page et aux formats de `seo.md` (cas à la une sous le hero, enjeux en H2 avec indicateur, bloc Orem court, ressource propriétaire, FAQ requêtes, 2 secteurs proches). Si la trame s'en écarte, le signaler à Louis avant de dessiner.
 Lister les sections dans l'ordre avec, pour chacune : rôle (SEO ou conversion), contenu variable, CTA, et s'il s'agit d'une des reprises autorisées. Identifier le mot-clé du H1 et le secteur.
 Si une information manque (secteur ambigu, réalisations à rattacher), poser la question avant de dessiner.
 
@@ -70,6 +72,7 @@ Pièges déjà rencontrés (et réglés dans `helpers.js`) :
 
 ### 6. Finitions et contrôle
 - `typoPass(ROOT)` sur la page (espaces insécables, flèches).
+- Poser la fiche SEO au-dessus de la page (`seo.md`) et compter les mots propres au secteur.
 - Capture de la page entière (`maxDimension` 7000 à 9000), découpée en tranches pour la relire.
 - Dérouler `controle-qualite.md` et corriger.
 

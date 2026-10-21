@@ -27,7 +27,10 @@
 - [ ] Alternance clair et sombre sans deux sections sombres consécutives.
 - [ ] Footer en dernier enfant de la page.
 
-## SEO
+## SEO (détail dans `seo.md`)
+
+- [ ] Ordre de page conforme à `seo.md` : cas à la une sous le hero, Pourquoi Orem court après la méthode, ressource propriétaire, 2 secteurs proches.
+- [ ] Fiche SEO posée au-dessus de la page (title, meta, H1, balisage, maillage).
 
 - [ ] Compter les mots par section (script de comptage sur les nœuds TEXT, hors nav et footer). Viser **au moins 1 000 mots propres au secteur** : les sections reprises ou communes (méthode, offres, avis) ne comptent pas.
 - [ ] Le mot-clé principal est dans le H1, l'intro, au moins deux H2 et une question de FAQ ; ses variantes (ex. « site internet d'hôtel », « refonte de site hôtelier ») sont réparties dans les H2 et H3.

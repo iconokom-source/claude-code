@@ -52,7 +52,9 @@ Avant de dessiner une section, vérifier qu'elle ne ressemble à aucune de celle
 | `Animation Button CTA` | component set `2768:6461` (pastilles orange + « Rencontrer l'équipe ») ; sur fond clair, utiliser la pilule noire « ↳ » |
 | `L'agence à Lille` (en-tête + 3 cartes à visuels) | contenu « 3 arguments illustrés » : à redessiner |
 
-## Sections inventées et validées (page Hôtellerie, 3815:1702)
+## Sections inventées et validées (pages Hôtellerie 3815:1702 et Médias 3836:1747)
+
+L'ordre de page à suivre est celui de `seo.md`. Le tableau ci-dessous décrit la forme de chaque section.
 
 Elles montrent le niveau attendu. **Ne pas les recopier non plus d'une page secteur à l'autre** : changer au moins la composition d'une page à l'autre (inverser, passer en sombre, changer le nombre de colonnes, la mise en scène des visuels).
 
@@ -61,13 +63,16 @@ Elles montrent le niveau attendu. **Ne pas les recopier non plus d'une page sect
 | 1 | Hero clair 2 colonnes | dégradé d'ambiance du secteur ; eyebrow cible, H1 serif deux tons avec mot-clé, intro, pilule noire « ↳ » + lien ; note Google ; **collage** de 3 visuels du secteur en rayon 24 qui se chevauchent avec ombres et une **pastille de preuve chiffrée réelle** ; bandeau de logos gris pleine largeur avec ceux du secteur en tête |
 | 2 | Enjeux du secteur | **index éditorial** : en-tête deux tons + intro à droite ; 5 lignes à filets, numéro Trykker 54 gris, H3 Trykker 27, trois colonnes Problème / Solution / Indicateur, l'indicateur en serif encre avec point bleu |
 | 3 | Cas clients | section **nuit `#000012`** ; collection en grille 2 colonnes avec retour à la ligne, cartes de 618 px, colonne de droite **décalée de 120 px** ; grand visuel 16:10, 3 vignettes, nom du client en serif, question du cas, **chiffres réels** en Trykker 54 sur filet, tags en pilules contour |
-| 4 | Pourquoi Orem | en-tête centré ; 3 cartes blanches **en escalier** (0, 64, 128 px), visuel en haut, numéro bleu, H3, texte |
+| 2 bis | Cas à la une | section blanche ; grand visuel 640 × 432 rayon 24 avec une vignette qui le chevauche, à droite eyebrow « Réalisation à la une », nom du client (H2 Trykker 34), contexte, 2 chiffres de l'étude sur filet, lien vers l'étude |
+| 3 bis | Enjeux (version SEO) | même index éditorial, mais H2 de 400 px avec mot-clé, colonne diagnostic (2 phrases grises + phrase « Sur le site : » en encre, libellé en Medium) et colonne « Indicateur à suivre » de 250 px |
+| 4 | Pourquoi Orem (bloc fusionné) | demi-écran sur `#f8f8f7` : titre deux tons à gauche (380 px), 3 preuves à filets avec point bleu au centre, 2 cartes blanches de liens vers les offres à droite (340 px) |
+| 4 bis | Ressource : audit annoté | section blanche ; capture d'une réalisation du secteur avec repères ronds numérotés bleu accent (bord blanc, ombre), liste de 4 annotations à filets avec les mêmes numéros |
 | 5 | Témoignages | section blanche ; en-tête deux tons avec chiffres officiels, note Google et flèches ; **rail de collection** `avis-list` qui déborde à droite : cartes `avis-item` identiques 416 px sur `#f8f8f7`, citation Trykker 18, espace flexible, filet puis auteur (photo ronde 44, nom, fonction). L'avis du secteur en premier. Une première version en carte vedette bleue a été refusée : fond bleu hors DA, texte collé au nom, pas pensée pour une collection |
-| 6 | Nos offres | 4 cartes O, R, E, M de **hauteurs croissantes** ; l'offre la plus liée au secteur en grande carte nuit avec visuel du secteur et lien orange |
+| 6 | Nos offres (abandonné) | remplacé par le bloc fusionné « Pourquoi Orem » sur demande de l'expert SEO |
 | 7 | Méthode O.R.E.M. | **section officielle reprise telle quelle** (`2174:5281`) |
 | 8 | Articles liés | section blanche ; **liste éditoriale** à filets : vignette typographique (dégradé bleu nuit + mot Trykker), tag, titre serif, accroche liée au secteur, bouton rond |
 | 9 | FAQ + CTA final | **section officielle reprise** (`2174:5376`) : titre adapté au secteur, onglets masqués, 5 questions du secteur, la première ouverte avec une réponse appuyée sur un chiffre réel |
-| 10 | Autres secteurs | bande blanche basse ; label à gauche, liens Trykker 27 en ligne séparés par « / », le premier en encre, les autres en gris |
+| 10 | Secteurs proches | bande blanche basse ; label « Secteurs proches » à gauche, **2 liens** Trykker 27 en encre avec flèche bleue |
 
 ## Banque d'idées pour varier
 
