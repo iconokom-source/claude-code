@@ -16,6 +16,7 @@ Exemples validés par Louis : `/secteurs/hotellerie` (nœud `3815:1702`) et `/se
    Exceptions, reprises telles quelles : la **nav**, le **footer**, la section **Méthode O.R.E.M.** (`2174:5281`) et la section **FAQ** (`2174:5376`, textes adaptés au secteur).
 3. **Les visuels viennent des réalisations du secteur** et, pour une page « agence web », ce sont **uniquement des visuels de sites** (mockups des études de cas, captures des sites en ligne en navigateur ou téléphone), jamais coupés. Les visuels de marque (logos, palettes, objets) sont réservés aux futures pages design. Si les visuels de site manquent, le dire à Louis.
    Sources : réalisations prises sur agence-orem.fr/realisations (ex. hôtellerie : Huchet-Demorge et Hôtel Eiffel Ségur, pas Casa Zanoni ; médias : Le Crayon, Riskintel, Bund Médias, Aktionnaire). Aucun chiffre ni avis inventé.
+5. **Tout élément répété ou interactif est un composant Figma** (variantes pour les états actif et inactif, propriétés de texte pour les contenus), instancié depuis la bibliothèque « Composants / pages secteurs » : c'est ce qui permet à l'agent Webflow de comprendre la structure. Voir `references/composants.md`.
 4. **Tout contenu répété est une collection CMS** (avis, cas, articles, FAQ, secteurs) : une liste d'éléments identiques qui tient avec n'importe quel nombre d'éléments. Pour mettre plus de contenu sans faire « liste fourre-tout », préférer les **onglets** (réalisations, enjeux) ou les sliders, avec tous les panneaux présents dans le DOM.
 
 ## Prérequis
@@ -26,6 +27,7 @@ Exemples validés par Louis : `/secteurs/hotellerie` (nœud `3815:1702`) et `/se
   - `references/da-site.md` : grille, couleurs, typographie, signatures visuelles, éléments globaux à cloner ;
   - `references/sections.md` : sections existantes à ne pas refaire, sections inventées validées, banque d'idées, règles CMS ;
   - `references/visuels.md` : récupération et import des visuels, hash déjà présents, chiffres réels ;
+  - `references/composants.md` : bibliothèque de composants (onglets, panneaux, navigateur, mobile, boutons, avis) à instancier ;
   - `references/helpers.js` : boîte à outils à coller en tête de chaque script `use_figma` ;
   - `references/seo.md` : ordre de page, mots-clés, format des enjeux et de la FAQ, maillage, fiche SEO (règles de l'expert SEO) ;
   - `references/controle-qualite.md` : liste de contrôle avant de rendre.

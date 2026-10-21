@@ -51,6 +51,8 @@
 
 ## Prêt pour Webflow
 
+- [ ] Onglets, panneaux, cartes d'avis, visuels de site, boutons et pastilles sont des **instances de composants** (`composants.md`), pas des frames dupliquées ; états Actif / Inactif en variantes.
+
 - [ ] Tout en auto-layout, calques nommés (`section-*`, `container`, `*-list`, `*-item`, `h1`, `h3`, `intro`).
 - [ ] Un seul H1 par page, contenant le mot-clé de la trame.
 - [ ] Les liens de la trame sont présents (CTA iClosed, réalisations, offres, articles, autres secteurs).
