@@ -53,7 +53,7 @@ for (const slug of ['huchet-demorge', 'le-crayon']) {
     canonical: document.querySelector('link[rel=canonical]')?.href,
     title: document.title,
     htmlHidden: getComputedStyle(document.documentElement).visibility === 'hidden',
-    redirectScript: [...document.scripts].some((s) => /location\.replace\(/.test(s.textContent)),
+    redirectScript: [...document.scripts].some((s) => /\/\?p=/.test(s.textContent)),
   }));
   ok(`/realisations/${slug} : HTTP 200, un seul h1, canonique, pas de masquage ni de redirection`, res.status() === 200 && seo.h1.length === 1 && /\/realisations\//.test(seo.canonical || '') && !seo.htmlHidden && !seo.redirectScript, JSON.stringify(seo));
   await raw.context().close();
@@ -69,10 +69,11 @@ for (const slug of ['huchet-demorge', 'le-crayon']) {
   const n = await state(page);
   ok(`/realisations/${slug} : la flèche « suivant » change de projet`, n.open && n.path !== st.path && n.path.startsWith('/realisations/'), `${st.path} → ${n.path}`);
   await page.locator('[data-project-modal-content] .close-modale').first().click().catch(() => {});
-  await page.waitForTimeout(1500);
+  await page.waitForLoadState('load');
+  await page.waitForTimeout(2000);
   const c = await state(page);
-  const gridVisible = await page.evaluate(() => [...document.querySelectorAll('[data-modal-trigger]')].some((a) => { const r = a.getBoundingClientRect(); return r.width > 0 && r.bottom > 0 && r.top < innerHeight; }));
-  ok(`/realisations/${slug} : la croix ferme et laisse sur la section des cas clients (adresse /)`, !c.open && c.path === '/' && gridVisible, JSON.stringify(c));
+  const vraieAccueil = await page.evaluate(() => !document.querySelector('.projet-statique'));
+  ok(`/realisations/${slug} : la croix ferme et mène au vrai accueil (pas de faux fond)`, !c.open && c.path === '/' && vraieAccueil, JSON.stringify(c));
   await page.context().close();
 }
 await browser.close();

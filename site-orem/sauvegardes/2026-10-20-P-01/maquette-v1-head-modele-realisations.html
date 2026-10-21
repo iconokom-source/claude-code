@@ -1,0 +1,13 @@
+<style>
+  /* P-01 : la page projet s'affiche directement dans le panneau (contenu lisible par Google) */
+  [data-project-modal-content]:empty { display: none; }
+  [data-project-modal-content]:not(:empty) + .projet-statique,
+  [data-project-modal]:not(.is-open) .projet-statique { display: none; }
+</style>
+<script>
+  // Une fois Webflow initialise, le script global de la modale prend le relais (fleches, fermeture, adresse).
+  window.addEventListener('load', function () {
+    history.replaceState({ projectModal: true, url: location.pathname }, '', location.pathname);
+    window.dispatchEvent(new PopStateEvent('popstate', { state: history.state }));
+  });
+</script>
