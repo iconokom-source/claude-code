@@ -1,0 +1,17 @@
+<script>
+  (function () {
+    document.querySelectorAll('.collection-item-realisations .container._24px-vertical').forEach(function (card) {
+      var img = card.querySelector('.image.realisations');
+      var holder = card.querySelector('[data-shadow-holder]');
+      if (!img || !holder) return;
+      var color = getComputedStyle(holder).backgroundColor;
+      if (!color || color === 'rgba(0, 0, 0, 0)') return;
+      card.addEventListener('mouseenter', function () {
+        img.style.filter = 'drop-shadow(0px 20px 32px ' + color + ')';
+      });
+      card.addEventListener('mouseleave', function () {
+        img.style.filter = '';
+      });
+    });
+  })();
+</script>

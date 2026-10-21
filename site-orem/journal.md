@@ -30,7 +30,7 @@ Mémoire de travail du skill `site-orem`. À lire en début de session, à mettr
 | — | P-05 | Dégradés hero flou 150 px + images cachées | — | — | à valider |
 | — | P-06 | Vidéos lourdes, preload auto, MutationObserver permanent | — | — | à valider |
 | — | P-07 | Code global spécifique à une page | — | — | à valider |
-| — | P-08 | CSS/JS copiés-collés sur pages légales et blog | — | — | à valider |
+| 2026-10-21 | P-08 | Code copié-collé retiré (CSS grille Réalisations + ombre au survol) sur Mentions légales, Confidentialité (head et footer) et Blog (head) : aucun élément visé sur ces pages (HTML et DOM vérifiés) | −2,4 Ko de HTML par page légale, −1,5 Ko sur Blog ; rendu identique au pixel (1440 et 390, hors bannière cookies) ; tests 12/12 | `sauvegardes/2026-10-21-P-08/` | **sous-domaine** ; partira à la prochaine publication (sans effet visible) |
 | — | P-09 | Doublon probable carrousel des offres | — | — | à valider |
 | — | P-10 | Scripts enregistrés obsolètes | — | — | à valider |
 | — | P-11 | Tiers (GTM, Axeptio, iClosed) | — | — | à valider |
@@ -65,4 +65,6 @@ Statuts : à valider · validé · appliqué (sous-domaine) · en production · 
 
 - Des publications sont faites depuis le Designer (07:41 et 15:11 le 2026-10-21) : tout ce qui est enregistré part en ligne. Ne jamais laisser d'état non testé dans Webflow.
 - Plan du site : 37 adresses ; la page membre de Clément Saint-Hilaire n'y figure pas (Louis et Théophile oui). Elle répond bien (200, canonique correcte). Réglage à vérifier dans Webflow (paramètres SEO du modèle Membres / plan du site).
+- Politique de confidentialité : un 2ᵉ `<h1>` vide (caractère invisible) dans le texte, à supprimer dans le Designer (contenu, pas du code).
+- Pixel `app.citeme.io` présent sur toutes les pages (bloqué par le réseau de la session, ignoré par les tests).
 - 3 nouveaux projets dans le CMS (h19, dipita, serenitine) : déjà couverts par les flèches et la fermeture.

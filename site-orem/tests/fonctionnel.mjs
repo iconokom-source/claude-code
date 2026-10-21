@@ -36,7 +36,7 @@ for (const path of pages) {
         navbar: vis(q('.navbar-logo-left-container')),
         footerPresent: !!q('.footer'),
         horizontalOverflow: document.documentElement.scrollWidth > window.innerWidth + 1,
-        brokenImages: [...document.images].filter((i) => i.complete && i.naturalWidth === 0 && i.loading !== 'lazy').map((i) => i.src).slice(0, 5),
+        brokenImages: [...document.images].filter((i) => i.complete && i.naturalWidth === 0 && i.loading !== 'lazy' && !/citeme|googletagmanager|clarity/.test(i.src)).map((i) => i.src).slice(0, 5),
         modalTriggers: document.querySelectorAll('[data-modal-trigger]').length,
         footerLogoInDom: !!document.querySelector('.footer img[src*="logo-orem-anime"]'),
       };

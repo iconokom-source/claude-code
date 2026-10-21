@@ -1,0 +1,52 @@
+<style>
+  /* Grille Réalisations : motif alterné 2/1 puis 1/2 (3 colonnes) */
+  .collection-list-realisations {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    grid-template-rows: none !important;
+    grid-auto-flow: row dense !important;
+    column-gap: 24px;
+    row-gap: 64px;
+  }
+
+  /* Rangée A : 2 / 1 */
+  .collection-list-realisations > .collection-item-realisations:nth-child(4n + 1) {
+    grid-column: span 2;
+  }
+  .collection-list-realisations > .collection-item-realisations:nth-child(4n + 2) {
+    grid-column: span 1;
+  }
+
+  /* Rangée B : 1 / 2 (l'inverse) */
+  .collection-list-realisations > .collection-item-realisations:nth-child(4n + 3) {
+    grid-column: span 1;
+  }
+  .collection-list-realisations > .collection-item-realisations:nth-child(4n + 4) {
+    grid-column: span 2;
+  }
+
+  /* Image en cover */
+  .collection-item-realisations img {
+    width: 100% !important;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* Responsive */
+  @media (max-width: 991px) {
+    .collection-list-realisations {
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+    .collection-list-realisations > .collection-item-realisations {
+      grid-column: span 1 !important;
+    }
+  }
+  @media (max-width: 767px) {
+    .collection-list-realisations {
+      grid-template-columns: 1fr !important;
+    }
+    .collection-list-realisations > .collection-item-realisations {
+      grid-column: span 1 !important;
+    }
+  }
+</style>
