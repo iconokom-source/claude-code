@@ -7,7 +7,16 @@
 - [ ] **Aucun nœud existant modifié.** Tout ce qui a été écrit est dans la frame de la nouvelle page ou dans une frame `sources-visuels/*`.
 - [ ] **Aucune section ne reproduit la composition d'une section existante** (liste dans `sections.md`), sauf les reprises autorisées : nav, footer, Méthode O.R.E.M., FAQ.
 - [ ] **Visuels du secteur uniquement**, issus des réalisations Orem rattachées au secteur, et sur une page « agence web », **uniquement des visuels de sites** (pas de logos, palettes, objets).
-- [ ] **Aucune image coupée** : ratio d'origine respecté, aucun visuel ne touche ni ne dépasse le bord du conteneur.
+- [ ] **Aucune image coupée** : ratio d'origine respecté, aucun visuel ne dépasse le bord du conteneur. Les frames auto-layout **coupent leur contenu** : si une colonne s'élargit (ex. H1 passé de 600 à 640 px), le visuel voisin est rogné à droite sans erreur. Vérifier par calcul, pas seulement à l'œil :
+
+  ```js
+  // tout nœud visible doit tenir entre ROOT.x + 100 et ROOT.x + 1400 (hors nav, points, rail d'avis, sections officielles Méthode et FAQ)
+  const minX = ROOT.x + 100, maxX = ROOT.x + 1400;
+  const bad = ROOT.findAll(n => n.visible !== false && n.absoluteBoundingBox && n.width < 1400)
+    .filter(n => { const b = n.absoluteBoundingBox; return b.x < minX - 40 || b.x + b.width > maxX + 1; })
+    .map(n => n.name);
+  ```
+- [ ] Hero : colonne texte **600 px fixes**, écart 64, visuel **636 px** (total 1300). Ne jamais élargir le H1 au-delà de 600 px.
 - [ ] **Chiffres réels uniquement**, recopiés des pages de cas ou des chiffres officiels (« plus de 40 clients accompagnés depuis 2023 », « 100 % de satisfaction client », « Noté 5/5 »). Pas de chiffre arrondi ou extrapolé, pas de durée ou de prix inventé. Aucun prix sur une page du site.
 - [ ] **Avis recopiés mot pour mot** (on peut couper une phrase entière, pas reformuler), avec le bon nom et la bonne fonction.
 - [ ] **Collections CMS** : avis, cas, articles, questions et secteurs sont des listes d'éléments identiques qui tiennent avec un nombre variable d'éléments. Pas d'élément « vedette » différent des autres.
