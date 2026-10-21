@@ -52,6 +52,7 @@
 ## Prêt pour Webflow
 
 - [ ] Onglets, panneaux, cartes d'avis, visuels de site, boutons et pastilles sont des **instances de composants** (`composants.md`), pas des frames dupliquées ; états Actif / Inactif en variantes.
+- [ ] **Tableau « États <url> » à jour** : une version par onglet (réalisations et enjeux), chacune avec un seul onglet Actif et son propre panneau visible, et la FAQ avec toutes les réponses ouvertes. Aucun texte de la page ne doit exister seulement dans un calque masqué.
 
 - [ ] Tout en auto-layout, calques nommés (`section-*`, `container`, `*-list`, `*-item`, `h1`, `h3`, `intro`).
 - [ ] Un seul H1 par page, contenant le mot-clé de la trame.

@@ -23,6 +23,19 @@ Demande de Louis : tout élément répété ou interactif est un **composant**, 
 - Un nouveau besoin répétable (ex. carte d'article, ligne de FAQ maison) se crée d'abord dans la bibliothèque, avec description et propriétés, puis s'instancie dans la page.
 - Les sections officielles reprises (nav, footer, Méthode, FAQ) restent des clones : ce sont déjà les éléments du site existant.
 
+## Tableau « États » : tous les textes visibles
+
+Demande de Louis : quand on donne la page et les composants à l'intégration, **absolument tous les textes doivent se lire**, pas seulement le premier onglet. Les panneaux masqués ne suffisent pas.
+
+Sous la bibliothèque, chaque page a une frame **`États <url>`** (fond `#fff8e6`, hors de la page, x = page.x − 60, y = bas de la bibliothèque + 400), qui empile :
+1. un clone de `section-realisations` **par réalisation** : l'onglet i en variante Actif, les autres Inactif, seul le panneau i visible ;
+2. un clone de `section-enjeux` **par enjeu** (5), même logique ;
+3. un clone de la FAQ avec **toutes les réponses `faq-reponse` visibles** ;
+4. avant chaque version, une pilule noire qui la nomme (« Enjeux, onglet 2 actif : <titre> »).
+
+En tête du tableau, une phrase rappelle que sur le site seul le premier onglet est affiché et que chaque version est un panneau du composant Tabs Webflow. Exemples : `3855:2098` (hôtellerie, 8 versions) et `3855:2644` (médias, 10 versions).
+Le tableau se refait après toute modification d'une section à onglets (supprimer l'ancien, recloner), et on vérifie par script que chaque version a exactement un onglet Actif et un panneau visible dont le titre correspond à l'onglet.
+
 ## Instancier depuis un script
 
 ```js

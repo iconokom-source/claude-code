@@ -76,6 +76,7 @@ Pièges déjà rencontrés (et réglés dans `helpers.js`) :
 ### 6. Finitions et contrôle
 - `typoPass(ROOT)` sur la page (espaces insécables, flèches).
 - Poser la fiche SEO au-dessus de la page (`seo.md`) et compter les mots propres au secteur.
+- Poser le tableau **« États <url> »** sous la bibliothèque : une version de chaque section à onglets par onglet actif, et la FAQ avec toutes ses réponses ouvertes, pour que tous les textes soient visibles (`composants.md`).
 - Capture de la page entière (`maxDimension` 7000 à 9000), découpée en tranches pour la relire.
 - Dérouler `controle-qualite.md` et corriger.
 
