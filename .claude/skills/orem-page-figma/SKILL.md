@@ -14,8 +14,9 @@ Exemples validés par Louis : `/secteurs/hotellerie` (nœud `3815:1702`) et `/se
 1. **Ne jamais modifier l'existant.** On crée une nouvelle frame de page dans une zone vide de l'onglet Site. Aucun nœud existant n'est déplacé, renommé ou retouché. On ne fait que **cloner** ce qui doit l'être.
 2. **La trame donne le fond, pas la forme.** Chaque section de la trame (rôle, contenu, CTA) devient une **composition nouvelle**, dessinée avec les invariants de la DA. Une trame qui cite une section existante (« structure du hero du template Offres ») indique le rôle, pas la mise en page.
    Exceptions, reprises telles quelles : la **nav**, le **footer**, la section **Méthode O.R.E.M.** (`2174:5281`) et la section **FAQ** (`2174:5376`, textes adaptés au secteur).
-3. **Les visuels viennent des réalisations du secteur**, prises sur agence-orem.fr/realisations (ex. hôtellerie : Huchet-Demorge et Hôtel Eiffel Ségur, pas Casa Zanoni ; médias : Le Crayon, Riskintel, Bund Médias, Aktionnaire). Aucun chiffre ni avis inventé.
-4. **Tout contenu répété est une collection CMS** (avis, cas, articles, FAQ, secteurs) : une liste d'éléments identiques qui tient avec n'importe quel nombre d'éléments.
+3. **Les visuels viennent des réalisations du secteur** et, pour une page « agence web », ce sont **uniquement des visuels de sites** (mockups des études de cas, captures des sites en ligne en navigateur ou téléphone), jamais coupés. Les visuels de marque (logos, palettes, objets) sont réservés aux futures pages design. Si les visuels de site manquent, le dire à Louis.
+   Sources : réalisations prises sur agence-orem.fr/realisations (ex. hôtellerie : Huchet-Demorge et Hôtel Eiffel Ségur, pas Casa Zanoni ; médias : Le Crayon, Riskintel, Bund Médias, Aktionnaire). Aucun chiffre ni avis inventé.
+4. **Tout contenu répété est une collection CMS** (avis, cas, articles, FAQ, secteurs) : une liste d'éléments identiques qui tient avec n'importe quel nombre d'éléments. Pour mettre plus de contenu sans faire « liste fourre-tout », préférer les **onglets** (réalisations, enjeux) ou les sliders, avec tous les panneaux présents dans le DOM.
 
 ## Prérequis
 

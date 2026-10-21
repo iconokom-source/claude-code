@@ -66,13 +66,22 @@ Elles montrent le niveau attendu. **Ne pas les recopier non plus d'une page sect
 | 2 bis | Cas à la une | section blanche ; grand visuel 640 × 432 rayon 24 avec une vignette qui le chevauche, à droite eyebrow « Réalisation à la une », nom du client (H2 Trykker 34), contexte, 2 chiffres de l'étude sur filet, lien vers l'étude |
 | 3 bis | Enjeux (version SEO) | même index éditorial, mais H2 de 400 px avec mot-clé, colonne diagnostic (2 phrases grises + phrase « Sur le site : » en encre, libellé en Medium) et colonne « Indicateur à suivre » de 250 px |
 | 4 | Pourquoi Orem (bloc fusionné) | demi-écran sur `#f8f8f7` : titre deux tons à gauche (380 px), 3 preuves à filets avec point bleu au centre, 2 cartes blanches de liens vers les offres à droite (340 px) |
-| 4 bis | Ressource : audit annoté | section blanche ; capture d'une réalisation du secteur avec repères ronds numérotés bleu accent (bord blanc, ombre), liste de 4 annotations à filets avec les mêmes numéros |
+| 4 bis | Ressource : audit annoté (supprimé) | section blanche ; capture d'une réalisation du secteur avec repères ronds numérotés bleu accent (bord blanc, ombre), liste de 4 annotations à filets avec les mêmes numéros |
 | 5 | Témoignages | section blanche ; en-tête deux tons avec chiffres officiels, note Google et flèches ; **rail de collection** `avis-list` qui déborde à droite : cartes `avis-item` identiques 416 px sur `#f8f8f7`, citation Trykker 18, espace flexible, filet puis auteur (photo ronde 44, nom, fonction). L'avis du secteur en premier. Une première version en carte vedette bleue a été refusée : fond bleu hors DA, texte collé au nom, pas pensée pour une collection |
 | 6 | Nos offres (abandonné) | remplacé par le bloc fusionné « Pourquoi Orem » sur demande de l'expert SEO |
 | 7 | Méthode O.R.E.M. | **section officielle reprise telle quelle** (`2174:5281`) |
 | 8 | Articles liés | section blanche ; **liste éditoriale** à filets : vignette typographique (dégradé bleu nuit + mot Trykker), tag, titre serif, accroche liée au secteur, bouton rond |
 | 9 | FAQ + CTA final | **section officielle reprise** (`2174:5376`) : titre adapté au secteur, onglets masqués, 5 questions du secteur, la première ouverte avec une réponse appuyée sur un chiffre réel |
 | 10 | Secteurs proches | bande blanche basse ; label « Secteurs proches » à gauche, **2 liens** Trykker 27 en encre avec flèche bleue |
+
+## Version actuelle des sections (après retours de Louis du 21 octobre)
+
+| Section | Composition |
+|---|---|
+| Hero | collage dans une frame de 636 × 600 qui ne dépasse jamais le conteneur : navigateur 576 px (capture desktop du site) + téléphone 176 px (capture mobile) qui le chevauche à gauche + pastille de résultat réel en bas à droite |
+| Réalisations en onglets | section nuit `#000012` ; en-tête deux tons + bouton contour « Toutes nos réalisations → » ; rangée d'onglets pilules (actif blanc, inactifs contour) `cas-tabs (collection CMS)` ; panneau `cas-panel` : visuel principal 740 px (mockup d'étude de cas), 2 visuels secondaires de 362 px, colonne texte (nom H3, contexte, 2 chiffres sur filets, tags, bouton blanc vers l'étude). Les autres panneaux existent, masqués |
+| Enjeux en onglets | colonne d'onglets 460 px (numéro + titre H2 Trykker 18, onglet actif en carte blanche avec ombre) ; panneau blanc rayon 24 : boîte visuel 430 px de haut fond `#f8f8f7` avec le site centré, H2, diagnostic, « Sur le site : », carte indicateur + où le lire |
+| Pourquoi Orem | à gauche titre deux tons, 3 preuves à filets, 2 boutons (noir et contour) ; à droite visuel de l'espace client Orem (desktop + mobile + légende) |
 
 ## Banque d'idées pour varier
 

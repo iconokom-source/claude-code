@@ -211,3 +211,38 @@ async function typoPass(root) {
   }
   return n;
 }
+
+// --- Visuels de sites (pages « agence web » : uniquement des visuels de sites) ---
+// Capture desktop 1440 x 900 dans un cadre navigateur : affichée entière, jamais recadrée.
+async function browser(parent, w, hash, url) {
+  const f = al('VERTICAL', { name: 'site-navigateur' });
+  f.fills = [solid(COL.white)]; f.cornerRadius = 14; f.clipsContent = true;
+  f.strokes = [solid(COL.dot)]; f.strokeWeight = 1;
+  parent.appendChild(f); fixWidth(f, w);
+  const bar = al('HORIZONTAL', { name: 'barre', itemSpacing: 6 });
+  add(f, bar, { w: 'FILL' });
+  bar.paddingLeft = bar.paddingRight = 14; bar.paddingTop = bar.paddingBottom = 10; bar.counterAxisAlignItems = 'CENTER';
+  for (const c of ['#ff736a', '#febc2e', '#19c332']) { const e = figma.createEllipse(); e.resize(9, 9); e.fills = [solid(c)]; bar.appendChild(e); }
+  const u = al('HORIZONTAL', { name: 'url' }); add(bar, u, { w: 'FILL' }); u.primaryAxisAlignItems = 'CENTER';
+  const pillUrl = al('HORIZONTAL'); u.appendChild(pillUrl);
+  pillUrl.fills = [solid('#f2f2f2')]; pillUrl.cornerRadius = 6;
+  pillUrl.paddingTop = pillUrl.paddingBottom = 3; pillUrl.paddingLeft = pillUrl.paddingRight = 16;
+  await txt(pillUrl, url, 'caption', GREY60);
+  img(f, w, Math.round(w * 900 / 1440), hash, { r: 0, name: 'capture' });
+  await f.setEffectStyleIdAsync(FX['light-elevations/secondary-elevation']);
+  return f;
+}
+// Capture mobile 780 x 1688 dans un cadre téléphone.
+async function phone(parent, w, hash) {
+  const pad = Math.round(w * 0.04);
+  const f = al('VERTICAL', { name: 'site-mobile' });
+  f.fills = [solid(COL.ink)]; f.cornerRadius = Math.round(w * 0.17);
+  f.paddingTop = f.paddingBottom = f.paddingLeft = f.paddingRight = pad;
+  parent.appendChild(f);
+  const iw = w - 2 * pad;
+  img(f, iw, Math.round(iw * 1688 / 780), hash, { r: Math.round(w * 0.13), name: 'capture' });
+  await f.setEffectStyleIdAsync(FX['light-elevations/secondary-elevation']);
+  return f;
+}
+// Visuel d'étude de cas (mockups 2160 x 1460 du site agence-orem.fr) : ratio respecté, pas de recadrage.
+const caseImg = (parent, w, hash, name = 'visuel-cas') => img(parent, w, Math.round(w * 1460 / 2160), hash, { r: 16, name });

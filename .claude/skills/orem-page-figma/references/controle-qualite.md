@@ -6,7 +6,8 @@
 
 - [ ] **Aucun nœud existant modifié.** Tout ce qui a été écrit est dans la frame de la nouvelle page ou dans une frame `sources-visuels/*`.
 - [ ] **Aucune section ne reproduit la composition d'une section existante** (liste dans `sections.md`), sauf les reprises autorisées : nav, footer, Méthode O.R.E.M., FAQ.
-- [ ] **Visuels du secteur uniquement**, issus des réalisations Orem rattachées au secteur. Aucun visuel d'un autre client pour illustrer le secteur.
+- [ ] **Visuels du secteur uniquement**, issus des réalisations Orem rattachées au secteur, et sur une page « agence web », **uniquement des visuels de sites** (pas de logos, palettes, objets).
+- [ ] **Aucune image coupée** : ratio d'origine respecté, aucun visuel ne touche ni ne dépasse le bord du conteneur.
 - [ ] **Chiffres réels uniquement**, recopiés des pages de cas ou des chiffres officiels (« plus de 40 clients accompagnés depuis 2023 », « 100 % de satisfaction client », « Noté 5/5 »). Pas de chiffre arrondi ou extrapolé, pas de durée ou de prix inventé. Aucun prix sur une page du site.
 - [ ] **Avis recopiés mot pour mot** (on peut couper une phrase entière, pas reformuler), avec le bon nom et la bonne fonction.
 - [ ] **Collections CMS** : avis, cas, articles, questions et secteurs sont des listes d'éléments identiques qui tiennent avec un nombre variable d'éléments. Pas d'élément « vedette » différent des autres.
@@ -29,7 +30,8 @@
 
 ## SEO (détail dans `seo.md`)
 
-- [ ] Ordre de page conforme à `seo.md` : cas à la une sous le hero, Pourquoi Orem court après la méthode, ressource propriétaire, 2 secteurs proches.
+- [ ] Ordre de page conforme à `seo.md` : réalisations en onglets sous le hero, enjeux en onglets, Pourquoi Orem avec visuel après la méthode, 2 secteurs proches.
+- [ ] Le mot-clé n'apparaît qu'une fois dans le premier écran (H1) ; title 450 à 580 px ; meta ≤ 920 px.
 - [ ] Fiche SEO posée au-dessus de la page (title, meta, H1, balisage, maillage).
 
 - [ ] Compter les mots par section (script de comptage sur les nœuds TEXT, hors nav et footer). Viser **au moins 1 000 mots propres au secteur** : les sections reprises ou communes (méthode, offres, avis) ne comptent pas.

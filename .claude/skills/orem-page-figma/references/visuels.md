@@ -4,6 +4,9 @@
 
 ## Règle de choix des visuels
 
+0. **Page « agence web » : uniquement des visuels de sites web** (pages, mockups navigateur, laptop, téléphone). Pas de logos, palettes, cartes de visite, objets ou affiches : ils iront sur les futures pages design. Ordre de préférence : (a) visuels de site des études de cas sur agence-orem.fr ; (b) captures propres des sites en ligne (Playwright, 1440 × 900 et 390 × 844 en @2x) posées dans `browser()` et `phone()`. Si un secteur n'a pas assez de visuels de site, le dire à Louis plutôt que d'utiliser autre chose.
+0 bis. **Jamais d'image coupée** : respecter le ratio d'origine (FILL sur un cadre au bon ratio, ou FIT), et aucun visuel ne dépasse le bord du conteneur.
+
 1. **Les réalisations Orem du secteur de la page, et elles seules.** Les visuels viennent des pages `https://www.agence-orem.fr/realisations/<slug>`. Une page « Hôtellerie » montre Huchet-Demorge et Hôtel Eiffel Ségur, **pas** Casa Zanoni (refusé par Louis : ce n'est pas de l'hôtellerie). En cas de doute sur le rattachement d'une réalisation, demander à Louis.
 2. Visuels de marque Orem (illustrations O.R.E.M., photos d'équipe, portraits d'avis) : réutilisables partout.
 3. Aucune image générée par IA, aucune banque d'images, aucun visuel d'un client hors secteur pour illustrer le secteur.
@@ -76,6 +79,27 @@ Réalisations du secteur : Le Crayon Groupe, Riskintel, Aktionnaire, Bund Média
 | image-case-bund-medias-1 / 2 (casquette) / 3 (formulaire) | 8d53c6fe9f0e1bf6dae7a12311ae37e4ecf1529e / 4b351d17a5ebf091bb269115655d61a04405a826 / c8d71d8d88dcea12525f7f58374e2c59a74a9548 |
 
 Chiffres réels utilisables (pages de cas) : Le Crayon, plus de 1 000 demandes qualifiées et 70 % du trafic en SEO ; Riskintel, plus de 500 leads et trafic organique multiplié par plus de 250 (janvier à août 2026) ; Aktionnaire, plus de 2 000 inscriptions newsletter et position moyenne de 27,8 à 6,3 ; Bund Médias, aucun chiffre publié (ne pas en inventer). Hôtel Eiffel Ségur, position moyenne de 38 à 6 et 398 visiteurs venus des IA ; Huchet-Demorge, environ 5 demandes qualifiées par semaine.
+
+### Visuels de sites web (frame `sources-visuels/sites-web`, 3848:1792)
+Mockups d'études de cas (ratio 2160 × 1460 ou 1080 × 730, sauf mention) :
+| Visuel | imageHash |
+|---|---|
+| visuel-hotel-eiffel-segur-13 (page chambre desktop + mobile) | 165c956d22bbf3ea5617cdeadd7a4d58482451cf |
+| visuel-huchet-demorge-28 (laptop) / -11 (écran carte) / -29 (iPhone, 532 carré) | c57b71a37f6b3b7bf519171690ac88ee4714dcf5 / 263b503364de59e58dddfa6ffa4992e8a19ea3ac / 991ef780cc53ba99990b5dd4c38069f9981e9cbc |
+| visuel-le-crayon-2026-06 (navigateur) / -12 (laptop) / -16 (Le Surligneur) / -26 (iPhone) | 8ed054f2c25122fe5815c3b4d3e6534d58cd0f45 / 029552243c0bbfb4383e510e49efb36d08cec5e0 / 7f1305c9b2898508370805c88e3bf51016111b39 / 7587bb223747945f23755caa786ce74f8a8131dd |
+| visuel-riskintel-04-v2 (navigateur) / -05-v2 (3 entités) / v2-10 (laptop) / v2-08 (iPhone, carré) | f1d82077b27c8d4d51af878530928e1ddd3537ce / 004d15c581c9a6aa02644c2538490fbd8f92c14c / 941fb880c15238d5da199f9333017a23d84e40c8 / c0e6e2d7b31eaf658be4e0f45bea9101efacdcb0 |
+| visuel-aktionnaire-04 (site) / -13 (laptop) / -08 (téléphones) / -05 (formulaire, carré) | b428e6d2bc714a8c539e742a102fcb6f4e02c5ef / fe2522970932610c4238c969220b4528e0938068 / e711d25c069911d0c4739c433d5b90be270982e6 / b77def2a94a866b4f0479bdcb2be7be6db51b08c |
+| visuel-bund-medias-3 (site) / -4 (mobiles, 1620 × 1095) | bdc5af71fc0afd56ff015dba0bc932f34efbd0ab / 3c46f5234713901d34d03176a4ad26bba80dc904 |
+
+Captures des sites en ligne (desktop 1440 × 900, mobile 780 × 1688) :
+| Site | desktop accueil / autre | mobile |
+|---|---|---|
+| paris-hotel-eiffel-segur.com | 4ac7342404a4a676f5c5483166da4ec73797b976 / 10f1fba959b179894033df85216b850fc6307d0f | 3dd3d75e743e3e4204b91363d741db0d34be43fa |
+| huchet-demorge.fr | 8a9141de4130bca24d5a24a0104ab29bb42862f9 / 15da19f252826982e097dbd7025d3c696d1c8c74 | 75ee879964a71aa1bdafefa09506c108b542457b |
+| lecrayongroupe.fr | 705674d3ba5ab75d273718e2b6c6b68ba4549944 / 7362962f80b0f663616f3703ed9188855e706e25 | 91c856dc6d04109aa8d9957574ec0b8c9905cf08 |
+| riskintel.fr | 60feec6c583051f6177cacc1c8d52d1e31a69352 / d3828bec4eeb4ae970ddfea42d963147b4e031bf | a8def56f2067d130c899a7f07e10a56e5112ba0b |
+| aktionnaire.com | cb7550da79209f471a16f3287a44bca6ac081dce | 625cdda3606eca462f75fe64eabe27ee5e2bb290 |
+| bund-medias.fr | 4f546ea20b9c4e3ff2d4e0b8a9b8e79dd7861f10 | b7734394bfc40057963ee58422ea5626b413da5b |
 
 ### Portraits d'avis (kit `orem-da`, `template/assets/avis/`)
 | Personne | Rôle | imageHash |
