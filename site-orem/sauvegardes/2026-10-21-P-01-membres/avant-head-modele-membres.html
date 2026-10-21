@@ -1,0 +1,17 @@
+<style>
+  html {
+    visibility: hidden !important;
+    .secondary-text.w-richtext p,
+    .secondary-text.w-richtext li {
+      color: inherit;
+      font-weight: inherit;
+    }
+  }
+</style>
+
+<script>
+  var path = location.pathname;
+  if (path && path !== '/') {
+    location.replace('/a-propos?p=' + encodeURIComponent(path));
+  }
+</script>

@@ -55,7 +55,7 @@ for (const path of pages) {
     // Modale projets (desktop uniquement, si présente)
     let modal = null;
     if (width === 1440 && checks.modalTriggers > 0) {
-      const trig = page.locator('[data-modal-trigger]').first();
+      const trig = page.locator('[data-modal-trigger]:visible').first();
       await trig.scrollIntoViewIfNeeded();
       await trig.click({ timeout: 5000 }).catch(() => {});
       await page.waitForTimeout(1500);
