@@ -31,6 +31,7 @@ Pages construites ensuite sur le même modèle (octobre 2026) : `/secteurs/cabin
   - `references/composants.md` : bibliothèque de composants (onglets, panneaux, navigateur, mobile, boutons, avis) à instancier ;
   - `references/helpers.js` : boîte à outils à coller en tête de chaque script `use_figma` ;
   - `references/seo.md` : ordre de page, mots-clés, format des enjeux et de la FAQ, maillage, fiche SEO (règles de l'expert SEO) ;
+  - `references/pages-identite.md` : pages secteur « identité visuelle » (/secteurs/<slug>/branding), trame, visuels de DA, composants ;
   - `references/controle-qualite.md` : liste de contrôle avant de rendre.
 - Règles de rédaction et vocabulaire Orem : celles du skill `orem-da` (vouvoiement, pas de tiret long, pas de « suivi », « agence » jamais « studio », offres O.R.E.M., chiffres officiels, CTA iClosed). Aucun prix sur une page du site.
 
