@@ -25,3 +25,27 @@ Trame de l'expert SEO du 22 octobre 2026, appliquée sur la page modèle `/secte
 | 7 | FAQ | section officielle clonée, 5 questions-requêtes de l'identité, réponses de 40 à 60 mots, aucun prix |
 | 8 | CTA | « Parlons de l'image de <votre secteur>. », un seul bouton |
 | 9 | Identités voisines | 2 liens « Identité visuelle pour <secteur voisin> » |
+
+## Pages construites (22 octobre 2026)
+
+| Page | Nœud | x | Format | Cas à la une / autres |
+|---|---|---|---|---|
+| /secteurs/hotellerie/branding | 3880:5682 | 19800 | complet | Huchet-Demorge / Hôtel Eiffel Ségur |
+| /secteurs/medias/branding | 3885:5902 | 21500 | complet | Le Crayon / Riskintel, Aktionnaire (Bund Médias écarté : pas d'identité documentée) |
+| /secteurs/cabinets-rh/branding | 3884:10082 | 23200 | allégé | Concilium et Le Recruteur |
+| /secteurs/esn/branding | 3897:6707 | 24900 | allégé | Logical Conseils |
+| /secteurs/sante/branding | 3886:11938 | 26600 | allégé + cadre déontologique | Sleepee by tim (brouillon Webflow) |
+| /secteurs/coachs-formateurs/branding | 3886:6420 | 28300 | complet | SforSales Academy / Dipita |
+| /secteurs/associations-collectivites/branding | 3886:12360 | 30000 | complet | Les Ombres / Impulsions Métropole Sud |
+| /secteurs/production-audiovisuelle/branding | 3886:6820 | 31700 | allégé | Dim Sum (texte de l'étude centré sur l'UX : seul ce qui se voit est décrit) |
+| /secteurs/agences-communication/branding | 3886:6026 | 33400 | complet | 24 Degrés / Orem |
+
+Fiches SEO au-dessus de chaque page, tableaux États à y = 11686, sources `sources-visuels/branding-<slug>` à x = page.x, y = 15000. Prochaine page : x = 35100.
+
+## Pièges rencontrés
+
+- **Format allégé** : en retirant le bloc Livrables, on perd le lien vers l'offre. L'ajouter sous les étapes de l'approche (`lien-offre`, « Notre offre Direction artistique → »).
+- **FAQ réduite à 3 questions** : le clone de la FAQ à 5 questions laisse des réponses orphelines et des filets vides ; les supprimer avec leurs conteneurs, puis vérifier que le dernier élément garde son filet.
+- **Nom de secteur long** : « … : branding et direction artistique » dépasse 580 px (cabinet de recrutement 633, agence de communication 662, coach et formateur 595) : passer à « … : branding et DA ».
+- **H1** : toujours « Identité visuelle pour <secteur> : » (y compris « pour la santé »), la même formule que l'ancre des pages voisines.
+- **Visuels hors création Orem** : affiche de programme d'un client, portraits de banque d'images utilisés par le client : ne pas les mettre en avant comme identité créée par Orem.

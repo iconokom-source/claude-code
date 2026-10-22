@@ -162,3 +162,23 @@ Chaque frame contient toutes les images importées, nommées. Principaux hash :
 | Agences, Orem (`3859:9926`) | aecc4b40af7dacd6b6d1dbd047e2424637002194 | 3edb013469cec679c33c3866ba2ab9d2430e0bb8 | 9c43bdd54060cdb2c9bf4a85a46bca1595d47ba3 (recomposé, l'étude n'a pas de mockup de site) | — |
 
 Portrait d'avis Mathéo Lamblin (JUWA) : c2d647fc4407bc8ebf451ab26f43bf42188a90eb.
+
+### Visuels de DA des pages identité visuelle (octobre 2026)
+
+Chaque frame `sources-visuels/branding-<slug>` contient tous les imports nommés. Principaux hash :
+
+| Client | Visuels |
+|---|---|
+| Huchet-Demorge | affiches métro 13 5c0da98828754301cfb30883a09ee6184fa2e4c4 ; affiche en gare 23 26cf0472601d69876693e8c51577861d2126b508 ; pictogrammes 16 b63c8e13af090c14129309ca1e0eba3c371b96eb ; montre 26 b4fa35a1d7f6534c82a673e9d4ed927e71e3a1c2 ; affiche murale 9 d2161193b4ef11be5731cafa1d4ecf0205f53109 ; stand 20 b72d3d386541d89e947addb91528b741790dbcc8 ; monogramme 25 c812114b257837857dd29337f8ab8d013c48a40f |
+| Le Crayon | typographie aec36b4d5ef7a7000bc903681c69f806eed549c0 ; logo mural b5f92402759753ff26f66f7c1a36703340c425bb ; manifeste 31ca15462516dd19b6784dba800c60f36ca27201 ; affiche fondateur bf408379b07d2c117c2973c884f8fd94bf1e2a1a ; trois filiales 3b0f3c94e4847dddb87dad19ef3d0c35540c87bb |
+| Riskintel | palette 530c4cd8d5063ba2c30c12d155f3262ece7e146f ; badge c30ada3ce28a60b0d06022e48d6b912fd98cafeb ; enveloppe b3a6ff31698a3b672917230326d414af3bbef515 ; typographie 75f5605ad2b6babca97cd83e6965733e2edef30d |
+| Aktionnaire | logo 2e6f7d2208a18a9f13b67b3a05154c7cb34c5877 ; tote bag cad3ab056a1a6548ed119d489ae57a61bba6eb50 |
+| Concilium et Le Recruteur | symbole 22c5d0445cf6d740e327ac350523cf3a26a76354 ; logo Concilium 27041c869656389b5cc09d16ead1fd999cfc1565 ; cartes de visite 99c5c2ebc6ce9f339efa41e1f2c3c84248951762 ; typographie b90c9aabad5ca5308916f4eb3866d7da62dca420 ; logo sur ciel a449de3a4614b1ba6abbbca81b36d8397b701afa ; signalétique cceeb3ac6345b939656df447b0b2e1d9ea4c458e ; palette 955974efc20147b9050bef231f5ad4f56ee3ad45 ; logo Le Recruteur 95fb1d4156f2ac43075f214d0044bffd4b8fdab3 ; support de formation 963de1bf56d79e519595b03a517ae419a3e3819c ; affichage 7858b8810708be906d8218e797216afa69b4b14e |
+| Logical Conseils | bâche ec7a35d3478a7d6ed10622892a9a2abd84c52837 ; expertises 458a0bf98967bdb7ac140949ce2e3cec52fdce2d ; métiers e635e5a0c9170b4704343657d32fc4f0b41e1c87 ; story 5e1c2a7460a91f4b1a7fcf3fd6043941d99fb305 ; section CTA (visuel 3) c8740f87fec33aa165fa736ee240d4de20d95ac8 |
+| SforSales Academy | logo 6b843cdd29b3a514344d2529ff0d0a927d8427b9 ; palette efbf001b71713bec649cbfd2ed38b10a5f13cf0e ; typographie f5bfe6d3361ac126f182403108d124d87a680294 ; logo mural 7b1f7496ee5bfeb47dc714451810123a08ac161f ; accroche 116cc61794a8763d78df65d1ed57329313797d2c ; affiches b1e2e9440b90a48351f09f30f9c996e913354f1e ; motif baab3ea2d5e663acbdef2114d7694d1291ac53b4 ; playbooks e4ea18a8cf1c5e3ee5d47e4c9bd07724f3df6e8c |
+| Dipita | logo fa5d2f82588131df1bbdb905271cc4aed8baca97 ; palette c4409cd3aa9ec2cf269111048112a7ef6fcf92c6 ; typographie 03101a3e73ce449194432c52e3fb6a2ff51180e1 ; salle de spectacle d4bdc2141d9c1759361f8f97c6518e0950497501 ; carnet 76767b84e1680a1544aec332e86d61c041ad5a72 |
+| Les Ombres | logotype 46152170b004e32e513f6070c16f87f0bd461dab ; palette 910dc2ff0116837d47c1ef6cdab16c74899bdc9f ; typographie b1ee93377f62db1c49c428a92fdb1c8ad8ce1fca ; « Tous ont en eux » c76d3fd0b1d8a13f675d35048daf01e86c957280 ; chevalet b921ea996a0540d8570292bd8d15537c278df519 ; stop-trottoir 4c672b61075a2621a15e8ad079e938bc3a65652c |
+| Impulsions Métropole Sud | logotype 86e2680d19ac57b74f727bff1e1bc7cba0ffd9b7 ; palette 296f650da1bf25e81f649104515cf827f05aa901 ; typographie c45f0e2ef3be04c18270ea54ebaccdfd85b006b3 ; iconographie a7a724575928a2907c63b25646140448bbb7e093 |
+| Dim Sum | mascotte a5c9a70ae97fa7952cc419d9b4b9aac3a39cba29 ; pictogrammes 371364cd6f2decc79df98eb93b897bde1ca55ce7 ; fiche graphique da21cc04e383fb7d0bb258ceeb2441eaab108732 ; typographie 90cfda3bc421bc377f0259eff1b80a0e05b1609c ; stories Plan Cut ca0fa4c2b124fff65053f919717c5b7c0e1f1985 |
+| 24 Degrés | logo 01644195e7d60056b8736a4be72e4829f1cff2d9 ; palette eaafa79fbb3a1fb83327d21a62417c70f1c721a6 ; typographies de8f50b524036804c94d545fbb50acd7e43eee19 ; campagne Terre f2ef27ced00b020ffc749894258fd11a6a1ab9fe ; affichage a9db71f20d1ddce206905aaa6600fe251faa48f8 ; offres 5a80858647641096320b39d39991513fa5bc3127 ; carte de visite 8ff64546d5b86aea6cbc0974747d10935ac9aa1b ; pictogramme météo 88c299218f1f35664fe015a91fd054fcaeb144db |
+| Orem | logo sur nuit bleue 7eb85d69b0de17453360ca7d23e4b82efece837f (l'illustration « Représenter », blanche, se pose sur fond encre) |
