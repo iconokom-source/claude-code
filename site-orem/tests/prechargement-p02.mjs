@@ -13,7 +13,7 @@ for (const [w,m] of [[1440,false],[390,true]]) for (const path of ['/','/realisa
   const p=await c.newPage(); let n=0; const errs=[];
   p.on('pageerror',e=>{ if(!/axept|Failed to fetch/.test(e.message)) errs.push(e.message)});
   p.on('request', r=>{ const u=new URL(r.url()); if (r.resourceType()==='fetch' && /^\/(realisations|membres)\//.test(u.pathname)) n++; });
-  await p.goto('https://www.agence-orem.fr'+path,{waitUntil:'load'}); await W(6000);
+  await p.goto((process.env.BASE||'https://www.agence-orem.fr')+path,{waitUntil:'load'}); await W(6000);
   const preload=n;
   const t=p.locator('[data-modal-trigger]:visible').first(); await t.scrollIntoViewIfNeeded(); await W(300);
   if (m) await t.tap(); else { await t.hover(); await W(150); await t.click(); }
