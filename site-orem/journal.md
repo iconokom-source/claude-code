@@ -28,7 +28,7 @@ Mémoire de travail du skill `site-orem`. À lire en début de session, à mettr
 | — | P-03 | Couleur navbar calculée au scroll | — | — | à valider |
 | — | P-04 | Footer reveal en JS | — | — | à valider |
 | — | P-05 | Dégradés hero flou 150 px + images cachées | — | — | à valider |
-| — | P-06 | Vidéos : état des lieux 2026-10-22 dans `propositions/P-06-videos.md`. Carrousel de l'accueil et de Lille : « conception création » 3 860 Ko et « Container » 3 449 Ko (MP4 servis), déjà chargés en différé. Essai local même définition : 620 Ko et 1 133 Ko, SSIM 0,99 (V-1, natif, aucun code). **V-1 préparée** : fichiers 944×720 crf 26 (894 et 1 442 Ko) ; Webflow plafonne les Background Video à 720 px de haut ; remplacement dans le Designer uniquement (non exposé au MCP) | −4,9 Mo attendus si Webflow respecte le poids envoyé (à mesurer après un 1er envoi) | `sauvegardes/2026-10-22-P-06-V1/` | préparé, attend accord pour le test sur un élément |
+| — | P-06 | Vidéos : état des lieux 2026-10-22 dans `propositions/P-06-videos.md`. Carrousel de l'accueil et de Lille : « conception création » 3 860 Ko et « Container » 3 449 Ko (MP4 servis), déjà chargés en différé. Essai local même définition : 620 Ko et 1 133 Ko, SSIM 0,99 (V-1, natif, aucun code). **V-1 préparée** : fichiers 944×720 crf 26 (894 et 1 442 Ko) ; Webflow plafonne les Background Video à 720 px de haut ; remplacement dans le Designer uniquement (non exposé au MCP) | −4,9 Mo attendus si Webflow respecte le poids envoyé (à mesurer après un 1er envoi) | `sauvegardes/2026-10-22-P-06-V1/` | **test 2026-10-22 non concluant** : Webflow réencode à débit fixe (~1,66 Mbit/s) → 894 Ko envoyés = 3 250 Ko servis (−16 %), WebM inchangé ; retour arrière proposé (sous-domaine seulement, production jamais touchée) |
 | — | P-07 | Code global spécifique à une page | — | — | à valider |
 | 2026-10-21 | P-08 | Code copié-collé retiré (CSS grille Réalisations + ombre au survol) sur Mentions légales, Confidentialité (head et footer) et Blog (head) : aucun élément visé sur ces pages (HTML et DOM vérifiés) | −2,4 Ko de HTML par page légale, −1,5 Ko sur Blog ; rendu identique au pixel (1440 et 390, hors bannière cookies) ; tests 12/12 | `sauvegardes/2026-10-21-P-08/` | **en production** le 2026-10-21 (accord « Publie ») |
 | — | P-09 | Doublon probable carrousel des offres | — | — | à valider |
@@ -49,6 +49,7 @@ Statuts : à valider · validé · appliqué (sous-domaine) · en production · 
 
 | Date | Nouveauté | Source | Utile pour |
 |---|---|---|---|
+| 2026-10-22 | Constaté : les Background Video sont réencodées par Webflow en 720 px de haut max, 30 i/s, à débit quasi fixe (~1,6–2 Mbit/s) ; envoyer un fichier plus léger ne réduit presque pas le fichier servi. Seuls leviers natifs : durée ou définition. Remplacement de la vidéo non exposé au MCP (Designer uniquement). | test P-06 V-1 | toute vidéo d'arrière-plan |
 | 2026-10-22 | API Custom Fonts (mai 2026) : envoi de polices personnalisées par l'API/MCP (`data_fonts_tool`), avec `font_display` et axes variables. Le retrait d'une Google Font reste une action du Designer. | developers.webflow.com/data/reference/custom-fonts ; guide MCP 2.2.0 | T-2 (supprimer `webfont.js`) |
 
 ## Notes
