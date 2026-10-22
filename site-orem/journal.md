@@ -68,3 +68,15 @@ Statuts : à valider · validé · appliqué (sous-domaine) · en production · 
 - Politique de confidentialité : un 2ᵉ `<h1>` vide (caractère invisible) dans le texte, à supprimer dans le Designer (contenu, pas du code).
 - Pixel `app.citeme.io` présent sur toutes les pages (bloqué par le réseau de la session, ignoré par les tests).
 - 3 nouveaux projets dans le CMS (h19, dipita, serenitine) : déjà couverts par les flèches et la fermeture.
+
+## Mesure 2026-10-22 (Lighthouse 12 mobile, médiane de 3, `audits/mesures-2026-10-22/`)
+
+| Page | Score | LCP | FCP | TBT | Poids | Requêtes | (rappel 20/10 : score, LCP, poids, requêtes) |
+|---|---|---|---|---|---|---|---|
+| Accueil | 39 | 13,4 s | 2,6 s | 1 288 ms | 5,1 Mo | 103 | 42, 13,0 s, 6,8 Mo, 100 |
+| Réalisations | 43 | 12,4 s | 2,4 s | 973 ms | 6,6 Mo | 87 | 45, 20,3 s, 7,7 Mo, 90 |
+| À propos | 44 | 15,2 s | 6,7 s | 620 ms | 4,4 Mo | 73 | 45, 14,1 s, 5,2 Mo, 64 |
+| Contact | 46 | 8,4 s | 2,4 s | 1 072 ms | 4,5 Mo | 85 | 48, 10,8 s, 5,2 Mo, 72 |
+| Mentions | 42 | 15,4 s | 6,7 s | 660 ms | 4,5 Mo | 73 | 51, 10,6 s, 5,2 Mo, 61 |
+
+Lecture : poids −0,7 à −1,7 Mo par page (logo du footer) ; LCP Réalisations −8 s, Contact −2,4 s ; scores stables (bruit important : un passage À propos à 7,3 s de LCP / 2,5 s de FCP). L'élément LCP reste le logo animé du footer. Requêtes en hausse (+10 à +13) : nouveaux tiers ajoutés depuis l'audit (pixel citeme…). Restent lourds : iClosed ~530 Ko, Axeptio ~310 Ko, GTM + gtag ~320 Ko, `webfont.js` bloquant (~0,9 s). Le WebM du footer (2,2 Mo) n'est chargé que par le Chromium de test (pas de H.264).
