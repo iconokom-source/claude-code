@@ -98,3 +98,41 @@ Le MCP ne peut pas changer la vidéo d'un Background Video (réglage non exposé
 - **Attention, publications depuis le Designer** : entre l'étape 1 et la fin, si quelqu'un publie, la nouvelle vidéo part en ligne. Le risque est faible, car même rendu et même définition. Faire les étapes 1 à 4 d'une traite.
 - **Retour arrière** : resélectionner l'asset d'origine sur l'élément. Voir `sauvegardes/2026-10-22-P-06-V1/README.md` ; ne pas supprimer les anciens assets.
 - **Gain attendu**, si Webflow respecte le poids envoyé : environ −4,9 Mo sur ces deux vidéos (MP4), pour les visiteurs de l'accueil et de Lille qui voient ces onglets du carrousel.
+
+## 6. V-2 mesurée (2026-10-22) : vidéos du haut des pages Offres (Cloudinary)
+
+Rappel : la taille affichée dans le Designer (« Size » d'un Background Video) est celle du **fichier envoyé**. Pour les Background Video, les visiteurs reçoivent les versions réencodées par Webflow (ex. Container : 26,86 Mo envoyés, 3,4 Mo servis). Les pages Offres, elles, servent le **fichier brut** depuis Cloudinary, sans réencodage.
+
+Le champ CMS `lien-video-hero-cloudinary` (collection Offres) est lu par le script `OffreHeroVideo` (`<video preload="auto" autoplay loop>`, une seule source WebM).
+
+| Offre | Fichier | Définition | Poids du fichier | Téléchargé en 15 s (1440 / 390 px) | Affiché dans |
+|---|---|---|---|---|---|
+| **Site web** | Container.webm | 1414×1080, 60 i/s, 21 s | **27,5 Mo** | **38 / 42 Mo** | 644×569 (358×302 mobile) |
+| **Image de marque** | conception-creation-16s-ambient-drift.webm | **2830×2160 (4K)**, 60 i/s, 16 s | **21,2 Mo** | **29 / 30 Mo** | idem |
+| Évolution et SEO | video_evolution.webm | 1124×858, 10 s | 1,65 Mo | 1,8 / 2,1 Mo | idem |
+| Conseil | conseil-strat.webm | 750×572, 2 s | 0,28 Mo | 0,3–0,4 Mo | idem |
+
+- **On télécharge plus que la taille du fichier** : un fichier trop gros pour le cache vidéo du navigateur est retéléchargé en partie à chaque boucle.
+- **Même chose sur mobile** : 30 à 42 Mo pour un cadre de 358×302 px.
+- C'est de loin le plus gros poste du site : **une visite de l'offre Site web pèse plus que toutes les autres pages réunies**.
+
+**Résolution nécessaire.**
+- Le cadre fait 569 px de haut ; la vidéo le remplit en hauteur (`cover`).
+- Sur écran Retina, il faut donc ~1 138 pixels réels : **1080 px de haut suffisent**.
+- La version 4K d'Image de marque est au-dessus de ce qu'aucun écran n'affiche dans ce cadre.
+
+Essai local, en 1080 px de haut, 30 i/s, H.264, sans son, `crf 26` :
+
+| Offre | Actuel | Essai |
+|---|---|---|
+| Site web | 27,5 Mo (38 Mo téléchargés) | **2,9 Mo** |
+| Image de marque | 21,2 Mo (29 Mo téléchargés) | **1,6 Mo** |
+
+**Gain : environ −35 à −40 Mo** par visite de ces deux pages.
+
+**Comment, sans ajouter de code.** Il suffit de changer l'URL dans le champ CMS `lien-video-hero-cloudinary` des 2 offres. Le MCP sait modifier un item CMS, et le retour arrière consiste à remettre l'URL d'origine, notée ci-dessus. Deux façons d'obtenir le fichier léger :
+
+- **(a) Transformation Cloudinary dans l'URL**, sans envoi de fichier. Exemple de forme : `…/video/upload/h_1080,fps_30,q_auto,vc_h264/v1788968724/6a9aeb6851c2695590bf38b3_Container.mp4`. Cloudinary génère et met en cache la version MP4. Cela consomme des crédits de transformation du compte Cloudinary (`fgv66xtf`) : à valider par le titulaire du compte.
+- **(b) Envoyer les MP4 préparés** sur Cloudinary (par le titulaire du compte) et mettre leurs URLs dans le CMS.
+
+En MP4 H.264, la vidéo se lira aussi sur les anciens Safari, ce qui n'est pas garanti en WebM seul.
