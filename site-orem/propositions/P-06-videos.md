@@ -136,3 +136,24 @@ Essai local, en 1080 px de haut, 30 i/s, H.264, sans son, `crf 26` :
 - **(b) Envoyer les MP4 préparés** sur Cloudinary (par le titulaire du compte) et mettre leurs URLs dans le CMS.
 
 En MP4 H.264, la vidéo se lira aussi sur les anciens Safari, ce qui n'est pas garanti en WebM seul.
+
+### V-2 : fichiers prêts (option b, envoi sur Cloudinary par Théophile)
+
+| Fichier | Pour | Définition | Poids | Remplace (champ `lien-video-hero-cloudinary`) |
+|---|---|---|---|---|
+| `P-06-videos/offre-site-web-1080.mp4` | Offre Site web (item `6a91389868fd8421abfd4283`) | 1414×1080, 30 i/s, 21 s, H.264 High, sans son, `faststart` | 4 584 Ko (au lieu de 27,5 Mo) | `https://res.cloudinary.com/fgv66xtf/video/upload/v1788968724/6a9aeb6851c2695590bf38b3_Container.webm` |
+| `P-06-videos/offre-image-de-marque-1080.mp4` | Offre Image de marque (item `6a95cbd73b87561e21d6541b`) | 1416×1080 (source 4K réduite), 30 i/s, 16 s, idem | 2 460 Ko (au lieu de 21,2 Mo) | `https://res.cloudinary.com/fgv66xtf/video/upload/v1788967451/conception-creation-16s-ambient-drift.webm` |
+
+- Réglage `crf 23`, plus fin que celui de l'accueil, parce que c'est la première image de la page. Fidélité par rapport à la source réduite en 1080 : 0,966 et 0,995.
+- Comparaisons (source / crf 23 / crf 26) : `*-zoom-source-crf23-crf26.jpg`.
+- Le fichier « Site web » est identique octet pour octet à l'asset Webflow `Container.webm`.
+
+**Ensuite**, une fois les nouvelles URLs données :
+1. Mise à jour des 2 items CMS par le MCP (une valeur de champ chacun).
+2. Publication sur orem.webflow.io.
+3. Mesure avec `tests/videos-hero-offres.mjs` et tests sur les 5 Offres (1440 / 991 / 390).
+4. Accord avant la production.
+
+**Retour arrière** : remettre les URLs d'origine ci-dessus.
+
+**Attention** : un item CMS modifié par l'API est publié avec le site. Pas de publication de l'item seul avant validation.
