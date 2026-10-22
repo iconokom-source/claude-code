@@ -33,7 +33,7 @@ Mémoire de travail du skill `site-orem`. À lire en début de session, à mettr
 | 2026-10-21 | P-08 | Code copié-collé retiré (CSS grille Réalisations + ombre au survol) sur Mentions légales, Confidentialité (head et footer) et Blog (head) : aucun élément visé sur ces pages (HTML et DOM vérifiés) | −2,4 Ko de HTML par page légale, −1,5 Ko sur Blog ; rendu identique au pixel (1440 et 390, hors bannière cookies) ; tests 12/12 | `sauvegardes/2026-10-21-P-08/` | **en production** le 2026-10-21 (accord « Publie ») |
 | — | P-09 | Doublon probable carrousel des offres | — | — | à valider |
 | — | P-10 | Scripts enregistrés obsolètes | — | — | à valider |
-| — | P-11 | Tiers (GTM, Axeptio, iClosed) + webfont.js : état des lieux 2026-10-22 dans `propositions/P-11-tiers.md` (T-1 widget iClosed, T-2 polices natives, T-3 réglages Axeptio, T-4 GTM inchangé) | tiers ≈ 1,2 Mo, ~1,2 s de TBT sur toutes les pages | — | à valider (chaque point avec accord) |
+| — | P-11 | Tiers (GTM, Axeptio, iClosed) + webfont.js : état des lieux 2026-10-22 dans `propositions/P-11-tiers.md` (T-1 widget iClosed, T-2 polices natives, T-3 réglages Axeptio, T-4 GTM inchangé) | tiers ≈ 1,2 Mo, ~1,2 s de TBT sur toutes les pages | — | en attente : « on ne change rien pour le moment » (2026-10-22) |
 | — | P-12 | Polices via Google Fonts | — | — | à valider |
 | — | P-13 | Animations JS / IX2 → IX3 ou CSS | — | — | à valider |
 | — | P-14 | Accessibilité et robustesse | — | — | à valider |
@@ -72,7 +72,7 @@ Statuts : à valider · validé · appliqué (sous-domaine) · en production · 
 
 ## À signaler (2026-10-22, après-midi)
 
-- **Régression CLS depuis la publication du footer natif (08:17)** : accueil 0,03 → 1,1 à 1,3 (mobile) et 0,5 (desktop) ; Réalisations 0,01 → 0,7 à 1,1. Contact, À propos et Mentions ne sont pas touchées. Cause : des scripts changent la hauteur de la page au chargement (section de l'accueil 1 715 → 954 px ; grille de Réalisations) et Chrome compte chaque changement comme un déplacement du footer `sticky`. Rien de visible à l'écran, mais c'est compté dans les Core Web Vitals. Score Lighthouse de l'accueil : 39 → ~13. Proposé : restaurer `sauvegardes/2026-10-22-P-15-reveal/` (option A), puis stabiliser les hauteurs avant de reprendre le footer natif. Test : `tests/decalages-cls.mjs`.
+- **Régression CLS depuis la publication du footer natif (08:17)** : accueil 0,03 → 1,1 à 1,3 (mobile) et 0,5 (desktop) ; Réalisations 0,01 → 0,7 à 1,1. Contact, À propos et Mentions ne sont pas touchées. Cause : des scripts changent la hauteur de la page au chargement (section de l'accueil 1 715 → 954 px ; grille de Réalisations) et Chrome compte chaque changement comme un déplacement du footer `sticky`. Rien de visible à l'écran, mais c'est compté dans les Core Web Vitals. Score Lighthouse de l'accueil : 39 → ~13. Proposé : restaurer `sauvegardes/2026-10-22-P-15-reveal/` (option A), puis stabiliser les hauteurs avant de reprendre le footer natif. Test : `tests/decalages-cls.mjs`. **Décision de Théophile (2026-10-22) : on ne change rien pour le moment** (ni retour arrière, ni T-1 à T-3) ; à reproposer plus tard.
 - Clarity se déclenche avant le consentement (GTM, déclencheur `gtm.js`), et la bannière Axeptio n'a qu'un écran de bienvenue : à voir côté conformité.
 
 ## Mesure 2026-10-22 (Lighthouse 12 mobile, médiane de 3, `audits/mesures-2026-10-22/`)
