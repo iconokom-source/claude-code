@@ -50,3 +50,51 @@ Ordre conseillé : **V-1** (gros gain, aucun code, retour arrière simple), puis
 ## 4. Reste des assets
 
 L'audit du 20/10 relevait 5 WebM de 17 à 30 Mo dans les assets. Aucun n'est servi sur les pages mesurées, sauf peut-être via Cloudinary sur les Offres (`conception-creation-16s-ambient-drift.webm`, à mesurer). Les supprimer des assets ne changerait rien pour les visiteurs ; c'est du ménage, avec un accord nommé.
+
+## 5. V-1 préparée (2026-10-22) : plan détaillé
+
+### Résolution
+
+| | |
+|---|---|
+| Sources d'origine (assets) | conception création 1124×858, Container 1414×1080, 60 i/s |
+| Fichiers servis aujourd'hui | **944×720 et 942×720, 30 i/s** |
+| Pixels réellement affichés | 707×531 (écran standard) ; jusqu'à 1 414×1 062 (portable Retina) et 1 662×948 (tablette Retina, 991 px) ; 858×654 (mobile ×3) |
+
+- **Webflow plafonne les vidéos d'arrière-plan à 720 px de haut.** Les 7 vidéos du site sortent toutes en 720 px, quelle que soit leur source : 858, 1 080 ou 720 px.
+- Envoyer un fichier plus grand ne donnerait donc pas plus de détail. Envoyer plus petit ferait perdre de la netteté.
+- Les fichiers préparés gardent exactement la définition servie aujourd'hui : **944×720 et 942×720**. Ils sont tirés des sources d'origine (réduction Lanczos), pas des fichiers déjà compressés par Webflow.
+- Sur écran Retina, la vidéo reste aussi nette qu'aujourd'hui, ni plus ni moins. Faire mieux demanderait de sortir du Background Video natif : vidéo hébergée et balise `<video>` dans un embed, donc du code en plus. Ce n'est pas proposé.
+
+### Fichiers prêts (dans ce dossier)
+
+| Fichier | Définition | Poids | Remplace |
+|---|---|---|---|
+| `P-06-videos/conception-creation-v4.mp4` | 944×720, 30 i/s, H.264, sans son | 894 Ko (au lieu de 3 860) | asset `6a9aeb706db5e2c8d407e95a` |
+| `P-06-videos/container-v2.mp4` | 942×720, 30 i/s, H.264, sans son | 1 442 Ko (au lieu de 3 449) | asset `6a9aeb6851c2695590bf38b3` |
+
+Qualité : `crf 26`, un cran plus prudent que l'essai du §2. Zoom ×2 sur les textes : `*-zoom-x2-actuel-vs-crf26.jpg` (à gauche l'actuel, à droite le nouveau). Pas de différence visible.
+
+### L'inconnue à lever d'abord
+
+**Webflow réencode chaque vidéo envoyée.** Le poids servi dépend de son encodeur, pas seulement du fichier envoyé. C'est probablement pour ça que les fichiers servis aujourd'hui sont lourds : il a reçu des sources à 8,7 et 10,7 Mbit/s en 60 i/s. On ne connaîtra le gain réel qu'après un premier envoi.
+
+### Déroulé proposé
+
+Le MCP ne peut pas changer la vidéo d'un Background Video (réglage non exposé) : les remplacements se font dans le Designer.
+
+1. **Test sur un seul élément** : la vidéo « conception création » de l'accueil (élément `efeed470-…`). Dans le Designer : Réglages › Background Video › envoyer `conception-creation-v4.mp4`.
+2. Publier **uniquement sur orem.webflow.io**, puis mesurer avec `tests/tailles-videos.sh https://orem.webflow.io/` :
+   - si le MP4 servi fait nettement moins de 3 860 Ko, en 944×720 → on continue ;
+   - sinon → on remet l'asset d'origine (retour arrière ci-dessous) et on s'arrête là.
+3. Si c'est concluant : les trois autres remplacements (Container sur l'accueil, puis les deux sur Lille). Pour Lille, réutiliser l'asset déjà envoyé, ce qui évite un deuxième réencodage.
+4. Vérifier sur orem.webflow.io :
+   - tailles servies ;
+   - rendu en mouvement à 1440, 991 et 390 px ;
+   - le carrousel (ordre, durée de 8 s, barre de progression) ;
+   - tests fonctionnels habituels.
+5. Puis votre accord pour la publication en production.
+
+- **Attention, publications depuis le Designer** : entre l'étape 1 et la fin, si quelqu'un publie, la nouvelle vidéo part en ligne. Le risque est faible, car même rendu et même définition. Faire les étapes 1 à 4 d'une traite.
+- **Retour arrière** : resélectionner l'asset d'origine sur l'élément. Voir `sauvegardes/2026-10-22-P-06-V1/README.md` ; ne pas supprimer les anciens assets.
+- **Gain attendu**, si Webflow respecte le poids envoyé : environ −4,9 Mo sur ces deux vidéos (MP4), pour les visiteurs de l'accueil et de Lille qui voient ces onglets du carrousel.
