@@ -35,6 +35,7 @@ Mémoire de travail du skill `site-orem`. À lire en début de session, à mettr
 | — | P-10 | Scripts enregistrés obsolètes | — | — | à valider |
 | — | P-11 | Tiers (GTM, Axeptio, iClosed) + webfont.js : état des lieux 2026-10-22 dans `propositions/P-11-tiers.md` (T-1 widget iClosed, T-2 polices natives, T-3 réglages Axeptio, T-4 GTM inchangé) | tiers ≈ 1,2 Mo, ~1,2 s de TBT sur toutes les pages | — | en attente : « on ne change rien pour le moment » (2026-10-22) |
 | — | P-12 | Polices via Google Fonts | — | — | à valider |
+| 2026-10-23 | P-13 essai IX3 | Offres : ligne de progression + apparition des étapes (mobile) en IX3 natif, scripts retirés (−1,8 Ko) | rendu identique à la prod (ligne 150/650/1150 px aux mêmes positions ; cartes visibles) ; **mais le moteur IX3 (GSAP + ScrollTrigger + runtime) ajoute +108 Ko compressés de JS sur les pages Offres** (66 → 174 Ko de scripts Webflow) | `sauvegardes/2026-10-23-P-13-process/` | sous-domaine seulement ; **décision attendue** : garder ou revenir |
 | — | P-13 | Animations en custom code → IX3 / natif : inventaire 2026-10-23 dans `propositions/P-13-animations.md` (13 animations, ~70 Ko dont ~50 Ko chargés partout ; 0 interaction IX3 aujourd'hui). Ordre proposé : A8 (1er essai IX3 + poids du moteur) → A1 navbar → A2 dégradés → A7/A9 → doublon carrousel → reste | à mesurer | — | à valider |
 | — | P-14 | Accessibilité et robustesse | — | — | à valider |
 
@@ -54,6 +55,8 @@ Statuts : à valider · validé · appliqué (sous-domaine) · en production · 
 | 2026-10-22 | API Custom Fonts (mai 2026) : envoi de polices personnalisées par l'API/MCP (`data_fonts_tool`), avec `font_display` et axes variables. Le retrait d'une Google Font reste une action du Designer. | developers.webflow.com/data/reference/custom-fonts ; guide MCP 2.2.0 | T-2 (supprimer `webfont.js`) |
 
 ## Notes
+
+- 2026-10-23 : consigne de Théophile — **aller plus vite, moins de vérifications intermédiaires** : sauvegarde + essai sur orem.webflow.io pour chaque modification, mais une **vérification globale** (tests complets, mesures) quand plusieurs modifications sont faites, pas après chacune.
 
 - 2026-10-20 : consigne de Théophile — **réduire le code, pas en ajouter ; natif Webflow au maximum.** Un script de chargement différé du footer (1,7 Ko) avait été préparé et testé en injection locale, il a été abandonné avant tout envoi à Webflow.
 
