@@ -36,6 +36,8 @@ Pipelines « commerciales » : P4, P6, P7, et P5 étapes 55 à 58 (opportunité 
 | Opportunité / upsell repérée chez un client | nouveau sujet commercial |
 | Deal `won`/`lost` avec des activités commerciales encore ouvertes | cohérence de clôture |
 
+Quand Shannen doit rédiger un message (relance WhatsApp / LinkedIn) : lui envoyer les vrais derniers messages de Louis pour le ton, et lui demander un message **court**, qui ne répète rien de ce qui a déjà été dit (ni l'objet ni la durée d'une visio déjà acceptée, ni les arguments du message précédent). Si le prospect a déjà dit oui à un RDV, le message sert seulement à caler le créneau ; sinon, à savoir où il en est. Si Shannen renvoie un message long ou répétitif, le signaler à Louis dans les points à corriger et proposer de redemander une version courte.
+
 Sur un deal qui part chez Shannen : Claude applique seulement les faits (activités faites → `done` + note), rien d'autre ; Shannen replanifie.
 
 ## Question à Louis (ni Claude ni Shannen ne peuvent savoir)
