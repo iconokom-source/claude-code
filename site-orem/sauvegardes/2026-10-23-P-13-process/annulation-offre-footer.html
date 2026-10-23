@@ -1,0 +1,62 @@
+<script>
+(function(){
+  function initProcessLine(){
+    var track = document.querySelector('.process-line');
+    if(!track) return;
+    var wrap = track.parentElement;
+    var ticking = false;
+    function update(){
+      var rect = wrap.getBoundingClientRect();
+      var scrollY = window.pageYOffset || document.documentElement.scrollTop;
+      var vh = window.innerHeight || document.documentElement.clientHeight;
+      var wrapTop = rect.top + scrollY;
+      var wrapHeight = rect.height;
+      var viewportCenter = scrollY + vh / 2;
+      var h = viewportCenter - wrapTop;
+      h = Math.max(0, Math.min(wrapHeight, h));
+      track.style.height = h + 'px';
+      ticking = false;
+    }
+    function onScroll(){
+      if(!ticking){
+        window.requestAnimationFrame(update);
+        ticking = true;
+      }
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    update();
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', initProcessLine);
+  } else {
+    initProcessLine();
+  }
+})();
+</script>
+
+<script>
+  (function () {
+    // ===== Etapes du process : reveal alterne, une seule fois, mobile uniquement =====
+    if (window.innerWidth > 767) return;
+    var cards = document.querySelectorAll('.process-card');
+    if (!cards.length) return;
+    cards.forEach(function (el, i) {
+      el.setAttribute('data-reveal-dir', i % 2 === 0 ? 'left' : 'right');
+    });
+    var io = new IntersectionObserver(
+      function (entries, obs) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('process-reveal-in');
+            obs.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.2 },
+    );
+    cards.forEach(function (el) {
+      io.observe(el);
+    });
+  })();
+</script>
