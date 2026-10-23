@@ -1,0 +1,4 @@
+# Congés / indisponibilités de Louis : aucune activité n'y sera placée.
+# Une date (AAAA-MM-JJ) ou une période (AAAA-MM-JJ AAAA-MM-JJ) par ligne.
+# Exemple :
+# 2026-12-24 2027-01-01
