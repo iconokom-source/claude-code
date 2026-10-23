@@ -8,6 +8,7 @@ Tout passe par `scripts/jours.py` (lancer avec `python3 <chemin du skill>/script
 - Tout écart (« +3 », « 5 jours d'intervalle ») se compte en **jours ouvrés**.
 - Une date demandée non ouvrée → jour ouvré suivant, signalé dans le plan. Exception : « fin de semaine / fin du mois » → jour ouvré **précédent**.
 - Jamais de date passée. Jamais aujourd'hui pour un décalage (sauf si Louis le dit).
+- Pas d'heure sur les tâches (toute la journée) : seulement les RDV / visios programmés et les heures données par Louis.
 - Heures : `due_time` Pipedrive est en UTC. On conserve **l'heure de Paris** ; l'UTC change au passage heure d'été / d'hiver (dernier dimanche de mars / d'octobre) → `jours.py heure`.
 
 ## 2. Chaînes de tâches liées
@@ -46,7 +47,7 @@ Pour chaque chaîne, écris le JSON de `jours.py cascade` :
 | Tâche interne décalée sans date | Jour ouvré suivant le moins chargé | 1 |
 | Attente d'éléments client (« si éléments reçus ») sans nouvelles | Re-vérifier | 3 |
 
-Relance créée : même type que la précédente (`relance` par défaut), sujet `Relance <n> <prénom> — <objet court>`, même personne / organisation / deal, priorité de l'activité d'origine, note `Pas de réponse à <activité #id du JJ/MM>. Relance <n>/2 avant décision Shannen.` Pas de texte de message (Shannen le rédige si Louis le demande).
+Relance créée : même type que la précédente (`relance` par défaut), sujet `Relance <n> <prénom> — <objet court>`, même personne / organisation / deal, priorité de l'activité d'origine (sinon selon l'argent en jeu, SKILL.md §0), sans heure, note `Pas de réponse à <activité #id du JJ/MM>. Relance <n>/2 avant décision Shannen.` Pas de texte de message (Shannen le rédige si Louis le demande).
 
 ## 4. Charge par jour
 
