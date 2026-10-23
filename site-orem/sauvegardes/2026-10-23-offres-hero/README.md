@@ -6,4 +6,4 @@
    Retour : remettre la visibilité à « visible ».
 2. Script OffreHeroVideo : 1.0.0 → 1.1.0 (ajoute `poster` = première image Cloudinary, `/video/upload/so_0/…jpg`).
    Avant / après dans ce dossier. Retour : `add_site_script offreherovideo version 1.0.0`.
-3. Head du modèle Offres : voir avant-head-modele-offres.html (bloc d'origine) ; ajout d'un préchargement de cette première image.
+3. Head du modèle Offres : seul ajout = le premier bloc `<script>` (« Première image de la vidéo hero Cloudinary… ») placé en tête ; le reste du head est inchangé. Retour : supprimer ce bloc.
