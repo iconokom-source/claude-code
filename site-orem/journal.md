@@ -9,6 +9,25 @@ Mémoire de travail du skill `site-orem`. À lire en début de session, à mettr
 - Audit complet : **phases A à C faites le 2026-10-20** (MCP, lecture seule) ; **phase D (mesure) faite le 2026-10-20** : 42–51/100 mobile, LCP 10–20 s ; à refaire après autorisation de `d3e54v103j8qbb.cloudfront.net` (jQuery), `client.axept.io`, `www.clarity.ms`, `www.google-analytics.com`, `www.google.com`
 - Dernier rapport : `site-orem/audits/audit-2026-10-20.md` · code de référence : `site-orem/audits/code-2026-10-20/`
 
+## Reprise — état au 2026-10-23 (à lire en premier)
+
+**En production (agence-orem.fr) : rien de nouveau depuis le 2026-10-22.** Tout ce qui suit est publié sur **orem.webflow.io uniquement** et attend l'accord explicite de Théophile pour partir en production (bloqué aussi par des pages de l'équipe en cours dans le Designer) :
+1. Footer « reveal » v2 natif (`footer-espace` + `footer-sticky`) : CLS ≤ 0,04 partout (prod jusqu'à 1,45).
+2. Offres : ligne de process + apparition mobile (scripts sur le modèle Offres, CSS dans le head Offres).
+3. Vidéos hero Offres Cloudinary 1080p (CMS) + vidéo « conception création » allégée.
+4. Lot dégradés : dégradés natifs `degrade-hero` + calque exact `degrade-flou` (validé à l'œil par Théophile), widget iClosed retiré, showreel déplacé vers Accueil/Lille ; head global −15 Ko, footer global −11 Ko.
+5. Vidéos d'arrière-plan différées sur toutes les pages (script global). Gain réel ≈ 224 Ko/page (les navigateurs lisent le MP4 du footer ; le WebM 2,2 Mo n'est lu que par le Chromium sans H.264 des tests, ce qui gonfle les poids mesurés ici).
+6. Fondu du haut de l'accueil rejoué en CSS (H1 visible ~2 s au lieu de ~10 s en mobile simulé).
+
+**Mesures sous-domaine (Lighthouse 12 mobile, local)** : accueil 39 → 55-57 ; À propos 70-82 ; Réalisations 45-78 (bruit). PageSpeed de Théophile (13 h 28, avant les points 5-6) : accueil 61 mobile / 72 bureau. Prod accueil : 14 (CLS 1,45).
+
+**Freins restants, chacun à décider par Théophile :**
+- Polices (frein n° 1) : le H1 attend Lexend Deca / Trykker chargées par webfont.js (6-10 s de « render delay » en simulation). Piste sans changement visuel : héberger les mêmes polices dans Webflow avec affichage immédiat. Théophile a dit « ne pas toucher aux polices » → ne rien faire sans feu vert.
+- Axeptio + GTM/gtag (~1 s de calcul, ~680 Ko) : retarder le chargement → consentement/suivi, accord explicite requis. Clarity se déclenche avant consentement (conformité).
+- Script couleur de la navbar (calculs à chaque scroll + sondage 6 s), slider des avis, doublon du carrousel (P-09/P-13 A1, A4, A5).
+
+**Méthode convenue** : moins de re-tests, vérification globale après plusieurs changements ; rendu identique exigé (pas de flou/perte de qualité) ; sous-domaine d'abord ; jamais de publication prod sans accord nommé.
+
 ## Modifications
 
 | Date | Fiche | Ce qui a changé | Avant → après | Sauvegarde | Statut |
