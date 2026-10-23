@@ -107,6 +107,13 @@ Statuts : à valider · validé · appliqué (sous-domaine) · en production · 
 - **Régression CLS depuis la publication du footer natif (08:17)** : accueil 0,03 → 1,1 à 1,3 (mobile) et 0,5 (desktop) ; Réalisations 0,01 → 0,7 à 1,1. Contact, À propos et Mentions ne sont pas touchées. Cause : des scripts changent la hauteur de la page au chargement (section de l'accueil 1 715 → 954 px ; grille de Réalisations) et Chrome compte chaque changement comme un déplacement du footer `sticky`. Rien de visible à l'écran, mais c'est compté dans les Core Web Vitals. Score Lighthouse de l'accueil : 39 → ~13. Proposé : restaurer `sauvegardes/2026-10-22-P-15-reveal/` (option A), puis stabiliser les hauteurs avant de reprendre le footer natif. Test : `tests/decalages-cls.mjs`. **Décision de Théophile (2026-10-22) : on ne change rien pour le moment** (ni retour arrière, ni T-1 à T-3) ; à reproposer plus tard.
 - Clarity se déclenche avant le consentement (GTM, déclencheur `gtm.js`), et la bannière Axeptio n'a qu'un écran de bienvenue : à voir côté conformité.
 
+## Mesure 2026-10-23 après polices (sous-domaine, `audits/mesures-2026-10-23-polices/`)
+
+- PageSpeed de Théophile (orem.webflow.io, accueil) : **mobile 65** (61 avant fondu CSS + vidéos différées + polices), **bureau 88** (72).
+- Lighthouse 12 local, mobile, 3 passages : accueil 43–50, À propos 45–67, Réalisations 46–57, Contact 42–46 (bruit fort, CPU de la session). CLS ≤ 0,03 partout.
+- Polices du site demandées à ~0,8 s (40 + 13 Ko, fastly). Plus aucune requête Google venant du site ; les requêtes `fonts.googleapis.com` / `gstatic` restantes viennent d'**Axeptio** (ses propres polices Source Sans 3 + Lexend Deca 100–300, ~70 Ko) → T-3.
+- LCP accueil = H1 ; « render delay » 5,8 s : c'est maintenant le **calcul** qui retarde l'affichage, plus les polices. Temps de calcul 5,7–8,4 s : scripts inline de la page 1,5–2,7 s, `webflow.achunk` (moteur IX2, etc.) 1,7–2,2 s, Axeptio 0,55–0,65 s, GTM + gtag ~0,5–0,6 s, DragScrollCasesV4 0,35 s.
+
 ## Mesure 2026-10-22 (Lighthouse 12 mobile, médiane de 3, `audits/mesures-2026-10-22/`)
 
 | Page | Score | LCP | FCP | TBT | Poids | Requêtes | (rappel 20/10 : score, LCP, poids, requêtes) |
