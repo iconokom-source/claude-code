@@ -2,14 +2,33 @@
 <link rel="preload" href="https://webflow-files-prod.global.ssl.fastly.net/6a7582303b9ddd4a77302cc8/fonts/6adb495d7b3239448ccc25be-LexendDeca-latin.woff2" as="font" type="font/woff2" crossorigin />
 
 <style>
-  /* Haut de page affiché immédiatement (essai 2026-10-23) : l'interaction Webflow "Slide In Bottom"
-     pose opacity:0 sur ces 4 éléments ; on les montre sans fondu ni montée. */
+  /* Fondu du haut de page en CSS (2026-10-23) : reproduit l'effet Webflow "Slide In Bottom" (opacite 0 -> 1, montee de 100 px,
+     1 s, outQuart) mais demarre des l'affichage au lieu d'attendre les scripts : le titre (LCP) n'est plus cache 10 s sur mobile.
+     L'animation CSS prend le pas sur les styles en ligne poses par l'interaction Webflow. */
+  @keyframes oremSlideInBottom {
+    from {
+      opacity: 0.01; /* 0,01 et non 0 : invisible, mais le navigateur compte l'affichage du titre (LCP) */
+      transform: translate3d(0, 100px, 0);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
   [data-w-id='c7dee749-bc35-171b-8b46-bf2d55ebfcf0'],
   [data-w-id='f6eb1637-f8fe-342e-6d64-8f1f3848cf25'],
   [data-w-id='e817c46e-4ebe-03d0-b2f0-46ea3686fdcd'],
   [data-w-id='105590a1-dab3-4e8d-5bec-3515b8be2a19'] {
-    opacity: 1 !important;
-    transform: none !important;
+    animation: oremSlideInBottom 1s cubic-bezier(0.25, 1, 0.5, 1) both;
+  }
+  [data-w-id='f6eb1637-f8fe-342e-6d64-8f1f3848cf25'] {
+    animation-delay: 0.25s;
+  }
+  [data-w-id='e817c46e-4ebe-03d0-b2f0-46ea3686fdcd'] {
+    animation-delay: 0.3s;
+  }
+  [data-w-id='105590a1-dab3-4e8d-5bec-3515b8be2a19'] {
+    animation-delay: 0.35s;
   }
 </style>
 
