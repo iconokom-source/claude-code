@@ -1,0 +1,55 @@
+<script>
+(function () {
+  // ===== Lazy-load des videos de fond (perf) =====
+  function setupLazyVideo(video) {
+    if (video.dataset.lazyVideoInit) return;
+    video.dataset.lazyVideoInit = '1';
+    var sources = Array.prototype.slice.call(video.querySelectorAll('source'));
+    sources.forEach(function (s) {
+      if (s.src) {
+        s.dataset.lazySrc = s.src;
+        s.removeAttribute('src');
+      }
+    });
+    video.preload = 'none';
+
+    function activate() {
+      sources.forEach(function (s) {
+        if (s.dataset.lazySrc) s.src = s.dataset.lazySrc;
+      });
+      video.load();
+      video.play().catch(function () {});
+    }
+
+    if ('IntersectionObserver' in window) {
+      var observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            activate();
+            observer.unobserve(video);
+          }
+        });
+      }, { rootMargin: '600px 0px' });
+      observer.observe(video);
+    } else {
+      activate();
+    }
+  }
+
+  function scan(root) {
+    (root || document).querySelectorAll('video').forEach(setupLazyVideo);
+  }
+
+  scan();
+  var mo = new MutationObserver(function (mutations) {
+    mutations.forEach(function (m) {
+      m.addedNodes.forEach(function (n) {
+        if (n.nodeType !== 1) return;
+        if (n.tagName === 'VIDEO') setupLazyVideo(n);
+        else if (n.querySelectorAll) scan(n);
+      });
+    });
+  });
+  mo.observe(document.documentElement, { childList: true, subtree: true });
+})();
+</script>
