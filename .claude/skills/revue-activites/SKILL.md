@@ -19,6 +19,8 @@ Fichiers :
 - **Les activités en retard sont ramenées chaque matin à la date du jour** (toutes ont `update_time` ≈ 7h56). Donc `due_date` = aujourd'hui ne veut pas dire « prévu aujourd'hui ». La vraie date prévue se lit dans la note (« Mercredi 21/10 à 9h », « la semaine du 19/10 », « si pas de réponse au mail du 19/10 ») ou, à défaut, se déduit de `add_time`. Affiche-la avec ⏳ et le retard en jours ouvrés.
 - `due_time` est en **UTC** (`07:00` = 9h à Paris en heure d'été, 8h en hiver). Toujours afficher l'heure de Paris (`jours.py heure`).
 - Les RDV synchronisés depuis l'agenda arrivent parfois **en double** : une activité sans deal (`deal_id null`, `public_description` « Deal Pipedrive #306 ») + l'activité du deal. Regroupe-les, traite-les ensemble.
+- **Ne jamais toucher aux activités liées à une invitation d'agenda** (`conference_meeting_client` ou `conference_meeting_url` renseigné) : ni date, ni sujet, ni description, ni statut, ni rattachement. Toute modification peut renvoyer une invitation mise à jour au prospect. Les signaler seulement (« doublon agenda »), Louis s'en occupe.
+- Proposition « prête » envoyée par Louis (PDF) : lire la page d'investissement, mettre la **valeur HT** dans le deal et une note résumant le périmètre et le prix (options comprises). Client hors de France (ex. Belgique) : pas de TVA, ne jamais calculer de TTC.
 - Beaucoup de notes contiennent un **message prêt à envoyer** et des dates écrites en clair (« demain », « mercredi 21/10 »). Quand l'activité bouge, ces mentions deviennent fausses → à corriger (§5).
 
 ## 1. Collecter
