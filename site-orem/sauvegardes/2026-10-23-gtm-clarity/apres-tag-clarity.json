@@ -1,0 +1,45 @@
+{
+ "path": "accounts/6376092428/containers/263710704/workspaces/6/tags/16",
+ "accountId": "6376092428",
+ "containerId": "263710704",
+ "workspaceId": "6",
+ "tagId": "16",
+ "name": "Microsoft Clarity - Official",
+ "type": "cvt_MQDKZ",
+ "parameter": [
+  {
+   "type": "template",
+   "key": "sessionId",
+   "value": "{{Analytics Session ID}}"
+  },
+  {
+   "type": "template",
+   "key": "projectId",
+   "value": "yjmq0todzd"
+  },
+  {
+   "type": "template",
+   "key": "userId",
+   "value": "{{Analytics Client ID}}"
+  }
+ ],
+ "fingerprint": "1792758858946",
+ "firingTriggerId": [
+  "2147479553",
+  "17"
+ ],
+ "tagFiringOption": "oncePerEvent",
+ "tagManagerUrl": "https://tagmanager.google.com/#/container/accounts/6376092428/containers/263710704/workspaces/6/tags/16?apiLink=tag",
+ "consentSettings": {
+  "consentStatus": "needed",
+  "consentType": {
+   "type": "list",
+   "list": [
+    {
+     "type": "template",
+     "value": "analytics_storage"
+    }
+   ]
+  }
+ }
+}
