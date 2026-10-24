@@ -1,0 +1,49 @@
+<style>
+  /* P-01 : la page membre s'affiche directement dans le panneau (contenu lisible par Google) */
+  [data-project-modal-content]:empty { display: none; }
+  [data-project-modal-content]:not(:empty) + .projet-statique,
+  [data-project-modal]:not(.is-open) .projet-statique { display: none; }
+</style>
+<script>
+  // Vient-on d'une page du site (rechargement, retour) ? Alors la page d'origine est juste avant dans l'historique.
+  // Sinon (Google, lien partage) : on le note pour la session, la fermeture menera a la page A propos.
+  var depuisLeSite = false;
+  try {
+    depuisLeSite = !!(history.state && history.state.projectModal) && !sessionStorage.getItem('projetDirect');
+    if (!depuisLeSite) sessionStorage.setItem('projetDirect', '1');
+  } catch (err) {}
+  if (history.state && history.state.projectModal) history.replaceState(null, '', location.pathname);
+  // Le panneau est deja affiche ouvert dans le HTML : on ne le rouvre plus au chargement (2026-10-24 : la reouverture
+  // figeait la page, re-telechargeait cette meme page et re-initialisait Webflow). Les fleches menent au membre voisin.
+  function membreVoisin(sens) {
+    var slugs = Array.prototype.map.call(document.querySelectorAll('[data-slug]'), function (el) { return el.getAttribute('data-slug'); });
+    var i = slugs.indexOf(location.pathname.split('/').pop());
+    if (i < 0 || slugs.length < 2) return;
+    location.href = '/membres/' + slugs[(i + sens + slugs.length) % slugs.length];
+  }
+  // Fermeture : on ne reste jamais sur cette page, on retrouve la vraie page d'origine (ou A propos).
+  function quitterProjet(e) {
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    try { sessionStorage.removeItem('projetDirect'); } catch (err) {}
+    if (!depuisLeSite) return location.replace('/a-propos');
+    // Le navigateur revient a l'adresse d'origine sans la recharger : on la charge pour de vrai.
+    window.addEventListener('popstate', function (ev) { ev.stopImmediatePropagation(); location.reload(); }, true);
+    history.back();
+  }
+  document.addEventListener('click', function (e) {
+    if (e.target.closest('[data-project-modal-close], [data-project-modal-overlay], .close-modale')) return quitterProjet(e);
+    var fleche = e.target.closest('.change-modale');
+    if (fleche) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      // Les deux fleches ont la classe « suivant » : le sens vient de l'image (fleche gauche / droite)
+      membreVoisin(fleche.querySelector('img[alt*="gauche"]') ? -1 : 1);
+    }
+  }, true);
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') quitterProjet(e);
+    else if (e.key === 'ArrowRight') membreVoisin(1);
+    else if (e.key === 'ArrowLeft') membreVoisin(-1);
+  }, true);
+</script>
