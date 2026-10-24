@@ -6,6 +6,11 @@
   /* 2026-10-24 : la version statique s'affiche des le depart comme le contenu charge par la modale
      (qui n'en garde que l'interieur) : le cadre englobant ne compte plus dans la mise en page */
   .projet-statique [data-project-root] { display: contents; }
+  /* 2026-10-24 : le logo anime du footer (408 Ko) est entierement couvert par le panneau sur ces pages :
+     masque, il n'est plus telecharge (image en chargement differe) */
+  .footer .image._280x280px { display: none; }
+  /* 2026-10-24 : idem pour la video de fond du footer (2,4 Mo + image d'attente) : masquee, elle n'est plus chargee */
+  .fond-footer { display: none; }
 </style>
 <script>
   // Vient-on d'une page du site (rechargement, retour) ? Alors la page d'origine est juste avant dans l'historique.
@@ -78,7 +83,7 @@
     if (fleche) {
       e.preventDefault();
       e.stopImmediatePropagation();
-      // Les deux fleches ont la classe « suivant » : le sens vient de l'image (fleche gauche / droite)
+      // Sens d'apres l'image de la fleche (gauche / droite)
       premierChangement(fleche.querySelector('img[alt*="gauche"]') ? -1 : 1);
     }
   }, true);
