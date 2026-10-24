@@ -16,6 +16,15 @@
     if (!depuisLeSite) sessionStorage.setItem('projetDirect', '1');
   } catch (err) {}
   if (history.state && history.state.projectModal) history.replaceState(null, '', location.pathname);
+  // Photo du membre : proportions reservees des son insertion (champs CMS Largeur / Hauteur photo), avant son chargement :
+  // plus de decalage du texte quand elle arrive (2026-10-24). Sans valeurs, rien ne change.
+  new MutationObserver(function (m, o) {
+    var img = document.querySelector('img[data-largeur][data-hauteur]');
+    if (!img) return;
+    var w = +img.getAttribute('data-largeur'), h = +img.getAttribute('data-hauteur');
+    if (w > 0 && h > 0) img.style.aspectRatio = w + ' / ' + h;
+    o.disconnect();
+  }).observe(document.documentElement, { childList: true, subtree: true });
   window.addEventListener('load', function () {
     // Liste cachee des membres (CMS) : donne l'ordre des fleches
     document.querySelectorAll('[data-slug]').forEach(function (el) { el.setAttribute('href', '/membres/' + el.getAttribute('data-slug')); });
