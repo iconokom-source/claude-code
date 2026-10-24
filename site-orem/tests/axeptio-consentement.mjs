@@ -1,0 +1,22 @@
+import { chromium } from 'playwright-core'; import fs from 'fs';
+const B=process.argv[2], inject=process.argv[3]==='1', HOST=process.argv[4]||'https://orem.webflow.io/';
+const ah=fs.readFileSync(B+'/avant-site-head.html','utf8'), nh=fs.readFileSync(B+'/apres-site-head.html','utf8');
+const af=fs.readFileSync(B+'/avant-site-footer.html','utf8'), nf=fs.readFileSync(B+'/apres-site-footer.html','utf8');
+const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--no-sandbox'] });
+const c = await b.newContext({ viewport:{width:1440,height:900} });
+if (inject) await c.route(u=>u.origin===new URL(HOST).origin && !/\.\w+$/.test(u.pathname), async r=>{ const res=await r.fetch(); let t=await res.text();
+  const n=t.length; t=t.replace(ah,()=>nh).replace(af,()=>nf); if(t.length===n) console.log('!! injection non appliquée'); r.fulfill({response:res, body:t}); });
+const p = await c.newPage(); const errs=[]; p.on('pageerror',e=>errs.push(e.message));
+let hits=[]; p.on('request', r=>{const u=r.url(); if(/google-analytics\.com\/g\/collect|analytics\.google|clarity\.ms\/tag|axept\.io\/sdk/.test(u)) hits.push(u.replace(/^https:\/\/([^/]+).*?(gcs=[^&]*)?.*$/,(m,h,g)=>h+' '+(g||'')));});
+const dl=()=>p.evaluate(()=>(window.dataLayer||[]).slice(0,14).map(e=>e[0]?e[0]+' '+e[1]+' '+(e[2]?JSON.stringify(e[2]).slice(0,90):''):e.event).join(' | '));
+const banner=()=>p.evaluate(()=>!!document.querySelector('#axeptio_overlay .axeptio_mount, .axeptio_widget, [class*=axeptio_widget]'));
+const step=async(t)=>{await p.waitForTimeout(t); console.log(' dl:',await dl()); console.log(' requêtes:',hits.splice(0).join(' ; ')); console.log(' bannière:',await banner());};
+console.log('1. arrivée sans interaction'); await p.goto(HOST,{waitUntil:'load'}); await step(5000);
+console.log('2. scroll'); await p.mouse.wheel(0,300); await step(4000);
+console.log('3. OK pour moi'); await p.getByText('OK pour moi').click(); await step(3000);
+console.log('cookie:', (await c.cookies()).filter(k=>k.name=='axeptio_cookies').map(k=>k.domain+' '+decodeURIComponent(k.value).slice(0,140)));console.log('4. visite suivante'); await p.goto(HOST+'a-propos',{waitUntil:'load'}); await step(4000);
+console.log('5. clic lien préférences cookies');
+const has=await p.evaluate(()=>!!document.querySelector('[data-cookie-consent]')); console.log(' lien présent:',has);
+if(has){ await p.evaluate(()=>document.querySelector('[data-cookie-consent]').click()); await step(3000);}
+await p.screenshot({path:'polices/axe-prefs-'+(inject?'nouveau':'actuel')+'.png'});console.log('erreurs JS:', errs.filter(e=>!/Dropped/.test(e)));
+await b.close();

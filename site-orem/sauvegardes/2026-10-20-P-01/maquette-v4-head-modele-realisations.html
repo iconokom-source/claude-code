@@ -1,0 +1,42 @@
+<style>
+  /* P-01 : la page projet s'affiche directement dans le panneau (contenu lisible par Google) */
+  [data-project-modal-content]:empty { display: none; }
+  [data-project-modal-content]:not(:empty) + .projet-statique,
+  [data-project-modal]:not(.is-open) .projet-statique { display: none; }
+</style>
+<script>
+  // Vient-on d'une page du site (rechargement, retour) ? Alors la page d'origine est juste avant dans l'historique.
+  // Sinon (Google, lien partage) : on le note pour la session, la fermeture menera a l'accueil.
+  var depuisLeSite = false;
+  try {
+    depuisLeSite = !!(history.state && history.state.projectModal) && !sessionStorage.getItem('projetDirect');
+    if (!depuisLeSite) sessionStorage.setItem('projetDirect', '1');
+  } catch (err) {}
+  // Pas d'ouverture avant que Webflow soit pret (sinon erreur webflow.js au rechargement) : on attend le load ci-dessous.
+  if (history.state && history.state.projectModal) history.replaceState(null, '', location.pathname);
+  // Une fois Webflow initialise, le script global de la modale prend le relais (fleches, adresse).
+  window.addEventListener('load', function () {
+    // Liste cachee de tous les projets (CMS) : donne l'ordre des fleches
+    document.querySelectorAll('[data-slug]').forEach(function (el) { el.setAttribute('href', '/realisations/' + el.getAttribute('data-slug')); });
+    document.querySelectorAll('.projet-statique [data-modal-trigger]').forEach(function (el) { el.removeAttribute('data-modal-trigger'); });
+    // Des que la modale est remplie, la version statique (masquee) est retiree : un seul exemplaire du contenu.
+    var contenu = document.querySelector('[data-project-modal-content]'), statique = document.querySelector('.projet-statique');
+    if (contenu && statique) new MutationObserver(function (m, o) { if (contenu.firstElementChild) { statique.remove(); o.disconnect(); } }).observe(contenu, { childList: true });
+    history.replaceState({ projectModal: true, url: location.pathname }, '', location.pathname);
+    window.dispatchEvent(new PopStateEvent('popstate', { state: history.state }));
+  });
+  // Fermeture : on ne reste jamais sur cette page, on retrouve la vraie page d'origine (ou l'accueil).
+  function quitterProjet(e) {
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    try { sessionStorage.removeItem('projetDirect'); } catch (err) {}
+    if (!depuisLeSite) return location.replace('/');
+    // Le navigateur revient a l'adresse d'origine sans la recharger : on la charge pour de vrai.
+    window.addEventListener('popstate', function (ev) { ev.stopImmediatePropagation(); location.reload(); }, true);
+    history.back();
+  }
+  document.addEventListener('click', function (e) {
+    if (e.target.closest('[data-project-modal-close], [data-project-modal-overlay], .close-modale')) quitterProjet(e);
+  }, true);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') quitterProjet(e); }, true);
+</script>

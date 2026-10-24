@@ -1,0 +1,1192 @@
+<style>
+  [data-project-modal] {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    visibility: hidden;
+    transition: visibility 0.5s;
+  }
+  [data-project-modal].is-open {
+    visibility: visible;
+  }
+
+  [data-project-modal-overlay] {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    opacity: 0;
+    transition: opacity 0.45s ease;
+  }
+  [data-project-modal].is-open [data-project-modal-overlay] {
+    opacity: 1;
+  }
+
+  [data-project-modal-dialog] {
+    position: absolute;
+    left: 50%;
+    top: 4vh;
+    bottom: 0;
+    width: min(1400px, 92vw);
+    max-height: none;
+    background-color: #f2f2f0;
+    border-radius: 16px 16px 0 0;
+    overflow: hidden;
+    transform: translate(-50%, 100%);
+    transition: transform 0.5s cubic-bezier(0.4, 0, 1, 1);
+    will-change: transform;
+  }
+  [data-project-modal].is-open [data-project-modal-dialog] {
+    transform: translate(-50%, 0);
+    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  [data-project-modal-content] {
+    max-height: 100%;
+    height: 100%;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  [data-project-modal-close] {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    z-index: 2;
+    cursor: pointer;
+  }
+</style>
+
+<style>
+  .container-1300px {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+
+  .collection-list-wrapper-cases {
+    width: 100% !important;
+    min-width: 0 !important;
+    margin: -48px 0 !important;
+    padding: 48px 0 !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scrollbar-width: none;
+  }
+  .collection-list-wrapper-cases::-webkit-scrollbar {
+    display: none;
+  }
+
+  .collection-list-cases {
+    width: max-content !important;
+    min-width: 100% !important;
+    padding-left: max(32px, calc(50vw - 618px)) !important;
+    padding-right: 32px !important;
+    box-sizing: border-box !important;
+  }
+</style>
+
+<style>
+  [data-bg-holder],
+  [data-dot-holder] {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+</style>
+
+<style>
+  .visuels-list {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 32px !important;
+    align-items: flex-start !important;
+  }
+  .visuels-item[data-size='demi' i] {
+    width: calc(50% - 16px);
+  }
+  .visuels-item[data-size='pleine' i] {
+    width: 100%;
+  }
+  .visuels-item {
+    overflow: hidden;
+    border-radius: 0;
+  }
+  .visuels-item img,
+  .visuels-item video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+</style>
+
+<style>
+  @media (min-width: 992px) {
+    .faq-cta-wrapper:hover .faq-icons-cluster {
+      max-width: 230px;
+      overflow: visible;
+    }
+    .faq-cta-wrapper:hover .faq-icon-btn {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    .faq-icon-btn-outer:hover .faq-cta-tooltip {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+
+    @keyframes faqSlotOpen {
+      0% {
+        width: 24px;
+      }
+      52% {
+        width: 128px;
+      }
+      68% {
+        width: 84px;
+      }
+      82% {
+        width: 116px;
+      }
+      92% {
+        width: 98px;
+      }
+      100% {
+        width: 104px;
+      }
+    }
+    @keyframes faqSlotClose {
+      0% {
+        width: 104px;
+      }
+      38% {
+        width: 4px;
+      }
+      58% {
+        width: 44px;
+      }
+      76% {
+        width: 12px;
+      }
+      90% {
+        width: 30px;
+      }
+      100% {
+        width: 24px;
+      }
+    }
+    .faq-cta-icon-slot {
+      animation: faqSlotClose 0.38s cubic-bezier(0.36, 0, 0.66, 1) forwards;
+    }
+    .faq-choise-container:hover .faq-cta-icon-slot {
+      animation: faqSlotOpen 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    .faq-choise-container:hover .faq-cta-icon-slot > .faq-icon-img {
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+
+    .faq-avatar-outer:nth-child(1) {
+      z-index: 1;
+    }
+    .faq-avatar-outer:nth-child(2) {
+      z-index: 2;
+    }
+    .faq-avatar-outer:nth-child(3) {
+      z-index: 3;
+    }
+    .faq-avatar-outer:hover {
+      z-index: 10;
+    }
+    .faq-choise-container:hover .faq-avatar-outer:nth-child(2) {
+      transform: translate(33px, -50%);
+      transition-delay: 0.04s;
+    }
+    .faq-choise-container:hover .faq-avatar-outer:nth-child(3) {
+      transform: translate(66px, -50%);
+      transition-delay: 0.08s;
+    }
+    .faq-choise-container:hover .faq-avatar-outer:nth-child(1):hover {
+      transform: translate(0px, calc(-50% - 4px));
+      transition-delay: 0s;
+    }
+    .faq-choise-container:hover .faq-avatar-outer:nth-child(2):hover {
+      transform: translate(33px, calc(-50% - 4px));
+      transition-delay: 0s;
+    }
+    .faq-choise-container:hover .faq-avatar-outer:nth-child(3):hover {
+      transform: translate(66px, calc(-50% - 4px));
+      transition-delay: 0s;
+    }
+    .faq-choise-container:hover .faq-avatar-outer .faq-avatar {
+      opacity: 1;
+    }
+    .faq-choise-container:hover .faq-avatar-outer:nth-child(2) .faq-avatar {
+      transition-delay: 0.06s;
+    }
+    .faq-choise-container:hover .faq-avatar-outer:nth-child(3) .faq-avatar {
+      transition-delay: 0.12s;
+    }
+    .faq-avatar-outer:hover .faq-cta-tooltip {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+  }
+</style>
+
+<style>
+  .nav-link,
+  .button-header,
+  .nav-divider,
+  .logo-header,
+  .menu-button,
+  .menu-button svg,
+  .menu-button path,
+  .w-dropdown-toggle,
+  .dropdown-offre-link {
+    transition:
+      color 0.25s ease,
+      background-color 0.25s ease,
+      border-color 0.25s ease,
+      filter 0.25s ease,
+      fill 0.25s ease;
+  }
+
+  .navbar-logo-left-container.shadow-three.nav-on-dark .nav-link,
+  .navbar-logo-left-container.shadow-three .nav-link,
+  .navbar-logo-left-container.shadow-three.nav-on-dark .w-dropdown-toggle,
+  .navbar-logo-left-container.shadow-three .w-dropdown-toggle,
+  .navbar-logo-left-container.shadow-three.nav-on-dark .dropdown-offre-link,
+  .navbar-logo-left-container.shadow-three .dropdown-offre-link {
+    color: #fff !important;
+  }
+  .navbar-logo-left-container.shadow-three.nav-on-dark .nav-divider,
+  .navbar-logo-left-container.shadow-three .nav-divider {
+    background-color: rgba(255, 255, 255, 0.35);
+  }
+  .navbar-logo-left-container.shadow-three.nav-on-dark .button-header,
+  .navbar-logo-left-container.shadow-three .button-header {
+    background-color: #fff;
+    color: #000;
+  }
+  .navbar-logo-left-container.shadow-three.nav-on-dark .logo-header,
+  .navbar-logo-left-container.shadow-three .logo-header {
+    filter: none;
+  }
+  .navbar-logo-left-container.shadow-three.nav-on-dark .menu-button,
+  .navbar-logo-left-container.shadow-three .menu-button {
+    color: #fff;
+    fill: #fff;
+  }
+
+  .navbar-logo-left-container.shadow-three.nav-on-light .nav-link,
+  .navbar-logo-left-container.shadow-three.nav-on-light .w-dropdown-toggle,
+  .navbar-logo-left-container.shadow-three.nav-on-light .dropdown-offre-link {
+    color: #000 !important;
+  }
+  .navbar-logo-left-container.shadow-three.nav-on-light .nav-divider {
+    background-color: rgba(0, 0, 0, 0.35);
+  }
+  .navbar-logo-left-container.shadow-three.nav-on-light .button-header {
+    background-color: #000;
+    color: #fff;
+  }
+  .navbar-logo-left-container.shadow-three.nav-on-light .logo-header {
+    filter: invert(1);
+  }
+  .navbar-logo-left-container.shadow-three.nav-on-light .menu-button {
+    color: #000;
+    fill: #000;
+  }
+</style>
+
+<style>
+  @keyframes logoClientMarquee {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(var(--marquee-shift, -50%));
+    }
+  }
+  .logo-client-hero {
+    animation: logoClientMarquee 22s linear infinite;
+  }
+</style>
+
+<style>
+  .rich-text-block h1,
+  .rich-text-block h2 {
+    margin-top: 0;
+    margin-bottom: 24px;
+    line-height: 1.25;
+  }
+  .rich-text-block h3 {
+    margin-top: 40px;
+    margin-bottom: 12px;
+    line-height: 1.3;
+  }
+  .rich-text-block h4,
+  .rich-text-block h5,
+  .rich-text-block h6 {
+    margin-top: 28px;
+    margin-bottom: 8px;
+    line-height: 1.35;
+  }
+  .rich-text-block h1 + h2,
+  .rich-text-block h1 + h3,
+  .rich-text-block h2 + h3,
+  .rich-text-block h2 + h4,
+  .rich-text-block h3 + h4,
+  .rich-text-block h3 + h5,
+  .rich-text-block h4 + h5,
+  .rich-text-block h5 + h6 {
+    margin-top: 6px;
+  }
+  .rich-text-block p {
+    margin-bottom: 18px;
+    line-height: 1.65;
+  }
+  .rich-text-block ul,
+  .rich-text-block ol {
+    margin-top: 2px;
+    margin-bottom: 20px;
+    line-height: 1.6;
+  }
+  .rich-text-block li {
+    margin-bottom: 8px;
+  }
+  .rich-text-block li:last-child {
+    margin-bottom: 0;
+  }
+  .rich-text-block blockquote {
+    margin: 28px 0;
+  }
+  .rich-text-block figure,
+  .rich-text-block img {
+    margin: 24px 0;
+  }
+  .rich-text-block > div > *:first-child {
+    margin-top: 0;
+  }
+  .rich-text-block > div > *:last-child {
+    margin-bottom: 0;
+  }
+  .rich-text-block p.rt-empty-p {
+    display: none;
+  }
+</style>
+
+<style>
+  .w-dropdown {
+    position: relative;
+  }
+  .w-dropdown-list {
+    display: block !important;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 0;
+    padding-top: 16px;
+    pointer-events: none;
+    z-index: 20;
+  }
+  .w-dropdown:hover .w-dropdown-list {
+    pointer-events: auto;
+  }
+
+  .dropdown-offre-link {
+    opacity: 0;
+    transform: translateY(-4px);
+    transition:
+      opacity 0.12s ease,
+      transform 0.12s ease;
+  }
+
+  .w-dropdown:hover .dropdown-offre-link {
+    opacity: 1;
+    transform: translateY(0);
+    transition:
+      opacity 0.15s ease,
+      transform 0.15s ease;
+  }
+  .w-dropdown:hover .w-dyn-item:nth-child(1) .dropdown-offre-link {
+    transition-delay: 0s;
+  }
+  .w-dropdown:hover .w-dyn-item:nth-child(2) .dropdown-offre-link {
+    transition-delay: 0.08s;
+  }
+  .w-dropdown:hover .w-dyn-item:nth-child(3) .dropdown-offre-link {
+    transition-delay: 0.16s;
+  }
+  .w-dropdown:hover .w-dyn-item:nth-child(4) .dropdown-offre-link {
+    transition-delay: 0.24s;
+  }
+  .w-dropdown:hover .w-dyn-item:nth-child(5) .dropdown-offre-link {
+    transition-delay: 0.32s;
+  }
+  .w-dropdown:hover .w-dyn-item:nth-child(6) .dropdown-offre-link {
+    transition-delay: 0.4s;
+  }
+
+  .dropdown-offre-link:hover {
+    opacity: 0.65 !important;
+  }
+
+  .nav-dropdown-list .collection-list {
+    background-color: transparent;
+    backdrop-filter: blur(0px);
+    -webkit-backdrop-filter: blur(0px);
+    transition:
+      background-color 0.15s ease,
+      backdrop-filter 0.15s ease,
+      -webkit-backdrop-filter 0.15s ease;
+  }
+  .w-dropdown:hover .nav-dropdown-list .collection-list {
+    background-color: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(30px);
+    -webkit-backdrop-filter: blur(30px);
+  }
+</style>
+
+<style>
+  .no-rich-text *,
+  .secondary-text._14px._60._16px-margin.w-richtext * {
+    margin: 0 !important;
+    padding: 0 !important;
+    font-family: inherit !important;
+    font-size: inherit !important;
+    font-weight: inherit !important;
+    font-style: inherit !important;
+    line-height: inherit !important;
+    letter-spacing: inherit !important;
+    color: inherit !important;
+    text-align: inherit !important;
+    text-decoration: none !important;
+    list-style: none !important;
+  }
+  .no-rich-text a,
+  .secondary-text._14px._60._16px-margin.w-richtext a {
+    color: inherit !important;
+    text-decoration: underline !important;
+    cursor: pointer;
+  }
+  .no-rich-text ul,
+  .no-rich-text ol,
+  .secondary-text._14px._60._16px-margin.w-richtext ul,
+  .secondary-text._14px._60._16px-margin.w-richtext ol {
+    display: inline;
+  }
+  .no-rich-text br,
+  .secondary-text._14px._60._16px-margin.w-richtext br {
+    display: none;
+  }
+</style>
+
+<style>
+  .blog-filter-radio:checked {
+    background-image: url(https://cdn.prod.website-files.com/6a7582303b9ddd4a77302cc8/6a9818d770c68a2290f74efa_blog-filter-radio-active.svg);
+  }
+</style>
+
+<style>
+  .filter-anim {
+    transition:
+      opacity 0.3s ease,
+      transform 0.3s ease;
+  }
+  .filter-anim.filter-hidden {
+    opacity: 0;
+    transform: scale(0.96);
+    pointer-events: none;
+  }
+</style>
+
+<style>
+  .image.logo._60.blending,
+  .image._100.blending {
+    mix-blend-mode: normal !important;
+    filter: grayscale(100%) !important;
+  }
+</style>
+
+<style>
+  .faq-icon-btn.w-variant-83c1c303-19c2-0196-6ca4-89b0b1adfec9 {
+    background-color: #ff6200 !important;
+  }
+</style>
+
+<style>
+  html {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  html::-webkit-scrollbar {
+    display: none;
+  }
+  body {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  body::-webkit-scrollbar {
+    display: none;
+  }
+</style>
+
+<style>
+  .collection-list-wrapper-cases {
+    cursor: grab;
+  }
+  .collection-list-wrapper-cases.is-dragging {
+    cursor: grabbing;
+    user-select: none;
+  }
+</style>
+
+<style>
+  .li-post-text {
+    display: -webkit-box;
+    -webkit-line-clamp: 5;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .li-post-text p {
+    margin: 0 0 8px 0;
+    font: inherit;
+    color: inherit;
+    letter-spacing: inherit;
+  }
+  .li-post-text p:last-child {
+    margin-bottom: 0;
+  }
+  .li-post-text a,
+  .li-post-text strong,
+  .li-post-text em {
+    font: inherit;
+    color: inherit;
+    letter-spacing: inherit;
+  }
+  .li-pill,
+  .li-pill-text {
+    text-decoration: none !important;
+  }
+  .li-sidebar.li-sidebar.li-sidebar.li-sidebar {
+    position: sticky;
+    top: 96px;
+    align-self: start;
+    max-height: calc(100vh - 128px);
+    overflow-x: hidden;
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+  .li-sidebar.li-sidebar.li-sidebar.li-sidebar::-webkit-scrollbar {
+    display: none;
+  }
+</style>
+
+<style></style>
+
+<style>
+  .navbar-logo-left-container.shadow-three.nav-on-light .menu-button {
+    color: #000;
+    fill: #000;
+  }
+  .navbar-logo-left-container.shadow-three:has(.menu-button.w--open) .nav-link,
+  .navbar-logo-left-container.shadow-three:has(.menu-button.w--open) .w-dropdown-toggle,
+  .navbar-logo-left-container.shadow-three:has(.menu-button.w--open) .dropdown-offre-link {
+    color: #fff !important;
+  }
+  .navbar-logo-left-container.shadow-three:has(.menu-button.w--open) .nav-divider {
+    background-color: rgba(255, 255, 255, 0.35) !important;
+  }
+  .navbar-logo-left-container.shadow-three:has(.menu-button.w--open) .button-header {
+    background-color: #fff !important;
+    color: #000 !important;
+  }
+  .navbar-logo-left-container.shadow-three:has(.menu-button.w--open) .logo-header {
+    filter: none !important;
+  }
+  .navbar-logo-left-container.shadow-three:has(.menu-button.w--open) .menu-button {
+    color: #fff !important;
+    fill: #fff !important;
+  }
+</style>
+
+<style>
+  @media (max-width: 991px) {
+    .visuels-list {
+      gap: 16px !important;
+    }
+    .visuels-item[data-size='demi' i] {
+      width: calc(50% - 8px);
+    }
+  }
+  @media (max-width: 767px) {
+    .visuels-item {
+      border-radius: 0;
+    }
+  }
+</style>
+
+<style>
+  @media (max-width: 991px) {
+    .image.case-1 {
+      transform: rotate(4.45deg) !important;
+    }
+    .image.case-2 {
+      transform: rotate(-3.69deg) !important;
+    }
+    .image.case-3 {
+      transform: rotate(6.5deg) !important;
+    }
+  }
+</style>
+
+<style>
+  .navbar-logo-left-container.shadow-three.nav-on-light .menu-button img {
+    filter: brightness(0);
+  }
+  .navbar-logo-left-container.shadow-three.nav-on-dark .menu-button img,
+  .navbar-logo-left-container.shadow-three .menu-button img {
+    filter: none;
+  }
+  .navbar-logo-left-container.shadow-three:has(.menu-button.w--open) .menu-button img {
+    filter: none !important;
+  }
+</style>
+
+<style>
+  @media (max-width: 991px) {
+    [data-project-modal-dialog] {
+      left: 32px;
+      right: 32px;
+      top: 32px;
+      width: auto;
+      transform: translateY(100%);
+    }
+    [data-project-modal].is-open [data-project-modal-dialog] {
+      transform: translateY(0);
+    }
+  }
+  @media (max-width: 767px) {
+    [data-project-modal-dialog] {
+      left: 16px;
+      right: 16px;
+      top: 16px;
+    }
+  }
+</style>
+
+<style>
+  @media (max-width: 767px) {
+    .process-grid {
+      gap: 32px !important;
+      align-items: center !important;
+    }
+    .process-card {
+      width: 320px !important;
+      max-width: 100% !important;
+      margin-left: auto !important;
+      margin-right: auto !important;
+    }
+    .process-line {
+      display: none !important;
+    }
+    .process-card[data-reveal-dir] {
+      opacity: 0;
+      transition:
+        opacity 0.6s ease,
+        transform 0.6s ease;
+    }
+    .process-card[data-reveal-dir='left'] {
+      transform: translateX(-40px);
+    }
+    .process-card[data-reveal-dir='right'] {
+      transform: translateX(40px);
+    }
+    .process-card[data-reveal-dir].process-reveal-in {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+</style>
+
+<style>
+  @media (max-width: 991px) {
+    .problematique-card:hover {
+      background-image: none !important;
+      border-color: rgba(247, 245, 245, 0.1) !important;
+      box-shadow: none !important;
+    }
+    .problematique-card:hover .secondary-text {
+      color: rgba(242, 242, 242, 0.2) !important;
+    }
+    .problematique-card.card-visible {
+      background-image: radial-gradient(90% 70% at 0% 100%, rgb(29, 29, 31) 0%, rgb(15, 15, 16) 50%, rgb(7, 7, 8) 75%, rgb(0, 0, 0) 100%) !important;
+      border-color: rgba(255, 255, 255, 0.1) !important;
+      box-shadow:
+        rgba(0, 0, 18, 0.3) 0px 8px 30px,
+        rgba(0, 0, 18, 0.2) 0px 0px 4px !important;
+    }
+    .problematique-card.card-visible .secondary-text {
+      color: rgb(255, 98, 0) !important;
+    }
+  }
+</style>
+
+<style>
+  @media (max-width: 767px) {
+    .li-sidebar.li-sidebar.li-sidebar.li-sidebar {
+      position: static !important;
+      top: auto !important;
+      max-height: none !important;
+      overflow-y: visible !important;
+    }
+  }
+</style>
+
+<style>
+  @media (max-width: 991px) {
+    [data-partner-photo] {
+      display: none !important;
+    }
+  }
+</style>
+
+<style>
+  @media (max-width: 991px) {
+    .collection-list-logo.flex-libre {
+      display: grid !important;
+      grid-template-columns: repeat(4, 1fr) !important;
+      gap: 32px 24px !important;
+      justify-items: center !important;
+      align-items: center !important;
+    }
+    .collection-item-logo.flex-libre {
+      width: 100% !important;
+      height: auto !important;
+      max-width: 100px !important;
+      display: flex !important;
+      justify-content: center !important;
+      align-items: center !important;
+    }
+    .collection-item-logo.flex-libre .link-block._100 {
+      width: 100% !important;
+      height: auto !important;
+      display: flex !important;
+      justify-content: center !important;
+      align-items: center !important;
+    }
+    .collection-item-logo.flex-libre img {
+      width: 100% !important;
+      height: auto !important;
+      max-height: 32px !important;
+      object-fit: contain !important;
+    }
+  }
+  @media (max-width: 479px) {
+    .collection-list-logo.flex-libre {
+      grid-template-columns: repeat(3, 1fr) !important;
+    }
+  }
+</style>
+
+<style>
+  .image-fond-realisations.home {
+    display: none !important;
+  }
+  .home-gradient-crop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    overflow: hidden;
+    pointer-events: none;
+    isolation: isolate;
+    contain: paint;
+  }
+  .home-gradient-bands {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    filter: blur(150px);
+    transform: translateZ(0);
+  }
+  .home-gradient-bands > div {
+    flex: 1 0 0;
+    min-height: 0;
+  }
+</style>
+
+<style>
+  .hero-container-section.blanc .image-fond-realisations:not(.article) {
+    display: none !important;
+  }
+</style>
+
+<style>
+  .hero-container-section.propos .image-fond-realisations {
+    display: none !important;
+  }
+</style>
+
+<style>
+  .collection-list-article .collection-item-article:first-child {
+    grid-column: 1 / -1;
+  }
+</style>
+
+<style>
+  /* ===== Showreel mobile (<=767px) : carrousel vertical mot/image =====
+     Structure ajoutee par l'utilisateur dans le Designer (container-mobile-change > div-change
+     [5x secondary-text + ligne-orange.haut] + container.24px-gap [change-div.gauche / .droite]).
+     .div-change et .ligne-orange.haut n'avaient aucune regle CSS - base posee ici, uniquement
+     sous 767px pour ne jamais affecter le desktop (qui garde son mecanisme IX2 natif existant,
+     inchange). La largeur/hauteur de .div-change n'est PLUS forcee ici (elle est laissee au
+     Designer, qui a ses propres regles par breakpoint) - seuls position/overflow, necessaires au
+     fonctionnement du carrousel, sont poses. */
+  @media (max-width: 767px) {
+    .div-change {
+      position: relative;
+      overflow: hidden;
+    }
+    /* !important necessaire : certains mots ont ete edites individuellement dans le Designer par
+       l'utilisateur (voir historique), ce qui peut creer des regles a specificite egale ou
+       superieure a cette regle generique. Sans !important, le centrage flex ne gagnait le
+       conflit de cascade que pour le mot affiche au chargement initial, pas pour les autres. */
+    .div-change .secondary-text {
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      text-align: center !important;
+    }
+    .ligne-orange.haut {
+      position: absolute;
+      left: 0;
+      bottom: -8px;
+      height: 3px;
+      width: 0%;
+      background-color: #ff6200;
+    }
+    /* "Showreel 2025" en attente (comme sur desktop, cf. .container-showreal.hide) : exclu de la
+       rotation JS ci-dessous, et masque au cas ou le JS n'ait pas encore tourne. */
+    .div-change .secondary-text.showreel {
+      display: none !important;
+    }
+    .change-div {
+      cursor: pointer;
+    }
+    /* Le wrapper ambiant autour des images (.container._0px-vertical.center._32px-radius.fond-blanc)
+       est pilote par la meme interaction IX2 native que le mecanisme desktop, qui lui applique un
+       opacity via inline style en continu (fige a une valeur partielle sur mobile car son trigger
+       ne peut jamais aboutir a ce breakpoint). Un simple style.opacity='1' en JS ne suffit pas car
+       IX2 le reecrase. Une regle CSS !important gagne toujours face a un inline style non-important. */
+    .container._0px-vertical.center._32px-radius.fond-blanc {
+      opacity: 1 !important;
+    }
+  }
+</style>
+
+<script>
+  (function () {
+    // ===== Showreel mobile (<=767px uniquement) : carrousel vertical mot/image =====
+    // Le mecanisme desktop (.container-showreal x5 + .ligne-orange) est pilote par une
+    // interaction IX2 native Webflow (verifie en direct : aucun JS custom ne le controlait deja)
+    // et reste totalement inchange - son conteneur (.container._1x5-grid.change-hide) est deja
+    // masque par le Designer sous 767px. Ce bloc construit la version mobile equivalente sur la
+    // structure ajoutee par l'utilisateur (container-mobile-change), independante du desktop.
+    // Les classes mot -> classes image ne correspondent PAS 1:1 (ex: mot "web" / image
+    // "conception-web", mot "suivi" / image "accompagnement") - table de correspondance explicite
+    // ci-dessous plutot que de supposer une egalite de nom.
+    // FIX (2026-09-07) : les images .image.absolute-showreel etaient invisibles sur mobile car
+    // leur conteneur ambiant (.container._0px-vertical.center._32px-radius.fond-blanc, le parent
+    // direct de .container.image-showreel) a opacity:0 par defaut dans le Designer - visiblement
+    // prevu pour etre revele par l'interaction IX2 desktop, qui ne se declenche jamais sur mobile
+    // (son conteneur declencheur est masque a ce breakpoint). Force ici a opacity:1 sur mobile
+    // uniquement, sans toucher au desktop.
+    // FIX (2026-09-08) : la barre de progression (.ligne-orange) restait bloquee a 100% apres le
+    // premier cycle car startProgress() n'etait redemarree que sur un clic manuel (via
+    // restartAutoplay), jamais lors d'un defilement automatique. next(false) redemarre desormais
+    // aussi la barre de progression.
+    // FIX (2026-09-08 bis) : le centrage vertical ne fonctionnait que pour le premier mot affiche.
+    // Cause 1 (CSS) : conflit de cascade avec des regles posees individuellement sur certains mots
+    // dans le Designer - resolu avec !important. Cause 2 (JS) : measure() lisait offsetHeight alors
+    // que le CSS impose height:100% sur le mot, donc au lieu de mesurer la hauteur naturelle du
+    // texte elle relisait la hauteur deja fixee du parent (mesure circulaire, jamais correcte hors
+    // du tout premier appel). measure() neutralise desormais height:100% via un style inline
+    // temporaire pour lire la vraie hauteur de contenu avant de la restaurer.
+    function initShowreelMobile() {
+      if (window.innerWidth > 767) return;
+      var wrap = document.querySelector('.container-mobile-change');
+      if (!wrap) return;
+      var divChange = wrap.querySelector('.div-change');
+      if (!divChange) return;
+      // "Showreel 2025" est exclu de la rotation, comme sur desktop ou l'element equivalent
+      // (.container-showreal[data-showreel="showreel-2025"]) porte une classe "hide" - le showreel
+      // n'est pas encore pret, donc ni son mot ni son image ne doivent apparaitre pour le moment.
+      var words = Array.prototype.slice.call(divChange.querySelectorAll('.secondary-text')).filter(function (w) {
+        return !w.classList.contains('showreel');
+      });
+      var ligne = divChange.querySelector('.ligne-orange');
+      var prevBtn = wrap.querySelector('.change-div.gauche');
+      var nextBtn = wrap.querySelector('.change-div.droite');
+      if (!words.length) return;
+
+      var imageShowreel = document.querySelector('.container.image-showreel');
+      if (imageShowreel && imageShowreel.parentElement) {
+        imageShowreel.parentElement.style.opacity = '1';
+      }
+
+      var KEY_MAP = {
+        showreel: 'showreel-2025',
+        web: 'conception-web',
+        da: 'direction-artistique',
+        suivi: 'accompagnement',
+        copywriting: 'copywriting',
+      };
+      var BASE_CLASSES = { 'secondary-text': true, _18px: true };
+      function localKeyOf(el) {
+        return Array.prototype.filter.call(el.classList, function (c) {
+          return !BASE_CLASSES[c];
+        })[0];
+      }
+
+      var images = Array.prototype.slice.call(document.querySelectorAll('.image.absolute-showreel'));
+      function setImage(localKey) {
+        var target = KEY_MAP[localKey];
+        if (!target) return;
+        images.forEach(function (img) {
+          img.style.opacity = img.classList.contains(target) ? '1' : '0';
+        });
+      }
+
+      var DURATION = 500; // ms
+      var AUTOPLAY_MS = 4000;
+      var current = 0;
+      var isAnimating = false;
+      var timer = null;
+      var progressRAF = null;
+
+      words.forEach(function (w) {
+        w.style.position = 'absolute';
+        w.style.top = '0';
+        w.style.left = '0';
+        w.style.width = '100%';
+        w.style.transition = 'transform ' + DURATION + 'ms ease, opacity ' + DURATION + 'ms ease';
+      });
+
+      // Hauteur reelle d'un mot (peut wrapper sur 2 lignes selon la largeur d'ecran) : mesuree
+      // hors flux d'animation, sans toucher son etat courant de facon visible. Le CSS impose
+      // height:100% (pour le centrage vertical flex) - on le neutralise temporairement via un
+      // style inline (height:auto) pendant la mesure pour lire la vraie hauteur du contenu, sinon
+      // offsetHeight ne renvoie que la hauteur deja fixee du parent (mesure circulaire).
+      function measure(el) {
+        var prevTransform = el.style.transform;
+        var prevTransition = el.style.transition;
+        var prevHeight = el.style.height;
+        el.style.transition = 'none';
+        el.style.transform = 'translateY(0%)';
+        el.style.height = 'auto';
+        var h = el.offsetHeight || el.scrollHeight || el.getBoundingClientRect().height;
+        el.style.height = prevHeight;
+        el.style.transform = prevTransform;
+        el.style.transition = prevTransition;
+        return h;
+      }
+
+      // Applique une hauteur mesuree a divChange, mais ne l'ecrase JAMAIS avec 0 : une mesure a 0
+      // signifie que la mise en page n'etait pas encore stable (ex: juste apres DOMContentLoaded,
+      // avant que le CSS externe Webflow n'ait fini d'etre applique) - dans ce cas on garde la
+      // hauteur precedente plutot que de clipper tout le texte avec overflow:hidden + height:0.
+      function applyHeight(h) {
+        if (h > 0) divChange.style.height = h + 'px';
+      }
+
+      function stopProgress() {
+        if (progressRAF) cancelAnimationFrame(progressRAF);
+        progressRAF = null;
+      }
+      function startProgress() {
+        stopProgress();
+        if (!ligne) return;
+        ligne.style.transition = 'none';
+        ligne.style.width = '0%';
+        void ligne.offsetWidth;
+        var start = performance.now();
+        function tick(now) {
+          var pct = Math.min(1, (now - start) / AUTOPLAY_MS);
+          ligne.style.width = pct * 100 + '%';
+          if (pct < 1) progressRAF = requestAnimationFrame(tick);
+        }
+        progressRAF = requestAnimationFrame(tick);
+      }
+
+      function goTo(index, direction) {
+        // direction 1 (suivant/auto) : le mot courant sort par le bas, le nouveau entre par le haut.
+        // direction -1 (precedent) : le mot courant sort par le haut, le nouveau entre par le bas.
+        if (index === current || isAnimating) return;
+        isAnimating = true;
+        var outgoing = words[current];
+        var incoming = words[index];
+        var targetH = measure(incoming);
+
+        incoming.style.transition = 'none';
+        incoming.style.zIndex = '2';
+        incoming.style.opacity = '0';
+        incoming.style.transform = 'translateY(' + (direction > 0 ? '-100%' : '100%') + ')';
+        void incoming.offsetWidth;
+        incoming.style.transition = 'transform ' + DURATION + 'ms ease, opacity ' + DURATION + 'ms ease';
+
+        outgoing.style.zIndex = '1';
+        outgoing.style.opacity = '0';
+        outgoing.style.transform = 'translateY(' + (direction > 0 ? '100%' : '-100%') + ')';
+
+        incoming.style.opacity = '1';
+        incoming.style.transform = 'translateY(0%)';
+
+        divChange.style.transition = 'height ' + DURATION + 'ms ease';
+        applyHeight(targetH);
+
+        current = index;
+        setImage(localKeyOf(incoming));
+        setTimeout(function () {
+          isAnimating = false;
+        }, DURATION + 20);
+      }
+
+      function next(manual) {
+        goTo((current + 1) % words.length, 1);
+        if (manual) {
+          restartAutoplay();
+        } else {
+          // Defilement automatique : le timer setInterval continue de tourner tel quel, mais la
+          // barre de progression doit repartir de 0 pour ce nouveau cycle (sinon elle reste figee
+          // a 100% des le deuxieme mot, faute d'avoir jamais ete relancee).
+          startProgress();
+        }
+      }
+      function prev(manual) {
+        goTo((current - 1 + words.length) % words.length, -1);
+        if (manual) restartAutoplay();
+      }
+      function startAutoplay() {
+        stopAutoplay();
+        timer = setInterval(function () {
+          next(false);
+        }, AUTOPLAY_MS);
+        startProgress();
+      }
+      function stopAutoplay() {
+        if (timer) {
+          clearInterval(timer);
+          timer = null;
+        }
+        stopProgress();
+      }
+      function restartAutoplay() {
+        startAutoplay();
+      }
+
+      if (prevBtn)
+        prevBtn.addEventListener('click', function () {
+          prev(true);
+        });
+      if (nextBtn)
+        nextBtn.addEventListener('click', function () {
+          next(true);
+        });
+
+      // Init : seul le premier mot est visible, hauteur du conteneur fixee, image correspondante activee.
+      words.forEach(function (w, i) {
+        w.style.opacity = i === 0 ? '1' : '0';
+        w.style.transform = 'translateY(0%)';
+        w.style.zIndex = i === 0 ? '2' : '1';
+      });
+      divChange.style.position = 'relative';
+      divChange.style.overflow = 'hidden';
+      setImage(localKeyOf(words[0]));
+      startAutoplay();
+
+      // Comme tous les mots sont en position:absolute (hors flux), divChange n'a par lui-meme
+      // aucune hauteur naturelle : il faut la mesurer sur words[0] et l'appliquer explicitement,
+      // sinon overflow:hidden clippe tout le texte a une hauteur de 0. Juste apres
+      // DOMContentLoaded, le CSS externe de Webflow peut ne pas encore etre totalement applique
+      // et la mesure initiale renvoyer 0 - on reessaie sur quelques frames jusqu'a obtenir une
+      // valeur reelle.
+      var heightAttempts = 0;
+      function establishInitialHeight() {
+        var h = measure(words[0]);
+        if (h > 0) {
+          applyHeight(h);
+        } else if (heightAttempts < 20) {
+          heightAttempts++;
+          requestAnimationFrame(establishInitialHeight);
+        }
+      }
+      establishInitialHeight();
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initShowreelMobile);
+    else initShowreelMobile();
+  })();
+</script>
+
+<script>
+  window.axeptioSettings = {
+    clientId: '6aa26286c53b7dcb0130d0f3',
+    cookiesVersion: '34e0c0c4-ed68-419d-9b74-79e8be441272',
+    googleConsentMode: {
+      default: {
+        analytics_storage: 'denied',
+        ad_storage: 'denied',
+        ad_user_data: 'denied',
+        ad_personalization: 'denied',
+        wait_for_update: 500,
+      },
+    },
+  };
+  (function (d, s) {
+    var t = d.getElementsByTagName(s)[0],
+      e = d.createElement(s);
+    e.async = true;
+    e.src = '//static.axept.io/sdk.js';
+    t.parentNode.insertBefore(e, t);
+  })(document, 'script');
+</script>
+
+<!-- Google Tag Manager -->
+<script>
+  (function (w, d, s, l, i) {
+    w[l] = w[l] || [];
+    w[l].push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
+    var f = d.getElementsByTagName(s)[0],
+      j = d.createElement(s),
+      dl = l != 'dataLayer' ? '&l=' + l : '';
+    j.async = true;
+    j.src = 'https://www.googletagmanager.com/gtm.js?id=' + i + dl;
+    f.parentNode.insertBefore(j, f);
+  })(window, document, 'script', 'dataLayer', 'GTM-TD7C9Z42');
+</script>
+<!-- End Google Tag Manager -->
+
+<meta name="google-site-verification" content="3_CZO9NpX7Ltkm0qTSCKXCwI3LMwddsrf5kM6E7Dwv8" />
+
+<!-- iClosed Lift Widget begin -->
+<script type="text/javascript" src="https://app.iclosed.io/assets/widget.js" data-cta-widget="rwHV-P4jCI50" async></script>
+<!-- iClosed Lift Widget end -->
+
+<!-- Add to Project Settings → Custom Code → Head Code -->
+<!-- CiteMe AI Tracker -->
+<!-- If your site sends a Content-Security-Policy header, allow https://app.citeme.io in script-src, img-src and connect-src or this tracker will be silently blocked -->
+<script async src="https://app.citeme.io/api/beacon/e3cd49e71a0a5d5530733d935f7b4829" data-cfasync="false" referrerpolicy="unsafe-url"></script>
+<img src="https://app.citeme.io/api/beacon/e3cd49e71a0a5d5530733d935f7b4829/pixel" referrerpolicy="unsafe-url" width="1" height="1" alt="" style="position: absolute; width: 0; height: 0; overflow: hidden" />

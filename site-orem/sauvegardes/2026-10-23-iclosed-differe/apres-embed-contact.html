@@ -1,0 +1,23 @@
+<!-- iClosed inline widget begin -->
+<div class="iclosed-widget" data-url="https://app.iclosed.io/e/Orem/rdv-30min" title="Rendez-vous de découverte 🚀" style="width: 100%; height: 620px"></div>
+<script>
+  // Agenda iClosed (onglet caché à l'ouverture) chargé à la première interaction : son application pèse ~750 Ko (2026-10-23)
+  (function (w, d) {
+    var ev = ['pointerdown', 'keydown', 'scroll', 'touchstart', 'mousemove'];
+    function load() {
+      if (w.oremIclosedLoaded) return;
+      w.oremIclosedLoaded = true;
+      ev.forEach(function (n) {
+        w.removeEventListener(n, load, true);
+      });
+      var s = d.createElement('script');
+      s.async = true;
+      s.src = 'https://app.iclosed.io/assets/widget.js';
+      d.body.appendChild(s);
+    }
+    ev.forEach(function (n) {
+      w.addEventListener(n, load, { capture: true, passive: true });
+    });
+  })(window, document);
+</script>
+<!-- iClosed inline widget end -->

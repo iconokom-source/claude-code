@@ -1,0 +1,36 @@
+<script>
+(function(){
+  function initProcessLine(){
+    var track = document.querySelector('.process-line');
+    if(!track) return;
+    var wrap = track.parentElement;
+    var ticking = false;
+    function update(){
+      var rect = wrap.getBoundingClientRect();
+      var scrollY = window.pageYOffset || document.documentElement.scrollTop;
+      var vh = window.innerHeight || document.documentElement.clientHeight;
+      var wrapTop = rect.top + scrollY;
+      var wrapHeight = rect.height;
+      var viewportCenter = scrollY + vh / 2;
+      var h = viewportCenter - wrapTop;
+      h = Math.max(0, Math.min(wrapHeight, h));
+      track.style.height = h + 'px';
+      ticking = false;
+    }
+    function onScroll(){
+      if(!ticking){
+        window.requestAnimationFrame(update);
+        ticking = true;
+      }
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    update();
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', initProcessLine);
+  } else {
+    initProcessLine();
+  }
+})();
+</script>

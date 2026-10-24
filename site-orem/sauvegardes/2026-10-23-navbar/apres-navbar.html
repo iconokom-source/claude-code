@@ -1,0 +1,190 @@
+<script>
+  (function () {
+    // Bascule automatique du menu (liens, logo, bouton, diviseur) entre blanc et noir
+    // selon la luminosité de ce qu'il y a réellement sous la navbar (plus de mix-blend-mode).
+    // Hysteresis : une lecture differente de l'etat applique n'est prise en compte que si elle
+    // est confirmee par une deuxieme lecture identique lors du passage suivant.
+    // Luminance des <img> : mesuree reellement (canvas hors-DOM downscale) au lieu d'etre
+    // devinee a 0.85 - une image decorative sombre en fond de hero forcait alors a tort le menu
+    // en mode "clair" (texte noir sur fond noir, invisible).
+    function getNav() {
+      return document.querySelector('.navbar-logo-left-container.shadow-three');
+    }
+    if (!getNav()) return;
+
+    function luminance(rgb) {
+      var a = rgb.map(function (v) {
+        v /= 255;
+        return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+      });
+      return 0.2126 * a[0] + 0.7152 * a[1] + 0.0722 * a[2];
+    }
+    function parseColor(str) {
+      var m = str.match(/rgba?\(([^)]+)\)/);
+      if (!m) return null;
+      var parts = m[1].split(',').map(function (s) {
+        return parseFloat(s);
+      });
+      var alpha = parts.length > 3 ? parts[3] : 1;
+      if (alpha === 0) return null;
+      return { rgb: [parts[0], parts[1], parts[2]], alpha: alpha };
+    }
+
+    var imgLumCache = {};
+    function averageImageLuminance(imgEl) {
+      var src = imgEl.currentSrc || imgEl.src;
+      if (!src) return null;
+      var entry = imgLumCache[src];
+      if (entry) return entry.done ? entry.value : null;
+      entry = imgLumCache[src] = { done: false, value: null };
+      var probe = new Image();
+      probe.crossOrigin = 'anonymous';
+      probe.onload = function () {
+        try {
+          var size = 12;
+          var c = document.createElement('canvas');
+          c.width = size;
+          c.height = size;
+          var ctx = c.getContext('2d');
+          ctx.drawImage(probe, 0, 0, size, size);
+          var data = ctx.getImageData(0, 0, size, size).data;
+          var total = 0,
+            n = 0;
+          for (var i = 0; i < data.length; i += 4) {
+            if (data[i + 3] === 0) continue;
+            total += luminance([data[i], data[i + 1], data[i + 2]]);
+            n++;
+          }
+          entry.value = n ? total / n : 0.3;
+        } catch (e) {
+          entry.value = 0.3; // image illisible (CORS) : hypothese prudente plutot sombre
+        }
+        entry.done = true;
+        update();
+      };
+      probe.onerror = function () {
+        entry.value = 0.3;
+        entry.done = true;
+      };
+      probe.src = src;
+      return null;
+    }
+
+    function isRealMedia(node) {
+      var tag = node.tagName;
+      return tag === 'VIDEO' || tag === 'PICTURE' || tag === 'CANVAS' || tag === 'SVG';
+    }
+    function bgLuminanceAt(nav, x, y) {
+      var els = document.elementsFromPoint(x, y);
+      var first = null;
+      for (var i = 0; i < els.length; i++) {
+        if (!nav.contains(els[i])) {
+          first = els[i];
+          break;
+        }
+      }
+      if (!first) return null;
+      var node = first;
+      while (node && node !== document.documentElement) {
+        if (node.tagName === 'IMG') {
+          var v = averageImageLuminance(node);
+          if (v !== null) return v;
+        } else if (isRealMedia(node)) {
+          return 0.3;
+        }
+        var cs = getComputedStyle(node);
+        var c = parseColor(cs.backgroundColor);
+        if (c && c.alpha > 0.4) return luminance(c.rgb);
+        if (cs.backgroundImage && cs.backgroundImage !== 'none') return 0.2;
+        node = node.parentElement;
+      }
+      return null;
+    }
+    function computeIsLight() {
+      var nav = getNav();
+      if (!nav) return null;
+      var rect = nav.getBoundingClientRect();
+      if (rect.height === 0) return null;
+      var y = rect.top + rect.height / 2 + 1;
+      var xs = [rect.left + 24, rect.left + rect.width / 2, rect.right - 24];
+      var total = 0,
+        count = 0;
+      xs.forEach(function (x) {
+        var lum = bgLuminanceAt(nav, x, y);
+        if (lum !== null) {
+          total += lum;
+          count++;
+        }
+      });
+      var avg = count ? total / count : 0.15;
+      return avg > 0.55;
+    }
+    function applyState(isLight) {
+      var nav = getNav();
+      if (!nav) return;
+      nav.classList.toggle('nav-on-light', isLight);
+      nav.classList.toggle('nav-on-dark', !isLight);
+    }
+    // Lecture confirmee sur deux images consecutives (meme hysteresis qu'avant)
+    var checking = false;
+    function update() {
+      if (checking) return;
+      checking = true;
+      var first = computeIsLight();
+      requestAnimationFrame(function () {
+        checking = false;
+        var second = computeIsLight();
+        if (second !== null && (first === second || first === null)) applyState(second);
+      });
+    }
+
+    // Plus de calcul a chaque image de defilement : la couleur n'est relue que lorsqu'un element qui
+    // la determine (image, video, svg, fond opaque ou en image) traverse la ligne de la navbar.
+    var io = null;
+    function isDecisive(el) {
+      if (el.tagName === 'IMG' || isRealMedia(el)) return true;
+      var cs = getComputedStyle(el);
+      if (cs.backgroundImage && cs.backgroundImage !== 'none') return true;
+      var c = parseColor(cs.backgroundColor);
+      return !!(c && c.alpha > 0.4);
+    }
+    function watch() {
+      var nav = getNav();
+      if (!nav) return;
+      if (io) io.disconnect();
+      var rect = nav.getBoundingClientRect();
+      var line = Math.round(rect.top + rect.height / 2 + 1);
+      io = new IntersectionObserver(update, {
+        rootMargin: -line + 'px 0px ' + -(window.innerHeight - line - 1) + 'px 0px',
+      });
+      var all = document.body.getElementsByTagName('*');
+      for (var i = 0; i < all.length; i++) {
+        if (!nav.contains(all[i]) && isDecisive(all[i])) io.observe(all[i]);
+      }
+      update();
+    }
+    // Filet de securite : une relecture a la fin de chaque defilement
+    var endTimer = null;
+    window.addEventListener(
+      'scroll',
+      function () {
+        clearTimeout(endTimer);
+        endTimer = setTimeout(update, 150);
+      },
+      { passive: true },
+    );
+    var resizeTimer = null;
+    window.addEventListener('resize', function () {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(watch, 150);
+    });
+    update();
+    window.addEventListener('load', function () {
+      watch();
+      setTimeout(watch, 3000);
+    });
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(update).catch(function () {});
+    }
+  })();
+</script>

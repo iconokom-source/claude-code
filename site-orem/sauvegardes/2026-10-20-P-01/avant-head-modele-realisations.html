@@ -1,0 +1,11 @@
+<style>
+  html {
+    visibility: hidden !important;
+  }
+</style>
+<script>
+  var path = location.pathname;
+  if (path && path !== '/') {
+    location.replace('/?p=' + encodeURIComponent(path));
+  }
+</script>

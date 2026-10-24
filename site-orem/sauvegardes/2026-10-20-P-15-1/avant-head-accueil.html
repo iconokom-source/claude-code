@@ -1,0 +1,68 @@
+<link rel="preload" as="image" href="https://cdn.prod.website-files.com/6a7582303b9ddd4a77302cc8/6a95b83444997d1adc1ebfa2_logo-orem-anime-transparent-hq.webp" fetchpriority="high" />
+
+<script>
+  (function () {
+    // ===== Lazy-load des videos de fond (perf) =====
+    // Les videos Webflow natives (BackgroundVideoWrapper) sont rendues avec un
+    // <source src=...> statique : le navigateur commence a les telecharger des
+    // le parsing du HTML, meme hors ecran (probleme detecte via PageSpeed :
+    // ~8 Mo de video charges d'un coup, score mobile 35/100). On intercepte les
+    // <video> des leur insertion dans le DOM (MutationObserver pose dans le
+    // <head>, donc actif avant que le <body> ne soit parse), on retire le src
+    // reel des <source> avant que le navigateur ne lance la requete, et on ne
+    // le restaure que lorsque la video approche du viewport.
+    function setupLazyVideo(video) {
+      if (video.dataset.lazyVideoInit) return;
+      video.dataset.lazyVideoInit = '1';
+      var sources = Array.prototype.slice.call(video.querySelectorAll('source'));
+      sources.forEach(function (s) {
+        if (s.src) {
+          s.dataset.lazySrc = s.src;
+          s.removeAttribute('src');
+        }
+      });
+      video.preload = 'none';
+
+      function activate() {
+        sources.forEach(function (s) {
+          if (s.dataset.lazySrc) s.src = s.dataset.lazySrc;
+        });
+        video.load();
+        video.play().catch(function () {});
+      }
+
+      if ('IntersectionObserver' in window) {
+        var observer = new IntersectionObserver(
+          function (entries) {
+            entries.forEach(function (entry) {
+              if (entry.isIntersecting) {
+                activate();
+                observer.unobserve(video);
+              }
+            });
+          },
+          { rootMargin: '600px 0px' },
+        );
+        observer.observe(video);
+      } else {
+        activate();
+      }
+    }
+
+    function scan(root) {
+      (root || document).querySelectorAll('video').forEach(setupLazyVideo);
+    }
+
+    scan();
+    var mo = new MutationObserver(function (mutations) {
+      mutations.forEach(function (m) {
+        m.addedNodes.forEach(function (n) {
+          if (n.nodeType !== 1) return;
+          if (n.tagName === 'VIDEO') setupLazyVideo(n);
+          else if (n.querySelectorAll) scan(n);
+        });
+      });
+    });
+    mo.observe(document.documentElement, { childList: true, subtree: true });
+  })();
+</script>

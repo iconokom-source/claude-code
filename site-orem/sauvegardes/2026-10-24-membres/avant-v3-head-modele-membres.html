@@ -1,0 +1,82 @@
+<style>
+  /* P-01 : la page membre s'affiche directement dans le panneau (contenu lisible par Google) */
+  [data-project-modal-content]:empty { display: none; }
+  [data-project-modal-content]:not(:empty) + .projet-statique,
+  [data-project-modal]:not(.is-open) .projet-statique { display: none; }
+  /* 2026-10-24 : la version statique s'affiche des le depart comme le contenu charge par la modale
+     (qui n'en garde que l'interieur) : le cadre englobant ne compte plus dans la mise en page */
+  .projet-statique [data-project-root] { display: contents; }
+</style>
+<script>
+  // Vient-on d'une page du site (rechargement, retour) ? Alors la page d'origine est juste avant dans l'historique.
+  // Sinon (Google, lien partage) : on le note pour la session, la fermeture menera a la page A propos.
+  var depuisLeSite = false;
+  try {
+    depuisLeSite = !!(history.state && history.state.projectModal) && !sessionStorage.getItem('projetDirect');
+    if (!depuisLeSite) sessionStorage.setItem('projetDirect', '1');
+  } catch (err) {}
+  if (history.state && history.state.projectModal) history.replaceState(null, '', location.pathname);
+  window.addEventListener('load', function () {
+    // Liste cachee des membres (CMS) : donne l'ordre des fleches
+    document.querySelectorAll('[data-slug]').forEach(function (el) { el.setAttribute('href', '/membres/' + el.getAttribute('data-slug')); });
+    document.querySelectorAll('.projet-statique [data-modal-trigger]').forEach(function (el) { el.removeAttribute('data-modal-trigger'); });
+  });
+  // 2026-10-24 : la modale globale n'est plus rouverte au chargement (elle figeait la page, re-telechargeait cette
+  // meme page et re-initialisait Webflow). Elle prend le relais au premier changement de membre, avec le meme
+  // fondu glisse que ses fleches.
+  var modaleActive = false;
+  function premierChangement(sens) {
+    var contenu = document.querySelector('[data-project-modal-content]'), statique = document.querySelector('.projet-statique');
+    var slugs = Array.prototype.map.call(document.querySelectorAll('[data-slug]'), function (el) { return el.getAttribute('data-slug'); });
+    var i = slugs.indexOf(location.pathname.split('/').pop());
+    if (!contenu || !statique || i < 0 || slugs.length < 2) return;
+    modaleActive = true;
+    var url = '/membres/' + slugs[(i + sens + slugs.length) % slugs.length];
+    statique.style.transition = 'opacity .25s ease, transform .25s ease';
+    statique.style.opacity = '0';
+    statique.style.transform = 'translateX(' + (sens > 0 ? 24 : -24) + 'px)';
+    new MutationObserver(function (m, o) {
+      if (!contenu.firstElementChild) return;
+      o.disconnect();
+      statique.remove();
+      contenu.style.transition = 'none';
+      contenu.style.opacity = '0';
+      contenu.style.transform = 'translateX(' + (sens > 0 ? -24 : 24) + 'px)';
+      void contenu.offsetWidth;
+      contenu.style.transition = 'opacity .25s ease, transform .25s ease';
+      contenu.style.opacity = '1';
+      contenu.style.transform = 'translateX(0)';
+      setTimeout(function () { contenu.style.transition = 'none'; contenu.style.transform = 'none'; }, 270);
+    }).observe(contenu, { childList: true });
+    setTimeout(function () {
+      history.replaceState({ projectModal: true, url: url }, '', url);
+      window.dispatchEvent(new PopStateEvent('popstate', { state: history.state }));
+    }, 250);
+  }
+  // Fermeture : on ne reste jamais sur cette page, on retrouve la vraie page d'origine (ou A propos).
+  function quitterProjet(e) {
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    try { sessionStorage.removeItem('projetDirect'); } catch (err) {}
+    if (!depuisLeSite) return location.replace('/a-propos');
+    // Le navigateur revient a l'adresse d'origine sans la recharger : on la charge pour de vrai.
+    window.addEventListener('popstate', function (ev) { ev.stopImmediatePropagation(); location.reload(); }, true);
+    history.back();
+  }
+  document.addEventListener('click', function (e) {
+    if (e.target.closest('[data-project-modal-close], [data-project-modal-overlay], .close-modale')) return quitterProjet(e);
+    var fleche = !modaleActive && e.target.closest('.change-modale');
+    if (fleche) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      // Les deux fleches ont la classe « suivant » : le sens vient de l'image (fleche gauche / droite)
+      premierChangement(fleche.querySelector('img[alt*="gauche"]') ? -1 : 1);
+    }
+  }, true);
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') return quitterProjet(e);
+    if (modaleActive || (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft')) return;
+    e.stopImmediatePropagation();
+    premierChangement(e.key === 'ArrowRight' ? 1 : -1);
+  }, true);
+</script>

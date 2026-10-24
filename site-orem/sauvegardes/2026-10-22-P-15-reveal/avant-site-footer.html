@@ -1,0 +1,1200 @@
+<style>
+  /* ===== TESTIMONIALS SLIDER (Orem) - moved from homepage page-level footer to site-level so the testimonials component works on every page ===== */
+  .slider-viewport {
+    overflow: hidden;
+    position: relative;
+  }
+  .collection-list-avis {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 0 !important; /* le JS gère l'espacement, on neutralise le gap Designer */
+    will-change: transform;
+  }
+
+  .collection-item-avis {
+    flex: 0 0 auto;
+    opacity: var(--tsl-op, 0.5);
+    transform: scale(var(--tsl-sc, 1));
+    transition:
+      opacity var(--tsl-dur, 700ms) var(--tsl-ease, cubic-bezier(0.65, 0, 0.35, 1)),
+      transform var(--tsl-dur, 700ms) var(--tsl-ease, cubic-bezier(0.65, 0, 0.35, 1));
+  }
+  .collection-item-avis.is-active {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .button-change {
+    cursor: pointer;
+    user-select: none;
+  }
+
+  /* Responsive : la card fait 1000px, on la réduit sous ~1080px sinon elle déborde */
+  @media (max-width: 1079px) {
+    .collection-item-avis {
+      width: 86vw !important;
+      min-width: 86vw !important;
+    }
+  }
+  @media (max-width: 767px) {
+    .collection-item-avis {
+      width: 88vw !important;
+      min-width: 88vw !important;
+      height: auto !important;
+    }
+  }
+  @media (max-width: 479px) {
+    .collection-item-avis {
+      width: 90vw !important;
+      min-width: 90vw !important;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .collection-list-avis,
+    .collection-item-avis {
+      transition: none !important;
+    }
+  }
+</style>
+
+<script>
+  (function () {
+    var CONFIG = {
+      autoplay: true, // défilement auto
+      autoplayMs: 10000, // intervalle
+      loop: true, // boucle infinie (clones)
+      durationMs: 700, // durée du slide
+      easing: 'cubic-bezier(0.65, 0, 0.35, 1)',
+      inactiveOpacity: 0.5, // opacité des voisines
+      inactiveScale: 0.8, // échelle des voisines (1 = pas de réduction)
+      visualGap: 40, // écart VISUEL constant entre carte active et voisine (px), quelle que soit l'échelle
+      swipeThreshold: 40, // px pour valider un swipe
+      clickToActivate: true, // cliquer une voisine l'active
+    };
+
+    function init() {
+      var viewport = document.querySelector('.slider-viewport');
+      var track = viewport && viewport.querySelector('.collection-list-avis');
+      if (!viewport || !track) return;
+
+      var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      viewport.style.setProperty('--tsl-op', CONFIG.inactiveOpacity);
+      viewport.style.setProperty('--tsl-sc', CONFIG.inactiveScale);
+      viewport.style.setProperty('--tsl-dur', CONFIG.durationMs + 'ms');
+      viewport.style.setProperty('--tsl-ease', CONFIG.easing);
+      track.style.willChange = 'transform';
+
+      var originals = [].slice.call(track.children).filter(function (el) {
+        return el.matches('.w-dyn-item, .collection-item-avis');
+      });
+      var N = originals.length;
+      if (N === 0) return;
+
+      var doLoop = CONFIG.loop && N > 1;
+      var index = doLoop ? N : 0;
+
+      if (doLoop) {
+        var before = document.createDocumentFragment();
+        var after = document.createDocumentFragment();
+        originals.forEach(function (el) {
+          var a = el.cloneNode(true);
+          a.dataset.clone = '1';
+          before.appendChild(a);
+          var b = el.cloneNode(true);
+          b.dataset.clone = '1';
+          after.appendChild(b);
+        });
+        track.insertBefore(before, originals[0]);
+        track.appendChild(after);
+      }
+
+      var items = [].slice.call(track.children).filter(function (el) {
+        return el.matches('.w-dyn-item, .collection-item-avis');
+      });
+
+      // Compense la place libérée par le scale : marge = (visualGap - largeur*(1-scale)/2) / 2
+      // Résultat : l'écart visuel actif <-> voisine vaut toujours CONFIG.visualGap, à tous les breakpoints.
+      function applyGap() {
+        var w = items[0] ? items[0].offsetWidth : 0; // largeur de layout, non affectée par le transform
+        if (!w) return;
+        var m = (CONFIG.visualGap - (w * (1 - CONFIG.inactiveScale)) / 2) / 2;
+        items.forEach(function (el) {
+          el.style.marginLeft = m + 'px';
+          el.style.marginRight = m + 'px';
+        });
+      }
+
+      function setTransition(on) {
+        track.style.transition = on && !reduce ? 'transform ' + CONFIG.durationMs + 'ms ' + CONFIG.easing : 'none';
+      }
+
+      function currentTranslate() {
+        var t = getComputedStyle(track).transform;
+        if (!t || t === 'none') return 0;
+        try {
+          return new DOMMatrixReadOnly(t).m41;
+        } catch (e) {
+          return 0;
+        }
+      }
+
+      function markActive(i) {
+        items.forEach(function (el, k) {
+          var on = k === i;
+          el.classList.toggle('is-active', on);
+          el.setAttribute('aria-hidden', on ? 'false' : 'true');
+        });
+      }
+
+      function center(i, animate) {
+        var item = items[i];
+        if (!item) return;
+        setTransition(animate);
+        var vp = viewport.getBoundingClientRect();
+        var it = item.getBoundingClientRect();
+        var delta = vp.left + vp.width / 2 - (it.left + it.width / 2);
+        track.style.transform = 'translateX(' + (currentTranslate() + delta) + 'px)';
+        markActive(i);
+      }
+
+      function normalize() {
+        if (!doLoop) return;
+        if (index >= 2 * N) {
+          index -= N;
+          center(index, false);
+        } else if (index < N) {
+          index += N;
+          center(index, false);
+        }
+      }
+
+      function go(i) {
+        if (!doLoop) i = Math.max(0, Math.min(items.length - 1, i));
+        index = i;
+        center(index, true);
+        if (reduce) normalize();
+      }
+      function next() {
+        go(index + 1);
+        resetAutoplay();
+      }
+      function prev() {
+        go(index - 1);
+        resetAutoplay();
+      }
+
+      track.addEventListener('transitionend', function (e) {
+        if (e.propertyName === 'transform') normalize();
+      });
+
+      // Flèches (combo classes existantes, aucun custom attribute requis)
+      var prevBtn = document.querySelector('.button-change.left');
+      var nextBtn = document.querySelector('.button-change.right');
+      if (prevBtn) prevBtn.addEventListener('click', prev);
+      if (nextBtn) nextBtn.addEventListener('click', next);
+
+      // Clic sur une voisine pour l'activer
+      if (CONFIG.clickToActivate) {
+        items.forEach(function (el, k) {
+          el.addEventListener('click', function () {
+            if (k !== index) {
+              go(k);
+              resetAutoplay();
+            }
+          });
+        });
+      }
+
+      // Swipe tactile
+      var startX = null;
+      viewport.addEventListener(
+        'touchstart',
+        function (e) {
+          startX = e.touches[0].clientX;
+        },
+        { passive: true },
+      );
+      viewport.addEventListener(
+        'touchend',
+        function (e) {
+          if (startX === null) return;
+          var dx = e.changedTouches[0].clientX - startX;
+          if (Math.abs(dx) > CONFIG.swipeThreshold) {
+            dx < 0 ? next() : prev();
+          }
+          startX = null;
+        },
+        { passive: true },
+      );
+
+      // Clavier
+      viewport.setAttribute('tabindex', '0');
+      viewport.addEventListener('keydown', function (e) {
+        if (e.key === 'ArrowLeft') prev();
+        else if (e.key === 'ArrowRight') next();
+      });
+
+      // Autoplay + pause au survol
+      var timer = null;
+      function startAutoplay() {
+        if (CONFIG.autoplay && !reduce && !timer)
+          timer = setInterval(function () {
+            go(index + 1);
+          }, CONFIG.autoplayMs);
+      }
+      function stopAutoplay() {
+        if (timer) {
+          clearInterval(timer);
+          timer = null;
+        }
+      }
+      function resetAutoplay() {
+        stopAutoplay();
+        startAutoplay();
+      }
+      viewport.addEventListener('mouseenter', stopAutoplay);
+      viewport.addEventListener('mouseleave', startAutoplay);
+
+      // Resize : recompense l'espacement puis recentre sans animation
+      var rAF;
+      window.addEventListener('resize', function () {
+        cancelAnimationFrame(rAF);
+        rAF = requestAnimationFrame(function () {
+          applyGap();
+          center(index, false);
+        });
+      });
+
+      // Init
+      applyGap();
+      center(index, false);
+      startAutoplay();
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+    else init();
+  })();
+</script>
+
+<script>
+  (function () {
+    const CONFIG = {
+      trigger: '[data-modal-trigger]',
+      source: '[data-project-root]',
+      modal: '[data-project-modal]',
+      content: '[data-project-modal-content]',
+      close: '[data-project-modal-close], [data-project-modal-overlay], .close-modale',
+      prev: '.change-modale:not(.suivant)',
+      next: '.change-modale.suivant',
+      openClass: 'is-open',
+      projectBase: '/realisations/',
+      param: 'p',
+      homeUrl: '/',
+      scrollKey: 'modalScrollY',
+      animMs: 400,
+      swapMs: 250,
+    };
+    const modal = document.querySelector(CONFIG.modal);
+    if (!modal) return;
+    const content = modal.querySelector(CONFIG.content);
+    const cache = new Map();
+    let lockY = 0,
+      isOpen = false,
+      pushedByOpen = false,
+      currentUrl = null,
+      isSwapping = false;
+    let savedHScrolls = [];
+    const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+
+    function lockScroll(explicitY) {
+      lockY = typeof explicitY === 'number' ? explicitY : window.scrollY || document.documentElement.scrollTop;
+      // iOS Safari : figer le body en position:fixed casse le scrollLeft des conteneurs
+      // horizontaux internes (ex: carrousel de cas clients) - le navigateur le reinitialise
+      // parfois a la levee du blocage. On sauvegarde chaque position avant, on la restaure
+      // explicitement dans unlockScroll() plutot que de laisser le navigateur deviner.
+      savedHScrolls = Array.prototype.slice.call(document.querySelectorAll('.collection-list-wrapper-cases')).map(function (el) {
+        return [el, el.scrollLeft];
+      });
+      document.body.style.position = 'fixed';
+      document.body.style.top = '-' + lockY + 'px';
+      document.body.style.width = '100%';
+    }
+    function unlockScroll() {
+      const y = lockY;
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      window.scrollTo(0, y);
+      const restore = function () {
+        savedHScrolls.forEach(function (pair) {
+          pair[0].scrollLeft = pair[1];
+        });
+      };
+      restore();
+      requestAnimationFrame(function () {
+        restore();
+        requestAnimationFrame(restore);
+      });
+    }
+    function reinitWebflow() {
+      if (!window.Webflow) return;
+      window.Webflow.destroy();
+      window.Webflow.ready();
+      const ix2 = window.Webflow.require && window.Webflow.require('ix2');
+      if (ix2 && ix2.init) ix2.init();
+      document.dispatchEvent(new Event('readystatechange'));
+    }
+    async function fetchContent(url) {
+      if (cache.has(url)) return cache.get(url);
+      const res = await fetch(url, { headers: { 'X-Requested-With': 'modal' } });
+      const html = await res.text();
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      const root = doc.querySelector(CONFIG.source);
+      const out = root ? root.innerHTML : '';
+      cache.set(url, out);
+      return out;
+    }
+    function getProjectList() {
+      const seen = new Set(),
+        out = [];
+      document.querySelectorAll(CONFIG.trigger).forEach((a) => {
+        if (a.closest(CONFIG.content)) return; // ignore les triggers du contenu injecté dans la modale
+        const h = a.getAttribute('href');
+        if (h && !seen.has(h)) {
+          seen.add(h);
+          out.push(h);
+        }
+      });
+      return out;
+    }
+    async function openModal(url, mode, lockAt) {
+      if (isOpen) return;
+      isOpen = true;
+      pushedByOpen = mode === 'push';
+      currentUrl = url;
+      lockScroll(lockAt);
+      if (mode === 'push') history.pushState({ projectModal: true, url: url }, '', url);
+      else if (mode === 'replace') history.replaceState({ projectModal: true, url: url }, '', url);
+      modal.classList.add(CONFIG.openClass);
+      modal.setAttribute('aria-hidden', 'false');
+      content.style.transition = 'none';
+      content.style.opacity = '1';
+      content.style.transform = 'none';
+      content.innerHTML = '';
+      try {
+        content.innerHTML = await fetchContent(url);
+        content.scrollTop = 0;
+        requestAnimationFrame(function () {
+          requestAnimationFrame(reinitWebflow);
+        });
+      } catch (e) {
+        content.innerHTML = '<p style="padding:2rem">Contenu indisponible.</p>';
+        console.error('[modale]', e);
+      }
+    }
+    async function swapToUrl(url) {
+      // Trigger cliqué alors qu'une modale est déjà ouverte (ex: carte "projet" dans la modale
+      // d'un membre) : openModal() ne ferait rien (garde isOpen). On remplace le contenu en place,
+      // comme changeProject(), mais vers une URL arbitraire plutot que prev/next de la meme liste.
+      if (isSwapping || !isOpen || url === currentUrl) return;
+      isSwapping = true;
+      content.style.transition = 'opacity .25s ease';
+      content.style.opacity = '0';
+      try {
+        const html = (await Promise.all([fetchContent(url), wait(CONFIG.swapMs)]))[0];
+        currentUrl = url;
+        history.pushState({ projectModal: true, url: url }, '', url);
+        content.style.transition = 'none';
+        content.innerHTML = html;
+        content.scrollTop = 0;
+        reinitWebflow();
+        void content.offsetWidth;
+        content.style.transition = 'opacity .25s ease';
+        content.style.opacity = '1';
+      } catch (e) {
+        console.error('[modale swap-to-new]', e);
+        content.style.opacity = '1';
+      }
+      isSwapping = false;
+    }
+    async function changeProject(direction) {
+      if (isSwapping || !isOpen || !currentUrl) return;
+      const list = getProjectList();
+      let idx = list.indexOf(currentUrl);
+      if (idx === -1) return;
+      let n = idx + direction;
+      if (n < 0) n = list.length - 1;
+      if (n >= list.length) n = 0;
+      const newUrl = list[n];
+      if (newUrl === currentUrl) return;
+      isSwapping = true;
+      const outX = direction > 0 ? 24 : -24;
+      content.style.transition = 'opacity .25s ease, transform .25s ease';
+      content.style.opacity = '0';
+      content.style.transform = 'translateX(' + outX + 'px)';
+      try {
+        const html = (await Promise.all([fetchContent(newUrl), wait(CONFIG.swapMs)]))[0];
+        currentUrl = newUrl;
+        history.replaceState({ projectModal: true, url: newUrl }, '', newUrl);
+        content.style.transition = 'none';
+        content.style.transform = 'translateX(' + (direction > 0 ? -24 : 24) + 'px)';
+        content.innerHTML = html;
+        content.scrollTop = 0;
+        reinitWebflow();
+        void content.offsetWidth;
+        content.style.transition = 'opacity .25s ease, transform .25s ease';
+        content.style.opacity = '1';
+        content.style.transform = 'translateX(0)';
+      } catch (e) {
+        console.error('[modale swap]', e);
+        content.style.opacity = '1';
+        content.style.transform = 'none';
+      }
+      await wait(CONFIG.swapMs + 20);
+      // On retire le transform résiduel : sinon les boutons fixed se calent sur le contenu qui scrolle
+      content.style.transition = 'none';
+      content.style.transform = 'none';
+      isSwapping = false;
+    }
+    function closeModal(navigate) {
+      if (!isOpen) return;
+      isOpen = false;
+      currentUrl = null;
+      modal.classList.remove(CONFIG.openClass);
+      modal.setAttribute('aria-hidden', 'true');
+      unlockScroll();
+      setTimeout(function () {
+        if (!isOpen) content.innerHTML = '';
+      }, CONFIG.animMs);
+      if (navigate) {
+        if (pushedByOpen) history.back();
+        else history.replaceState(null, '', CONFIG.homeUrl);
+      }
+      pushedByOpen = false;
+    }
+    function hardReset() {
+      isOpen = false;
+      currentUrl = null;
+      modal.classList.remove(CONFIG.openClass);
+      modal.setAttribute('aria-hidden', 'true');
+      content.innerHTML = '';
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+    }
+    function reconcile() {
+      const s = history.state;
+      if (s && s.projectModal) {
+        if (!isOpen) openModal(s.url, 'none');
+        else if (s.url !== currentUrl) swapToUrl(s.url); // navigation arriere/avant entre deux triggers
+      } else if (isOpen) {
+        closeModal(false);
+      }
+    }
+
+    document.addEventListener('click', function (e) {
+      const link = e.target.closest(CONFIG.trigger);
+      if (link) {
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+        const href = link.getAttribute('href');
+        if (!href) return;
+        e.preventDefault();
+        if (isOpen) {
+          swapToUrl(href);
+          return;
+        }
+        try {
+          sessionStorage.setItem(CONFIG.scrollKey, String(window.scrollY || 0));
+        } catch (err) {}
+        openModal(href, 'push');
+        return;
+      }
+      if (e.target.closest(CONFIG.next)) {
+        e.preventDefault();
+        changeProject(1);
+        return;
+      }
+      if (e.target.closest(CONFIG.prev)) {
+        e.preventDefault();
+        changeProject(-1);
+        return;
+      }
+      if (e.target.closest(CONFIG.close)) {
+        e.preventDefault();
+        closeModal(true);
+        return;
+      }
+    });
+
+    window.addEventListener('popstate', reconcile);
+    window.addEventListener('pageshow', function (e) {
+      if (e.persisted) {
+        hardReset();
+        reconcile();
+      }
+    });
+    document.addEventListener('keydown', function (e) {
+      if (!isOpen) return;
+      if (e.key === 'Escape') closeModal(true);
+      else if (e.key === 'ArrowRight') changeProject(1);
+      else if (e.key === 'ArrowLeft') changeProject(-1);
+    });
+
+    // Préchargement à l'intention : la page d'une carte est chargée au survol, au focus ou au toucher
+    (function () {
+      var vus = {};
+      var warm = function (e) {
+        var a = e.target.closest && e.target.closest(CONFIG.trigger);
+        var h = a && a.getAttribute('href');
+        if (h && !vus[h]) { vus[h] = 1; fetchContent(h).catch(function () { vus[h] = 0; }); }
+      };
+      ['pointerover', 'focusin', 'touchstart'].forEach(function (t) { document.addEventListener(t, warm, { passive: true }); });
+    })();
+
+    const p = new URLSearchParams(location.search).get(CONFIG.param);
+    if (p) {
+      let y = 0;
+      try {
+        const v = sessionStorage.getItem(CONFIG.scrollKey);
+        if (v !== null) y = parseInt(v, 10) || 0;
+      } catch (err) {}
+      openModal(p, 'replace', y); // p = chemin complet, ex: /membres/slug ou /realisations/slug
+    } else {
+      reconcile();
+    }
+  })();
+</script>
+
+<script>
+  (function () {
+    function cleanEmptyParagraphs(root) {
+      (root || document).querySelectorAll('.rich-text-block p').forEach(function (p) {
+        var t = p.textContent.replace(/‍|​| /g, '').trim();
+        if (t === '') p.classList.add('rt-empty-p');
+      });
+    }
+    cleanEmptyParagraphs();
+    document.addEventListener('DOMContentLoaded', function () {
+      cleanEmptyParagraphs();
+    });
+  })();
+</script>
+
+<script>
+  (function () {
+    function buildVideos(root) {
+      (root || document).querySelectorAll('.visuels-item').forEach((item) => {
+        const type = (item.getAttribute('data-type') || '').trim().toLowerCase();
+        if (type.indexOf('vid') !== 0) return; // matche "video" ET "vidéo"
+        if (item.dataset.videoDone) return;
+        const url = item.getAttribute('data-video');
+        if (!url) return;
+        item.dataset.videoDone = '1';
+        const img = item.querySelector('img');
+        if (img) img.remove();
+        const v = document.createElement('video');
+        v.src = url;
+        v.autoplay = true;
+        v.loop = true;
+        v.muted = true;
+        v.defaultMuted = true;
+        v.playsInline = true;
+        v.controls = false;
+        v.setAttribute('muted', '');
+        v.setAttribute('playsinline', '');
+        v.setAttribute('preload', 'auto');
+        v.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;pointer-events:none';
+        item.appendChild(v);
+        v.play().catch(() => {});
+      });
+    }
+    buildVideos();
+    const mc = document.querySelector('[data-project-modal-content]');
+    if (mc) new MutationObserver(() => buildVideos()).observe(mc, { childList: true, subtree: true });
+  })();
+</script>
+
+<script>
+  (function () {
+    const cards = document.querySelectorAll('.case-card');
+    if (!cards.length) return;
+
+    const section = cards[0].closest('section');
+    // Les 2 points du haut de la section (classe combo cas-clients sur .dot-change)
+    const topDots = document.querySelectorAll('.dot-change.cas-clients');
+
+    cards.forEach((card) => {
+      const bgEl = card.querySelector('[data-bg-holder]'); // couleur fond (CMS)
+      const dotEl = card.querySelector('[data-dot-holder]'); // couleur dots (CMS)
+      const dots = card.querySelectorAll('.dot-change'); // dots de CETTE carte
+
+      const bgColor = bgEl ? getComputedStyle(bgEl).backgroundColor : '';
+      const dotColor = dotEl ? getComputedStyle(dotEl).backgroundColor : '';
+
+      card.addEventListener('mouseenter', () => {
+        if (section && bgColor) section.style.backgroundColor = bgColor;
+        if (dotColor) {
+          dots.forEach((d) => {
+            d.style.backgroundColor = dotColor;
+          });
+          topDots.forEach((d) => {
+            d.style.backgroundColor = dotColor;
+          }); // les 2 points du haut suivent
+        }
+      });
+      card.addEventListener('mouseleave', () => {
+        if (section) section.style.backgroundColor = '';
+        dots.forEach((d) => {
+          d.style.backgroundColor = '';
+        });
+        topDots.forEach((d) => {
+          d.style.backgroundColor = '';
+        });
+      });
+    });
+  })();
+</script>
+
+<script>
+  (function () {
+    // Bascule automatique du menu (liens, logo, bouton, diviseur) entre blanc et noir
+    // selon la luminosité de ce qu'il y a réellement sous la navbar (plus de mix-blend-mode).
+    // Hysteresis : une lecture differente de l'etat applique n'est prise en compte que si elle
+    // est confirmee par une deuxieme lecture identique lors du passage suivant.
+    // Luminance des <img> : mesuree reellement (canvas hors-DOM downscale) au lieu d'etre
+    // devinee a 0.85 - une image decorative sombre en fond de hero forcait alors a tort le menu
+    // en mode "clair" (texte noir sur fond noir, invisible).
+    function getNav() {
+      return document.querySelector('.navbar-logo-left-container.shadow-three');
+    }
+    if (!getNav()) return;
+
+    function luminance(rgb) {
+      var a = rgb.map(function (v) {
+        v /= 255;
+        return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+      });
+      return 0.2126 * a[0] + 0.7152 * a[1] + 0.0722 * a[2];
+    }
+    function parseColor(str) {
+      var m = str.match(/rgba?\(([^)]+)\)/);
+      if (!m) return null;
+      var parts = m[1].split(',').map(function (s) {
+        return parseFloat(s);
+      });
+      var alpha = parts.length > 3 ? parts[3] : 1;
+      if (alpha === 0) return null;
+      return { rgb: [parts[0], parts[1], parts[2]], alpha: alpha };
+    }
+
+    var imgLumCache = {};
+    function averageImageLuminance(imgEl) {
+      var src = imgEl.currentSrc || imgEl.src;
+      if (!src) return null;
+      var entry = imgLumCache[src];
+      if (entry) return entry.done ? entry.value : null;
+      entry = imgLumCache[src] = { done: false, value: null };
+      var probe = new Image();
+      probe.crossOrigin = 'anonymous';
+      probe.onload = function () {
+        try {
+          var size = 12;
+          var c = document.createElement('canvas');
+          c.width = size;
+          c.height = size;
+          var ctx = c.getContext('2d');
+          ctx.drawImage(probe, 0, 0, size, size);
+          var data = ctx.getImageData(0, 0, size, size).data;
+          var total = 0,
+            n = 0;
+          for (var i = 0; i < data.length; i += 4) {
+            if (data[i + 3] === 0) continue;
+            total += luminance([data[i], data[i + 1], data[i + 2]]);
+            n++;
+          }
+          entry.value = n ? total / n : 0.3;
+        } catch (e) {
+          entry.value = 0.3; // image illisible (CORS) : hypothese prudente plutot sombre
+        }
+        entry.done = true;
+        update();
+      };
+      probe.onerror = function () {
+        entry.value = 0.3;
+        entry.done = true;
+      };
+      probe.src = src;
+      return null;
+    }
+
+    function isRealMedia(node) {
+      var tag = node.tagName;
+      return tag === 'VIDEO' || tag === 'PICTURE' || tag === 'CANVAS' || tag === 'SVG';
+    }
+    function bgLuminanceAt(nav, x, y) {
+      var els = document.elementsFromPoint(x, y);
+      var first = null;
+      for (var i = 0; i < els.length; i++) {
+        if (!nav.contains(els[i])) {
+          first = els[i];
+          break;
+        }
+      }
+      if (!first) return null;
+      var node = first;
+      while (node && node !== document.documentElement) {
+        if (node.tagName === 'IMG') {
+          var v = averageImageLuminance(node);
+          if (v !== null) return v;
+        } else if (isRealMedia(node)) {
+          return 0.3;
+        }
+        var cs = getComputedStyle(node);
+        var c = parseColor(cs.backgroundColor);
+        if (c && c.alpha > 0.4) return luminance(c.rgb);
+        if (cs.backgroundImage && cs.backgroundImage !== 'none') return 0.2;
+        node = node.parentElement;
+      }
+      return null;
+    }
+    function computeIsLight() {
+      var nav = getNav();
+      if (!nav) return null;
+      var rect = nav.getBoundingClientRect();
+      if (rect.height === 0) return null;
+      var y = rect.top + rect.height / 2 + 1;
+      var xs = [rect.left + 24, rect.left + rect.width / 2, rect.right - 24];
+      var total = 0,
+        count = 0;
+      xs.forEach(function (x) {
+        var lum = bgLuminanceAt(nav, x, y);
+        if (lum !== null) {
+          total += lum;
+          count++;
+        }
+      });
+      var avg = count ? total / count : 0.15;
+      return avg > 0.55;
+    }
+    var appliedLight = null;
+    var pendingLight = null;
+    function applyState(isLight) {
+      var nav = getNav();
+      if (!nav) return;
+      if (isLight) {
+        nav.classList.add('nav-on-light');
+        nav.classList.remove('nav-on-dark');
+      } else {
+        nav.classList.add('nav-on-dark');
+        nav.classList.remove('nav-on-light');
+      }
+      appliedLight = isLight;
+      pendingLight = null;
+    }
+    function update() {
+      var isLight = computeIsLight();
+      if (isLight === null) return;
+      if (appliedLight === null) {
+        applyState(isLight);
+        return;
+      }
+      if (isLight === appliedLight) {
+        pendingLight = null;
+        return;
+      }
+      if (pendingLight === isLight) {
+        applyState(isLight);
+      } else {
+        pendingLight = isLight;
+      }
+    }
+    var ticking2 = false;
+    function onScroll2() {
+      if (!ticking2) {
+        ticking2 = true;
+        requestAnimationFrame(function () {
+          try {
+            update();
+          } finally {
+            ticking2 = false;
+          }
+        });
+      }
+    }
+    window.addEventListener('scroll', onScroll2, { passive: true });
+    window.addEventListener('resize', onScroll2);
+    window.addEventListener('load', update);
+    document.addEventListener('DOMContentLoaded', update);
+    update();
+    var pollStart = Date.now();
+    function poll() {
+      update();
+      if (Date.now() - pollStart < 6000) setTimeout(poll, 150);
+    }
+    setTimeout(poll, 150);
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(update).catch(function () {});
+    }
+  })();
+</script>
+
+<script>
+  (function () {
+    const main = document.querySelector('.main-wrapper');
+    const footer = document.querySelector('.footer');
+    const pw = document.querySelector('.page-wrapper');
+    if (!main || !footer || !pw) return;
+
+    let spacer = document.getElementById('footer-reveal-spacer');
+    if (!spacer) {
+      spacer = document.createElement('div');
+      spacer.id = 'footer-reveal-spacer';
+      spacer.style.width = '100%';
+      spacer.style.pointerEvents = 'none';
+      pw.appendChild(spacer);
+    }
+    function measure() {
+      main.style.marginBottom = '';
+      spacer.style.height = footer.scrollHeight + 'px';
+    }
+    function onScroll() {
+      const vh = window.innerHeight;
+      const fH = footer.scrollHeight;
+      const endMain = main.getBoundingClientRect().bottom + window.scrollY;
+      const y = window.scrollY;
+      const translate = y <= endMain ? 0 : -Math.min(y - endMain, Math.max(0, fH - vh));
+      footer.style.transform = 'translateY(' + translate + 'px)';
+    }
+    measure();
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', function () {
+      measure();
+      onScroll();
+    });
+    window.addEventListener('load', function () {
+      measure();
+      onScroll();
+    });
+  })();
+</script>
+
+<script>
+  (function () {
+    // ===== Dates en francais (posts LinkedIn + articles) =====
+    // Les champs Date CMS sont rendus par Webflow en anglais ("August 12, 2026") sur les posts
+    // LinkedIn, ou en numerique DD.MM.YYYY ("02.09.2026") sur les articles - jamais localises en
+    // francais nativement. On reformate cote client, en texte pur, sans dependre d'une classe
+    // dediee (les classes de date sont partagees avec d'autres textes) : on ne touche qu'un noeud
+    // texte dont le contenu COMPLET (trim) matche exactement un des deux formats source.
+    var MONTHS_FR = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+    var MONTHS_EN = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'];
+    var RE_NUMERIC = /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/; // DD.MM.YYYY (articles)
+    var RE_ENGLISH = /^([A-Za-z]+)\s+(\d{1,2}),\s*(\d{4})$/; // "August 12, 2026" (posts LinkedIn)
+
+    function frenchize(text) {
+      var m = RE_NUMERIC.exec(text);
+      if (m) {
+        var day = parseInt(m[1], 10);
+        var month = MONTHS_FR[parseInt(m[2], 10) - 1];
+        if (!month) return null;
+        return day + ' ' + month + ' ' + m[3];
+      }
+      m = RE_ENGLISH.exec(text);
+      if (m) {
+        var idx = MONTHS_EN.indexOf(m[1].toLowerCase());
+        if (idx === -1) return null;
+        return parseInt(m[2], 10) + ' ' + MONTHS_FR[idx] + ' ' + m[3];
+      }
+      return null;
+    }
+
+    function walk(root) {
+      var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+      var node;
+      var targets = [];
+      while ((node = walker.nextNode())) {
+        var text = node.nodeValue.trim();
+        if (!text) continue;
+        var out = frenchize(text);
+        if (out) targets.push([node, out]);
+      }
+      targets.forEach(function (pair) {
+        pair[0].nodeValue = pair[1];
+      });
+    }
+
+    function run() {
+      walk(document.body);
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run);
+    else run();
+    window.addEventListener('load', run);
+  })();
+</script>
+
+<script>
+  (function () {
+    // ===== Etapes du process : reveal alterne, une seule fois, mobile uniquement =====
+    if (window.innerWidth > 767) return;
+    var cards = document.querySelectorAll('.process-card');
+    if (!cards.length) return;
+    cards.forEach(function (el, i) {
+      el.setAttribute('data-reveal-dir', i % 2 === 0 ? 'left' : 'right');
+    });
+    var io = new IntersectionObserver(
+      function (entries, obs) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('process-reveal-in');
+            obs.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.2 },
+    );
+    cards.forEach(function (el) {
+      io.observe(el);
+    });
+  })();
+</script>
+
+<script>
+  (function () {
+    // ===== Offres : cartes problematique-card, effet "hover" pilote par la visibilite sur
+    // tablette/mobile (<=991px), reserve au vrai survol souris sur ordinateur =====
+    // L'effet est un VRAI :hover CSS (verifie en direct via le CSSOM, ni IX2 ni JS) - un evenement
+    // souris simule via dispatchEvent ne declenche donc jamais le pseudo-etat :hover, quelle que
+    // soit la carte ciblee (tentative precedente, sur .case-card, corrigee ici). La bonne
+    // approche est de reproduire le MEME rendu visuel via une classe (".card-visible"), definie
+    // avec les valeurs exactes de :hover dans le head (voir bloc "effet hover des cartes
+    // problematique-card"), ajoutee/retiree par IntersectionObserver des que la carte
+    // entre/sort du viewport - reversible, comme demande ("la premiere carte visible directement,
+    // la deuxieme des qu'elle apparait au slide"). Le head neutralise en parallele le vrai :hover
+    // sous 991px pour eviter l'effet parasite au toucher que causait le survol "colle" par
+    // certains navigateurs mobiles.
+    if (window.innerWidth > 991) return;
+    var cards = document.querySelectorAll('.problematique-card');
+    if (!cards.length) return;
+    var io = new IntersectionObserver(
+      function (entries) {
+        entries.forEach(function (entry) {
+          entry.target.classList.toggle('card-visible', entry.isIntersecting);
+        });
+      },
+      { threshold: 0.5 },
+    );
+    cards.forEach(function (el) {
+      io.observe(el);
+    });
+  })();
+</script>
+
+<script>
+  (function () {
+    // ===== Accueil : reconstruction du degrade de fond a partir de l'image reelle =====
+    // FIX (2026-09-04, v3) : les couleurs precedentes venaient du markup Figma, pas du fichier
+    // reellement servi par Webflow (asset "gradiant home 2.webp") - d'ou le decoupage signale
+    // au mauvais endroit. Les 48 couleurs ci-dessous sont echantillonnees directement dans
+    // l'image reelle (moyenne par bande horizontale sur toute sa hauteur source, 3081px),
+    // etirees uniformement sur les 2310px - identique a la maniere dont le navigateur etire
+    // deja cette image (pas d'object-fit sur .image-fond-realisations.home, donc stretch
+    // simple). Bandes empilees en flex column (chacune flex:1), floutees via
+    // filter:blur(150px) sur .home-gradient-bands. Inseres juste apres l'image d'origine
+    // (masquee en CSS, voir head), qui reste dans le DOM pour ne rien casser d'autre (alt
+    // text, etc.).
+    // FIX (2026-09-04, v5) : bug Chromium confirme - un enfant avec filter:blur() plus grand
+    // que son parent overflow:hidden n'est PAS clipe de facon fiable (le debord continue a se
+    // peindre sous le parent, meme avec contain:paint / clip-path). Les versions precedentes
+    // (v2-v4) agrandissaient bands au-dela de crop (padding EXT haut/bas/gauche/droite) pour
+    // eviter que le flou ne s'estompe vers la transparence sur ses propres bords - mais cet
+    // agrandissement fuyait hors de crop.overflow:hidden et peignait un bandeau gris juste
+    // sous la card sticky, sur la page suivante. Nouvelle approche, testee en direct et
+    // confirmee : bands fait EXACTEMENT la taille de crop (aucun debord possible, donc rien a
+    // fuir), et crop porte en background un degrade CSS NET (non floute, memes stops de
+    // couleur) qui sert de calque de secours - la ou le flou s'estompe vers la transparence
+    // sur ses propres bords (haut/bas/gauche/droite), ce degrade net apparait a la place du
+    // fond noir de la section, avec la bonne couleur.
+    var COLORS = ['#1d1210', '#1a1212', '#151116', '#10111a', '#0d121e', '#0a1122', '#081226', '#06122b', '#041430', '#031635', '#04183a', '#041a42', '#041e4a', '#042254', '#04265e', '#042b69', '#043075', '#043780', '#043f8c', '#044797', '#0551a0', '#075da8', '#0c68af', '#1375b5', '#1e83bc', '#2c91c3', '#3da0ca', '#51aed1', '#65bbd9', '#78c6e0', '#8cd0e6', '#9ed7e9', '#aedeeb', '#bbe1eb', '#c8e3e9', '#d2e5e7', '#dce6e4', '#e4e5e1', '#ebe6df', '#f0e8e0', '#f4ebe2', '#f5ede7', '#f8f0ea', '#f8f2ed', '#f8f4f0', '#f8f6f5', '#f8f7f6', '#f8f8f8'];
+    function initHomeGradientBands() {
+      var img = document.querySelector('.image-fond-realisations.home');
+      if (!img) return;
+      var section = img.closest('.hero-container-section');
+      if (!section || section.querySelector('.home-gradient-crop')) return;
+      // Hauteur EXACTE en dur (2310px), demande explicite de l'utilisateur.
+      var H = 2310;
+      var crop = document.createElement('div');
+      crop.className = 'home-gradient-crop';
+      crop.style.height = H + 'px';
+      crop.style.background = 'linear-gradient(to bottom, ' + COLORS.join(', ') + ')';
+      var bands = document.createElement('div');
+      bands.className = 'home-gradient-bands';
+      bands.style.top = '0px';
+      bands.style.left = '0px';
+      bands.style.width = '100%';
+      bands.style.height = '100%';
+      COLORS.forEach(function (c) {
+        var band = document.createElement('div');
+        band.style.background = c;
+        bands.appendChild(band);
+      });
+      crop.appendChild(bands);
+      img.insertAdjacentElement('afterend', crop);
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initHomeGradientBands);
+    else initHomeGradientBands();
+  })();
+</script>
+
+<script>
+  (function () {
+    // ===== Realisations : degrade de fond reconstruit a partir de l'image reelle =====
+    // FIX (2026-09-04, v3) : memes causes/remede que sur la home - couleurs precedentes issues
+    // du markup Figma plutot que de l'asset reellement servi ("gradiant travaux.webp", 2000x2792,
+    // stretch simple, pas d'object-fit). Les 48 couleurs ci-dessous sont echantillonnees
+    // directement dans cette image reelle (moyenne par bande horizontale sur toute sa hauteur
+    // source) puis etirees uniformement sur les 2310px. Jamais mutualiser les tableaux de
+    // couleurs entre pages, chaque hero a sa propre image source. Meme calque de flou que la
+    // home (filter:blur(150px), classes .home-gradient-bands / .home-gradient-crop reutilisees
+    // car purement structurelles). FIX (2026-09-05) : le selecteur ciblait TOUT
+    // .image-fond-realisations dans un .hero-container-section.blanc, mais la page Articles (blog
+    // post) reutilise la MEME classe de section "blanc" pour son propre hero, avec sa propre image
+    // variante ".image-fond-realisations.article" - le script matchait donc aussi cette image sur
+    // les pages d'article, la masquait ET y injectait par-dessus le degrade Realisations (voile
+    // blanc/degrade errone couvrant tout le contenu de l'article). Exclu explicitement via
+    // :not(.article). Cible desormais
+    // ".hero-container-section.blanc .image-fond-realisations:not(.article)" (page Realisations
+    // uniquement).
+    var COLORS_REALISATIONS = ['#f8f8f8', '#f8f8f8', '#f8f8f8', '#f8f8f8', '#f8f8f8', '#f8f8f8', '#f8f8f8', '#f8f8f8', '#f8f8f8', '#f8f8f8', '#f6f8f7', '#f5f8f7', '#f2f7f8', '#eef6f8', '#e8f4f8', '#e2f2f7', '#d9f0f7', '#cfecf5', '#c3e8f3', '#b3e1ef', '#a2d9ea', '#8fd0e5', '#7bc6df', '#68b9d8', '#53abd0', '#409cc9', '#2f8dc1', '#217eb9', '#176eb0', '#0e61a7', '#08549c', '#064991', '#043e85', '#033679', '#032e6d', '#032762', '#032356', '#031d4c', '#031a42', '#031739', '#031432', '#02122c', '#031128', '#030e22', '#020d1f', '#030b1c', '#030a17', '#030814'];
+    function initRealisationsGradientBands() {
+      var img = document.querySelector('.hero-container-section.blanc .image-fond-realisations:not(.article)');
+      if (!img) return;
+      var section = img.closest('.hero-container-section');
+      if (!section || section.querySelector('.home-gradient-crop')) return;
+      var H = 2310;
+      var crop = document.createElement('div');
+      crop.className = 'home-gradient-crop';
+      crop.style.height = H + 'px';
+      // FIX (2026-09-04, v5) : voir le commentaire detaille sur la home - bands fait
+      // desormais EXACTEMENT la taille de crop (rien ne peut fuir hors du clip), et crop
+      // porte un degrade CSS net en secours derriere le calque floute.
+      crop.style.background = 'linear-gradient(to bottom, ' + COLORS_REALISATIONS.join(', ') + ')';
+      var bands = document.createElement('div');
+      bands.className = 'home-gradient-bands';
+      bands.style.top = '0px';
+      bands.style.left = '0px';
+      bands.style.width = '100%';
+      bands.style.height = '100%';
+      COLORS_REALISATIONS.forEach(function (c) {
+        var band = document.createElement('div');
+        band.style.background = c;
+        bands.appendChild(band);
+      });
+      crop.appendChild(bands);
+      img.insertAdjacentElement('afterend', crop);
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initRealisationsGradientBands);
+    else initRealisationsGradientBands();
+  })();
+</script>
+
+<script>
+  (function () {
+    // ===== A propos : degrade de fond reconstruit a partir de l'image reelle =====
+    // FIX (2026-09-04, v3) : les couleurs precedentes venaient du cadre Figma (2311px, jamais
+    // affiche tel quel) et non de l'image reellement servie par Webflow (asset "gradiant
+    // about.webp", 1080x1318px, en object-fit:cover) - d'ou le decalage signale ("coupe au
+    // mauvais endroit"). Les 48 couleurs ci-dessous sont echantillonnees directement dans le
+    // fichier image reel (moyenne par bande horizontale, sur toute la hauteur source), puis
+    // etirees uniformement sur les 1400px comme sur les 2 autres pages - le calque
+    // object-fit:cover de l'image d'origine (qui ne montre qu'une portion recadree et variable
+    // selon la largeur d'ecran) est ignore au profit d'un etirement plein-image, deterministe et
+    // identique quelle que soit la largeur de viewport. Le calque de flou reste a
+    // rgba(255,255,255,0.01) (1% d'opacite) comme dans la version precedente. Cible
+    // ".hero-container-section.propos .image-fond-realisations" (page A propos uniquement).
+    var COLORS_APROPOS = ['#050c1c', '#040d1e', '#040e21', '#040f25', '#04122b', '#041431', '#041739', '#061d43', '#08244f', '#0b2d5d', '#123a6a', '#1a477a', '#25578b', '#33689d', '#457bad', '#588fbc', '#6ba2c9', '#80b4d5', '#95c4e0', '#aad2e8', '#bedeee', '#cfe8f5', '#ddf0f8', '#e8f6fa', '#eff9fc', '#f6fcfd', '#fafdfe', '#fcfffe', '#feffff', '#ffffff', '#ffffff', '#ffffff', '#ffffff', '#ffffff', '#ffffff', '#ffffff', '#ffffff', '#ffffff', '#ffffff', '#ffffff', '#ffffff', '#ffffff', '#ffffff', '#ffffff', '#ffffff', '#ffffff', '#ffffff'];
+    function initAproposGradientBands() {
+      var img = document.querySelector('.hero-container-section.propos .image-fond-realisations');
+      if (!img) return;
+      var section = img.closest('.hero-container-section');
+      if (!section || section.querySelector('.home-gradient-crop')) return;
+      var H = 1400;
+      var crop = document.createElement('div');
+      crop.className = 'home-gradient-crop';
+      crop.style.height = H + 'px';
+      // FIX (2026-09-04, v5) : voir le commentaire detaille sur la home - bands fait
+      // desormais EXACTEMENT la taille de crop (rien ne peut fuir hors du clip), et crop
+      // porte un degrade CSS net en secours derriere le calque floute.
+      crop.style.background = 'linear-gradient(to bottom, ' + COLORS_APROPOS.join(', ') + ')';
+      var bands = document.createElement('div');
+      bands.className = 'home-gradient-bands';
+      bands.style.top = '0px';
+      bands.style.left = '0px';
+      bands.style.width = '100%';
+      bands.style.height = '100%';
+      COLORS_APROPOS.forEach(function (c) {
+        var band = document.createElement('div');
+        band.style.background = c;
+        bands.appendChild(band);
+      });
+      crop.appendChild(bands);
+      // Legere teinte blanche (1%) de la version d'origine - simple calque statique alpha,
+      // AUCUN backdrop-filter donc pas de risque de fuite au scroll.
+      var tint = document.createElement('div');
+      tint.style.position = 'absolute';
+      tint.style.inset = '0';
+      tint.style.background = 'rgba(255, 255, 255, 0.01)';
+      tint.style.pointerEvents = 'none';
+      crop.appendChild(tint);
+      img.insertAdjacentElement('afterend', crop);
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initAproposGradientBands);
+    else initAproposGradientBands();
+  })();
+</script>
+
+<script>
+  document.addEventListener('click', function (e) {
+    var link = e.target.closest('[data-cookie-consent]');
+    if (link) {
+      e.preventDefault();
+      if (window.openAxeptioCookies) {
+        window.openAxeptioCookies();
+      }
+    }
+  });
+</script>
+
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TD7C9Z42" height="0" width="0" style="display: none; visibility: hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+
+<script>
+  (function () {
+    function isVisible(el) {
+      return el && window.getComputedStyle(el).display !== 'none';
+    }
+    document.querySelectorAll('.w-form-done').forEach(function (successEl) {
+      var formWrapper = successEl.closest('.w-form');
+      var formEl = formWrapper ? formWrapper.querySelector('form') : null;
+      var formName = formEl ? formEl.getAttribute('data-form-name') || 'formulaire' : 'formulaire';
+
+      var observer = new MutationObserver(function (mutations) {
+        mutations.forEach(function (m) {
+          if (m.attributeName === 'style' && isVisible(successEl)) {
+            window.dataLayer = window.dataLayer || [];
+            window.dataLayer.push({
+              event: 'form_submit_success',
+              form_name: formName,
+            });
+            observer.disconnect();
+          }
+        });
+      });
+      observer.observe(successEl, { attributes: true });
+    });
+  })();
+</script>
